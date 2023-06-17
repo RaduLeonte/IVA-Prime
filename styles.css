@@ -13,7 +13,7 @@ header {
     top: 0;
     left: 0;
     right: 0;
-    z-index: 1; /* Ensures menu bar stays on top */
+    z-index: 9999;; /* Ensures menu bar stays on top */
 }
 
 nav ul {
@@ -38,17 +38,14 @@ nav ul li a {
     overflow: hidden; /* Prevents the container from scrolling */
 }
 
-.sidebar {
-    flex: 1;
-    background-color: #f2f2f2;
-    overflow-y: auto; /* Enables sidebar scrolling */
-}
 
 .content {
     flex: 3;
     padding: 20px;
-    overflow-y: auto; /* Enables content scrolling */
+    position: relative;
+    overflow-y: scroll; /* Enables content scrolling */
     margin-top: 40px; /* Adjusts the top margin to exclude the menu bar */
+    font-family: "Anonymous Pro", sans-serif;
 }
 
 #file-content {
@@ -60,7 +57,6 @@ nav ul li a {
 
 .strands {
     position: relative;
-    font-family: "Anonymous Pro", sans-serif;
   }
   
   .strands p {
@@ -107,4 +103,115 @@ nav ul li a {
   .custom-context-menu li:hover {
     background-color: #555;
   }
+
+  .custom-context-menu li.disabled {
+    color: gray;
+    cursor: not-allowed;
+  }
+  
+
+  .horizontal-list {
+    display: flex;
+    list-style: none;
+    padding: 0;
+  }
+  
+  .horizontal-list li {
+    margin-right: 10px;
+  }
+
+  #header-list li {
+    display: inline-block;
+    margin: 5px;
+  }
+  
+  #header-list li a {
+    padding: 10px 20px;
+    text-decoration: none;
+  }
+  
+  #header-list #import-btn a {
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 5px;
+  }
+  
+  #header-list #import-btn a:hover {
+    background-color: #45a049;
+  }
+
+  .sidebar {
+    flex: 1;
+    background-color: #f2f2f2;
+    overflow-y: auto; /* Enables sidebar scrolling */
+    margin-top: 48px;
+}
+
+.sidebar-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.sidebar-table th,
+.sidebar-table td {
+    padding: 8px;
+    border: 1px solid #ccc;
+}
+
+.sidebar-table th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+    text-align: left;
+}
+
+.sidebar-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.sidebar-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+.wrap-text {
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+
+.sidebar-content {
+    background-color: #f2f2f2;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.sidebar-content p {
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+}
+
+.sidebar-content p:not(:last-child) {
+    margin-bottom: 10px;
+}
+
+.sidebar-content p:first-child {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.sidebar-content p:last-child {
+    margin-bottom: 0;
+}
+
+.floating-box {
+    position: fixed;
+    background-color: red;
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    z-index: 9000;
+  }
+  
   

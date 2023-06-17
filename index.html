@@ -4,21 +4,32 @@
     <title>IVA-Prime</title>
     <link href="https://fonts.googleapis.com/css2?family=Anonymous+Pro&display=swap" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="styles.css">
-    <script src="script.js"></script>
-    <!-- <script src="paragraphSelector.js"></script> -->
-    <script src="contextMenu.js"></script>
+    <script src="importPlasmid.js"></script>
+    <script src="sequenceContextMenu.js"></script>
+    <script src="featureLabel.js"></script>
 </head>
     <header>
         <nav>
-            <ul>
-                <li><a href="#">Import File</a></li>
+            <ul id="header-list"  class="horizontal-list">
+                <li id="import-btn"><a href="#">Import File</a></li>
                 <!-- Add more menu options here if needed -->
             </ul>
         </nav>
     </header>
 
     <div class="container">
-        <div class="sidebar"></div>
+        <div class="sidebar">
+            <div class="sidebar-content">
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                <p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                <!-- Add more paragraph elements here if needed -->
+            </div>
+            <table id="sidebar-table" class="sidebar-table">
+              <!-- Add more rows for additional information if needed -->
+            </table>
+          </div>
+          
+          
         <div class="content">    
             <!-- Plasmid -->
             <div id="file-content" class="strands"></div>
