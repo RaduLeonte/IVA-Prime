@@ -2,12 +2,18 @@ body {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
+    overflow: hidden; /* Prevents the whole page from scrolling */
 }
 
 header {
     background-color: #333;
     color: #fff;
     padding: 10px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1; /* Ensures menu bar stays on top */
 }
 
 nav ul {
@@ -29,18 +35,76 @@ nav ul li a {
 .container {
     display: flex;
     height: 100vh;
+    overflow: hidden; /* Prevents the container from scrolling */
 }
 
 .sidebar {
     flex: 1;
     background-color: #f2f2f2;
+    overflow-y: auto; /* Enables sidebar scrolling */
 }
 
 .content {
     flex: 3;
     padding: 20px;
+    overflow-y: auto; /* Enables content scrolling */
+    margin-top: 40px; /* Adjusts the top margin to exclude the menu bar */
 }
 
 #file-content {
     font-size: 24px;
+    word-wrap: break-word; /* Allows text to wrap */
+    white-space: pre-wrap; /* Preserves whitespace */
 }
+
+
+.strands {
+    position: relative;
+    font-family: "Anonymous Pro", sans-serif;
+  }
+  
+  .strands p {
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    line-height: 4.5em;
+    letter-spacing: 0.2em;
+    font-kerning: none;
+  }
+  
+  #complementary_strand {
+    background-color: transparent;
+    opacity: 0.5; /* Adjust the opacity as desired */
+    margin-top: 1.4em; /* Adjust the margin-top value to match line-height */
+  }
+
+
+  .custom-context-menu {
+    position: absolute;
+    display: none;
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #ccc;
+    padding: 8px;
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+    z-index: 9999;
+  }
+  
+  .custom-context-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .custom-context-menu li {
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  
+  .custom-context-menu li:hover {
+    background-color: #555;
+  }
+  
