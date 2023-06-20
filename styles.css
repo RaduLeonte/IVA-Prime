@@ -221,13 +221,11 @@ nav ul li a {
   }
   
   #sequence-grid td {
-    border: 1px solid #ccc;
+    border: 0px solid #ccc;
     padding: 5px;
     text-align: center;
     font-family: monospace;
     white-space: pre;
-    height:20px;
-    width: 10px;
   }
   
   #sequence-row, #complementary-row, #empty-row {
