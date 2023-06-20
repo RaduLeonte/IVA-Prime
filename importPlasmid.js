@@ -4,6 +4,9 @@ window.onload = function() {
 
     function handleFileSelect(event) {
         const file = event.target.files[0];
+        if (!file.name.includes(".gbk") && !file.name.includes(".dna")) {
+          return
+        }
         const reader = new FileReader();
 
         reader.onload = function(e) {
@@ -13,14 +16,15 @@ window.onload = function() {
             const { sequence, complementaryStrand, features } = parsePlasmidFile(fileContent);
             
             
-            // Display the parsed content in the div
-            fileContentDiv.innerHTML = `
-                <p id="complementary_strand">${complementaryStrand}</p>
-                <p id="forward_strand">${sequence}</p>
-            `;
+            // Create content grid
+            makeContentGrid(sequence, complementaryStrand, features);
+
+            // Update header with filename
             const headerList = document.getElementById('header-list');
             headerList.innerHTML = headerList.innerHTML + "<li><a>" + file.name + "</a></li>";
             
+
+            // Sidebar contents
             const sidebarTable = document.getElementById('sidebar-table');
             sidebarTable.innerHTML = `
                 <tr>
@@ -35,7 +39,7 @@ window.onload = function() {
                 const feature = features[featureName];
             
                 // Create a new table row
-                const row = document.createElement('tr');
+                let row = document.createElement('tr');
             
                 // Add feature name
                 const nameCell = document.createElement('td');
@@ -74,7 +78,6 @@ window.onload = function() {
     const fileInput = document.createElement('input');
     fileInput.setAttribute('type', 'file');
     fileInput.addEventListener('change', handleFileSelect);
-
     const importLink = document.querySelector('nav ul li a');
     importLink.addEventListener('click', function(event) {
         event.preventDefault();
@@ -82,114 +85,126 @@ window.onload = function() {
     });
 };
 
-function parsePlasmidFile(fileContent) {
-    // Adapted Python code goes here
-    const features = extractFeatures(fileContent);
-    console.log(features)
-    const sequence = extractSequence(fileContent);
+const gridStructure = ["Forward Strand",
+                        "Complementary Strand",
+                        "Annotations",
+                        "Empty"];
+const gridWidth = 40;
 
-    // Adapted extract_features function
-    function extractFeatures(input) {
-        //console.log(input);
-        const inputLines = input.split('\n').map(line => line.trim()).filter(line => line);
-        // Add LOCUS feature
-        const featuresDict = {};
-        const firstLine = inputLines[0];
-        const locusNote = firstLine.trim();
-        featuresDict['LOCUS'] = { note: locusNote.replace("LOCUS ", ""), span: "", label: ""};
-        while (inputLines.length > 0 && !inputLines[0].includes("FEATURES")) {
-            inputLines.shift(); // Remove the first item
-        }
-        inputLines.shift();
-        
-        const featureList = [];
-        let currentFeature = '';
-        
-        for (const line of inputLines) {
-          if (line.includes('..')) {
-            if (currentFeature !== '') {
-              featureList.push(currentFeature);
-            }
-            currentFeature = '';
-          }
-        
-          currentFeature += line + '\n';
-        }
-        
-        if (currentFeature !== '') {
-          featureList.push(currentFeature);
-        }
-        
-        
+function makeContentGrid(sequence, complementarySequence, features) {
+  const sequenceGrid = document.getElementById('sequence-grid');
+  sequenceGrid.innerHTML = ''; // Clear previous grid contents
 
-        
-        for (const feature of featureList) {
-          const lines = feature.split('\n').map(line => line.trim()).filter(line => line);
-          let featureName = lines[0].substring(0, lines[0].indexOf(' '));
-          let i = 0;
-        
-          while (featureName in featuresDict) {
-            if (`${featureName}${i}` in featuresDict) {
-              i++;
-            } else {
-              featureName = `${featureName}${i}`;
-              break;
-            }
-          }
-        
-          const featureInfo = {
-            span: lines[0].includes('complement') ? lines[0].substring(lines[0].indexOf('complement')) : lines[0].replace(featureName, '').trim()
-          };
-        
-          for (let j = 1; j < lines.length; j++) {
-            const property = lines[j];
-            const propertyName = property.substring(0, property.indexOf('=')).replace('/', '').replace('"', '');
-            const propertyBody = property.substring(property.indexOf('=') + 1).replace(/"/g, '').trim();
-        
-            featureInfo[propertyName] = propertyBody;
-          }
-        
-          featuresDict[featureName] = featureInfo;
-        }
-        
-        return featuresDict;
+  const gridHeight = Math.ceil(sequence.length / gridWidth) * gridStructure.length;
+  console.log(sequence.length, gridHeight, Math.ceil(sequence.length / gridWidth), sequenceGrid.rows)
+
+  for (let i = 0; i < gridHeight; i++) {
+    //console.log(i)
+    let row = sequenceGrid.rows[i]; // Get the corresponding row
+    if (!row) {
+      // If the row doesn't exist, create a new one
+      row = sequenceGrid.insertRow(i);
+    } 
+    for (let j = 0; j < gridWidth; j++) {
+      const cell = document.createElement('td');
+      let currentChar = ""
+      let test = Math.floor(i / gridStructure.length)
+      if ((i + 1) % gridStructure.length === 1) {
+        currentChar = sequence[test*gridWidth + j]
+      } else if ((i + 1) % gridStructure.length === 2) {
+        currentChar = complementarySequence[test*gridWidth + j]
       }
-      
-      
-
-    // Adapted extract_sequence functions
-    function extractSequence(input) {
-        input = input.substring(input.indexOf("ORIGIN") + "ORIGIN".length);
-        let output = input.replace(/\n/g, '').replace(/\/\//g, '').split(' ').filter(x => !/\d/.test(x));
-        output = output.join('').toUpperCase().trim().replace(/[\r\n]+/g, "")
-        // console.log(output)
-        return output;
+      if (!currentChar) {
+        currentChar = ""
+      }
+      cell.textContent = currentChar;
+      row.appendChild(cell);
     }
-    
+  }
+  
+  Object.entries(features).forEach(([key, value]) => {
+    if (value.span && !key.includes("source")) {
+      console.log(`Key: ${key}, Value: ${value}`);
+      function removeNonNumeric(inputString) {
+        const cleanedString = inputString.replace(/[^\d.]/g, '');
+        return cleanedString;
+      }
+      console.log(value.span)
+      value.span = removeNonNumeric(value.span);
+      console.log(value.span)
+      const range = value.span.split("..").map(Number);
+      const rangeStart = range[0];
+      const rangeEnd = range[1];
 
-    // Placeholder values for testing
-    const complementaryStrand = getComplementaryStrand(sequence);
-
-    return {
-        sequence,
-        complementaryStrand,
-        features
-    };
+      makeAnnotation(rangeStart - 1, rangeEnd, value.label); 
+    }
+  });
+  
 }
 
-function getComplementaryStrand(sequence) {
-    const nucleotideComplements = {
-        'A': 'T',
-        'T': 'A',
-        'G': 'C',
-        'C': 'G'
-    };
+function makeAnnotation(rStart, rEnd, text) {
+  const annotationColor = getRandomBackgroundColor();
+  Math.floor(rStart / gridWidth)
+  let {row, col} = basePositionToCoord(rStart);
+  const annotationSpan = rEnd - rStart;
+  let currentSpan = annotationSpan;
+  for (let i = 0; i < Math.floor(annotationSpan/gridWidth + 1); i++) {
+    if (i != 0) {
+        text = "..." + text.replace("...", "");
+      }
+    if (col + currentSpan > gridWidth) {
+      let carryOver = col + currentSpan - gridWidth;
+      currentSpan = gridWidth - col;
+      mergeCells(row, col, 1, currentSpan, text, annotationColor);
+      currentSpan = carryOver;
+      row = row + gridStructure.length;
+      col = 0;
+    } else {
+      mergeCells(row, col, 1, currentSpan, text, annotationColor);
+    }
+  }
 
-    const complementaryStrand = sequence
-        .toUpperCase()
-        .split('')
-        .map(nucleotide => nucleotideComplements[nucleotide])
-        .join('');
-
-    return complementaryStrand;
 }
+
+function basePositionToCoord(pos) {
+  let row = (Math.floor(pos / gridWidth)) * gridStructure.length;
+  const col = pos - (row/gridStructure.length)*gridWidth;
+  row = row + 2
+  return {row, col};
+}
+
+function mergeCells(row, col, rowspan, colspan, text, color) {
+  const table = document.getElementById('sequence-grid');
+  console.log(row, col);
+  console.log(table);
+  const mainCell = table.rows[row].cells[col];
+
+  mainCell.rowSpan = rowspan;
+  mainCell.colSpan = colspan;
+  mainCell.style.backgroundColor = color;
+
+  // Remove extra cells
+  for (let i = row; i < row + rowspan; i++) {
+    let k = 0;
+    for (let j = col + 1; j < col + colspan; j++) {
+      const cell = table.rows[i].cells[j - k];
+      cell.parentNode.removeChild(cell);
+      k++;
+    }
+  }
+
+  // Add text to the center of the merged cell
+  const textNode = document.createTextNode(text);
+  mainCell.appendChild(textNode);
+  mainCell.style.textAlign = 'center';
+}
+
+function getRandomBackgroundColor() {
+  const colors = ["#FFB6C1", "#FFDAB9", "#FFA07A", "#FFC0CB", "#87CEFA", "#98FB98", "#FF69B4", "#90EE90"];
+
+  const randomIndex = Math.floor(Math.random() * colors.length);
+  const randomColor = colors[randomIndex];
+
+  return randomColor;
+}
+

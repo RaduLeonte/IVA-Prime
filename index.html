@@ -4,9 +4,13 @@
     <title>IVA-Prime</title>
     <link href="https://fonts.googleapis.com/css2?family=Anonymous+Pro&display=swap" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="styles.css">
-    <script src="importPlasmid.js"></script>
-    <script src="sequenceContextMenu.js"></script>
     <script src="featureLabel.js"></script>
+    <script src="getComplementaryStand.js"></script>
+    <script src="getTM.js"></script>
+    <script src="importPlasmid.js"></script>
+    <script src="parsePlasmidFile.js"></script>
+    <!-- <script src="sequenceContextMenu.js"></script> -->
+    <script src="tableHover.js"></script>
 </head>
     <header>
         <nav>
@@ -32,7 +36,15 @@
           
         <div class="content">    
             <!-- Plasmid -->
-            <div id="file-content" class="strands"></div>
+            <div id="file-content" class="strands">
+                <table id="sequence-grid">
+                    <tbody>
+                      <tr id="sequence-row"></tr>
+                      <tr id="complementary-row"></tr>
+                      <tr id="empty-row"></tr>
+                    </tbody>
+                  </table>
+            </div>
         </div>
     </div>
 <body>
