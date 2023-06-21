@@ -33,36 +33,39 @@ window.onload = function() {
               `; // Set table headers
 
               for (const featureName in features) {
-                  const feature = features[featureName];
+                  if (!featureName.includes("LOCUS") && !featureName.includes("source")) {
+                    const feature = features[featureName];
               
-                  // Create a new table row
-                  let row = document.createElement('tr');
-              
-                  // Add feature name
-                  const nameCell = document.createElement('td');
-                  nameCell.textContent = featureName;
-                  nameCell.className = 'wrap-text';
-                  row.appendChild(nameCell);
-              
-                  // Add feature label
-                  const labelCell = document.createElement('td');
-                  labelCell.textContent = feature.label || '';
-                  labelCell.className = 'wrap-text';
-                  row.appendChild(labelCell);
-              
-                  // Add feature range
-                  const rangeCell = document.createElement('td');
-                  rangeCell.textContent = feature.span.replace("misc_feature ", "");
-                  rangeCell.className = 'wrap-text';
-                  row.appendChild(rangeCell);
-              
-                  // Add feature note
-                  const noteCell = document.createElement('td');
-                  noteCell.textContent = feature.note || '';
-                  noteCell.className = 'wrap-text';
-                  row.appendChild(noteCell);
-              
-                  sidebarTable.appendChild(row);
+                    // Create a new table row
+                    let row = document.createElement('tr');
+                
+                    // Add feature name
+                    const nameCell = document.createElement('td');
+                    nameCell.textContent = featureName;
+                    nameCell.className = 'wrap-text';
+                    row.appendChild(nameCell);
+                
+                    // Add feature label
+                    const labelCell = document.createElement('td');
+                    labelCell.textContent = feature.label || '';
+                    labelCell.className = 'wrap-text';
+                    row.appendChild(labelCell);
+                
+                    // Add feature range
+                    const rangeCell = document.createElement('td');
+                    rangeCell.textContent = feature.span.replace("misc_feature ", "");
+                    rangeCell.className = 'wrap-text';
+                    row.appendChild(rangeCell);
+                
+                    // Add feature note
+                    const noteCell = document.createElement('td');
+                    noteCell.textContent = feature.note || '';
+                    noteCell.className = 'wrap-text';
+                    row.appendChild(noteCell);
+                
+                    sidebarTable.appendChild(row);
+                  }
+                  
               }
 
               // Create content grid
@@ -301,13 +304,16 @@ function mergeCells(row, col, rowspan, colspan, text, color) {
     mainCell= table.rows[row].cells[col];
   }
 
-  if (text === "") {
-    throw new Error('Script aborted due to a specific condition.');
-  }
 
   mainCell.rowSpan = rowspan;
+  if (col + colspan > gridWidth) {
+    console.log(col, colspan)
+    colspan = gridWidth - col;
+  };
   mainCell.colSpan = colspan;
   mainCell.style.backgroundColor = color;
+
+  //throw new Error('Script aborted due to a specific condition.');
 
   // Remove extra cells
   for (let i = row; i < row + rowspan; i++) {

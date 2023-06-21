@@ -47,6 +47,7 @@ function addHoverPopupToTable(tableId) {
   
     popup.style.left = left + 'px';
     popup.style.top = top + 'px';
+    popup.style.zIndex = '3';
   }
   
   function waitForTableToExist(tableId, callback) {

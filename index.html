@@ -9,8 +9,10 @@
     <script src="getTM.js"></script>
     <script src="importPlasmid.js"></script>
     <script src="parsePlasmidFile.js"></script>
-    <!-- <script src="sequenceContextMenu.js"></script> -->
+    <script src="sequenceContextMenu.js"></script>
     <script src="tableHover.js"></script>
+    <script src="sequenceCursor.js"></script>
+    <script src="tableSelection.js"></script>
 </head>
     <header>
         <nav>
@@ -26,6 +28,17 @@
             <div class="sidebar-content">
                 <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
                 <p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                <p id="tm-value"></p>
+                <script>
+                    // Call the get_tm() function and store the result in a variable
+                    var tm = get_tm("TAATACGACTCAC", 100E-9, 0.5);
+                    
+                    // Get the reference to the <p> element by its ID
+                    var tmValueElement = document.getElementById("tm-value");
+                    
+                    // Set the text content of the <p> element to the calculated TM value
+                    tmValueElement.textContent = "TAATACGACTCAC: " + tm;
+                  </script>
                 <!-- Add more paragraph elements here if needed -->
             </div>
             <table id="sidebar-table" class="sidebar-table">
@@ -39,9 +52,6 @@
             <div id="file-content" class="strands">
                 <table id="sequence-grid">
                     <tbody>
-                      <tr id="sequence-row"></tr>
-                      <tr id="complementary-row"></tr>
-                      <tr id="empty-row"></tr>
                     </tbody>
                   </table>
             </div>

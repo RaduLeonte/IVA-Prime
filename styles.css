@@ -145,6 +145,7 @@ nav ul li a {
     background-color: #f2f2f2;
     overflow-y: auto; /* Enables sidebar scrolling */
     margin-top: 48px;
+    resize: horizontal;
 }
 
 .sidebar-table {
@@ -215,6 +216,7 @@ nav ul li a {
   }
   
   #sequence-grid {
+    z-index: 1;
     table-layout: fixed;
     width: 100%;
     border-collapse: collapse;
@@ -226,6 +228,17 @@ nav ul li a {
     text-align: center;
     font-family: monospace;
     white-space: pre;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+  }
+  #sequence-grid td:hover {
+    background-color: #e0e0e0;
+  }
+
+  #sequence-grid td.selected-cell {
+    background-color: rgba(0, 150, 255, 0.2);
   }
   
   #sequence-row, #complementary-row, #empty-row {
