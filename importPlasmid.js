@@ -1,3 +1,10 @@
+const gridStructure = ["Forward Strand",
+                        "Complementary Strand",
+                        "Indices",
+                        "Amino Acids",
+                        "Annotations"];
+const gridWidth = 40;
+
 window.onload = function() {
     const fileContentDiv = document.getElementById('file-content');
     const contentDiv = document.querySelector('.content');
@@ -89,13 +96,6 @@ window.onload = function() {
     });
 };
 
-const gridStructure = ["Forward Strand",
-                        "Complementary Strand",
-                        "Indices",
-                        "Amino Acids",
-                        "Annotations"];
-const gridWidth = 40;
-
 function checkAnnotationOverlap(features) {
   let maximumOverlap = 0;
   const spansList = [];
@@ -176,6 +176,7 @@ function makeContentGrid(sequence, complementarySequence, features) {
         currentChar = ""
       }
       cell.textContent = currentChar;
+      cell.id = gridStructure[i % gridStructure.length];
       row.appendChild(cell);
     }
   }
