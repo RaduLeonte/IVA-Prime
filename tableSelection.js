@@ -1,6 +1,7 @@
 function addCellSelection() {
   const sequenceGridTable = document.getElementById('sequence-grid');
   const fileContentContainer = document.getElementById('file-content');
+  let selectedText = '';
 
   if (!sequenceGridTable) {
     // Table doesn't exist yet, observe the DOM for changes
@@ -68,95 +69,106 @@ function addCellSelection() {
     if (isSelecting) {
       const cell = event.target.closest('td');
       if (cell) {
-        // Find the first cell with the same ID directly above or below the cursor
-        let nearestCell = cell;
-        let rowIndex = cell.parentElement.rowIndex;
-  
-        if (rowIndex > startCell.parentElement.rowIndex) {
-          // If the cursor is below the start cell, search downwards
-          while (rowIndex < sequenceGridTable.rows.length && nearestCell.id !== startCell.id) {
-            nearestCell = sequenceGridTable.rows[rowIndex].cells[cell.cellIndex];
-            rowIndex++;
-          }
-        } else {
-          // If the cursor is above the start cell, search upwards
-          while (rowIndex >= 0 && nearestCell.id !== startCell.id) {
-            nearestCell = sequenceGridTable.rows[rowIndex].cells[cell.cellIndex];
-            rowIndex--;
-          }
-        }
-  
-        if (endCell && endCell !== nearestCell) {
-          endCell.classList.remove('selected-cell');
-        }
-        endCell = nearestCell;
-        if (endCell) {
-          endCell.classList.add('selected-cell');
-        }
-  
-        // Get the indices of the start and end cells
-        const startRowIndex = startCell.parentElement.rowIndex;
-        const endRowIndex = endCell.parentElement.rowIndex;
-        const startCellIndex = startCell.cellIndex;
-        const endCellIndex = endCell.cellIndex;
-  
-        // Highlight cells between startCell and endCell
-        const rows = sequenceGridTable.rows;
-        for (let i = startRowIndex; i <= endRowIndex; i++) {
-          const row = rows[i];
-          const minIndex = (i === startRowIndex) ? startCellIndex : 0;
-          const maxIndex = (i === endRowIndex) ? endCellIndex : row.cells.length - 1;
-  
-          for (let j = minIndex; j <= maxIndex; j++) {
-            const selectedCell = row.cells[j];
-            if (selectedCell.id === startCell.id) {
-              selectedCell.classList.add('selected-cell');
-            } else {
-              selectedCell.classList.remove('selected-cell');
+        // Check if the cell has the same ID as the start cell
+        if (cell.id === startCell.id) {
+          // Get the indices of the start and end cells
+          const startRowIndex = startCell.parentElement.rowIndex;
+          const startCellIndex = startCell.cellIndex;
+          const endRowIndex = cell.parentElement.rowIndex;
+          const endCellIndex = cell.cellIndex;
+
+          // Determine the minimum and maximum indices
+          const minRowIndex = Math.min(startRowIndex, endRowIndex);
+          const maxRowIndex = Math.max(startRowIndex, endRowIndex);
+          const minCellIndex = Math.min(startCellIndex, endCellIndex);
+          const maxCellIndex = Math.max(startCellIndex, endCellIndex);
+
+          // Clear the previous selection
+          clearSelection();
+
+          // Iterate over cells between start and end cells
+          for (let i = minRowIndex; i <= maxRowIndex; i++) {
+            const row = sequenceGridTable.rows[i];
+            const start = (i === minRowIndex) ? minCellIndex : 0;
+            const end = (i === maxRowIndex) ? maxCellIndex : row.cells.length - 1;
+
+            for (let j = start; j <= end; j++) {
+              const selectedCell = row.cells[j];
+              if (selectedCell.id === startCell.id) {
+                selectedCell.classList.add('selected-cell');
+              }
             }
           }
+
+          // Update the end cell
+          endCell = cell;
+        } else {
+          // Clear the selection if the cell doesn't have the same ID
+          clearSelection();
         }
       }
     }
   });
-  
-  
-  
 
   sequenceGridTable.addEventListener('mouseup', function (event) {
     if (event.button === 0 && isSelecting) {
       isSelecting = false;
-  
+
       // Enable text selection after selecting cells
       fileContentContainer.style.userSelect = '';
       fileContentContainer.style.MozUserSelect = '';
       fileContentContainer.style.webkitUserSelect = '';
       fileContentContainer.style.msUserSelect = '';
-  
-      // Clear startCell and endCell references
-      startCell = null;
-      endCell = null;
-  
+
       // Extract text content from selected cells
-      const selectedText = getSelectedText();
+      selectedText = getSelectedText();
       console.log(selectedText);
     }
   });
-  
+
   function getSelectedText() {
-    const cells = Array.from(document.getElementsByClassName('selected-cell'));
-    const selectedText = cells.map(cell => cell.textContent.trim()).join('');
-    return selectedText;
+    const selectedCells = document.querySelectorAll('.selected-cell');
+    let text = '';
+    selectedCells.forEach((cell) => {
+      text += cell.textContent.trim();
+    });
+    return text;
   }
-  
 
   sequenceGridTable.addEventListener('mouseleave', function () {
     if (isSelecting) {
       // Clear startCell and endCell references when leaving the table while selecting
       startCell = null;
       endCell = null;
+      isSelecting = false;
     }
   });
+
+  document.addEventListener('click', function (event) {
+    if (!event.target.closest('#sequence-grid')) {
+      // Clicked outside the table, clear the selection
+      clearSelection();
+      startCell = null;
+      endCell = null;
+      isSelecting = false;
+    }
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.ctrlKey && event.key === 'c' && selectedText !== '') {
+      event.preventDefault();
+      copyToClipboard(selectedText);
+    }
+  });
+
+  function copyToClipboard(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+  }
 }
 
 // Call the function to enable cell selection in your sequence grid table
