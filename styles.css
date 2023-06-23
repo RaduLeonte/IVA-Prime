@@ -107,7 +107,10 @@ nav ul li a {
   .custom-context-menu li.disabled {
     color: gray;
     cursor: not-allowed;
+    pointer-events: none; /* Disable click events on disabled items */
+    opacity: 0.5; /* Reduce opacity to visually indicate disabled state */
   }
+  
   
 
   .horizontal-list {
@@ -260,4 +263,61 @@ nav ul li a {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   font-size: 14px;
   color: #333333;
+}
+
+/* Popup window */
+
+.popup-window {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #f2f2f2;
+  border: 1px solid #ccc;
+  padding: 20px;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.popup-window h2 {
+  margin: 0 0 10px;
+}
+
+.popup-window label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.popup-window input[type="text"] {
+  width: 200px;
+  padding: 5px;
+  margin-bottom: 10px;
+}
+
+.popup-window button {
+  padding: 8px 16px;
+  margin-right: 10px;
+}
+
+.popup-window #create-primers-button {
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 5px;
+}
+
+.popup-window #create-primers-button:hover {
+  background-color: #45a049;
+}
+
+.popup-window #cancel-button {
+  background-color: #ccc;
+  color: white;
+  border-radius: 5px;
+}
+
+.popup-window #cancel-button:hover {
+  background-color: #999;
 }

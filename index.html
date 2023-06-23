@@ -13,6 +13,8 @@
     <script src="tableHover.js"></script>
     <script src="sequenceCursor.js"></script>
     <script src="tableSelection.js"></script>
+    <script src="createPrimers.js"></script>
+    <script src="insertionPopUpWindow.js"></script>
 </head>
     <header>
         <nav>
@@ -31,13 +33,13 @@
                 <p id="tm-value"></p>
                 <script>
                     // Call the get_tm() function and store the result in a variable
-                    var tm = get_tm("TAATACGACTCAC", 100E-9, 0.5);
+                    var tm = get_tm("GCCGCTTGAAGAATCCGATTTT", 100E-9, 0.5);
                     
                     // Get the reference to the <p> element by its ID
                     var tmValueElement = document.getElementById("tm-value");
                     
                     // Set the text content of the <p> element to the calculated TM value
-                    tmValueElement.textContent = "TAATACGACTCAC: " + tm;
+                    tmValueElement.textContent = "GCCGCTTGAAGAATCCGATTTT: " + tm + " (SHOULD BE: 60.57117379973066)";
                   </script>
                 <!-- Add more paragraph elements here if needed -->
             </div>

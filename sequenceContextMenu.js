@@ -1,7 +1,6 @@
 let clickedOffset = 0;
-let selectedText = '';
-let dnaSequenceInput = '';
-let aminoAcidSequenceInput = '';
+let targetCell = null;
+let target = null;
 
 function updateMenuItems() {
   const insertionMenuItem = document.getElementById('insertion');
@@ -9,19 +8,43 @@ function updateMenuItems() {
   const mutationMenuItem = document.getElementById('mutation');
   const subcloningMenuItem = document.getElementById('subcloning');
 
-  insertionMenuItem.disabled = selectedText.length > 0;
-  deletionMenuItem.disabled = selectedText.length === 0;
-  mutationMenuItem.disabled = selectedText.length === 0;
-  subcloningMenuItem.disabled = selectedText.length === 0;
+  // Example logic for updating menu item states based on selectedText
+  console.log(selectedText)
+  if (selectedText) {
+    insertionMenuItem.classList.add('disabled');
+    deletionMenuItem.classList.remove('disabled');
+    mutationMenuItem.classList.remove('disabled');
+    subcloningMenuItem.classList.remove('disabled');
+  } else {
+    insertionMenuItem.classList.remove('disabled');
+    deletionMenuItem.classList.add('disabled');
+    mutationMenuItem.classList.add('disabled');
+    subcloningMenuItem.classList.add('disabled');
+  }
+}
 
-  insertionMenuItem.classList.toggle('disabled', selectedText.length > 0);
-  deletionMenuItem.classList.toggle('disabled', selectedText.length === 0);
-  mutationMenuItem.classList.toggle('disabled', selectedText.length === 0);
-  subcloningMenuItem.classList.toggle('disabled', selectedText.length === 0);
 
-  const selectedTextPreview = selectedText ? selectedText.substring(0, 5) : '';
-  const selectedTextInfo = selectedText ? ` (${selectedTextPreview})` : '';
-  insertionMenuItem.textContent = `Insert sequence${selectedTextInfo}`;
+
+function positionContextMenu(clientX, clientY) {
+  const contextMenu = document.querySelector('.custom-context-menu');
+
+  const windowWidth = window.innerWidth;
+  const windowHeight = window.innerHeight;
+
+  const menuWidth = contextMenu.offsetWidth;
+  const menuHeight = contextMenu.offsetHeight;
+
+  // Calculate the maximum left and top positions to ensure the menu is entirely visible
+  const maxLeft = windowWidth - menuWidth;
+  const maxTop = windowHeight - menuHeight;
+
+  // Calculate the left and top positions for the context menu
+  const left = Math.min(clientX, maxLeft);
+  const top = Math.min(clientY, maxTop);
+
+  contextMenu.style.left = left + 'px';
+  contextMenu.style.top = top + 'px';
+  contextMenu.style.display = 'block';
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -31,67 +54,34 @@ document.addEventListener('DOMContentLoaded', function () {
   contextMenu.className = 'custom-context-menu';
   contextMenu.innerHTML = `
     <ul>
-      <li id="insertion">Insert sequence</li>
+      <li id="insertion">Insert here</li>
       <li id="deletion" disabled>Delete selection</li>
       <li id="mutation" disabled>Mutate selection</li>
       <li id="subcloning" disabled>Subclone</li>
     </ul>
-    <p id="selected-text-preview"></p>
   `;
   document.body.appendChild(contextMenu);
 
-  const popupWindow = document.createElement('div');
-  popupWindow.className = 'popup-window';
-  popupWindow.innerHTML = `
-    <h2>Insert Sequence</h2>
-    <div>
-      <label for="dna-sequence-input">DNA Sequence:</label>
-      <input type="text" id="dna-sequence-input">
-    </div>
-    <div>
-      <label for="amino-acid-sequence-input">Amino Acid Sequence:</label>
-      <input type="text" id="amino-acid-sequence-input">
-    </div>
-    <button id="insert-sequence-button">Insert</button>
-  `;
-  popupWindow.style.display = 'none';
-  document.body.appendChild(popupWindow);
-
-  contextMenu.style.display = 'none';
-
   function handleContextMenu(clientX, clientY) {
     const table = document.getElementById(targetElementId);
-
-    const selection = window.getSelection();
-    selectedText = selection.toString().trim();
-
-    if (!selectedText) {
-      selection.removeAllRanges();
-      const range = document.createRange();
-      range.setStart(table, 0);
-      range.setEnd(table, 0);
-      selection.addRange(range);
-    }
-
-    clickedOffset = getCharacterOffset(table, clientX, clientY);
-
+    target = targetCell; // Declare the target variable
+  
+    clickedOffset = getCharacterOffset(targetCell);
+  
     if (selectedText) {
       console.log('Selected text:', selectedText);
     }
-
+  
     console.log('Clicked position:', clickedOffset);
-
+  
     updateMenuItems();
-
-    const selectedTextPreviewElement = document.getElementById('selected-text-preview');
-    selectedTextPreviewElement.textContent = selectedText.length > 0 ? selectedText.substring(0, 5) : '';
-
-    contextMenu.style.top = event.pageY + 'px';
-    contextMenu.style.left = event.pageX + 'px';
-    contextMenu.style.display = 'block';
+  
+    positionContextMenu(clientX, clientY);
   }
+  
 
   function hideContextMenu() {
+    const contextMenu = document.querySelector('.custom-context-menu');
     contextMenu.style.display = 'none';
   }
 
@@ -99,6 +89,7 @@ document.addEventListener('DOMContentLoaded', function () {
     event.preventDefault();
 
     if (event.target.matches(`#${targetElementId} td`)) {
+      targetCell = event.target; // Store the target cell
       handleContextMenu(event.clientX, event.clientY);
     } else {
       hideContextMenu();
@@ -121,9 +112,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (menuItemId === 'insertion') {
       console.log('Insertion selected');
       const currentCursorPosition = clickedOffset;
-      const tableRow = Array.from(table.rows).find((row) => row.contains(event.target));
+      const tableRow = target.parentNode;
       const rowIndex = tableRow.rowIndex;
-      const cellIndex = Array.from(tableRow.cells).indexOf(event.target);
+      const cellIndex = Array.from(tableRow.cells).indexOf(target);
 
       // Show the popup window for sequence insertion
       showPopupWindow();
@@ -141,65 +132,10 @@ document.addEventListener('DOMContentLoaded', function () {
     hideContextMenu();
   });
 
-  popupWindow.addEventListener('click', function (event) {
-    if (event.target.id === 'insert-sequence-button') {
-      // Get the entered values from the text inputs
-      dnaSequenceInput = document.getElementById('dna-sequence-input').value;
-      aminoAcidSequenceInput = document.getElementById('amino-acid-sequence-input').value;
+  function getCharacterOffset(target) {
+    const tableRow = target.parentNode;
+    const cellIndex = Array.from(tableRow.cells).indexOf(target);
 
-      console.log('DNA Sequence:', dnaSequenceInput);
-      console.log('Amino Acid Sequence:', aminoAcidSequenceInput);
-
-      // Insertion logic here
-
-      // Clear the text inputs
-      document.getElementById('dna-sequence-input').value = '';
-      document.getElementById('amino-acid-sequence-input').value = '';
-
-      // Hide the popup window
-      hidePopupWindow();
-    }
-  });
-
-  function showPopupWindow() {
-    popupWindow.style.display = 'block';
-    centerPopupWindow();
+    return { rowIndex: tableRow.rowIndex, cellIndex };
   }
-
-  function hidePopupWindow() {
-    popupWindow.style.display = 'none';
-  }
-
-  function centerPopupWindow() {
-    const screenWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-    const screenHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-    const popupWidth = popupWindow.offsetWidth;
-    const popupHeight = popupWindow.offsetHeight;
-    const left = (screenWidth - popupWidth) / 2;
-    const top = (screenHeight - popupHeight) / 2;
-    popupWindow.style.left = left + 'px';
-    popupWindow.style.top = top + 'px';
-  }
-
-  function getCharacterOffset(element, clientX, clientY) {
-    const range = document.createRange();
-    const textNode = document.createTextNode('');
-    range.setStart(element, 0);
-    range.insertNode(textNode);
-
-    const dummy = document.createElement('span');
-    dummy.appendChild(document.createTextNode('\u200b'));
-    range.insertNode(dummy);
-
-    const rect = dummy.getBoundingClientRect();
-    const offset = (clientX - rect.left) / dummy.offsetWidth;
-    dummy.parentNode.removeChild(dummy);
-    textNode.parentNode.removeChild(textNode);
-
-    return Math.floor(offset * element.textContent.length);
-  }
-
-  window.addEventListener('resize', function () {
-    centerPopupWindow();
-  });
 });

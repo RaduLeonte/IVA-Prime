@@ -1,7 +1,8 @@
+let selectedText = '';
+
 function addCellSelection() {
   const sequenceGridTable = document.getElementById('sequence-grid');
   const fileContentContainer = document.getElementById('file-content');
-  let selectedText = '';
 
   if (!sequenceGridTable) {
     // Table doesn't exist yet, observe the DOM for changes
@@ -63,6 +64,7 @@ function addCellSelection() {
     selectedCells.forEach((cell) => {
       cell.classList.remove('selected-cell');
     });
+    selectedText = "";
   }
 
   sequenceGridTable.addEventListener('mousemove', function (event) {
