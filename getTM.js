@@ -37,7 +37,7 @@ function get_tm(sequence, c, m) {
         "CG/GC": -10.6E3,
         "GC/CG": -9.8E3,
         "GG/CC": -8.0E3
-    };
+    }; 
 
     // cal k-1 mol-1
     const deltaS_dict = {
