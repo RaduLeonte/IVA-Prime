@@ -1,26 +1,43 @@
-function get_tm(sequence, c, m) {
-    console.log(sequence)
-    function find_in_dict(dictionary, pair) {
-        let key = null;
-      
-        for (let [dictKey, value] of Object.entries(dictionary)) {
-          if (dictKey.slice(0, 2).includes(pair)) {
-            key = dictKey;
-            break;
-          } else if (dictKey.slice(0, 2).includes(pair.split('').reverse().join(''))) {
-            key = dictKey;
-            break;
-          } else if (dictKey.slice(-2).includes(pair)) {
-            key = dictKey;
-            break;
-          } else if (dictKey.slice(-2).includes(pair.split('').reverse().join(''))) {
-            key = dictKey;
-            break;
-          }
-        }
-      
-        return dictionary[key];
+function find_in_dict(dictionary, pair) {
+  let key = null;
+
+  // Check for pair in the first 2 characters of dict keys
+  for (const dictKey of Object.keys(dictionary)) {
+    if (dictKey.slice(0, 2) === pair) {
+      key = dictKey;
+      return dictionary[key];
     }
+  }
+
+  // Check for reverse of pair in the first 2 characters of dict keys
+  for (const dictKey of Object.keys(dictionary)) {
+    if (dictKey.slice(0, 2) === pair.split('').reverse().join('')) {
+      key = dictKey;
+      return dictionary[key];
+    }
+  }
+
+  // Check for pair in the last 2 characters of dict keys
+  for (const dictKey of Object.keys(dictionary)) {
+    if (dictKey.slice(-2) === pair) {
+      key = dictKey;
+      return dictionary[key];
+    }
+  }
+
+  // Check for reverse of pair in the last 2 characters of dict keys
+  for (const dictKey of Object.keys(dictionary)) {
+    if (dictKey.slice(-2) === pair.split('').reverse().join('')) {
+      key = dictKey;
+      return dictionary[key];
+    }
+  }
+
+  return null;
+}
+
+function get_tm(sequence, c, m) {
+    //console.log("Input sequence: " + sequence)
 
     // Constants or params
     const R = 1.987; // cal mol-1 K-1 universal gas constant
@@ -81,12 +98,19 @@ function get_tm(sequence, c, m) {
 
         const to_addH = find_in_dict(deltaH_dict, pair);
         deltaH0 += to_addH;
+        //console.log(pair, to_addH)
 
         const to_addS = find_in_dict(deltaS_dict, pair);
-        deltaS0 += to_addS;
+        deltaS0 += to_addS
+        //console.log(to_addS)
     }
 
+    //console.log("DeltaH0: " + deltaH0)
+    //console.log("DeltaS0: " + deltaS0)
+    
+
     const tm = (deltaH0 / (deltaS0 + R * Math.log(c / symm_fraction))) - 273.15;
+    //console.log(tm)   
     const tm_corr = tm + 16.6 * Math.log(m);
 
     return tm_corr;
