@@ -1,8 +1,9 @@
 function parsePlasmidFile(fileContent) {
     // Adapted Python code goes here
-    const features = extractFeatures(fileContent);
+    features = extractFeatures(fileContent);
     //console.log(features)
-    const sequence = extractSequence(fileContent);
+    sequence = extractSequence(fileContent);
+    complementaryStrand = getComplementaryStrand(sequence);
 
     // Adapted extract_features function
     function extractFeatures(input) {
@@ -81,14 +82,4 @@ function parsePlasmidFile(fileContent) {
         // console.log(output)
         return output;
     }
-    
-
-    // Placeholder values for testing
-    const complementaryStrand = getComplementaryStrand(sequence);
-
-    return {
-        sequence,
-        complementaryStrand,
-        features
-    };
 }

@@ -4,7 +4,6 @@ let aminoAcidSequenceInput = '';
 function showPopupWindow() {
     const popupWindow = document.querySelector('.popup-window');
     popupWindow.style.display = 'block';
-    centerPopupWindow(); // Add this line to center the popup window
 }
 
 function hidePopupWindow() {
@@ -74,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function () {
       console.log('Amino Acid Sequence:', aminoAcidSequenceInput);
 
       // Call the function to create insertion primers
-      createInsertionPrimers();
+      createInsertionPrimers(dnaSequenceInput, aminoAcidSequenceInput,insertionPosition);
 
       // Clear the text inputs
       document.getElementById('dna-sequence-input').value = '';

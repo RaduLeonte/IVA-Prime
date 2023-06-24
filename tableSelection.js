@@ -1,4 +1,6 @@
 let selectedText = '';
+let selectionStartPos = null;
+let selectionEndPos = null;
 
 function addCellSelection() {
   const sequenceGridTable = document.getElementById('sequence-grid');
@@ -34,6 +36,7 @@ function addCellSelection() {
     if (event.button === 0) {
       // Clear the previous selection
       clearSelection();
+      selectionStartPos = basePosition;
 
       isSelecting = true;
 
@@ -115,6 +118,7 @@ function addCellSelection() {
   sequenceGridTable.addEventListener('mouseup', function (event) {
     if (event.button === 0 && isSelecting) {
       isSelecting = false;
+      selectionEndPos = basePosition;
 
       // Enable text selection after selecting cells
       fileContentContainer.style.userSelect = '';
@@ -124,7 +128,7 @@ function addCellSelection() {
 
       // Extract text content from selected cells
       selectedText = getSelectedText();
-      console.log(selectedText);
+      console.log(selectedText, selectionStartPos, selectionEndPos);
     }
   });
 

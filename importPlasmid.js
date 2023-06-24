@@ -4,6 +4,9 @@ const gridStructure = ["Forward Strand",
                         "Amino Acids",
                         "Annotations"];
 const gridWidth = 40;
+let sequence = "";
+let complementaryStrand = "";
+let features = null;
 
 window.onload = function() {
     const fileContentDiv = document.getElementById('file-content');
@@ -20,7 +23,7 @@ window.onload = function() {
               const fileContent = e.target.result;
               
               // Parse the file content into variables
-              const { sequence, complementaryStrand, features } = parsePlasmidFile(fileContent);
+              parsePlasmidFile(fileContent);
               
 
               // Update header with filename

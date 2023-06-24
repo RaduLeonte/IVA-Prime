@@ -1,6 +1,7 @@
 let clickedOffset = 0;
 let targetCell = null;
 let target = null;
+insertionPosition = null;
 
 function updateMenuItems() {
   const insertionMenuItem = document.getElementById('insertion');
@@ -71,8 +72,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (selectedText) {
       console.log('Selected text:', selectedText);
     }
-  
-    console.log('Clicked position:', clickedOffset);
+    insertionPosition = basePosition;
+    console.log('Clicked position:', insertionPosition);
   
     updateMenuItems();
   
