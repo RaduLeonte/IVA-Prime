@@ -55,10 +55,26 @@ function addCellSelection() {
 
       // Get the starting cell
       const cell = event.target.closest('td');
+
       if (cell) {
-        startCell = cell;
+        const rect = cell.getBoundingClientRect();
+        const cursorX = event.clientX;
+
+        // Check if the cursor is close to the right edge
+        if (cursorX - rect.left <= 10) {
+          // Get the previous sibling cell
+          const previousCell = cell.previousElementSibling;
+
+          if (previousCell) {
+            startCell = previousCell;
+          }
+        } else {
+          startCell = cell;
+        }
+
         startCell.classList.add('selected-cell');
       }
+
     }
   });
 
@@ -72,9 +88,21 @@ function addCellSelection() {
 
   sequenceGridTable.addEventListener('mousemove', function (event) {
     if (isSelecting) {
-      const cell = event.target.closest('td');
+      let cell = event.target.closest('td');
       if (cell) {
-        // Check if the cell has the same ID as the start cell
+        const rect = cell.getBoundingClientRect();
+        const cursorX = event.clientX;
+        const cellWidth = rect.width;
+
+        // Check if the cursor is closer to the right edge
+        if (cursorX - rect.left >= cellWidth / 2) {
+          // Get the next sibling cell
+          const nextCell = cell.nextElementSibling;
+
+          if (nextCell) {
+            cell = nextCell;
+          }
+        }
         if (cell.id === startCell.id) {
           // Get the indices of the start and end cells
           const startRowIndex = startCell.parentElement.rowIndex;

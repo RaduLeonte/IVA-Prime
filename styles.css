@@ -321,3 +321,60 @@ nav ul li a {
 .popup-window #cancel-button:hover {
   background-color: #999;
 }
+
+/* Popup window */
+
+.mutation-popup-window {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #f2f2f2;
+  border: 1px solid #ccc;
+  padding: 20px;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mutation-popup-window h2 {
+  margin: 0 0 10px;
+}
+
+.mutation-popup-window label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.mutation-popup-window input[type="text"] {
+  width: 200px;
+  padding: 5px;
+  margin-bottom: 10px;
+}
+
+.mutation-popup-window button {
+  padding: 8px 16px;
+  margin-right: 10px;
+}
+
+.mutation-popup-window #create-primers-button {
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 5px;
+}
+
+.mutation-popup-window #create-primers-button:hover {
+  background-color: #45a049;
+}
+
+.mutation-popup-window #cancel-button {
+  background-color: #ccc;
+  color: white;
+  border-radius: 5px;
+}
+
+.mutation-popup-window #cancel-button:hover {
+  background-color: #999;
+}

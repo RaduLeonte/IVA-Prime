@@ -15,7 +15,7 @@ function updateMenuItems() {
     insertionMenuItem.classList.add('disabled');
     deletionMenuItem.classList.remove('disabled');
     mutationMenuItem.classList.remove('disabled');
-    subcloningMenuItem.classList.remove('disabled');
+    subcloningMenuItem.classList.add('disabled');
   } else {
     insertionMenuItem.classList.remove('disabled');
     deletionMenuItem.classList.add('disabled');
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
       <li id="insertion">Insert here</li>
       <li id="deletion" disabled>Delete selection</li>
       <li id="mutation" disabled>Mutate selection</li>
-      <li id="subcloning" disabled>Subclone</li>
+      <li id="subcloning" disabled>Subclone (Soon™)</li>
     </ul>
   `;
   document.body.appendChild(contextMenu);
@@ -112,18 +112,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (menuItemId === 'insertion') {
       console.log('Insertion selected');
-      const currentCursorPosition = clickedOffset;
-      const tableRow = target.parentNode;
-      const rowIndex = tableRow.rowIndex;
-      const cellIndex = Array.from(tableRow.cells).indexOf(target);
 
       // Show the popup window for sequence insertion
       showPopupWindow();
     } else if (menuItemId === 'deletion') {
       console.log('Deletion selected');
+      createDeletionPrimers(selectionStartPos, selectionEndPos);
       // Deletion logic here
     } else if (menuItemId === 'mutation') {
       console.log('Mutation selected');
+      showMutationPopupWindow();
       // Mutation logic here
     } else if (menuItemId === 'subcloning') {
       console.log('Subcloning selected');

@@ -1,7 +1,9 @@
-primerConc = 100E-9; // M
-saltConc = 0.5; // M
+let primerConc = 100E-9; // M
+let saltConc = 0.5; // M
+let homoRegionTm = 49.5;
+let tempRegionTm = 60;
 
-function displayPrimers(primersType, primersList) {
+function displayPrimers(primersType, primersList, mutSeq) {
 
     var element = document.getElementById("primers-type");
     element.textContent = primersType + " Primers:";
@@ -24,7 +26,7 @@ function displayPrimers(primersType, primersList) {
     paragraph1.appendChild(span1b);
 
     const spanTm1 = document.createElement('span');
-    spanTm1.textContent = "(" + get_tm(primersList[2], primerConc, saltConc).toFixed(1) + ", " + get_tm(primersList[3], primerConc, saltConc).toFixed(1) + ")";
+    spanTm1.textContent = " (" + get_tm(primersList[2], primerConc, saltConc).toFixed(1) + ", " + get_tm(primersList[3], primerConc, saltConc).toFixed(1) + ")";
     paragraph1.appendChild(spanTm1);
 
     // Create the second paragraph
@@ -35,6 +37,7 @@ function displayPrimers(primersType, primersList) {
     span2a.style.color = 'red';
     span2a.style.fontWeight = 'bold';
     span2a.textContent = primersList[0];
+
     // Create the second span with green text and bold
     const span2b = document.createElement('span');
     span2b.style.color = 'green';
@@ -42,10 +45,17 @@ function displayPrimers(primersType, primersList) {
     span2b.textContent = primersList[1];
     // Append the spans to the paragraph
     paragraph2.appendChild(span2a);
+    if (mutSeq) {
+        const spanMut = document.createElement('span');
+        spanMut.style.color = 'purple';
+        spanMut.style.fontWeight = 'bold';
+        spanMut.textContent = mutSeq;
+        paragraph2.appendChild(spanMut);
+    }
     paragraph2.appendChild(span2b);
 
     const spanTm2 = document.createElement('span');
-    spanTm2.textContent = "(" + get_tm(primersList[0], primerConc, saltConc).toFixed(1) + ", " + get_tm(primersList[1], primerConc, saltConc).toFixed(1) + ")";
+    spanTm2.textContent = " (" + get_tm(primersList[0], primerConc, saltConc).toFixed(1) + ", " + get_tm(primersList[1], primerConc, saltConc).toFixed(1) + ")";
     paragraph2.appendChild(spanTm2);
 
     // Find the <p> with the id "primers-type"
@@ -60,7 +70,7 @@ function primerExtension(startingPos, direction, targetTm, minLength) {
     let length = minLength;
 
     const backbone = direction === 'forward' ? sequence : complementaryStrand;
-    console.log(backbone)
+    //console.log(backbone)
     //let prev_p = direction === 'forward' ? backbone.slice(p_start_index, p_start_index + length - 1): backbone.slice(p_start_index - length, p_start_index);
     let prev_p = direction === 'forward' ? repeatingSlice(backbone, p_start_index, p_start_index + length - 1): repeatingSlice(backbone, p_start_index - length, p_start_index);
     let prev_tm = get_tm(prev_p, primerConc, saltConc);
@@ -69,7 +79,7 @@ function primerExtension(startingPos, direction, targetTm, minLength) {
     while (i < maxIter) {
         //let curr_p = direction === 'forward' ? backbone.slice(p_start_index, p_start_index + length): backbone.slice(p_start_index - length - 1, p_start_index);
         let curr_p = direction === 'forward' ? repeatingSlice(backbone, p_start_index, p_start_index + length): repeatingSlice(backbone, p_start_index - length - 1, p_start_index);
-        console.log("Curr_p: " + curr_p)
+        //console.log("Curr_p: " + curr_p)
         let curr_tm = get_tm(curr_p, primerConc, saltConc);
 
         if (curr_tm >= targetTm) {
@@ -166,11 +176,10 @@ function optimizeAA(inputAA) {
 
     let closestKey = null;
     let closestDiff = Infinity;
-    const targetTM = 49.5;
 
     for (let key in dnaTMDictionary) {
         const tm = dnaTMDictionary[key];
-        const diff = Math.abs(tm - targetTM);
+        const diff = Math.abs(tm - homoRegionTm);
 
         if (diff < closestDiff) {
             closestDiff = diff;
@@ -184,10 +193,15 @@ function optimizeAA(inputAA) {
     return optimizedAA;
 }
 
+function repeatingSlice(str, startIndex, endIndex) {
+    const repeatedStr = str.repeat(3); // ABC_ABC_ABC
+    return repeatedStr.slice(startIndex + str.length, endIndex + str.length);
+}
+
 function createInsertionPrimers(dnaSequence, aaSequence, insertionPos) {
     // Insertion logic using dnaSequenceInput and aminoAcidSequenceInput
     console.log('Creating insertion primers...');
-    let homologousSequence = "";
+    let homologousSequenceFwd = "";
 
     // for testing
     if (!aaSequence && !dnaSequence) {
@@ -196,27 +210,54 @@ function createInsertionPrimers(dnaSequence, aaSequence, insertionPos) {
 
     if (aaSequence) {
         console.log("Optimizing aa sequence to 49.5 C.");
-        homologousSequence = optimizeAA(aaSequence);
+        homologousSequenceFwd = optimizeAA(aaSequence);
     } else {
-        homologousSequence = dnaSequence;
+        homologousSequenceFwd = dnaSequence;
     }
 
-    let homologousSequenceRev = getComplementaryStrand(homologousSequence).split('').reverse().join('');
-    console.log("Before overhang: " + homologousSequenceRev)
+    let homologousSequenceRev = getComplementaryStrand(homologousSequenceFwd).split('').reverse().join('');
     while (get_tm(homologousSequenceRev, primerConc, saltConc) > 52) {
         homologousSequenceRev = homologousSequenceRev.slice(0, -1);
     }
-    console.log("After overhang: " + homologousSequenceRev)
 
-    let homoFwd = homologousSequence;
-    let tempFwd = primerExtension(insertionPos, "forward", 60, 7)
+    let homoFwd = homologousSequenceFwd;
+    let tempFwd = primerExtension(insertionPos, "forward", tempRegionTm, 7)
     let homoRev = homologousSequenceRev;
-    let tempRev = primerExtension(insertionPos, "backward", 60, 7)
+    let tempRev = primerExtension(insertionPos, "backward", tempRegionTm, 7)
 
     displayPrimers("Insertion", [homoFwd, tempFwd, homoRev, tempRev]);
 }
 
-function repeatingSlice(str, startIndex, endIndex) {
-    const repeatedStr = str.repeat(3); // ABC_ABC_ABC
-    return repeatedStr.slice(startIndex + str.length, endIndex + str.length);
+function createDeletionPrimers(deletionStartPos, deletionEndPos) {
+    if (deletionStartPos > deletionEndPos) {
+        let temp = deletionStartPos;
+        deletionStartPos = deletionEndPos;
+        deletionEndPos = temp;
+    }
+    console.log('Creating deletion primers...', selectedText, deletionStartPos, deletionEndPos);
+
+    let homoRev = primerExtension(deletionStartPos, "backward", homoRegionTm, 7);
+    let homoFwd = getComplementaryStrand(homoRev);
+    
+    let tempFwd = primerExtension(deletionEndPos, "forward", tempRegionTm, 7);
+    let tempRev = primerExtension(deletionStartPos - homoRev.length, "backward", tempRegionTm, 7);
+
+    displayPrimers("Deletion", [homoFwd, tempFwd, homoRev, tempRev])
+}
+
+function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
+    if (mutaStartPos > mutaEndPos) {
+        let temp = mutaStartPos;
+        mutaStartPos = mutaEndPos;
+        mutaEndPos = temp;
+    }
+    console.log('Creating deletion primers...', mutationSeq, mutaStartPos, mutaEndPos);
+
+    
+    let homoRev = primerExtension(mutaStartPos, "backward", homoRegionTm, 7);
+    let tempRev = primerExtension(mutaStartPos - homoRev.length, "backward", tempRegionTm, 7);
+    let tempFwd = primerExtension(mutaEndPos, "forward", tempRegionTm, 7);
+    let homoFwd = getComplementaryStrand(homoRev);
+
+    displayPrimers("Deletion", [homoFwd, tempFwd, homoRev, tempRev], mutationSeq);
 }
