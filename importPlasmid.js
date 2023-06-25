@@ -257,7 +257,6 @@ function makeAnnotation(rStart, rEnd, text) {
 
 
 function mergeCells(row, col, rowspan, colspan, text, color) {
-  console.log("Mergin cells: ", row, col, rowspan, colspan, text, color);
   const table = document.getElementById('sequence-grid');
   
   // Adjust col pos
@@ -270,7 +269,10 @@ function mergeCells(row, col, rowspan, colspan, text, color) {
         }
       }
     }
-    col++;
+    console.log(col + 1, gridWidth, (col + 1 >= gridWidth));
+    if ((col + 1 < gridWidth)) {
+      col++;
+    }
   }
   
   if (col - occupiedCells < 0) {
@@ -289,7 +291,6 @@ function mergeCells(row, col, rowspan, colspan, text, color) {
       mainCell = table.rows[row].cells[col];
     }
   }
-  console.log("Cell content above: ", mainCell.innerText)
 
   if (mainCell.innerText.trim() !== '') {
     row++;
@@ -314,7 +315,8 @@ function mergeCells(row, col, rowspan, colspan, text, color) {
     mainCell= table.rows[row].cells[col];
   }
 
-
+  // If fails again, just abort the function call
+  console.log("Mergin cells: ", row, col, rowspan, colspan, text, color);
   mainCell.rowSpan = rowspan;
   if (col + colspan > gridWidth) {
     console.log(col, colspan)
@@ -462,7 +464,7 @@ function startTranslation(codonPos) {
     let codon = sequence.slice(codonPos - 1, codonPos + 2);
     let aminoAcid = translateCodon(codon);
     //console.log(codon, aminoAcid);
-    fillAACell(row, col, aminoAcid);
+    fillAACells(row, col, aminoAcid);
     col += 3;
     codonPos += 3;
     if (col > gridWidth) {
@@ -475,7 +477,7 @@ function startTranslation(codonPos) {
   }
 }
 
-function fillAACell(row, col, text) {
+function fillAACells(row, col, text) {
   //console.log(row, col ,text);
   const table = document.getElementById('sequence-grid');
   let mainCell = table.rows[row].cells[col];
@@ -486,9 +488,20 @@ function fillAACell(row, col, text) {
     mainCell = table.rows[row].cells[col];
   }
 
+  const leftCell = table.rows[row].cells[col-1];
+  const rightCell = table.rows[row].cells[col+1];
+  // Check and clear text in leftCell
+  if (leftCell && leftCell.textContent) {
+    leftCell.textContent = '';
+  }
+
+  // Check and clear text in rightCell
+  if (rightCell && rightCell.textContent) {
+    rightCell.textContent = '';
+  }
+
   // Add text to the center of the merged cell
-  const textNode = document.createTextNode(text);
-  mainCell.appendChild(textNode);
+  mainCell.textContent = text;
   mainCell.style.textAlign = 'center';
 }
 
