@@ -8,16 +8,21 @@ function updateMenuItems() {
   const deletionMenuItem = document.getElementById('deletion');
   const mutationMenuItem = document.getElementById('mutation');
   const subcloningMenuItem = document.getElementById('subcloning');
+  const beginTranslationMenuItem = document.getElementById('begin-translation');
 
   // Example logic for updating menu item states based on selectedText
   console.log(selectedText)
   if (selectedText) {
     insertionMenuItem.classList.add('disabled');
+    beginTranslationMenuItem.classList.add('disabled');
+
     deletionMenuItem.classList.remove('disabled');
     mutationMenuItem.classList.remove('disabled');
     subcloningMenuItem.classList.add('disabled');
   } else {
     insertionMenuItem.classList.remove('disabled');
+    beginTranslationMenuItem.classList.remove('disabled');
+
     deletionMenuItem.classList.add('disabled');
     mutationMenuItem.classList.add('disabled');
     subcloningMenuItem.classList.add('disabled');
@@ -59,6 +64,7 @@ document.addEventListener('DOMContentLoaded', function () {
       <li id="deletion" disabled>Delete selection</li>
       <li id="mutation" disabled>Mutate selection</li>
       <li id="subcloning" disabled>Subclone (Soon™)</li>
+      <li id="begin-translation" disabled>Begin translation here</li>
     </ul>
   `;
   document.body.appendChild(contextMenu);
@@ -126,6 +132,14 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (menuItemId === 'subcloning') {
       console.log('Subcloning selected');
       // Subcloning logic here
+    } else if (menuItemId === 'begin-translation') {
+      console.log('Beginning translation');
+      console.log("!!!", sequence.slice(insertionPosition - 1, insertionPosition + 2))
+      if (sequence.slice(insertionPosition - 1, insertionPosition + 2) === "ATG") {
+        startTranslation(insertionPosition);
+      } else {
+        startTranslation(sequence.indexOf("ATG", insertionPosition) + 1);
+      }
     }
 
     hideContextMenu();

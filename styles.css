@@ -174,8 +174,10 @@ nav ul li a {
 }
 
 .sidebar-table tr:hover {
-    background-color: #f5f5f5;
+  background-color: #dcdcdc; /* Dark gray */
+  cursor: pointer;
 }
+
 
 .wrap-text {
     word-wrap: break-word;
@@ -236,6 +238,10 @@ nav ul li a {
     -webkit-user-select: none;
     -ms-user-select: none;
   }
+  td.AminoAcids {
+    color: grey;
+  }
+
   #sequence-grid td:hover {
     background-color: #e0e0e0;
   }

@@ -42,6 +42,7 @@ window.onload = function() {
                   </tr>
               `; // Set table headers
 
+              // SIDEBAR
               for (const featureName in features) {
                   if (!featureName.includes("LOCUS") && !featureName.includes("source")) {
                     const feature = features[featureName];
@@ -80,6 +81,9 @@ window.onload = function() {
 
               // Create content grid
               makeContentGrid(sequence, complementaryStrand, features);
+
+              // Check for promoters and translation
+              promoterTranslation();
 
               contentDiv.style.overflow = 'auto'; // Enable scrolling after file import
           };
@@ -153,6 +157,7 @@ function checkAnnotationOverlap(features) {
   return
 }
 
+
 function makeContentGrid(sequence, complementarySequence, features) {
   checkAnnotationOverlap(features);
   const sequenceGrid = document.getElementById('sequence-grid');
@@ -180,6 +185,7 @@ function makeContentGrid(sequence, complementarySequence, features) {
       }
       cell.textContent = currentChar;
       cell.id = gridStructure[i % gridStructure.length];
+      cell.classList.add(gridStructure[i % gridStructure.length].replace(" ", ""));
       row.appendChild(cell);
     }
   }
@@ -343,4 +349,147 @@ function getRandomBackgroundColor() {
 
   return randomColor;
 }
+
+const promoters = {
+  "CMV": "CGCAAATGGGCGGTAGGCGTG",
+  "EF1α": "CCACGGGACACCATCTTTAC",
+  "RSV": "CGCGTGCTAGAACAGATGAGGACCCTGGGAGCTCTCTC",
+  "PGK": "TCCATTTGCCTAGCTGTTTGA",
+  "T7": "TAATACGACTCACTATAGGG",
+  "Lac": "TTACAGCTCATGCGGCGTTCT",
+  "Tet": "TATAAATGCTAGATGCTAGTTATCATGCTATACGAAGTTGT",
+  "Hsp70": "CCACCCACAGCTCAGACGTTGTTGCTGCTGCTGCACGCGTG",
+  "GAPDH": "CTGACCTGCCGTCTAGAAAA",
+  "CMV-IE": "CGCAGGGTTTTCCCAGTCACGAC",
+  "EF1α-HTLV": "CCACGGGACACCATCTTTAC",
+  "U6": "GACGCTCATGGAAGACGCCAAA",
+  "CAG": "AGGATCCCCACTGACCGGCCCGGGTTC",
+  "SV5": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGGTTTTCCCAGTCACGAC",
+  "CAAG": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGGAATGCCACCGCCGCCG",
+  "β-actin": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+  "PGK1": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGATATCATGACAAGAGCA",
+  "HTLV": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGACTCCGCTTTGCTGAAA",
+  "EF1": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGCTGGCTGGAGTTCA",
+  "RR": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGACTAGCCACCATGTTTT",
+  "SV": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGAGATCCGCCACCATTGG",
+  "5xGal4AD": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGAGGAGAAGACCACAGCC",
+  "Rous Sarcoma Virus": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGAGATCCGCCACCATTGG",
+  "MSCV": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGAGATCCGCCACCATTGG",
+  "Bsd": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+  "Kozak": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+  "FspI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+  "Sp6": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+  "SeAP": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+  "SphI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+  "BamHI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+  "SalI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+  "XhoI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+  "HindIII": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT"
+};
+
+function translateCodon(codon) {
+  const codonTable = {
+    'GCT': 'A', 'GCC': 'A', 'GCA': 'A', 'GCG': 'A',
+    'TGT': 'C', 'TGC': 'C',
+    'GAT': 'D', 'GAC': 'D',
+    'GAA': 'E', 'GAG': 'E',
+    'TTT': 'F', 'TTC': 'F',
+    'GGT': 'G', 'GGC': 'G', 'GGA': 'G', 'GGG': 'G',
+    'CAT': 'H', 'CAC': 'H',
+    'ATT': 'I', 'ATC': 'I', 'ATA': 'I',
+    'AAA': 'K', 'AAG': 'K',
+    'TTA': 'L', 'TTG': 'L', 'CTT': 'L', 'CTC': 'L', 'CTA': 'L', 'CTG': 'L',
+    'ATG': 'M',
+    'AAT': 'N', 'AAC': 'N',
+    'CCT': 'P', 'CCC': 'P', 'CCA': 'P', 'CCG': 'P',
+    'CAA': 'Q', 'CAG': 'Q',
+    'CGT': 'R', 'CGC': 'R', 'CGA': 'R', 'CGG': 'R', 'AGA': 'R', 'AGG': 'R',
+    'TCT': 'S', 'TCC': 'S', 'TCA': 'S', 'TCG': 'S', 'AGT': 'S', 'AGC': 'S',
+    'ACT': 'T', 'ACC': 'T', 'ACA': 'T', 'ACG': 'T',
+    'GTT': 'V', 'GTC': 'V', 'GTA': 'V', 'GTG': 'V',
+    'TGG': 'W',
+    'TAT': 'Y', 'TAC': 'Y',
+    'TAA': '-', 'TAG': '-', 'TGA': '-'
+  };
+
+  return codonTable[codon] || '';
+}
+
+function promoterTranslation() {
+  function findAllOccurrences(string, substring) {
+    const indices = [];
+    let index = string.indexOf(substring);
+  
+    while (index !== -1) {
+      indices.push(index);
+      index = string.indexOf(substring, index + 1);
+    }
+  
+    return indices;
+  }
+
+
+  for (let promoter in promoters) {
+    let promoterSeq = promoters[promoter];
+    console.log(promoter + ": " + promoterSeq);
+    const occurrences = findAllOccurrences(sequence, promoterSeq);
+    console.log(occurrences)
+    if (occurrences.length !== 0) {
+      for (let i = 0; i < occurrences.length; i++) {
+        startTranslation(sequence.indexOf("ATG", occurrences[i] + promoter.length) + 1);
+      }
+    }
+  }
+}
+
+function seqIndexToCoords(inputIndex, targetRow) {
+  const outputRow = (Math.floor(inputIndex / gridWidth))*gridStructure.length + targetRow;
+  const outputIndex = inputIndex - Math.floor(inputIndex / gridWidth)*gridWidth - 1;
+  return [outputRow, outputIndex];
+}
+
+function startTranslation(codonPos) {
+  let rowIndex = 0;
+  let cellIndex = 0;
+  console.log("Starting translationa at " + codonPos + "(" + rowIndex + ", " + cellIndex + ").");
+  const rowIndexAA = gridStructure.indexOf("Amino Acids");
+  let tableCoords = seqIndexToCoords(codonPos, rowIndexAA);
+  //console.log(tableCoords);
+  let row = tableCoords[0];
+  let col = tableCoords[1] + 1;
+
+  while (true) {
+    let codon = sequence.slice(codonPos - 1, codonPos + 2);
+    let aminoAcid = translateCodon(codon);
+    //console.log(codon, aminoAcid);
+    fillAACell(row, col, aminoAcid);
+    col += 3;
+    codonPos += 3;
+    if (col > gridWidth) {
+      col -= gridWidth;
+      row += gridStructure.length;
+    }
+    if (aminoAcid === "-"){
+      break;
+    }
+  }
+}
+
+function fillAACell(row, col, text) {
+  //console.log(row, col ,text);
+  const table = document.getElementById('sequence-grid');
+  let mainCell = table.rows[row].cells[col];
+  if (!mainCell) {
+    row += gridStructure.length;
+    col = col - gridWidth;
+    //console.log(row, col ,text);
+    mainCell = table.rows[row].cells[col];
+  }
+
+  // Add text to the center of the merged cell
+  const textNode = document.createTextNode(text);
+  mainCell.appendChild(textNode);
+  mainCell.style.textAlign = 'center';
+}
+
 
