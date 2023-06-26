@@ -37,7 +37,7 @@ function addCellSelection() {
       // Clear the previous selection
       clearSelection();
       selectionStartPos = basePosition;
-
+      console.log("Starting selection at: " + selectionStartPos);
       isSelecting = true;
 
       // Reset cell selection
@@ -49,32 +49,8 @@ function addCellSelection() {
       fileContentContainer.style.MozUserSelect = 'none';
       fileContentContainer.style.webkitUserSelect = 'none';
       fileContentContainer.style.msUserSelect = 'none';
-
       // Prevent the default left mouse click behavior (e.g., text selection)
       event.preventDefault();
-
-      // Get the starting cell
-      const cell = event.target.closest('td');
-
-      if (cell) {
-        const rect = cell.getBoundingClientRect();
-        const cursorX = event.clientX;
-
-        // Check if the cursor is close to the right edge
-        if (cursorX - rect.left <= 10) {
-          // Get the previous sibling cell
-          const previousCell = cell.previousElementSibling;
-
-          if (previousCell) {
-            startCell = previousCell;
-          }
-        } else {
-          startCell = cell;
-        }
-
-        startCell.classList.add('selected-cell');
-      }
-
     }
   });
 
@@ -89,36 +65,28 @@ function addCellSelection() {
   sequenceGridTable.addEventListener('mousemove', function (event) {
     if (isSelecting) {
       let cell = event.target.closest('td');
-      if (cell) {
-        const rect = cell.getBoundingClientRect();
-        const cursorX = event.clientX;
-        const cellWidth = rect.width;
-
-        // Check if the cursor is closer to the right edge
-        if (cursorX - rect.left >= cellWidth / 2) {
-          // Get the next sibling cell
-          const nextCell = cell.nextElementSibling;
-
-          if (nextCell) {
-            cell = nextCell;
-          }
-        }
-        if (cell.id === startCell.id) {
+      if (cell && basePosition !== selectionStartPos) {
+        if (cell.id === "Forward Strand") {
+          selectionEndPos = basePosition;
           // Get the indices of the start and end cells
-          const startRowIndex = startCell.parentElement.rowIndex;
-          const startCellIndex = startCell.cellIndex;
-          const endRowIndex = cell.parentElement.rowIndex;
-          const endCellIndex = cell.cellIndex;
+          const startCoords = seqIndexToCoords(selectionStartPos, 0);
+          const startRowIndex = startCoords[0];
+          const startCellIndex = startCoords[1];
+          const endCoords = seqIndexToCoords(selectionEndPos, 0);
+          const endRowIndex = endCoords[0];
+          const endCellIndex = endCoords[1];
 
           // Determine the minimum and maximum indices
           const minRowIndex = Math.min(startRowIndex, endRowIndex);
           const maxRowIndex = Math.max(startRowIndex, endRowIndex);
           const minCellIndex = Math.min(startCellIndex, endCellIndex);
-          const maxCellIndex = Math.max(startCellIndex, endCellIndex);
+          const maxCellIndex = Math.max(startCellIndex, endCellIndex) - 1;
 
           // Clear the previous selection
           clearSelection();
 
+          console.log("Iterating from: " + minRowIndex + ", " + minCellIndex);
+          console.log("To: " + maxRowIndex + ", " + maxCellIndex);
           // Iterate over cells between start and end cells
           for (let i = minRowIndex; i <= maxRowIndex; i++) {
             const row = sequenceGridTable.rows[i];
@@ -127,7 +95,7 @@ function addCellSelection() {
 
             for (let j = start; j <= end; j++) {
               const selectedCell = row.cells[j];
-              if (selectedCell.id === startCell.id) {
+              if (selectedCell.id === "Forward Strand") {
                 selectedCell.classList.add('selected-cell');
               }
             }
@@ -146,7 +114,6 @@ function addCellSelection() {
   sequenceGridTable.addEventListener('mouseup', function (event) {
     if (event.button === 0 && isSelecting) {
       isSelecting = false;
-      selectionEndPos = basePosition;
 
       // Enable text selection after selecting cells
       fileContentContainer.style.userSelect = '';
