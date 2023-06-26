@@ -1,9 +1,14 @@
-function parsePlasmidFile(fileContent) {
-    // Adapted Python code goes here
-    features = extractFeatures(fileContent);
-    //console.log(features)
-    sequence = extractSequence(fileContent);
-    complementaryStrand = getComplementaryStrand(sequence);
+function parsePlasmidFile(fileContent, pNr) {
+    if (pNr === 1) {
+      features = extractFeatures(fileContent);
+      sequence = extractSequence(fileContent);
+      complementaryStrand = getComplementaryStrand(sequence);
+    } else {
+      features2 = extractFeatures(fileContent);
+      sequence2 = extractSequence(fileContent);
+      complementaryStrand2 = getComplementaryStrand(sequence2);
+    }
+    
 
     // Adapted extract_features function
     function extractFeatures(input) {
@@ -38,8 +43,6 @@ function parsePlasmidFile(fileContent) {
         }
         
         
-
-        
         for (const feature of featureList) {
           const lines = feature.split('\n').map(line => line.trim()).filter(line => line);
           let featureName = lines[0].substring(0, lines[0].indexOf(' '));
@@ -72,9 +75,7 @@ function parsePlasmidFile(fileContent) {
         return featuresDict;
       }
       
-      
-
-    // Adapted extract_sequence functions
+    
     function extractSequence(input) {
         input = input.substring(input.indexOf("ORIGIN") + "ORIGIN".length);
         let output = input.replace(/\n/g, '').replace(/\/\//g, '').split(' ').filter(x => !/\d/.test(x));

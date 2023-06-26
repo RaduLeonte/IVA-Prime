@@ -3,13 +3,21 @@ const gridStructure = ["Forward Strand",
                         "Indices",
                         "Amino Acids",
                         "Annotations"];
+const gridStructure2 = ["Forward Strand",
+                        "Complementary Strand",
+                        "Indices",
+                        "Amino Acids",
+                        "Annotations"];
 const gridWidth = 40;
 let sequence = "";
 let complementaryStrand = "";
 let features = null;
 
+let sequence2 = "";
+let complementaryStrand2 = "";
+let features2 = null;
+
 window.onload = function() {
-    const fileContentDiv = document.getElementById('file-content');
     const contentDiv = document.querySelector('.content');
 
     function handleFileSelect(event) {
@@ -23,7 +31,7 @@ window.onload = function() {
               const fileContent = e.target.result;
               
               // Parse the file content into variables
-              parsePlasmidFile(fileContent);
+              parsePlasmidFile(fileContent, 1);
               
 
               // Update header with filename
@@ -80,12 +88,26 @@ window.onload = function() {
               }
 
               // Create content grid
-              makeContentGrid(sequence, complementaryStrand, features);
+              makeContentGrid(sequence, complementaryStrand, features, 1);
 
               // Check for promoters and translation
-              promoterTranslation();
+              promoterTranslation(1);
 
               contentDiv.style.overflow = 'auto'; // Enable scrolling after file import
+              
+              // Show the second import button after the first file is imported
+              const importSecondButton = document.getElementById('import-second-btn');
+              importSecondButton.style.display = 'block';
+
+
+              // Add an event listener to the second import button
+              const fileInputSecond = document.createElement('input');
+              fileInputSecond.setAttribute('type', 'file');
+              fileInputSecond.addEventListener('change', handleFileSelectSecond);
+              importSecondButton.addEventListener('click', function(event) {
+                  event.preventDefault();
+                  fileInputSecond.click();
+              });
           };
 
           reader.readAsText(file);
@@ -103,10 +125,10 @@ window.onload = function() {
     });
 };
 
-function checkAnnotationOverlap(features) {
+function checkAnnotationOverlap(inputFeatures, pNr) {
   let maximumOverlap = 0;
   const spansList = [];
-  Object.entries(features).forEach(([key, value]) => {
+  Object.entries(inputFeatures).forEach(([key, value]) => {
     if (value.span && !key.includes("source")) {
 
       function removeNonNumeric(inputString) {
@@ -142,15 +164,29 @@ function checkAnnotationOverlap(features) {
 
   let count = 0;
 
-  for (let i = 0; i < gridStructure.length; i++) {
-    if (gridStructure[i] === "Annotations") {
-      count++;
+  if (pNr === 1) {
+    for (let i = 0; i < gridStructure.length; i++) {
+      if (gridStructure[i] === "Annotations") {
+        count++;
+      }
     }
-  }
-  
-  if (count !== maximumOverlap) {
-    for (let i = 0; i < maximumOverlap - count; i++) {
-      gridStructure.push("Annotations")
+      
+    if (count !== maximumOverlap) {
+      for (let i = 0; i < maximumOverlap - count; i++) {
+        gridStructure.push("Annotations")
+      }
+    }
+  } else {
+    for (let i = 0; i < gridStructure2.length; i++) {
+      if (gridStructure2[i] === "Annotations") {
+        count++;
+      }
+    }
+      
+    if (count !== maximumOverlap) {
+      for (let i = 0; i < maximumOverlap - count; i++) {
+        gridStructure2.push("Annotations")
+      }
     }
   }
 
@@ -158,12 +194,22 @@ function checkAnnotationOverlap(features) {
 }
 
 
-function makeContentGrid(sequence, complementarySequence, features) {
-  checkAnnotationOverlap(features);
-  const sequenceGrid = document.getElementById('sequence-grid');
+function makeContentGrid(inputSequence, inputComplementarySequence, inputFeatures, pNr) {
+  checkAnnotationOverlap(inputFeatures, pNr);
+  let sequenceGrid = null;
+  let gridHeight = 0;
+  let currGridStructure = null;
+  if (pNr === 1) {
+    sequenceGrid = document.getElementById('sequence-grid');
+    currGridStructure = gridStructure;
+  } else {
+    sequenceGrid = document.getElementById('sequence-grid2');
+    currGridStructure = gridStructure2;
+  }
+  let currGridStructureLength = currGridStructure.length;
+  gridHeight = Math.ceil(inputSequence.length / gridWidth) * currGridStructureLength;
   sequenceGrid.innerHTML = ''; // Clear previous grid contents
 
-  const gridHeight = Math.ceil(sequence.length / gridWidth) * gridStructure.length;
 
   for (let i = 0; i < gridHeight; i++) {
     let row = sequenceGrid.rows[i]; // Get the corresponding row
@@ -174,23 +220,23 @@ function makeContentGrid(sequence, complementarySequence, features) {
     for (let j = 0; j < gridWidth; j++) {
       const cell = document.createElement('td');
       let currentChar = ""
-      let test = Math.floor(i / gridStructure.length)
-      if ((i + 1) % gridStructure.length === 1) {
-        currentChar = sequence[test*gridWidth + j]
-      } else if ((i + 1) % gridStructure.length === 2) {
-        currentChar = complementarySequence[test*gridWidth + j]
+      let test = Math.floor(i / currGridStructureLength)
+      if ((i + 1) % currGridStructureLength === 1) {
+        currentChar = inputSequence[test*gridWidth + j]
+      } else if ((i + 1) % currGridStructureLength === 2) {
+        currentChar = inputComplementarySequence[test*gridWidth + j]
       }
       if (!currentChar) {
         currentChar = ""
       }
       cell.textContent = currentChar;
-      cell.id = gridStructure[i % gridStructure.length];
-      cell.classList.add(gridStructure[i % gridStructure.length].replace(" ", ""));
+      cell.id = currGridStructure[i % currGridStructureLength];
+      cell.classList.add(currGridStructure[i % currGridStructureLength].replace(" ", ""));
       row.appendChild(cell);
     }
   }
   
-  Object.entries(features).forEach(([key, value]) => {
+  Object.entries(inputFeatures).forEach(([key, value]) => {
     if (value.span && !key.includes("source")) {
       function removeNonNumeric(inputString) {
         const cleanedString = inputString.replace(/[^\d.]/g, '');
@@ -202,24 +248,23 @@ function makeContentGrid(sequence, complementarySequence, features) {
       const rangeEnd = range[1];
 
       console.log(value.label, rangeStart + ".." + rangeEnd)
-      makeAnnotation(rangeStart - 1, rangeEnd - 1, value.label); 
+      makeAnnotation(rangeStart - 1, rangeEnd - 1, value.label, pNr, currGridStructure); 
     }
   });
   
 }
 
-function makeAnnotation(rStart, rEnd, text) {
+function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
   const annotationColor = getRandomBackgroundColor();
-  let row = (Math.floor(rStart / gridWidth)) * gridStructure.length;
-  let col = rStart - (row/gridStructure.length)*gridWidth;
-  row = row + gridStructure.indexOf("Annotations");
+  let row = (Math.floor(rStart / gridWidth)) * currGridStructure.length;
+  let col = rStart - (row/currGridStructure.length)*gridWidth;
+  row = row + currGridStructure.indexOf("Annotations");
   const annotationSpan = rEnd - rStart;
 
   let currentSpan = annotationSpan;
   let carryOver = annotationSpan;
   console.log("Annotation: ", rStart, rEnd, row, col, text, annotationSpan);
   
-  //for (let i = 0; i < Math.floor((annotationSpan + col)/gridWidth + 1); i++) {
   let i = 0;
   while (carryOver > 0) {
     console.log("Current part: ", i + 1, "/", Math.floor((annotationSpan + col)/gridWidth + 1))
@@ -231,33 +276,34 @@ function makeAnnotation(rStart, rEnd, text) {
       console.log("Carry over: " + carryOver);
       currentSpan = gridWidth - col;
       console.log("Current span1: " + currentSpan);
-      mergeCells(row, col, 1, currentSpan, text, annotationColor);
+      mergeCells(row, col, 1, currentSpan, text, annotationColor, pNr,currGridStructure);
       currentSpan = carryOver;
-      row = row + gridStructure.length;
+      row = row + currGridStructure.length;
       col = 0;
     } else if (currentSpan === 40) {
       console.log("Current span2: " + currentSpan);
-      mergeCells(row, col, 1, currentSpan, text, annotationColor);
-      mergeCells(row + gridStructure.length, col, 1, 1, text, annotationColor);
+      mergeCells(row, col, 1, currentSpan, text, annotationColor, pNr,currGridStructure);
+      mergeCells(row + currGridStructure.length, col, 1, 1, text, annotationColor, pNr,currGridStructure);
       carryOver = 0;
     } else {
       console.log("Current span3: " + currentSpan);
-      mergeCells(row, col, 1, currentSpan + 1, text, annotationColor);
+      mergeCells(row, col, 1, currentSpan + 1, text, annotationColor, pNr, currGridStructure);
       carryOver = 0;
     }
     i++;
   }
-
-  // if (carryOver !== 0) {
-  //   console.log(carryOver + 1);
-  //   mergeCells(row, col, 1, carryOver + 1, "..." + text.replace("...", ""), annotationColor);
-  // }
 }
 
 
 
-function mergeCells(row, col, rowspan, colspan, text, color) {
-  const table = document.getElementById('sequence-grid');
+function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStructure) {
+  let table = null;
+  if (pNr === 1){
+    table = document.getElementById('sequence-grid');
+  } else {
+    table = document.getElementById('sequence-grid2');
+  }
+  
   
   // Adjust col pos
   let occupiedCells = 0;
@@ -284,7 +330,7 @@ function mergeCells(row, col, rowspan, colspan, text, color) {
 
   
   let mainCell = 0;
-  for (let i = 0; i < gridStructure.filter(item => item === "Annotations").length; i++) {
+  for (let i = 0; i < currGridStructure.filter(item => item === "Annotations").length; i++) {
     mainCell = table.rows[row].cells[col];
     if (!mainCell) {
       row++;
@@ -417,7 +463,7 @@ function translateCodon(codon) {
   return codonTable[codon] || '';
 }
 
-function promoterTranslation() {
+function promoterTranslation(pNr) {
   function findAllOccurrences(string, substring) {
     const indices = [];
     let index = string.indexOf(substring);
@@ -430,32 +476,45 @@ function promoterTranslation() {
     return indices;
   }
 
+  let currSequence = "";
+  if (pNr === 1) {
+    currSequence = sequence;
+  } else {
+    currSequence = sequence2;
+  }
+
 
   for (let promoter in promoters) {
     let promoterSeq = promoters[promoter];
     console.log(promoter + ": " + promoterSeq);
-    const occurrences = findAllOccurrences(sequence, promoterSeq);
+    const occurrences = findAllOccurrences(currSequence, promoterSeq);
     console.log(occurrences)
     if (occurrences.length !== 0) {
       for (let i = 0; i < occurrences.length; i++) {
-        startTranslation(sequence.indexOf("ATG", occurrences[i] + promoter.length) + 1);
+        startTranslation(currSequence.indexOf("ATG", occurrences[i] + promoter.length) + 1, pNr);
       }
     }
   }
 }
 
-function seqIndexToCoords(inputIndex, targetRow) {
-  const outputRow = (Math.floor(inputIndex / gridWidth))*gridStructure.length + targetRow;
+function seqIndexToCoords(inputIndex, targetRow, currGridStructure) {
+  const outputRow = (Math.floor(inputIndex / gridWidth))*currGridStructure.length + targetRow;
   const outputIndex = inputIndex - Math.floor(inputIndex / gridWidth)*gridWidth - 1;
   return [outputRow, outputIndex];
 }
 
-function startTranslation(codonPos) {
+function startTranslation(codonPos, pNr) {
   let rowIndex = 0;
   let cellIndex = 0;
+  let currGridStructure = null;
+  if (pNr === 1) {
+    currGridStructure = gridStructure;
+  } else {
+    currGridStructure = gridStructure2;
+  }
   console.log("Starting translationa at " + codonPos + "(" + rowIndex + ", " + cellIndex + ").");
-  const rowIndexAA = gridStructure.indexOf("Amino Acids");
-  let tableCoords = seqIndexToCoords(codonPos, rowIndexAA);
+  const rowIndexAA = currGridStructure.indexOf("Amino Acids");
+  let tableCoords = seqIndexToCoords(codonPos, rowIndexAA, currGridStructure);
   //console.log(tableCoords);
   let row = tableCoords[0];
   let col = tableCoords[1] + 1;
@@ -464,12 +523,12 @@ function startTranslation(codonPos) {
     let codon = sequence.slice(codonPos - 1, codonPos + 2);
     let aminoAcid = translateCodon(codon);
     //console.log(codon, aminoAcid);
-    fillAACells(row, col, aminoAcid);
+    fillAACells(row, col, aminoAcid, pNr);
     col += 3;
     codonPos += 3;
     if (col > gridWidth) {
       col -= gridWidth;
-      row += gridStructure.length;
+      row += currGridStructure.length;
     }
     if (aminoAcid === "-"){
       break;
@@ -477,9 +536,14 @@ function startTranslation(codonPos) {
   }
 }
 
-function fillAACells(row, col, text) {
+function fillAACells(row, col, text, pNr) {
   //console.log(row, col ,text);
-  const table = document.getElementById('sequence-grid');
+  let table = null;
+  if (pNr === 1) {
+    table = document.getElementById('sequence-grid');
+  } else {
+    table = document.getElementById('sequence-grid2');
+  }
   let mainCell = table.rows[row].cells[col];
   if (!mainCell) {
     row += gridStructure.length;

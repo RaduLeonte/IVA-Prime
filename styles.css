@@ -48,10 +48,10 @@ nav ul li a {
     font-family: "Anonymous Pro", sans-serif;
 }
 
-#file-content {
+.strands {
     font-size: 18px;
     word-wrap: break-word; /* Allows text to wrap */
-    white-space: pre-wrap; /* Preserves whitespace */
+    /*white-space: pre-wrap;  Preserves whitespace */
 }
 
 
@@ -143,11 +143,21 @@ nav ul li a {
     background-color: #45a049;
   }
 
+  #header-list #import-second-btn a {
+    background-color: #9932CC; /* This is a nice purple color */
+    color: white;
+    border-radius: 5px;
+  }
+
+  #header-list #import-second-btn a:hover {
+      background-color: #800080; /* This is a slightly lighter purple for the hover effect */
+  }
+
+
   .sidebar {
     flex: 1;
     background-color: #f2f2f2;
     overflow-y: auto; /* Enables sidebar scrolling */
-    margin-top: 48px;
     resize: horizontal;
 }
 
@@ -189,6 +199,7 @@ nav ul li a {
     background-color: #f2f2f2;
     padding: 20px;
     overflow-y: auto;
+    margin-top: 50px;
 }
 
 .sidebar-content p {
@@ -220,14 +231,14 @@ nav ul li a {
     z-index: 9000;
   }
   
-  #sequence-grid {
+  .sequence-grid {
     z-index: 1;
     table-layout: fixed;
     width: 100%;
     border-collapse: collapse;
   }
   
-  #sequence-grid td {
+  .sequence-grid td {
     border: 0px solid #ccc;
     padding: 5px;
     text-align: center;
@@ -238,15 +249,16 @@ nav ul li a {
     -webkit-user-select: none;
     -ms-user-select: none;
   }
+
   td.AminoAcids {
     color: grey;
   }
 
-  #sequence-grid td:hover {
+  .sequence-grid td:hover {
     background-color: #e0e0e0;
   }
 
-  #sequence-grid td.selected-cell {
+  .sequence-grid td.selected-cell {
     background-color: rgba(0, 150, 255, 0.2);
   }
   
@@ -383,4 +395,14 @@ nav ul li a {
 
 .mutation-popup-window #cancel-button:hover {
   background-color: #999;
+}
+
+#content2 {
+  margin-top: 0px;
+}
+
+.divider {
+  background-color: #c6c6c6;
+  height: 5px;
+  width:'50vw';
 }
