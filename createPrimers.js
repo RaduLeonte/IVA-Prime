@@ -65,11 +65,14 @@ function displayPrimers(primersType, primersList, mutSeq) {
     element.insertAdjacentElement('afterend', paragraph2);
 }
 
-function primerExtension(startingPos, direction, targetTm, minLength) {
+function primerExtension(startingPos, direction, targetTm, minLength, pNr) {
     let p_start_index = startingPos - 1;
     let length = minLength;
 
-    const backbone = direction === 'forward' ? sequence : complementaryStrand;
+    let backbone = direction === 'forward' ? sequence : complementaryStrand;
+    if (pNr === 2) {
+        backbone = direction === 'forward' ? sequence2 : complementaryStrand2;
+    }
     //console.log(backbone)
     //let prev_p = direction === 'forward' ? backbone.slice(p_start_index, p_start_index + length - 1): backbone.slice(p_start_index - length, p_start_index);
     let prev_p = direction === 'forward' ? repeatingSlice(backbone, p_start_index, p_start_index + length - 1): repeatingSlice(backbone, p_start_index - length, p_start_index);
@@ -221,9 +224,9 @@ function createInsertionPrimers(dnaSequence, aaSequence, insertionPos) {
     }
 
     let homoFwd = homologousSequenceFwd;
-    let tempFwd = primerExtension(insertionPos, "forward", tempRegionTm, 7)
+    let tempFwd = primerExtension(insertionPos, "forward", tempRegionTm, 7, 1)
     let homoRev = homologousSequenceRev;
-    let tempRev = primerExtension(insertionPos, "backward", tempRegionTm, 7)
+    let tempRev = primerExtension(insertionPos, "backward", tempRegionTm, 7, 1)
 
     displayPrimers("Insertion", [homoFwd, tempFwd, homoRev, tempRev]);
 }
@@ -236,11 +239,11 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
     }
     console.log('Creating deletion primers...', selectedText, deletionStartPos, deletionEndPos);
 
-    let homoRev = primerExtension(deletionStartPos, "backward", homoRegionTm, 7);
+    let homoRev = primerExtension(deletionStartPos, "backward", homoRegionTm, 7, 1);
     let homoFwd = getComplementaryStrand(homoRev);
     
-    let tempFwd = primerExtension(deletionEndPos, "forward", tempRegionTm, 7);
-    let tempRev = primerExtension(deletionStartPos - homoRev.length, "backward", tempRegionTm, 7);
+    let tempFwd = primerExtension(deletionEndPos, "forward", tempRegionTm, 7, 1);
+    let tempRev = primerExtension(deletionStartPos - homoRev.length, "backward", tempRegionTm, 7, 1);
 
     displayPrimers("Deletion", [homoFwd, tempFwd, homoRev, tempRev])
 }
@@ -254,10 +257,50 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
     console.log('Creating deletion primers...', mutationSeq, mutaStartPos, mutaEndPos);
 
     
-    let homoRev = primerExtension(mutaStartPos, "backward", homoRegionTm, 7);
-    let tempRev = primerExtension(mutaStartPos - homoRev.length, "backward", tempRegionTm, 7);
-    let tempFwd = primerExtension(mutaEndPos, "forward", tempRegionTm, 7);
+    let homoRev = primerExtension(mutaStartPos, "backward", homoRegionTm, 7, 1);
+    let tempRev = primerExtension(mutaStartPos - homoRev.length, "backward", tempRegionTm, 7, 1);
+    let tempFwd = primerExtension(mutaEndPos, "forward", tempRegionTm, 7, 1);
     let homoFwd = getComplementaryStrand(homoRev);
 
     displayPrimers("Deletion", [homoFwd, tempFwd, homoRev, tempRev], mutationSeq);
+}
+
+function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
+    if (subcloningStartPos > subcloningEndPos) {
+        let temp = subcloningStartPos;
+        subcloningStartPos = subcloningEndPos;
+        subcloningEndPos = temp;
+    }
+    console.log('Creating subcloning primers...', selectedText, subcloningStartPos, subcloningEndPos);
+
+    const element = document.getElementById('sequence-grid2');
+    // Change the cursor to a pointer when it's over the element
+    element.style.cursor = 'pointer';
+    // Listen for click events on the element
+    element.addEventListener('click', function(event) {
+        event.stopPropagation(); // Prevent the event from bubbling up to the document
+        // Your code here for what should happen when the element is clicked
+        let subcloningInsertPosition = basePosition2;
+        console.log('Element was clicked!', subcloningInsertPosition);
+        element.style.cursor = 'default';
+
+
+        let tempFwd = primerExtension(subcloningStartPos, "forward", tempRegionTm, 7, 1);
+        let homoFwd = primerExtension(subcloningInsertPosition, "backward", homoRegionTm, 7, 2);
+
+        let tempRev = primerExtension(subcloningEndPos, "backward", tempRegionTm, 7, 1);
+        let homoRev = primerExtension(subcloningInsertPosition, "forward", homoRegionTm, 7, 2);
+
+
+        displayPrimers("Subcloning", [homoFwd, tempFwd, homoRev, tempRev]);
+    }, { once: true });
+
+    // Listen for click events on the document
+    document.addEventListener('click', function() {
+        // Your code here for what should happen when something outside the element is clicked
+        console.log('Clicked outside the element. Aborting...');
+        // Reset the cursor
+        element.style.cursor = 'default';
+        return;
+    }, { once: true });
 }

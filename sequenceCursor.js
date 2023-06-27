@@ -1,6 +1,6 @@
-function addCellBorderOnHover() {
-    const sequenceGridTable = document.getElementById('sequence-grid');
-    const fileContentContainer = document.getElementById('file-content');
+function addCellBorderOnHover(tableId, containerId, pNr) {
+    const sequenceGridTable = document.getElementById(tableId);
+    const fileContentContainer = document.getElementById(containerId);
   
     if (!sequenceGridTable) {
       // Table doesn't exist yet, observe the DOM for changes
@@ -9,11 +9,11 @@ function addCellBorderOnHover() {
           if (mutation.type === 'childList') {
             // Check if the table is added
             const addedNodes = Array.from(mutation.addedNodes);
-            const isTableAdded = addedNodes.some(node => node.id === 'sequence-grid');
+            const isTableAdded = addedNodes.some(node => node.id === tableId);
   
             if (isTableAdded) {
               observer.disconnect(); // Stop observing DOM changes
-              addCellBorderOnHover(); // Call the function again now that the table exists
+              addCellBorderOnHover(tableId, containerId, pNr); // Call the function again now that the table exists
               break;
             }
           }
@@ -71,6 +71,7 @@ function addCellBorderOnHover() {
   }
   
   // Call the function to add the cell border on hover effect to your sequence grid table
-  addCellBorderOnHover();
+addCellBorderOnHover('sequence-grid', 'file-content', 1);
+addCellBorderOnHover('sequence-grid2', 'file-content2', 2);
 
   

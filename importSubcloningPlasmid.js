@@ -1,3 +1,5 @@
+let secondPlasmidIported = false;
+
 function handleFileSelectSecond(event) {
     // Your existing file handling code here, but modify it to work with the second plasmid
     console.log("SECOND PLASMID LOADING");
@@ -79,6 +81,7 @@ function handleFileSelectSecond(event) {
 
     // After the second file is imported, create the second plasmid window
     createSecondPlasmidWindow();
+    secondPlasmidIported = true;
 }
 
 function createSecondPlasmidWindow() {

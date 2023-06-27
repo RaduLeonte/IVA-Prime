@@ -1,6 +1,7 @@
 let basePosition = -1;
+let basePosition2 = -1;
 
-function addHoverPopupToTable(tableId) {
+function addHoverPopupToTable(tableId, pNr) {
   const table = document.getElementById(tableId);
 
   table.addEventListener('mouseover', function(event) {
@@ -11,7 +12,12 @@ function addHoverPopupToTable(tableId) {
 
       const popup = document.createElement('div');
       popup.className = 'hover-popup';
-      popup.textContent = basePosition !== -1 ? basePosition + " (" + rowIndex + ", " + cellIndex + ")" : "";
+      if (pNr === 1) {
+        popup.textContent = basePosition !== -1 ? basePosition + " (" + rowIndex + ", " + cellIndex + ")" : "";
+      } else {
+        popup.textContent = basePosition2 !== -1 ? basePosition2 + " (" + rowIndex + ", " + cellIndex + ")" : "";
+      }
+      
 
       document.body.appendChild(popup);
       positionPopup(popup, event.clientX, event.clientY);
@@ -23,7 +29,12 @@ function addHoverPopupToTable(tableId) {
     if (popup) {
       document.body.removeChild(popup);
     }
-    basePosition = -1;
+    if (pNr === 1) {
+      basePosition = -1;
+    } else {
+      basePosition2 = -1;
+    }
+    
   });
 
   table.addEventListener('mousemove', function(event) {
@@ -33,15 +44,28 @@ function addHoverPopupToTable(tableId) {
       const cellWidth = cellRect.width;
 
       if (cursorOffset < cellWidth / 2) {
-        basePosition = ((event.target.parentNode.rowIndex - event.target.parentNode.rowIndex % gridStructure.length) / gridStructure.length) * gridWidth + event.target.cellIndex + 1;
+        if (pNr === 1) {
+          basePosition = ((event.target.parentNode.rowIndex - event.target.parentNode.rowIndex % gridStructure.length) / gridStructure.length) * gridWidth + event.target.cellIndex + 1;
+        } else {
+          basePosition2 = ((event.target.parentNode.rowIndex - event.target.parentNode.rowIndex % gridStructure2.length) / gridStructure2.length) * gridWidth + event.target.cellIndex + 1;
+        }
       } else {
-        basePosition = ((event.target.parentNode.rowIndex - event.target.parentNode.rowIndex % gridStructure.length) / gridStructure.length) * gridWidth + event.target.cellIndex + 2;
+        if (pNr === 1) {
+          basePosition = ((event.target.parentNode.rowIndex - event.target.parentNode.rowIndex % gridStructure.length) / gridStructure.length) * gridWidth + event.target.cellIndex + 2;
+        } else {
+          basePosition2 = ((event.target.parentNode.rowIndex - event.target.parentNode.rowIndex % gridStructure2.length) / gridStructure2.length) * gridWidth + event.target.cellIndex + 2;
+        }
       }
 
       const popup = document.querySelector('.hover-popup');
       if (popup) {
-        popup.textContent = basePosition !== -1 ? basePosition + " (" + event.target.parentNode.rowIndex + ", " + event.target.cellIndex + ")" : "";
+        if (pNr === 1) {
+          popup.textContent = basePosition !== -1 ? basePosition + " (" + event.target.parentNode.rowIndex + ", " + event.target.cellIndex + ")" : "";
+          positionPopup(popup, event.clientX, event.clientY);
+        } else {
+          popup.textContent = basePosition2 !== -1 ? basePosition2 + " (" + event.target.parentNode.rowIndex + ", " + event.target.cellIndex + ")" : "";
         positionPopup(popup, event.clientX, event.clientY);
+        }
       }
     }
   });
@@ -76,5 +100,9 @@ function waitForTableToExist(tableId, callback) {
 }
 
 waitForTableToExist('sequence-grid', function() {
-  addHoverPopupToTable('sequence-grid');
+  addHoverPopupToTable('sequence-grid', 1);
+});
+
+waitForTableToExist('sequence-grid2', function() {
+  addHoverPopupToTable('sequence-grid2', 2);
 });

@@ -1,6 +1,7 @@
-document.addEventListener('DOMContentLoaded', function () {
-    const sidebarTable = document.getElementById('sidebar-table');
-    const fileContentDiv = document.getElementById('file-content');
+function addScrollingEffectToFeatureTable(tableId, containerId, pNr) {
+  document.addEventListener('DOMContentLoaded', function () {
+    const sidebarTable = document.getElementById(tableId);
+    const fileContentDiv = document.getElementById(containerId);
   
     // Function to add event listener to each <tr> element
     function addEventListenerToTableRow(row) {
@@ -53,4 +54,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // Start observing the sidebar table for changes
     observer.observe(sidebarTable, { childList: true, subtree: true });
   });
+}
+
+addScrollingEffectToFeatureTable('sidebar-table', 'file-content', 1);
+addScrollingEffectToFeatureTable('sidebar-table2', 'file-content2', 2);
+
   

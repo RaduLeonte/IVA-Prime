@@ -1,10 +1,12 @@
 let selectedText = '';
+let selectedText2 = '';
 let selectionStartPos = null;
 let selectionEndPos = null;
 
-function addCellSelection() {
-  const sequenceGridTable = document.getElementById('sequence-grid');
-  const fileContentContainer = document.getElementById('file-content');
+function addCellSelection(tableId, containerId, pNr) {
+  console.log(tableId, containerId, pNr);
+  const sequenceGridTable = document.getElementById(tableId);
+  const fileContentContainer = document.getElementById(containerId);
 
   if (!sequenceGridTable) {
     // Table doesn't exist yet, observe the DOM for changes
@@ -13,11 +15,11 @@ function addCellSelection() {
         if (mutation.type === 'childList') {
           // Check if the table is added
           const addedNodes = Array.from(mutation.addedNodes);
-          const isTableAdded = addedNodes.some((node) => node.id === 'sequence-grid');
+          const isTableAdded = addedNodes.some((node) => node.id === tableId);
 
           if (isTableAdded) {
             observer.disconnect(); // Stop observing DOM changes
-            addCellSelection(); // Call the function again now that the table exists
+            addCellSelection(tableId, containerId, pNr); // Call the function again now that the table exists
             break;
           }
         }
@@ -33,10 +35,16 @@ function addCellSelection() {
   let endCell = null;
 
   sequenceGridTable.addEventListener('mousedown', function (event) {
+    console.log("Mouse down");
     if (event.button === 0) {
       // Clear the previous selection
-      clearSelection();
-      selectionStartPos = basePosition;
+      clearSelection(pNr);
+      if (pNr === 1) {
+        selectionStartPos = basePosition;
+      } else {
+        selectionStartPos = basePosition2;
+      }
+      
       console.log("Starting selection at: " + selectionStartPos);
       isSelecting = true;
 
@@ -54,12 +62,16 @@ function addCellSelection() {
     }
   });
 
-  function clearSelection() {
+  function clearSelection(pNr) {
     const selectedCells = document.querySelectorAll('.selected-cell');
     selectedCells.forEach((cell) => {
       cell.classList.remove('selected-cell');
     });
-    selectedText = "";
+    if (pNr === 1) {
+      selectedText = "";
+    } else {
+      selectedText2 = "";
+    }
   }
 
   sequenceGridTable.addEventListener('mousemove', function (event) {
@@ -67,12 +79,19 @@ function addCellSelection() {
       let cell = event.target.closest('td');
       if (cell && basePosition !== selectionStartPos) {
         if (cell.id === "Forward Strand") {
-          selectionEndPos = basePosition;
+          let currGridStructure = null;
+          if (pNr === 1) {
+            selectionEndPos = basePosition;
+            currGridStructure = gridStructure;
+          } else {
+            selectionEndPos = basePosition2;
+            currGridStructure = gridStructure2;
+          }
           // Get the indices of the start and end cells
-          const startCoords = seqIndexToCoords(selectionStartPos, 0);
+          const startCoords = seqIndexToCoords(selectionStartPos, 0, currGridStructure);
           const startRowIndex = startCoords[0];
           const startCellIndex = startCoords[1];
-          const endCoords = seqIndexToCoords(selectionEndPos, 0);
+          const endCoords = seqIndexToCoords(selectionEndPos, 0, currGridStructure);
           const endRowIndex = endCoords[0];
           const endCellIndex = endCoords[1];
 
@@ -83,7 +102,7 @@ function addCellSelection() {
           const maxCellIndex = Math.max(startCellIndex, endCellIndex) - 1;
 
           // Clear the previous selection
-          clearSelection();
+          clearSelection(pNr);
 
           console.log("Iterating from: " + minRowIndex + ", " + minCellIndex);
           console.log("To: " + maxRowIndex + ", " + maxCellIndex);
@@ -105,7 +124,7 @@ function addCellSelection() {
           endCell = cell;
         } else {
           // Clear the selection if the cell doesn't have the same ID
-          clearSelection();
+          clearSelection(pNr);
         }
       }
     }
@@ -122,8 +141,13 @@ function addCellSelection() {
       fileContentContainer.style.msUserSelect = '';
 
       // Extract text content from selected cells
-      selectedText = getSelectedText();
-      console.log(selectedText, selectionStartPos, selectionEndPos);
+      if (pNr === 1) {
+        selectedText = getSelectedText();
+        console.log("Selected text: ", selectedText, selectionStartPos, selectionEndPos);
+      } else {
+        selectedText2 = getSelectedText();
+        console.log("Selected text: ", selectedText2, selectionStartPos, selectionEndPos);
+      }
     }
   });
 
@@ -146,9 +170,9 @@ function addCellSelection() {
   });
 
   document.addEventListener('click', function (event) {
-    if (!event.target.closest('#sequence-grid')) {
+    if (!event.target.closest('#sequence-grid') && !event.target.closest('#sequence-grid2')) {
       // Clicked outside the table, clear the selection
-      clearSelection();
+      clearSelection(pNr);
       startCell = null;
       endCell = null;
       isSelecting = false;
@@ -156,9 +180,15 @@ function addCellSelection() {
   });
 
   document.addEventListener('keydown', function (event) {
-    if (event.ctrlKey && event.key === 'c' && selectedText !== '') {
+    let currSelectedText = "";
+    if (pNr === 1) {
+      currSelectedText = selectedText;
+    } else {
+      currSelectedText = selectedText2;
+    }
+    if (event.ctrlKey && event.key === 'c' && currSelectedText !== '') {
       event.preventDefault();
-      copyToClipboard(selectedText);
+      copyToClipboard(currSelectedText);
     }
   });
 
@@ -173,4 +203,5 @@ function addCellSelection() {
 }
 
 // Call the function to enable cell selection in your sequence grid table
-addCellSelection();
+addCellSelection('sequence-grid', 'file-content', 1);
+//addCellSelection('sequence-grid2', 'file-content2', 2);
