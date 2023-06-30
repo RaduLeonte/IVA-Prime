@@ -74,6 +74,7 @@ function handleFileSelectSecond(event) {
 
               // Check for promoters and translation
               promoterTranslation(2);
+              featureTranslation(2);
           };
 
           reader.readAsText(file);

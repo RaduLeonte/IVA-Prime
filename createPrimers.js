@@ -286,10 +286,10 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
 
 
         let tempFwd = primerExtension(subcloningStartPos, "forward", tempRegionTm, 7, 1);
-        let homoFwd = primerExtension(subcloningInsertPosition, "backward", homoRegionTm, 7, 2);
+        let homoFwd = primerExtension(subcloningInsertPosition, "backward", tempRegionTm, 7, 2);
 
         let tempRev = primerExtension(subcloningEndPos, "backward", tempRegionTm, 7, 1);
-        let homoRev = primerExtension(subcloningInsertPosition, "forward", homoRegionTm, 7, 2);
+        let homoRev = primerExtension(subcloningInsertPosition, "forward", tempRegionTm, 7, 2);
 
 
         displayPrimers("Subcloning", [homoFwd, tempFwd, homoRev, tempRev]);

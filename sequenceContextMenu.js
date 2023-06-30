@@ -142,9 +142,9 @@ document.addEventListener('DOMContentLoaded', function () {
       console.log('Beginning translation');
       console.log("!!!", sequence.slice(insertionPosition - 1, insertionPosition + 2))
       if (sequence.slice(insertionPosition - 1, insertionPosition + 2) === "ATG") {
-        startTranslation(insertionPosition);
+        startTranslation(insertionPosition, 1);
       } else {
-        startTranslation(sequence.indexOf("ATG", insertionPosition) + 1);
+        startTranslation(sequence.indexOf("ATG", insertionPosition) + 1, 1);
       }
     }
 

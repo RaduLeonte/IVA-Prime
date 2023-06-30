@@ -17,6 +17,8 @@ let sequence2 = "";
 let complementaryStrand2 = "";
 let features2 = null;
 
+let recentColor = null;
+
 window.onload = function() {
     const contentDiv = document.querySelector('.content');
 
@@ -92,6 +94,7 @@ window.onload = function() {
 
               // Check for promoters and translation
               promoterTranslation(1);
+              featureTranslation(1);
 
               contentDiv.style.overflow = 'auto'; // Enable scrolling after file import
               
@@ -256,6 +259,7 @@ function makeContentGrid(inputSequence, inputComplementarySequence, inputFeature
 
 function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
   const annotationColor = getRandomBackgroundColor();
+  recentColor = annotationColor;
   let row = (Math.floor(rStart / gridWidth)) * currGridStructure.length;
   let col = rStart - (row/currGridStructure.length)*gridWidth;
   row = row + currGridStructure.indexOf("Annotations");
@@ -392,8 +396,11 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
 function getRandomBackgroundColor() {
   const colors = ["#FFB6C1", "#FFDAB9", "#FFA07A", "#FFC0CB", "#87CEFA", "#98FB98", "#FF69B4", "#90EE90"];
 
-  const randomIndex = Math.floor(Math.random() * colors.length);
-  const randomColor = colors[randomIndex];
+  let randomColor = recentColor;
+  while (randomColor === recentColor) {
+    const randomIndex = Math.floor(Math.random() * colors.length);
+    randomColor = colors[randomIndex];
+  }
 
   return randomColor;
 }
@@ -497,6 +504,35 @@ function promoterTranslation(pNr) {
   }
 }
 
+
+function featureTranslation(pNr) {
+
+  let currSequence = "";
+  let currFreatures = [];
+  if (pNr === 1) {
+    currSequence = sequence;
+    currFreatures = features;
+  } else {
+    currSequence = sequence2;
+    currFreatures = features2;
+  }
+
+  Object.entries(currFreatures).forEach(([key, value]) => {
+    if (value.span && !key.includes("source")) {
+      function removeNonNumeric(inputString) {
+        const cleanedString = inputString.replace(/[^\d.]/g, '');
+        return cleanedString;
+      }
+      value.span = removeNonNumeric(value.span);
+      const range = value.span.split("..").map(Number);
+      const rangeStart = range[0];
+      const rangeEnd = range[1];
+      console.log(key);
+      startTranslation(rangeStart, pNr);
+    }
+  });
+}
+
 function seqIndexToCoords(inputIndex, targetRow, currGridStructure) {
   const outputRow = (Math.floor(inputIndex / gridWidth))*currGridStructure.length + targetRow;
   const outputIndex = inputIndex - Math.floor(inputIndex / gridWidth)*gridWidth - 1;
@@ -504,23 +540,24 @@ function seqIndexToCoords(inputIndex, targetRow, currGridStructure) {
 }
 
 function startTranslation(codonPos, pNr) {
-  let rowIndex = 0;
-  let cellIndex = 0;
   let currGridStructure = null;
+  let currSequence = "";
   if (pNr === 1) {
+    currSequence = sequence;
     currGridStructure = gridStructure;
   } else {
+    currSequence = sequence2;
     currGridStructure = gridStructure2;
   }
-  console.log("Starting translationa at " + codonPos + "(" + rowIndex + ", " + cellIndex + ").");
   const rowIndexAA = currGridStructure.indexOf("Amino Acids");
   let tableCoords = seqIndexToCoords(codonPos, rowIndexAA, currGridStructure);
   //console.log(tableCoords);
   let row = tableCoords[0];
   let col = tableCoords[1] + 1;
+  console.log("Starting translationa at " + codonPos + "(" + row + ", " + col + ").");
 
   while (true) {
-    let codon = sequence.slice(codonPos - 1, codonPos + 2);
+    let codon = repeatingSlice(currSequence, codonPos - 1, codonPos + 2);
     let aminoAcid = translateCodon(codon);
     //console.log(codon, aminoAcid);
     fillAACells(row, col, aminoAcid, pNr);
@@ -530,25 +567,29 @@ function startTranslation(codonPos, pNr) {
       col -= gridWidth;
       row += currGridStructure.length;
     }
-    if (aminoAcid === "-"){
+    if (aminoAcid === "-" || codonPos > currSequence.length){
       break;
     }
   }
 }
 
 function fillAACells(row, col, text, pNr) {
-  //console.log(row, col ,text);
+
+  console.log(row, col ,text);
   let table = null;
+  let currGridStructure = null;
   if (pNr === 1) {
     table = document.getElementById('sequence-grid');
+    currGridStructure = gridStructure;
   } else {
     table = document.getElementById('sequence-grid2');
+    currGridStructure = gridStructure2;
   }
   let mainCell = table.rows[row].cells[col];
   if (!mainCell) {
-    row += gridStructure.length;
+    row += currGridStructure.length;
     col = col - gridWidth;
-    //console.log(row, col ,text);
+    console.log(row, col ,text);
     mainCell = table.rows[row].cells[col];
   }
 
