@@ -18,11 +18,13 @@
     <script src="insertionPopUpWindow.js"></script>
     <script src="mutationPopUpWindow.js"></script>
     <script src="scrollToAnnotation.js"></script>
+    <script src="importSubcloningPlasmid.js"></script>    
 </head>
     <header>
         <nav>
             <ul id="header-list"  class="horizontal-list">
                 <li id="import-btn"><a href="#">Import File</a></li>
+                <li id="import-second-btn" style="display: none;"><a href="#">Import Second Plasmid for Subcloning</a></li>
                 <!-- Add more menu options here if needed -->
             </ul>
         </nav>
@@ -43,7 +45,29 @@
         <div class="content" id="content">    
             <!-- Plasmid -->
             <div id="file-content" class="strands">
-                <table id="sequence-grid">
+                <table id="sequence-grid" class="sequence-grid">
+                    <tbody>
+                    </tbody>
+                  </table>
+            </div>
+        </div>
+    </div>
+    <div class="divider" id="divider" style="display: none;"></div>
+    <div class="container" id="second-plasmid-container" style="display: none;">
+        <div class="sidebar" id="siderbar2">
+            <div class="sidebar-content" id ="sidebar-content2" style="display: none;">
+                <!-- Add more paragraph elements here if needed -->
+            </div>
+            <table class="sidebar-table" id="sidebar-table2">
+              <!-- Add more rows for additional information if needed -->
+            </table>
+          </div>
+          
+          
+        <div class="content" id="content2">    
+            <!-- Plasmid -->
+            <div id="file-content2" class="strands">
+                <table id="sequence-grid2" class="sequence-grid">
                     <tbody>
                     </tbody>
                   </table>
