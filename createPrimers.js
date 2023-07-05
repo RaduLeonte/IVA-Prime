@@ -1,9 +1,10 @@
+
 let primerConc = 100E-9; // M
 let saltConc = 0.5; // M
 let homoRegionTm = 49.5;
 let tempRegionTm = 60;
 
-function displayPrimers(primersType, primersList, mutSeq) {
+function displayPrimers(primersType, primersList, textColor, templateColor, homoColor, mutSeq) {
 
     var element = document.getElementById("primers-type");
     element.textContent = primersType + " Primers:";
@@ -13,12 +14,14 @@ function displayPrimers(primersType, primersList, mutSeq) {
     paragraph1.style.wordWrap = 'break-word'; // Add CSS style for word wrapping
     // Create the first span with red text and bold
     const span1a = document.createElement('span');
-    span1a.style.color = 'red';
+    span1a.style.color = textColor;
+    span1a.style.backgroundColor = homoColor;
     span1a.style.fontWeight = 'bold';
     span1a.textContent = primersList[2];
     // Create the second span with green text and bold
     const span1b = document.createElement('span');
-    span1b.style.color = 'green';
+    span1b.style.color = textColor;
+    span1b.style.backgroundColor = templateColor;
     span1b.style.fontWeight = 'bold';
     span1b.textContent = primersList[3];
     // Append the spans to the paragraph
@@ -34,20 +37,23 @@ function displayPrimers(primersType, primersList, mutSeq) {
     paragraph2.style.wordWrap = 'break-word'; // Add CSS style for word wrapping
     // Create the first span with red text and bold
     const span2a = document.createElement('span');
-    span2a.style.color = 'red';
+    span2a.style.color = textColor;
+    span2a.style.backgroundColor = homoColor;
     span2a.style.fontWeight = 'bold';
     span2a.textContent = primersList[0];
 
     // Create the second span with green text and bold
     const span2b = document.createElement('span');
-    span2b.style.color = 'green';
+    span2b.style.color = textColor;
+    span2b.style.backgroundColor = templateColor;
     span2b.style.fontWeight = 'bold';
     span2b.textContent = primersList[1];
     // Append the spans to the paragraph
     paragraph2.appendChild(span2a);
     if (mutSeq) {
         const spanMut = document.createElement('span');
-        spanMut.style.color = 'purple';
+        spanMut.style.color = textColor;
+        spanMut.style.backgroundColor = 'rgb(199,51,116)';
         spanMut.style.fontWeight = 'bold';
         spanMut.textContent = mutSeq;
         paragraph2.appendChild(spanMut);
@@ -228,7 +234,7 @@ function createInsertionPrimers(dnaSequence, aaSequence, insertionPos) {
     let homoRev = homologousSequenceRev;
     let tempRev = primerExtension(insertionPos, "backward", tempRegionTm, 7, 1)
 
-    displayPrimers("Insertion", [homoFwd, tempFwd, homoRev, tempRev]);
+    displayPrimers("Insertion", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)");
 }
 
 function createDeletionPrimers(deletionStartPos, deletionEndPos) {
@@ -245,7 +251,7 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
     let tempFwd = primerExtension(deletionEndPos, "forward", tempRegionTm, 7, 1);
     let tempRev = primerExtension(deletionStartPos - homoRev.length, "backward", tempRegionTm, 7, 1);
 
-    displayPrimers("Deletion", [homoFwd, tempFwd, homoRev, tempRev])
+    displayPrimers("Deletion", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)")
 }
 
 function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
@@ -262,12 +268,13 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
     let tempFwd = primerExtension(mutaEndPos, "forward", tempRegionTm, 7, 1);
     let homoFwd = getComplementaryStrand(homoRev);
 
-    displayPrimers("Deletion", [homoFwd, tempFwd, homoRev, tempRev], mutationSeq);
+    displayPrimers("Deletion", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)", mutationSeq);
 }
 
 function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
     let subcloningInsertPositionStart = null;
     let subcloningInsertPositionEnd = null;
+    let selectingSubcloningTarget = false;
     if (subcloningStartPos > subcloningEndPos) {
         let temp = subcloningStartPos;
         subcloningStartPos = subcloningEndPos;
@@ -288,10 +295,11 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
         startCell = null;
         endCell = null;
         console.log('start: ', subcloningInsertPositionStart);
+        selectingSubcloningTarget = true;
     }, { once: true });
 
     element.addEventListener('mousemove', function(event) {
-        if (subcloningInsertPositionStart && subcloningInsertPositionStart !== basePosition2) {
+        if (selectingSubcloningTarget && subcloningInsertPositionStart && subcloningInsertPositionStart !== basePosition2) {
         subcloningInsertPositionEnd = basePosition2;
             // Get the indices of the start and end cells
           let startCoords = null;
@@ -354,6 +362,7 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
         subcloningInsertPositionEnd = basePosition2;
         console.log('end: ', subcloningInsertPositionEnd);
         element.style.cursor = 'default';
+        selectingSubcloningTarget = false;
 
         if (subcloningInsertPositionStart > subcloningInsertPositionEnd) {
             let temp = subcloningInsertPositionStart;
@@ -369,7 +378,7 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
         let homoRev = primerExtension(subcloningInsertPositionEnd, "forward", tempRegionTm, 7, 2);
 
 
-        displayPrimers("Subcloning", [homoFwd, tempFwd, homoRev, tempRev]);
+        displayPrimers("Subcloning", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(107, 96, 157)", "rgb(140, 202, 242)");
     }, { once: true });
 
     // Listen for click events on the document
