@@ -266,6 +266,8 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
 }
 
 function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
+    let subcloningInsertPositionStart = null;
+    let subcloningInsertPositionEnd = null;
     if (subcloningStartPos > subcloningEndPos) {
         let temp = subcloningStartPos;
         subcloningStartPos = subcloningEndPos;
@@ -277,19 +279,32 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
     // Change the cursor to a pointer when it's over the element
     element.style.cursor = 'pointer';
     // Listen for click events on the element
-    element.addEventListener('click', function(event) {
+    element.addEventListener('mousedown', function(event) {
         event.stopPropagation(); // Prevent the event from bubbling up to the document
         // Your code here for what should happen when the element is clicked
-        let subcloningInsertPosition = basePosition2;
-        console.log('Element was clicked!', subcloningInsertPosition);
+        subcloningInsertPositionStart = basePosition2;
+        console.log('start: ', subcloningInsertPositionStart);
+    }, { once: true });
+
+    element.addEventListener('mouseup', function(event) {
+        event.stopPropagation(); // Prevent the event from bubbling up to the document
+        // Your code here for what should happen when the element is clicked
+        subcloningInsertPositionEnd= basePosition2;
+        console.log('end: ', subcloningInsertPositionEnd);
         element.style.cursor = 'default';
 
+        if (subcloningInsertPositionStart > subcloningInsertPositionEnd) {
+            let temp = subcloningInsertPositionStart;
+            subcloningInsertPositionStart = subcloningInsertPositionEnd;
+            subcloningInsertPositionEnd = temp;
+        }
+        
 
         let tempFwd = primerExtension(subcloningStartPos, "forward", tempRegionTm, 7, 1);
-        let homoFwd = primerExtension(subcloningInsertPosition, "backward", tempRegionTm, 7, 2);
+        let homoFwd = primerExtension(subcloningInsertPositionStart, "backward", tempRegionTm, 7, 2);
 
         let tempRev = primerExtension(subcloningEndPos, "backward", tempRegionTm, 7, 1);
-        let homoRev = primerExtension(subcloningInsertPosition, "forward", tempRegionTm, 7, 2);
+        let homoRev = primerExtension(subcloningInsertPositionEnd, "forward", tempRegionTm, 7, 2);
 
 
         displayPrimers("Subcloning", [homoFwd, tempFwd, homoRev, tempRev]);
