@@ -87,34 +87,45 @@ function addCellSelection(tableId, containerId, pNr) {
             selectionEndPos = basePosition2;
             currGridStructure = gridStructure2;
           }
+          console.log(selectionStartPos, selectionEndPos)
           // Get the indices of the start and end cells
-          const startCoords = seqIndexToCoords(selectionStartPos, 0, currGridStructure);
-          const startRowIndex = startCoords[0];
-          const startCellIndex = startCoords[1];
-          const endCoords = seqIndexToCoords(selectionEndPos, 0, currGridStructure);
-          const endRowIndex = endCoords[0];
-          const endCellIndex = endCoords[1];
+          let startCoords = null;
+          let startRowIndex = null;
+          let startCellIndex = null;
+          let endCoords = null;
+          let endRowIndex = null;
+          let endCellIndex = null;
 
-          // Determine the minimum and maximum indices
-          const minRowIndex = Math.min(startRowIndex, endRowIndex);
-          const maxRowIndex = Math.max(startRowIndex, endRowIndex);
-          const minCellIndex = Math.min(startCellIndex, endCellIndex);
-          const maxCellIndex = Math.max(startCellIndex, endCellIndex) - 1;
+          if (selectionStartPos < selectionEndPos) {
+            startCoords = seqIndexToCoords(selectionStartPos, 0, currGridStructure);
+            startRowIndex = startCoords[0];
+            startCellIndex = startCoords[1];
+            endCoords = seqIndexToCoords(selectionEndPos, 0, currGridStructure);
+            endRowIndex = endCoords[0];
+            endCellIndex = endCoords[1] - 1;
+          } else {
+            startCoords = seqIndexToCoords(selectionEndPos, 0, currGridStructure);
+            startRowIndex = startCoords[0];
+            startCellIndex = startCoords[1];
+            endCoords = seqIndexToCoords(selectionStartPos, 0, currGridStructure);
+            endRowIndex = endCoords[0];
+            endCellIndex = endCoords[1] - 1;
+          }
 
           // Clear the previous selection
           clearSelection(pNr);
 
-          console.log("Iterating from: " + minRowIndex + ", " + minCellIndex);
-          console.log("To: " + maxRowIndex + ", " + maxCellIndex);
+          console.log("Iterating from: " + startRowIndex + ", " + startCellIndex);
+          console.log("To: " + endRowIndex + ", " + endCellIndex);
           // Iterate over cells between start and end cells
-          for (let i = minRowIndex; i <= maxRowIndex; i++) {
+          for (let i = startRowIndex; i <= endRowIndex; i++) {
             const row = sequenceGridTable.rows[i];
-            const start = (i === minRowIndex) ? minCellIndex : 0;
-            const end = (i === maxRowIndex) ? maxCellIndex : row.cells.length - 1;
+            const start = (i === startRowIndex) ? startCellIndex : 0;
+            const end = (i === endRowIndex) ? endCellIndex : row.cells.length - 1;
 
             for (let j = start; j <= end; j++) {
               const selectedCell = row.cells[j];
-              if (selectedCell.id === "Forward Strand") {
+              if (selectedCell.id === "Forward Strand" && selectedCell.innerText.trim() !== "") {
                 selectedCell.classList.add('selected-cell');
               }
             }
@@ -124,7 +135,7 @@ function addCellSelection(tableId, containerId, pNr) {
           endCell = cell;
         } else {
           // Clear the selection if the cell doesn't have the same ID
-          clearSelection(pNr);
+          //clearSelection(pNr);
         }
       }
     }
