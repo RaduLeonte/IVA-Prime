@@ -6,7 +6,7 @@ function handleFileSelectSecond(event) {
 
     const file = event.target.files[0];
         const fileExtension =  /\.([0-9a-z]+)(?:[\?#]|$)/i.exec(file.name)[0];
-        const acceptedFileExtensions = [".gbk", ".gb"]
+        const acceptedFileExtensions = [".gbk", ".gb", ".dna"]
         if (acceptedFileExtensions.includes(fileExtension)) {
           const reader = new FileReader();
 
@@ -14,7 +14,11 @@ function handleFileSelectSecond(event) {
               const fileContent = e.target.result;
               
               // Parse the file content into variables
-              parsePlasmidFile(fileContent, 2);
+              if (fileExtension === ".dna") {
+                parseDNAFile(fileContent, 2);
+              } else {
+                parsePlasmidFile(fileContent, 2);
+              }
 
               // Update header with filename
               const headerList = document.getElementById('header-list');

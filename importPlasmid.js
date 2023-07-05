@@ -25,7 +25,7 @@ window.onload = function() {
     function handleFileSelect(event) {
         const file = event.target.files[0];
         const fileExtension =  /\.([0-9a-z]+)(?:[\?#]|$)/i.exec(file.name)[0];
-        const acceptedFileExtensions = [".gbk", ".gb"]
+        const acceptedFileExtensions = [".gbk", ".gb", ".dna"]
         if (acceptedFileExtensions.includes(fileExtension)) {
           const reader = new FileReader();
 
@@ -33,7 +33,11 @@ window.onload = function() {
               const fileContent = e.target.result;
               
               // Parse the file content into variables
-              parsePlasmidFile(fileContent, 1);
+              if (fileExtension === ".dna") {
+                parseDNAFile(fileContent, 1);
+              } else {
+                parsePlasmidFile(fileContent, 1);
+              }
               
 
               // Update header with filename
@@ -53,6 +57,7 @@ window.onload = function() {
               `; // Set table headers
 
               // SIDEBAR
+              console.log(features)
               for (const featureName in features) {
                   if (!featureName.includes("LOCUS") && !featureName.includes("source")) {
                     const feature = features[featureName];

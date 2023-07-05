@@ -4,7 +4,7 @@ let selectionStartPos = null;
 let selectionEndPos = null;
 
 function addCellSelection(tableId, containerId, pNr) {
-  console.log(tableId, containerId, pNr);
+  //console.log(tableId, containerId, pNr);
   const sequenceGridTable = document.getElementById(tableId);
   const fileContentContainer = document.getElementById(containerId);
 
