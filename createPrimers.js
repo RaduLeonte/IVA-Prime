@@ -279,17 +279,79 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
     // Change the cursor to a pointer when it's over the element
     element.style.cursor = 'pointer';
     // Listen for click events on the element
+    let startCell = null;
+    let endCell = null;
     element.addEventListener('mousedown', function(event) {
         event.stopPropagation(); // Prevent the event from bubbling up to the document
         // Your code here for what should happen when the element is clicked
         subcloningInsertPositionStart = basePosition2;
+        startCell = null;
+        endCell = null;
         console.log('start: ', subcloningInsertPositionStart);
     }, { once: true });
+
+    element.addEventListener('mousemove', function(event) {
+        if (subcloningInsertPositionStart && subcloningInsertPositionStart !== basePosition2) {
+        subcloningInsertPositionEnd = basePosition2;
+            // Get the indices of the start and end cells
+          let startCoords = null;
+          let startRowIndex = null;
+          let startCellIndex = null;
+          let endCoords = null;
+          let endRowIndex = null;
+          let endCellIndex = null;
+
+          if (subcloningInsertPositionStart < subcloningInsertPositionEnd) {
+            startCoords = seqIndexToCoords(subcloningInsertPositionStart, 0, gridStructure2);
+            startRowIndex = startCoords[0];
+            startCellIndex = startCoords[1];
+            endCoords = seqIndexToCoords(subcloningInsertPositionEnd, 0, gridStructure2);
+            endRowIndex = endCoords[0];
+            endCellIndex = endCoords[1] - 1;
+          } else {
+            startCoords = seqIndexToCoords(subcloningInsertPositionEnd, 0, gridStructure2);
+            startRowIndex = startCoords[0];
+            startCellIndex = startCoords[1];
+            endCoords = seqIndexToCoords(subcloningInsertPositionStart, 0, gridStructure2);
+            endRowIndex = endCoords[0];
+            endCellIndex = endCoords[1] - 1;
+          }
+
+          // Clear the previous selection
+          function clearSelection() {
+            const selectedCells = element.querySelectorAll('.selected-cell-subcloning-target');
+            selectedCells.forEach((cell) => {
+              cell.classList.remove('selected-cell-subcloning-target');
+            });
+            selectedText2 = "";
+          }
+          clearSelection();
+
+          console.log("Iterating from: " + startRowIndex + ", " + startCellIndex);
+          console.log("To: " + endRowIndex + ", " + endCellIndex);
+          // Iterate over cells between start and end cells
+          for (let i = startRowIndex; i <= endRowIndex; i++) {
+            const row = element.rows[i];
+            const start = (i === startRowIndex) ? startCellIndex : 0;
+            const end = (i === endRowIndex) ? endCellIndex : row.cells.length - 1;
+
+            for (let j = start; j <= end; j++) {
+              const selectedCell = row.cells[j];
+              if (selectedCell.id === "Forward Strand" && selectedCell.innerText.trim() !== "") {
+                selectedCell.classList.add('selected-cell-subcloning-target');
+              }
+            }
+          }
+
+          // Update the end cell
+          //endCell = cell;
+        }
+    });
 
     element.addEventListener('mouseup', function(event) {
         event.stopPropagation(); // Prevent the event from bubbling up to the document
         // Your code here for what should happen when the element is clicked
-        subcloningInsertPositionEnd= basePosition2;
+        subcloningInsertPositionEnd = basePosition2;
         console.log('end: ', subcloningInsertPositionEnd);
         element.style.cursor = 'default';
 
