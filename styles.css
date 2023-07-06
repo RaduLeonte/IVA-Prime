@@ -410,3 +410,7 @@ nav ul li a {
   height: 5px;
   width:'50vw';
 }
+
+.loading * {
+  cursor: wait !important;
+}

@@ -207,6 +207,7 @@ function repeatingSlice(str, startIndex, endIndex) {
     return repeatedStr.slice(startIndex + str.length, endIndex + str.length);
 }
 
+
 function createInsertionPrimers(dnaSequence, aaSequence, insertionPos) {
     // Insertion logic using dnaSequenceInput and aminoAcidSequenceInput
     console.log('Creating insertion primers...');
@@ -233,8 +234,48 @@ function createInsertionPrimers(dnaSequence, aaSequence, insertionPos) {
     let tempFwd = primerExtension(insertionPos, "forward", tempRegionTm, 7, 1)
     let homoRev = homologousSequenceRev;
     let tempRev = primerExtension(insertionPos, "backward", tempRegionTm, 7, 1)
-
     displayPrimers("Insertion", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)");
+
+    // Update stuff
+    const insertStringPosition = insertionPos - 1;
+    sequence = sequence.slice(0, insertStringPosition) + homologousSequenceFwd + sequence.slice(insertStringPosition);
+    complementaryStrand = getComplementaryStrand(sequence);
+    Object.entries(features).forEach(([key, value]) => {
+        if (value.span && !key.includes("source")) {
+            const currSpan = value.span.split("..").map(Number);
+            const spanStart = currSpan[0];
+            const spanEnd = currSpan[1];
+            if (insertStringPosition < spanStart) {
+                const newSpanStart = spanStart + homologousSequenceFwd.length;
+                const newSpanEnd = spanEnd + homologousSequenceFwd.length;
+                value.span = newSpanStart + ".." + newSpanEnd;
+                console.log("Scooch over nerd.")
+            } else if (spanStart < insertStringPosition && insertStringPosition < spanEnd) {
+                console.log("Get deleted nerd!")
+                delete features[key];
+            }
+        }
+    });
+    let newFeatureName = "Insertion"
+    let i = 2;
+    console.log("Previous insertion present? ", Object.keys(features))
+    while (newFeatureName in features) {
+        newFeatureName =  newFeatureName.replace("" + i-1, "")
+        newFeatureName += i;
+        console.log(newFeatureName)
+        i++;
+    }
+    console.log("NEW FEATURES!! ", newFeatureName);
+    const tempDict = {}
+    tempDict.label = newFeatureName;
+    const insertStringPositionStart = insertStringPosition + 1;
+    const insertStringPositionEnd = insertStringPositionStart + homologousSequenceFwd.length - 1;
+    tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
+    console.log("TEMP DICT SPAN " + tempDict.span)
+    tempDict.note = "";
+    features[newFeatureName] = tempDict
+
+    makeContentGrid(1);
 }
 
 function createDeletionPrimers(deletionStartPos, deletionEndPos) {

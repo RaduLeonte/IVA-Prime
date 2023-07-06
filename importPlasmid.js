@@ -95,7 +95,7 @@ window.onload = function() {
               }
 
               // Create content grid
-              makeContentGrid(sequence, complementaryStrand, features, 1);
+              makeContentGrid(1);
 
               // Check for promoters and translation
               promoterTranslation(1);
@@ -201,65 +201,83 @@ function checkAnnotationOverlap(inputFeatures, pNr) {
   return
 }
 
-
-function makeContentGrid(inputSequence, inputComplementarySequence, inputFeatures, pNr) {
-  checkAnnotationOverlap(inputFeatures, pNr);
-  let sequenceGrid = null;
-  let gridHeight = 0;
-  let currGridStructure = null;
-  if (pNr === 1) {
-    sequenceGrid = document.getElementById('sequence-grid');
-    currGridStructure = gridStructure;
-  } else {
-    sequenceGrid = document.getElementById('sequence-grid2');
-    currGridStructure = gridStructure2;
+function changeCursorIcon(state) {
+  if (state ==="loading") {
+    document.body.classList.add('loading');
   }
-  let currGridStructureLength = currGridStructure.length;
-  gridHeight = Math.ceil(inputSequence.length / gridWidth) * currGridStructureLength;
-  sequenceGrid.innerHTML = ''; // Clear previous grid contents
+}
 
 
-  for (let i = 0; i < gridHeight; i++) {
-    let row = sequenceGrid.rows[i]; // Get the corresponding row
-    if (!row) {
-      // If the row doesn't exist, create a new one
-      row = sequenceGrid.insertRow(i);
-    } 
-    for (let j = 0; j < gridWidth; j++) {
-      const cell = document.createElement('td');
-      let currentChar = ""
-      let test = Math.floor(i / currGridStructureLength)
-      if ((i + 1) % currGridStructureLength === 1) {
-        currentChar = inputSequence[test*gridWidth + j]
-      } else if ((i + 1) % currGridStructureLength === 2) {
-        currentChar = inputComplementarySequence[test*gridWidth + j]
-      }
-      if (!currentChar) {
-        currentChar = ""
-      }
-      cell.textContent = currentChar;
-      cell.id = currGridStructure[i % currGridStructureLength];
-      cell.classList.add(currGridStructure[i % currGridStructureLength].replace(" ", ""));
-      row.appendChild(cell);
+function makeContentGrid(pNr) {
+  document.body.classList.add('loading');
+  setTimeout(function() {
+    let currSequence = null;
+    let currComplementarySequence = null;
+    let currFeatures = null;
+    let sequenceGrid = null;
+    let gridHeight = 0;
+    let currGridStructure = null;
+    if (pNr === 1) {
+      currSequence = sequence;
+      currComplementarySequence = complementaryStrand;
+      currFeatures = features;
+      sequenceGrid = document.getElementById('sequence-grid');
+      currGridStructure = gridStructure;
+    } else {
+      currSequence = sequence2;
+      currComplementarySequence = complementaryStrand2;
+      currFeatures = features2;
+      sequenceGrid = document.getElementById('sequence-grid2');
+      currGridStructure = gridStructure2;
     }
-  }
-  
-  Object.entries(inputFeatures).forEach(([key, value]) => {
-    if (value.span && !key.includes("source")) {
-      function removeNonNumeric(inputString) {
-        const cleanedString = inputString.replace(/[^\d.]/g, '');
-        return cleanedString;
-      }
-      value.span = removeNonNumeric(value.span);
-      const range = value.span.split("..").map(Number);
-      const rangeStart = range[0];
-      const rangeEnd = range[1];
+    checkAnnotationOverlap(currFeatures, pNr);
+    let currGridStructureLength = currGridStructure.length;
+    gridHeight = Math.ceil(currSequence.length / gridWidth) * currGridStructureLength;
+    sequenceGrid.innerHTML = ''; // Clear previous grid contents
 
-      console.log(value.label, rangeStart + ".." + rangeEnd)
-      makeAnnotation(rangeStart - 1, rangeEnd - 1, value.label, pNr, currGridStructure); 
+
+    for (let i = 0; i < gridHeight; i++) {
+      let row = sequenceGrid.rows[i]; // Get the corresponding row
+      if (!row) {
+        // If the row doesn't exist, create a new one
+        row = sequenceGrid.insertRow(i);
+      } 
+      for (let j = 0; j < gridWidth; j++) {
+        const cell = document.createElement('td');
+        let currentChar = ""
+        let test = Math.floor(i / currGridStructureLength)
+        if ((i + 1) % currGridStructureLength === 1) {
+          currentChar = currSequence[test*gridWidth + j]
+        } else if ((i + 1) % currGridStructureLength === 2) {
+          currentChar = currComplementarySequence[test*gridWidth + j]
+        }
+        if (!currentChar) {
+          currentChar = ""
+        }
+        cell.textContent = currentChar;
+        cell.id = currGridStructure[i % currGridStructureLength];
+        cell.classList.add(currGridStructure[i % currGridStructureLength].replace(" ", ""));
+        row.appendChild(cell);
+      }
     }
-  });
-  
+    
+    Object.entries(currFeatures).forEach(([key, value]) => {
+      if (value.span && !key.includes("source")) {
+        function removeNonNumeric(inputString) {
+          const cleanedString = inputString.replace(/[^\d.]/g, '');
+          return cleanedString;
+        }
+        value.span = removeNonNumeric(value.span);
+        const range = value.span.split("..").map(Number);
+        const rangeStart = range[0];
+        const rangeEnd = range[1];
+
+        console.log(value.label, rangeStart + ".." + rangeEnd)
+        makeAnnotation(rangeStart - 1, rangeEnd - 1, value.label, pNr, currGridStructure); 
+      }
+    });
+    document.body.classList.remove('loading');
+  }, 1);
 }
 
 function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
@@ -306,6 +324,7 @@ function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
 
 
 function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStructure) {
+  console.log("Mergin cells1: ", row, col, rowspan, colspan, text, color);
   let table = null;
   if (pNr === 1){
     table = document.getElementById('sequence-grid');
@@ -324,8 +343,8 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
         }
       }
     }
-    console.log(col + 1, gridWidth, (col + 1 >= gridWidth));
-    if ((col + 1 < gridWidth)) {
+    console.log(col + 1, gridWidth, (col + 1 < gridWidth), occupiedCells);
+    if ((col + 1 < gridWidth) && occupiedCells !== 0) {
       col++;
     }
   }
@@ -371,7 +390,7 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
   }
 
   // If fails again, just abort the function call
-  console.log("Mergin cells: ", row, col, rowspan, colspan, text, color);
+  console.log("Mergin cells2: ", row, col, rowspan, colspan, text, color);
   mainCell.rowSpan = rowspan;
   if (col + colspan > gridWidth) {
     console.log(col, colspan)
