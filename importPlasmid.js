@@ -95,26 +95,22 @@ window.onload = function() {
               }
 
               // Create content grid
-              makeContentGrid(1);
-
-              // Check for promoters and translation
-              promoterTranslation(1);
-              featureTranslation(1);
-
-              contentDiv.style.overflow = 'auto'; // Enable scrolling after file import
-              
-              // Show the second import button after the first file is imported
-              const importSecondButton = document.getElementById('import-second-btn');
-              importSecondButton.style.display = 'block';
+              makeContentGrid(1, function() {
+                contentDiv.style.overflow = 'auto'; // Enable scrolling after file import
+                
+                // Show the second import button after the first file is imported
+                const importSecondButton = document.getElementById('import-second-btn');
+                importSecondButton.style.display = 'block';
 
 
-              // Add an event listener to the second import button
-              const fileInputSecond = document.createElement('input');
-              fileInputSecond.setAttribute('type', 'file');
-              fileInputSecond.addEventListener('change', handleFileSelectSecond);
-              importSecondButton.addEventListener('click', function(event) {
-                  event.preventDefault();
-                  fileInputSecond.click();
+                // Add an event listener to the second import button
+                const fileInputSecond = document.createElement('input');
+                fileInputSecond.setAttribute('type', 'file');
+                fileInputSecond.addEventListener('change', handleFileSelectSecond);
+                importSecondButton.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    fileInputSecond.click();
+                });
               });
           };
 
@@ -208,7 +204,7 @@ function changeCursorIcon(state) {
 }
 
 
-function makeContentGrid(pNr) {
+function makeContentGrid(pNr, callback) {
   document.body.classList.add('loading');
   setTimeout(function() {
     let currSequence = null;
@@ -276,7 +272,13 @@ function makeContentGrid(pNr) {
         makeAnnotation(rangeStart - 1, rangeEnd - 1, value.label, pNr, currGridStructure); 
       }
     });
+
+    promoterTranslation(pNr);
+    featureTranslation(pNr);
     document.body.classList.remove('loading');
+    if (typeof callback === 'function') {
+      callback();
+    };
   }, 1);
 }
 

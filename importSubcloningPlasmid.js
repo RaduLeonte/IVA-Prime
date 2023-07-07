@@ -74,11 +74,7 @@ function handleFileSelectSecond(event) {
               }
 
               // Create content grid
-              makeContentGrid(sequence2, complementaryStrand2, features2, 2);
-
-              // Check for promoters and translation
-              promoterTranslation(2);
-              featureTranslation(2);
+              makeContentGrid(2);
           };
 
           reader.readAsText(file);

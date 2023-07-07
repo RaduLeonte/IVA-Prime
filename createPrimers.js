@@ -391,12 +391,13 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
     let subcloningInsertPositionStart = null;
     let subcloningInsertPositionEnd = null;
     let selectingSubcloningTarget = false;
+    let subcloningInsertionSequence = selectedText;
     if (subcloningStartPos > subcloningEndPos) {
         let temp = subcloningStartPos;
         subcloningStartPos = subcloningEndPos;
         subcloningEndPos = temp;
     }
-    console.log('Creating subcloning primers...', selectedText, subcloningStartPos, subcloningEndPos);
+    console.log('Creating subcloning primers...', subcloningInsertionSequence, subcloningStartPos, subcloningEndPos);
 
     const element = document.getElementById('sequence-grid2');
     // Change the cursor to a pointer when it's over the element
@@ -495,6 +496,54 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
 
 
         displayPrimers("Subcloning", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(107, 96, 157)", "rgb(140, 202, 242)");
+
+        // Update stuff
+        subcloningInsertPositionStart--;
+        subcloningInsertPositionEnd--;
+        sequence2 = sequence2.slice(0, subcloningInsertPositionStart) + subcloningInsertionSequence + sequence2.slice(subcloningInsertPositionEnd);
+        complementaryStrand2 = getComplementaryStrand(sequence2);
+        Object.entries(features2).forEach(([key, value]) => {
+            if (value.span && !key.includes("source")) {
+                const currSpan = value.span.split("..").map(Number);
+                const spanStart = currSpan[0];
+                const spanEnd = currSpan[1];
+                if (subcloningInsertPositionStart < spanStart && subcloningInsertPositionEnd < spanStart) {
+                    const newSpanStart = spanStart + subcloningInsertionSequence.length - (subcloningInsertPositionEnd - subcloningInsertPositionStart);
+                    const newSpanEnd = spanEnd + subcloningInsertionSequence.length - (subcloningInsertPositionEnd - subcloningInsertPositionStart);
+                    value.span = newSpanStart + ".." + newSpanEnd;
+                    console.log("Scooch over nerd.")
+                } else if (subcloningInsertPositionStart < spanStart && subcloningInsertPositionEnd > spanStart) {
+                    console.log("Get deleted nerd!")
+                    delete features2[key];
+                } else if(subcloningInsertPositionStart < spanEnd && subcloningInsertPositionEnd > spanEnd) {
+                    console.log("Get deleted nerd!")
+                    delete features2[key];
+                } else if (spanStart < subcloningInsertPositionStart && subcloningInsertPositionEnd < spanEnd) {
+                    console.log("Get deleted nerd!")
+                    delete features2[key];
+                }
+            }
+        });
+        let newFeatureName = "Subcloning"
+        let i = 2;
+        console.log("Previous insertion present? ", Object.keys(features2))
+        while (newFeatureName in features2) {
+            newFeatureName =  newFeatureName.replace("" + i-1, "")
+            newFeatureName += i;
+            console.log(newFeatureName)
+            i++;
+        }
+        console.log("NEW FEATURES!! ", newFeatureName);
+        const tempDict = {}
+        tempDict.label = newFeatureName;
+        const insertStringPositionStart = subcloningInsertPositionStart + 1;
+        const insertStringPositionEnd = insertStringPositionStart + subcloningInsertionSequence.length - 1;
+        tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
+        console.log("TEMP DICT SPAN " + tempDict.span)
+        tempDict.note = "";
+        features2[newFeatureName] = tempDict
+
+        makeContentGrid(2);
     }, { once: true });
 
     // Listen for click events on the document
