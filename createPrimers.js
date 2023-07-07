@@ -3,11 +3,18 @@ let primerConc = 100E-9; // M
 let saltConc = 0.5; // M
 let homoRegionTm = 49.5;
 let tempRegionTm = 60;
+let operationNr = 1;
 
 function displayPrimers(primersType, primersList, textColor, templateColor, homoColor, mutSeq) {
+    const sidebarContentDiv = document.querySelector('.sidebar-content');
+    const p = document.createElement('p');
+    p.id = 'primers-type';
+    p.textContent = operationNr + '. ' + primersType;
+    operationNr++;
+    sidebarContentDiv.appendChild(p);
 
     var element = document.getElementById("primers-type");
-    element.textContent = primersType + " Primers:";
+    element.textContent = "Primers:";
 
     // Create the first paragraph
     const paragraph1 = document.createElement('p');
@@ -67,8 +74,8 @@ function displayPrimers(primersType, primersList, textColor, templateColor, homo
     // Find the <p> with the id "primers-type"
 
     // Insert the new paragraphs after the <p> with id "primers-type"
-    element.insertAdjacentElement('afterend', paragraph1);
-    element.insertAdjacentElement('afterend', paragraph2);
+    sidebarContentDiv.appendChild(paragraph1);
+    sidebarContentDiv.appendChild(paragraph2);
 }
 
 function primerExtension(startingPos, direction, targetTm, minLength, pNr) {
@@ -292,7 +299,34 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
     let tempFwd = primerExtension(deletionEndPos, "forward", tempRegionTm, 7, 1);
     let tempRev = primerExtension(deletionStartPos - homoRev.length, "backward", tempRegionTm, 7, 1);
 
-    displayPrimers("Deletion", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)")
+    displayPrimers("Deletion", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)");
+
+    // Update stuff
+    deletionStartPos--;
+    deletionEndPos--;
+    const deletionSpan = deletionEndPos - deletionStartPos;
+    sequence = sequence.slice(0, deletionStartPos) + sequence.slice(deletionEndPos);
+    complementaryStrand = getComplementaryStrand(sequence);
+    Object.entries(features).forEach(([key, value]) => {
+        if (value.span && !key.includes("source")) {
+            const currSpan = value.span.split("..").map(Number);
+            const spanStart = currSpan[0];
+            const spanEnd = currSpan[1];
+            if (deletionEndPos < spanStart) {
+                const newSpanStart = spanStart - deletionSpan;
+                const newSpanEnd = spanEnd - deletionSpan;
+                value.span = newSpanStart + ".." + newSpanEnd;
+                console.log("Scooch over nerd.", value.label, value.span)
+            } else if (spanStart < deletionEndPos && spanStart > deletionStartPos) {
+                console.log("Get deleted nerd!", value.label, spanStart < deletionEndPos, deletionStartPos < spanEnd)
+                delete features[key];
+            } else if (spanEnd < deletionEndPos && spanEnd > deletionStartPos) {
+                console.log("Get deleted nerd!", value.label, spanStart < deletionEndPos, deletionStartPos < spanEnd)
+                delete features[key];
+            }
+        }
+    });
+    makeContentGrid(1);
 }
 
 function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
@@ -301,15 +335,56 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
         mutaStartPos = mutaEndPos;
         mutaEndPos = temp;
     }
-    console.log('Creating deletion primers...', mutationSeq, mutaStartPos, mutaEndPos);
+    console.log('Creating Mutagenesis primers...', mutationSeq, mutaStartPos, mutaEndPos);
 
     
     let homoRev = primerExtension(mutaStartPos, "backward", homoRegionTm, 7, 1);
     let tempRev = primerExtension(mutaStartPos - homoRev.length, "backward", tempRegionTm, 7, 1);
     let tempFwd = primerExtension(mutaEndPos, "forward", tempRegionTm, 7, 1);
     let homoFwd = getComplementaryStrand(homoRev);
+    displayPrimers("Mutagenesis", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)", mutationSeq);
 
-    displayPrimers("Deletion", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)", mutationSeq);
+    // Update stuff
+    mutaStartPos--;
+    mutaEndPos--;
+    sequence = sequence.slice(0, mutaStartPos) + mutationSeq + sequence.slice(mutaEndPos);
+    complementaryStrand = getComplementaryStrand(sequence);
+    Object.entries(features).forEach(([key, value]) => {
+        if (value.span && !key.includes("source")) {
+            const currSpan = value.span.split("..").map(Number);
+            const spanStart = currSpan[0];
+            const spanEnd = currSpan[1];
+            if (spanStart < mutaEndPos && spanStart > mutaStartPos) {
+                console.log("Get deleted nerd!", value.label, spanStart < mutaEndPos, mutaStartPos < spanEnd)
+                delete features[key];
+            } else if (spanEnd < mutaEndPos && spanEnd > mutaStartPos) {
+                console.log("Get deleted nerd!", value.label, spanStart < mutaEndPos, mutaStartPos < spanEnd)
+                delete features[key];
+            }
+        }
+    });
+
+
+    let newFeatureName = "Mutagenesis"
+    let i = 2;
+    console.log("Previous insertion present? ", Object.keys(features))
+    while (newFeatureName in features) {
+        newFeatureName =  newFeatureName.replace("" + i-1, "")
+        newFeatureName += i;
+        console.log(newFeatureName)
+        i++;
+    }
+    console.log("NEW FEATURES!! ", newFeatureName);
+    const tempDict = {}
+    tempDict.label = newFeatureName;
+    const insertStringPositionStart = mutaStartPos + 1;
+    const insertStringPositionEnd = mutaEndPos;
+    tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
+    console.log("TEMP DICT SPAN " + tempDict.span)
+    tempDict.note = "";
+    features[newFeatureName] = tempDict
+
+    makeContentGrid(1);
 }
 
 function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
