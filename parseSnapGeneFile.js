@@ -23,11 +23,10 @@ function parseDNAFile(fileContent, pNr) {
     let sequenceBA = fileBA.slice(25, findSubarrayIndex(fileBA, [2, 0, 0]));
     currSequence = new TextDecoder().decode(sequenceBA).toUpperCase();
     currComplementarySequence = getComplementaryStrand(currSequence);
-    //console.log(currSequence);
 
     // Features
     let featuresString = fileContent.slice(fileContent.indexOf("<Features"));
-    console.log(featuresString);
+
 
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(featuresString, 'text/xml');
@@ -36,7 +35,7 @@ function parseDNAFile(fileContent, pNr) {
     const featuresList = xmlDoc.getElementsByTagName('Feature');
     for (let i = 0; i < featuresList.length; i++) {
         const feature = featuresList[i];
-        console.log(feature)
+
         const featureName = feature.getAttribute('name') + i;
 
         const featureInfo = {}
@@ -79,7 +78,6 @@ function parseDNAFile(fileContent, pNr) {
         featureInfo["span"] = spanStart + ".." + spanEnd;
         featuresDict[featureName] = featureInfo;
 
-        console.log(featureName, featureInfo)
     }
 
     if (pNr === 1) {

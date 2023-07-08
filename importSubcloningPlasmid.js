@@ -1,8 +1,6 @@
 let secondPlasmidIported = false;
 
 function handleFileSelectSecond(event) {
-    // Your existing file handling code here, but modify it to work with the second plasmid
-    console.log("SECOND PLASMID LOADING");
 
     const file = event.target.files[0];
         const fileExtension =  /\.([0-9a-z]+)(?:[\?#]|$)/i.exec(file.name)[0];

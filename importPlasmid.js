@@ -57,7 +57,6 @@ window.onload = function() {
               `; // Set table headers
 
               // SIDEBAR
-              console.log(features)
               for (const featureName in features) {
                   if (!featureName.includes("LOCUS") && !featureName.includes("source")) {
                     const feature = features[featureName];
@@ -292,30 +291,24 @@ function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
 
   let currentSpan = annotationSpan;
   let carryOver = annotationSpan;
-  console.log("Annotation: ", rStart, rEnd, row, col, text, annotationSpan);
   
   let i = 0;
   while (carryOver > 0) {
-    console.log("Current part: ", i + 1, "/", Math.floor((annotationSpan + col)/gridWidth + 1))
     if (i != 0) {
         text = "..." + text.replace("...", "");
     }
     if (col + currentSpan > gridWidth) {
       carryOver = col + currentSpan - gridWidth;
-      console.log("Carry over: " + carryOver);
       currentSpan = gridWidth - col;
-      console.log("Current span1: " + currentSpan);
       mergeCells(row, col, 1, currentSpan, text, annotationColor, pNr,currGridStructure);
       currentSpan = carryOver;
       row = row + currGridStructure.length;
       col = 0;
     } else if (currentSpan === 40) {
-      console.log("Current span2: " + currentSpan);
       mergeCells(row, col, 1, currentSpan, text, annotationColor, pNr,currGridStructure);
       mergeCells(row + currGridStructure.length, col, 1, 1, text, annotationColor, pNr,currGridStructure);
       carryOver = 0;
     } else {
-      console.log("Current span3: " + currentSpan);
       mergeCells(row, col, 1, currentSpan + 1, text, annotationColor, pNr, currGridStructure);
       carryOver = 0;
     }
@@ -326,7 +319,6 @@ function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
 
 
 function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStructure) {
-  console.log("Mergin cells1: ", row, col, rowspan, colspan, text, color);
   let table = null;
   if (pNr === 1){
     table = document.getElementById('sequence-grid');
@@ -345,7 +337,6 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
         }
       }
     }
-    console.log(col + 1, gridWidth, (col + 1 < gridWidth), occupiedCells);
     if ((col + 1 < gridWidth) && occupiedCells !== 0) {
       col++;
     }
@@ -392,10 +383,8 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
   }
 
   // If fails again, just abort the function call
-  console.log("Mergin cells2: ", row, col, rowspan, colspan, text, color);
   mainCell.rowSpan = rowspan;
   if (col + colspan > gridWidth) {
-    console.log(col, colspan)
     colspan = gridWidth - col;
   };
   mainCell.colSpan = colspan;
@@ -519,9 +508,7 @@ function promoterTranslation(pNr) {
 
   for (let promoter in promoters) {
     let promoterSeq = promoters[promoter];
-    console.log(promoter + ": " + promoterSeq);
     const occurrences = findAllOccurrences(currSequence, promoterSeq);
-    console.log(occurrences)
     if (occurrences.length !== 0) {
       for (let i = 0; i < occurrences.length; i++) {
         startTranslation(currSequence.indexOf("ATG", occurrences[i] + promoter.length) + 1, pNr);
@@ -553,7 +540,6 @@ function featureTranslation(pNr) {
       const range = value.span.split("..").map(Number);
       const rangeStart = range[0];
       const rangeEnd = range[1];
-      console.log(key);
       startTranslation(rangeStart, pNr);
     }
   });
@@ -577,7 +563,7 @@ function startTranslation(codonPos, pNr) {
   }
   const rowIndexAA = currGridStructure.indexOf("Amino Acids");
   let tableCoords = seqIndexToCoords(codonPos, rowIndexAA, currGridStructure);
-  //console.log(tableCoords);
+
   let row = tableCoords[0];
   let col = tableCoords[1] + 1;
   console.log("Starting translationa at " + codonPos + "(" + row + ", " + col + ").");
@@ -585,7 +571,7 @@ function startTranslation(codonPos, pNr) {
   while (true) {
     let codon = repeatingSlice(currSequence, codonPos - 1, codonPos + 2);
     let aminoAcid = translateCodon(codon);
-    //console.log(codon, aminoAcid);
+
     fillAACells(row, col, aminoAcid, pNr);
     col += 3;
     codonPos += 3;
@@ -601,7 +587,6 @@ function startTranslation(codonPos, pNr) {
 
 function fillAACells(row, col, text, pNr) {
 
-  console.log(row, col ,text);
   let table = null;
   let currGridStructure = null;
   if (pNr === 1) {
@@ -615,7 +600,7 @@ function fillAACells(row, col, text, pNr) {
   if (!mainCell) {
     row += currGridStructure.length;
     col = col - gridWidth;
-    console.log(row, col ,text);
+
     mainCell = table.rows[row].cells[col];
   }
 

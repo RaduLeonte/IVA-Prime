@@ -12,7 +12,7 @@ function parsePlasmidFile(fileContent, pNr) {
 
     // Adapted extract_features function
     function extractFeatures(input) {
-        //console.log(input);
+
         const inputLines = input.split('\n').map(line => line.trim()).filter(line => line);
         // Add LOCUS feature
         const featuresDict = {};
@@ -80,7 +80,6 @@ function parsePlasmidFile(fileContent, pNr) {
         input = input.substring(input.indexOf("ORIGIN") + "ORIGIN".length);
         let output = input.replace(/\n/g, '').replace(/\/\//g, '').split(' ').filter(x => !/\d/.test(x));
         output = output.join('').toUpperCase().trim().replace(/[\r\n]+/g, "")
-        // console.log(output)
         return output;
     }
 }

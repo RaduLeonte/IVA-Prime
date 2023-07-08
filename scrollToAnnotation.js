@@ -14,7 +14,6 @@ function addScrollingEffectToFeatureTable(tableId, containerId, pNr) {
         // Get the label text from the second cell in the clicked row
         const labelCell = clickedRow.cells[1];
         const label = labelCell.textContent;
-        console.log(label)
       
         // Find the corresponding cell in the "file-content" table
         const fileContentTable = fileContentDiv.querySelector('table');

@@ -69,8 +69,6 @@ document.addEventListener('DOMContentLoaded', function () {
       dnaSequenceInput = document.getElementById('dna-sequence-input').value;
       aminoAcidSequenceInput = document.getElementById('amino-acid-sequence-input').value;
 
-      console.log('DNA Sequence:', dnaSequenceInput);
-      console.log('Amino Acid Sequence:', aminoAcidSequenceInput);
 
       // Call the function to create insertion primers
       createInsertionPrimers(dnaSequenceInput, aminoAcidSequenceInput,insertionPosition);
