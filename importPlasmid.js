@@ -57,7 +57,6 @@ window.onload = function() {
               `; // Set table headers
 
               // SIDEBAR
-              console.log(features)
               for (const featureName in features) {
                   if (!featureName.includes("LOCUS") && !featureName.includes("source")) {
                     const feature = features[featureName];
@@ -95,26 +94,22 @@ window.onload = function() {
               }
 
               // Create content grid
-              makeContentGrid(sequence, complementaryStrand, features, 1);
-
-              // Check for promoters and translation
-              promoterTranslation(1);
-              featureTranslation(1);
-
-              contentDiv.style.overflow = 'auto'; // Enable scrolling after file import
-              
-              // Show the second import button after the first file is imported
-              const importSecondButton = document.getElementById('import-second-btn');
-              importSecondButton.style.display = 'block';
+              makeContentGrid(1, function() {
+                contentDiv.style.overflow = 'auto'; // Enable scrolling after file import
+                
+                // Show the second import button after the first file is imported
+                const importSecondButton = document.getElementById('import-second-btn');
+                importSecondButton.style.display = 'block';
 
 
-              // Add an event listener to the second import button
-              const fileInputSecond = document.createElement('input');
-              fileInputSecond.setAttribute('type', 'file');
-              fileInputSecond.addEventListener('change', handleFileSelectSecond);
-              importSecondButton.addEventListener('click', function(event) {
-                  event.preventDefault();
-                  fileInputSecond.click();
+                // Add an event listener to the second import button
+                const fileInputSecond = document.createElement('input');
+                fileInputSecond.setAttribute('type', 'file');
+                fileInputSecond.addEventListener('change', handleFileSelectSecond);
+                importSecondButton.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    fileInputSecond.click();
+                });
               });
           };
 
@@ -201,65 +196,89 @@ function checkAnnotationOverlap(inputFeatures, pNr) {
   return
 }
 
-
-function makeContentGrid(inputSequence, inputComplementarySequence, inputFeatures, pNr) {
-  checkAnnotationOverlap(inputFeatures, pNr);
-  let sequenceGrid = null;
-  let gridHeight = 0;
-  let currGridStructure = null;
-  if (pNr === 1) {
-    sequenceGrid = document.getElementById('sequence-grid');
-    currGridStructure = gridStructure;
-  } else {
-    sequenceGrid = document.getElementById('sequence-grid2');
-    currGridStructure = gridStructure2;
+function changeCursorIcon(state) {
+  if (state ==="loading") {
+    document.body.classList.add('loading');
   }
-  let currGridStructureLength = currGridStructure.length;
-  gridHeight = Math.ceil(inputSequence.length / gridWidth) * currGridStructureLength;
-  sequenceGrid.innerHTML = ''; // Clear previous grid contents
+}
 
 
-  for (let i = 0; i < gridHeight; i++) {
-    let row = sequenceGrid.rows[i]; // Get the corresponding row
-    if (!row) {
-      // If the row doesn't exist, create a new one
-      row = sequenceGrid.insertRow(i);
-    } 
-    for (let j = 0; j < gridWidth; j++) {
-      const cell = document.createElement('td');
-      let currentChar = ""
-      let test = Math.floor(i / currGridStructureLength)
-      if ((i + 1) % currGridStructureLength === 1) {
-        currentChar = inputSequence[test*gridWidth + j]
-      } else if ((i + 1) % currGridStructureLength === 2) {
-        currentChar = inputComplementarySequence[test*gridWidth + j]
-      }
-      if (!currentChar) {
-        currentChar = ""
-      }
-      cell.textContent = currentChar;
-      cell.id = currGridStructure[i % currGridStructureLength];
-      cell.classList.add(currGridStructure[i % currGridStructureLength].replace(" ", ""));
-      row.appendChild(cell);
+function makeContentGrid(pNr, callback) {
+  document.body.classList.add('loading');
+  setTimeout(function() {
+    let currSequence = null;
+    let currComplementarySequence = null;
+    let currFeatures = null;
+    let sequenceGrid = null;
+    let gridHeight = 0;
+    let currGridStructure = null;
+    if (pNr === 1) {
+      currSequence = sequence;
+      currComplementarySequence = complementaryStrand;
+      currFeatures = features;
+      sequenceGrid = document.getElementById('sequence-grid');
+      currGridStructure = gridStructure;
+    } else {
+      currSequence = sequence2;
+      currComplementarySequence = complementaryStrand2;
+      currFeatures = features2;
+      sequenceGrid = document.getElementById('sequence-grid2');
+      currGridStructure = gridStructure2;
     }
-  }
-  
-  Object.entries(inputFeatures).forEach(([key, value]) => {
-    if (value.span && !key.includes("source")) {
-      function removeNonNumeric(inputString) {
-        const cleanedString = inputString.replace(/[^\d.]/g, '');
-        return cleanedString;
-      }
-      value.span = removeNonNumeric(value.span);
-      const range = value.span.split("..").map(Number);
-      const rangeStart = range[0];
-      const rangeEnd = range[1];
+    checkAnnotationOverlap(currFeatures, pNr);
+    let currGridStructureLength = currGridStructure.length;
+    gridHeight = Math.ceil(currSequence.length / gridWidth) * currGridStructureLength;
+    sequenceGrid.innerHTML = ''; // Clear previous grid contents
 
-      console.log(value.label, rangeStart + ".." + rangeEnd)
-      makeAnnotation(rangeStart - 1, rangeEnd - 1, value.label, pNr, currGridStructure); 
+
+    for (let i = 0; i < gridHeight; i++) {
+      let row = sequenceGrid.rows[i]; // Get the corresponding row
+      if (!row) {
+        // If the row doesn't exist, create a new one
+        row = sequenceGrid.insertRow(i);
+      } 
+      for (let j = 0; j < gridWidth; j++) {
+        const cell = document.createElement('td');
+        let currentChar = ""
+        let test = Math.floor(i / currGridStructureLength)
+        if ((i + 1) % currGridStructureLength === 1) {
+          currentChar = currSequence[test*gridWidth + j]
+        } else if ((i + 1) % currGridStructureLength === 2) {
+          currentChar = currComplementarySequence[test*gridWidth + j]
+        }
+        if (!currentChar) {
+          currentChar = ""
+        }
+        cell.textContent = currentChar;
+        cell.id = currGridStructure[i % currGridStructureLength];
+        cell.classList.add(currGridStructure[i % currGridStructureLength].replace(" ", ""));
+        row.appendChild(cell);
+      }
     }
-  });
-  
+    
+    Object.entries(currFeatures).forEach(([key, value]) => {
+      if (value.span && !key.includes("source")) {
+        function removeNonNumeric(inputString) {
+          const cleanedString = inputString.replace(/[^\d.]/g, '');
+          return cleanedString;
+        }
+        value.span = removeNonNumeric(value.span);
+        const range = value.span.split("..").map(Number);
+        const rangeStart = range[0];
+        const rangeEnd = range[1];
+
+        console.log(value.label, rangeStart + ".." + rangeEnd)
+        makeAnnotation(rangeStart - 1, rangeEnd - 1, value.label, pNr, currGridStructure); 
+      }
+    });
+
+    promoterTranslation(pNr);
+    featureTranslation(pNr);
+    document.body.classList.remove('loading');
+    if (typeof callback === 'function') {
+      callback();
+    };
+  }, 1);
 }
 
 function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
@@ -272,30 +291,24 @@ function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
 
   let currentSpan = annotationSpan;
   let carryOver = annotationSpan;
-  console.log("Annotation: ", rStart, rEnd, row, col, text, annotationSpan);
   
   let i = 0;
   while (carryOver > 0) {
-    console.log("Current part: ", i + 1, "/", Math.floor((annotationSpan + col)/gridWidth + 1))
     if (i != 0) {
         text = "..." + text.replace("...", "");
     }
     if (col + currentSpan > gridWidth) {
       carryOver = col + currentSpan - gridWidth;
-      console.log("Carry over: " + carryOver);
       currentSpan = gridWidth - col;
-      console.log("Current span1: " + currentSpan);
       mergeCells(row, col, 1, currentSpan, text, annotationColor, pNr,currGridStructure);
       currentSpan = carryOver;
       row = row + currGridStructure.length;
       col = 0;
     } else if (currentSpan === 40) {
-      console.log("Current span2: " + currentSpan);
       mergeCells(row, col, 1, currentSpan, text, annotationColor, pNr,currGridStructure);
       mergeCells(row + currGridStructure.length, col, 1, 1, text, annotationColor, pNr,currGridStructure);
       carryOver = 0;
     } else {
-      console.log("Current span3: " + currentSpan);
       mergeCells(row, col, 1, currentSpan + 1, text, annotationColor, pNr, currGridStructure);
       carryOver = 0;
     }
@@ -324,8 +337,7 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
         }
       }
     }
-    console.log(col + 1, gridWidth, (col + 1 >= gridWidth));
-    if ((col + 1 < gridWidth)) {
+    if ((col + 1 < gridWidth) && occupiedCells !== 0) {
       col++;
     }
   }
@@ -371,10 +383,8 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
   }
 
   // If fails again, just abort the function call
-  console.log("Mergin cells: ", row, col, rowspan, colspan, text, color);
   mainCell.rowSpan = rowspan;
   if (col + colspan > gridWidth) {
-    console.log(col, colspan)
     colspan = gridWidth - col;
   };
   mainCell.colSpan = colspan;
@@ -498,9 +508,7 @@ function promoterTranslation(pNr) {
 
   for (let promoter in promoters) {
     let promoterSeq = promoters[promoter];
-    console.log(promoter + ": " + promoterSeq);
     const occurrences = findAllOccurrences(currSequence, promoterSeq);
-    console.log(occurrences)
     if (occurrences.length !== 0) {
       for (let i = 0; i < occurrences.length; i++) {
         startTranslation(currSequence.indexOf("ATG", occurrences[i] + promoter.length) + 1, pNr);
@@ -532,7 +540,6 @@ function featureTranslation(pNr) {
       const range = value.span.split("..").map(Number);
       const rangeStart = range[0];
       const rangeEnd = range[1];
-      console.log(key);
       startTranslation(rangeStart, pNr);
     }
   });
@@ -556,7 +563,7 @@ function startTranslation(codonPos, pNr) {
   }
   const rowIndexAA = currGridStructure.indexOf("Amino Acids");
   let tableCoords = seqIndexToCoords(codonPos, rowIndexAA, currGridStructure);
-  //console.log(tableCoords);
+
   let row = tableCoords[0];
   let col = tableCoords[1] + 1;
   console.log("Starting translationa at " + codonPos + "(" + row + ", " + col + ").");
@@ -564,7 +571,7 @@ function startTranslation(codonPos, pNr) {
   while (true) {
     let codon = repeatingSlice(currSequence, codonPos - 1, codonPos + 2);
     let aminoAcid = translateCodon(codon);
-    //console.log(codon, aminoAcid);
+
     fillAACells(row, col, aminoAcid, pNr);
     col += 3;
     codonPos += 3;
@@ -580,7 +587,6 @@ function startTranslation(codonPos, pNr) {
 
 function fillAACells(row, col, text, pNr) {
 
-  console.log(row, col ,text);
   let table = null;
   let currGridStructure = null;
   if (pNr === 1) {
@@ -594,7 +600,7 @@ function fillAACells(row, col, text, pNr) {
   if (!mainCell) {
     row += currGridStructure.length;
     col = col - gridWidth;
-    console.log(row, col ,text);
+
     mainCell = table.rows[row].cells[col];
   }
 

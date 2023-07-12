@@ -3,11 +3,18 @@ let primerConc = 100E-9; // M
 let saltConc = 0.5; // M
 let homoRegionTm = 49.5;
 let tempRegionTm = 60;
+let operationNr = 1;
 
 function displayPrimers(primersType, primersList, textColor, templateColor, homoColor, mutSeq) {
+    const sidebarContentDiv = document.querySelector('.sidebar-content');
+    const p = document.createElement('p');
+    p.id = 'primers-type';
+    p.textContent = operationNr + '. ' + primersType;
+    operationNr++;
+    sidebarContentDiv.appendChild(p);
 
     var element = document.getElementById("primers-type");
-    element.textContent = primersType + " Primers:";
+    element.textContent = "Primers:";
 
     // Create the first paragraph
     const paragraph1 = document.createElement('p');
@@ -67,8 +74,8 @@ function displayPrimers(primersType, primersList, textColor, templateColor, homo
     // Find the <p> with the id "primers-type"
 
     // Insert the new paragraphs after the <p> with id "primers-type"
-    element.insertAdjacentElement('afterend', paragraph1);
-    element.insertAdjacentElement('afterend', paragraph2);
+    sidebarContentDiv.appendChild(paragraph1);
+    sidebarContentDiv.appendChild(paragraph2);
 }
 
 function primerExtension(startingPos, direction, targetTm, minLength, pNr) {
@@ -79,7 +86,7 @@ function primerExtension(startingPos, direction, targetTm, minLength, pNr) {
     if (pNr === 2) {
         backbone = direction === 'forward' ? sequence2 : complementaryStrand2;
     }
-    //console.log(backbone)
+    
     //let prev_p = direction === 'forward' ? backbone.slice(p_start_index, p_start_index + length - 1): backbone.slice(p_start_index - length, p_start_index);
     let prev_p = direction === 'forward' ? repeatingSlice(backbone, p_start_index, p_start_index + length - 1): repeatingSlice(backbone, p_start_index - length, p_start_index);
     let prev_tm = get_tm(prev_p, primerConc, saltConc);
@@ -88,7 +95,6 @@ function primerExtension(startingPos, direction, targetTm, minLength, pNr) {
     while (i < maxIter) {
         //let curr_p = direction === 'forward' ? backbone.slice(p_start_index, p_start_index + length): backbone.slice(p_start_index - length - 1, p_start_index);
         let curr_p = direction === 'forward' ? repeatingSlice(backbone, p_start_index, p_start_index + length): repeatingSlice(backbone, p_start_index - length - 1, p_start_index);
-        //console.log("Curr_p: " + curr_p)
         let curr_tm = get_tm(curr_p, primerConc, saltConc);
 
         if (curr_tm >= targetTm) {
@@ -174,14 +180,12 @@ function createDNATMMapping(dnaSequences, primerConc, saltConc) {
 
 function optimizeAA(inputAA) {
     let dnaSequences = generateDNASequences(inputAA);
-    // console.log(possibleDNA)
 
     const dnaTMDictionary = {};
     for (let sequence of dnaSequences) {
         const tm = get_tm(sequence, primerConc, saltConc);
         dnaTMDictionary[sequence] = tm;
     }
-    // console.log(dnaTMDictionary)
 
     let closestKey = null;
     let closestDiff = Infinity;
@@ -196,7 +200,7 @@ function optimizeAA(inputAA) {
         }
     }
 
-    console.log("Closes value: " + closestKey + "(" + dnaTMDictionary[closestKey] + ")")
+    console.log("Closest value: " + closestKey + "(" + dnaTMDictionary[closestKey] + ")")
     let optimizedAA = closestKey;
 
     return optimizedAA;
@@ -206,6 +210,7 @@ function repeatingSlice(str, startIndex, endIndex) {
     const repeatedStr = str.repeat(3); // ABC_ABC_ABC
     return repeatedStr.slice(startIndex + str.length, endIndex + str.length);
 }
+
 
 function createInsertionPrimers(dnaSequence, aaSequence, insertionPos) {
     // Insertion logic using dnaSequenceInput and aminoAcidSequenceInput
@@ -233,8 +238,42 @@ function createInsertionPrimers(dnaSequence, aaSequence, insertionPos) {
     let tempFwd = primerExtension(insertionPos, "forward", tempRegionTm, 7, 1)
     let homoRev = homologousSequenceRev;
     let tempRev = primerExtension(insertionPos, "backward", tempRegionTm, 7, 1)
-
     displayPrimers("Insertion", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)");
+
+    // Update stuff
+    const insertStringPosition = insertionPos - 1;
+    sequence = sequence.slice(0, insertStringPosition) + homologousSequenceFwd + sequence.slice(insertStringPosition);
+    complementaryStrand = getComplementaryStrand(sequence);
+    Object.entries(features).forEach(([key, value]) => {
+        if (value.span && !key.includes("source")) {
+            const currSpan = value.span.split("..").map(Number);
+            const spanStart = currSpan[0];
+            const spanEnd = currSpan[1];
+            if (insertStringPosition < spanStart) {
+                const newSpanStart = spanStart + homologousSequenceFwd.length;
+                const newSpanEnd = spanEnd + homologousSequenceFwd.length;
+                value.span = newSpanStart + ".." + newSpanEnd;
+            } else if (spanStart < insertStringPosition && insertStringPosition < spanEnd) {
+                delete features[key];
+            }
+        }
+    });
+    let newFeatureName = "Insertion"
+    let i = 2;
+    while (newFeatureName in features) {
+        newFeatureName =  newFeatureName.replace("" + i-1, "")
+        newFeatureName += i;
+        i++;
+    }
+    const tempDict = {}
+    tempDict.label = newFeatureName;
+    const insertStringPositionStart = insertStringPosition + 1;
+    const insertStringPositionEnd = insertStringPositionStart + homologousSequenceFwd.length - 1;
+    tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
+    tempDict.note = "";
+    features[newFeatureName] = tempDict
+
+    makeContentGrid(1);
 }
 
 function createDeletionPrimers(deletionStartPos, deletionEndPos) {
@@ -251,7 +290,31 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
     let tempFwd = primerExtension(deletionEndPos, "forward", tempRegionTm, 7, 1);
     let tempRev = primerExtension(deletionStartPos - homoRev.length, "backward", tempRegionTm, 7, 1);
 
-    displayPrimers("Deletion", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)")
+    displayPrimers("Deletion", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)");
+
+    // Update stuff
+    deletionStartPos--;
+    deletionEndPos--;
+    const deletionSpan = deletionEndPos - deletionStartPos;
+    sequence = sequence.slice(0, deletionStartPos) + sequence.slice(deletionEndPos);
+    complementaryStrand = getComplementaryStrand(sequence);
+    Object.entries(features).forEach(([key, value]) => {
+        if (value.span && !key.includes("source")) {
+            const currSpan = value.span.split("..").map(Number);
+            const spanStart = currSpan[0];
+            const spanEnd = currSpan[1];
+            if (deletionEndPos < spanStart) {
+                const newSpanStart = spanStart - deletionSpan;
+                const newSpanEnd = spanEnd - deletionSpan;
+                value.span = newSpanStart + ".." + newSpanEnd;
+            } else if (spanStart < deletionEndPos && spanStart > deletionStartPos) {
+                delete features[key];
+            } else if (spanEnd < deletionEndPos && spanEnd > deletionStartPos) {
+                delete features[key];
+            }
+        }
+    });
+    makeContentGrid(1);
 }
 
 function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
@@ -260,27 +323,63 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
         mutaStartPos = mutaEndPos;
         mutaEndPos = temp;
     }
-    console.log('Creating deletion primers...', mutationSeq, mutaStartPos, mutaEndPos);
+    console.log('Creating Mutagenesis primers...', mutationSeq, mutaStartPos, mutaEndPos);
 
     
     let homoRev = primerExtension(mutaStartPos, "backward", homoRegionTm, 7, 1);
     let tempRev = primerExtension(mutaStartPos - homoRev.length, "backward", tempRegionTm, 7, 1);
     let tempFwd = primerExtension(mutaEndPos, "forward", tempRegionTm, 7, 1);
     let homoFwd = getComplementaryStrand(homoRev);
+    displayPrimers("Mutagenesis", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)", mutationSeq);
 
-    displayPrimers("Deletion", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)", mutationSeq);
+    // Update stuff
+    mutaStartPos--;
+    mutaEndPos--;
+    sequence = sequence.slice(0, mutaStartPos) + mutationSeq + sequence.slice(mutaEndPos);
+    complementaryStrand = getComplementaryStrand(sequence);
+    Object.entries(features).forEach(([key, value]) => {
+        if (value.span && !key.includes("source")) {
+            const currSpan = value.span.split("..").map(Number);
+            const spanStart = currSpan[0];
+            const spanEnd = currSpan[1];
+            if (spanStart < mutaEndPos && spanStart > mutaStartPos) {
+                delete features[key];
+            } else if (spanEnd < mutaEndPos && spanEnd > mutaStartPos) {
+                delete features[key];
+            }
+        }
+    });
+
+
+    let newFeatureName = "Mutagenesis"
+    let i = 2;
+    while (newFeatureName in features) {
+        newFeatureName =  newFeatureName.replace("" + i-1, "")
+        newFeatureName += i;
+        i++;
+    }
+    const tempDict = {}
+    tempDict.label = newFeatureName;
+    const insertStringPositionStart = mutaStartPos + 1;
+    const insertStringPositionEnd = mutaEndPos;
+    tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
+    tempDict.note = "";
+    features[newFeatureName] = tempDict
+
+    makeContentGrid(1);
 }
 
 function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
     let subcloningInsertPositionStart = null;
     let subcloningInsertPositionEnd = null;
     let selectingSubcloningTarget = false;
+    let subcloningInsertionSequence = selectedText;
     if (subcloningStartPos > subcloningEndPos) {
         let temp = subcloningStartPos;
         subcloningStartPos = subcloningEndPos;
         subcloningEndPos = temp;
     }
-    console.log('Creating subcloning primers...', selectedText, subcloningStartPos, subcloningEndPos);
+    console.log('Creating subcloning primers...', subcloningInsertionSequence, subcloningStartPos, subcloningEndPos);
 
     const element = document.getElementById('sequence-grid2');
     // Change the cursor to a pointer when it's over the element
@@ -335,8 +434,6 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
           }
           clearSelection();
 
-          console.log("Iterating from: " + startRowIndex + ", " + startCellIndex);
-          console.log("To: " + endRowIndex + ", " + endCellIndex);
           // Iterate over cells between start and end cells
           for (let i = startRowIndex; i <= endRowIndex; i++) {
             const row = element.rows[i];
@@ -379,12 +476,51 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
 
 
         displayPrimers("Subcloning", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(107, 96, 157)", "rgb(140, 202, 242)");
+
+        // Update stuff
+        subcloningInsertPositionStart--;
+        subcloningInsertPositionEnd--;
+        sequence2 = sequence2.slice(0, subcloningInsertPositionStart) + subcloningInsertionSequence + sequence2.slice(subcloningInsertPositionEnd);
+        complementaryStrand2 = getComplementaryStrand(sequence2);
+        Object.entries(features2).forEach(([key, value]) => {
+            if (value.span && !key.includes("source")) {
+                const currSpan = value.span.split("..").map(Number);
+                const spanStart = currSpan[0];
+                const spanEnd = currSpan[1];
+                if (subcloningInsertPositionStart < spanStart && subcloningInsertPositionEnd < spanStart) {
+                    const newSpanStart = spanStart + subcloningInsertionSequence.length - (subcloningInsertPositionEnd - subcloningInsertPositionStart);
+                    const newSpanEnd = spanEnd + subcloningInsertionSequence.length - (subcloningInsertPositionEnd - subcloningInsertPositionStart);
+                    value.span = newSpanStart + ".." + newSpanEnd;
+                } else if (subcloningInsertPositionStart < spanStart && subcloningInsertPositionEnd > spanStart) {
+                    delete features2[key];
+                } else if(subcloningInsertPositionStart < spanEnd && subcloningInsertPositionEnd > spanEnd) {
+                    delete features2[key];
+                } else if (spanStart < subcloningInsertPositionStart && subcloningInsertPositionEnd < spanEnd) {
+                    delete features2[key];
+                }
+            }
+        });
+        let newFeatureName = "Subcloning"
+        let i = 2;
+        while (newFeatureName in features2) {
+            newFeatureName =  newFeatureName.replace("" + i-1, "")
+            newFeatureName += i;
+            i++;
+        }
+        const tempDict = {}
+        tempDict.label = newFeatureName;
+        const insertStringPositionStart = subcloningInsertPositionStart + 1;
+        const insertStringPositionEnd = insertStringPositionStart + subcloningInsertionSequence.length - 1;
+        tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
+        tempDict.note = "";
+        features2[newFeatureName] = tempDict
+
+        makeContentGrid(2);
     }, { once: true });
 
     // Listen for click events on the document
     document.addEventListener('click', function() {
         // Your code here for what should happen when something outside the element is clicked
-        console.log('Clicked outside the element. Aborting...');
         // Reset the cursor
         element.style.cursor = 'default';
         return;

@@ -4,7 +4,7 @@ let selectionStartPos = null;
 let selectionEndPos = null;
 
 function addCellSelection(tableId, containerId, pNr) {
-  //console.log(tableId, containerId, pNr);
+
   const sequenceGridTable = document.getElementById(tableId);
   const fileContentContainer = document.getElementById(containerId);
 
@@ -35,7 +35,7 @@ function addCellSelection(tableId, containerId, pNr) {
   let endCell = null;
 
   sequenceGridTable.addEventListener('mousedown', function (event) {
-    console.log("Mouse down");
+
     if (event.button === 0) {
       // Clear the previous selection
       clearSelection(pNr);
@@ -87,7 +87,7 @@ function addCellSelection(tableId, containerId, pNr) {
             selectionEndPos = basePosition2;
             currGridStructure = gridStructure2;
           }
-          console.log(selectionStartPos, selectionEndPos)
+
           // Get the indices of the start and end cells
           let startCoords = null;
           let startRowIndex = null;

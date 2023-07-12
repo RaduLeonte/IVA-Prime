@@ -140,7 +140,6 @@ document.addEventListener('DOMContentLoaded', function () {
       createSubcloningPrimers(selectionStartPos, selectionEndPos);
     } else if (menuItemId === 'begin-translation') {
       console.log('Beginning translation');
-      console.log("!!!", sequence.slice(insertionPosition - 1, insertionPosition + 2))
       if (sequence.slice(insertionPosition - 1, insertionPosition + 2) === "ATG") {
         startTranslation(insertionPosition, 1);
       } else {
