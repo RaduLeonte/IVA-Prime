@@ -37,7 +37,6 @@ function find_in_dict(dictionary, pair) {
 }
 
 function get_tm(sequence, c, m) {
-    //console.log("Input sequence: " + sequence)
 
     // Constants or params
     const R = 1.987; // cal mol-1 K-1 universal gas constant
@@ -98,19 +97,13 @@ function get_tm(sequence, c, m) {
 
         const to_addH = find_in_dict(deltaH_dict, pair);
         deltaH0 += to_addH;
-        //console.log(pair, to_addH)
 
         const to_addS = find_in_dict(deltaS_dict, pair);
         deltaS0 += to_addS
-        //console.log(to_addS)
     }
-
-    //console.log("DeltaH0: " + deltaH0)
-    //console.log("DeltaS0: " + deltaS0)
     
 
-    const tm = (deltaH0 / (deltaS0 + R * Math.log(c / symm_fraction))) - 273.15;
-    //console.log(tm)   
+    const tm = (deltaH0 / (deltaS0 + R * Math.log(c / symm_fraction))) - 273.15; 
     const tm_corr = tm + 16.6 * Math.log(m);
 
     return tm_corr;

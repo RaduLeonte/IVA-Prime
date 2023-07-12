@@ -86,7 +86,7 @@ function primerExtension(startingPos, direction, targetTm, minLength, pNr) {
     if (pNr === 2) {
         backbone = direction === 'forward' ? sequence2 : complementaryStrand2;
     }
-    //console.log(backbone)
+    
     //let prev_p = direction === 'forward' ? backbone.slice(p_start_index, p_start_index + length - 1): backbone.slice(p_start_index - length, p_start_index);
     let prev_p = direction === 'forward' ? repeatingSlice(backbone, p_start_index, p_start_index + length - 1): repeatingSlice(backbone, p_start_index - length, p_start_index);
     let prev_tm = get_tm(prev_p, primerConc, saltConc);
@@ -95,7 +95,6 @@ function primerExtension(startingPos, direction, targetTm, minLength, pNr) {
     while (i < maxIter) {
         //let curr_p = direction === 'forward' ? backbone.slice(p_start_index, p_start_index + length): backbone.slice(p_start_index - length - 1, p_start_index);
         let curr_p = direction === 'forward' ? repeatingSlice(backbone, p_start_index, p_start_index + length): repeatingSlice(backbone, p_start_index - length - 1, p_start_index);
-        //console.log("Curr_p: " + curr_p)
         let curr_tm = get_tm(curr_p, primerConc, saltConc);
 
         if (curr_tm >= targetTm) {
@@ -181,14 +180,12 @@ function createDNATMMapping(dnaSequences, primerConc, saltConc) {
 
 function optimizeAA(inputAA) {
     let dnaSequences = generateDNASequences(inputAA);
-    // console.log(possibleDNA)
 
     const dnaTMDictionary = {};
     for (let sequence of dnaSequences) {
         const tm = get_tm(sequence, primerConc, saltConc);
         dnaTMDictionary[sequence] = tm;
     }
-    // console.log(dnaTMDictionary)
 
     let closestKey = null;
     let closestDiff = Infinity;
@@ -203,7 +200,7 @@ function optimizeAA(inputAA) {
         }
     }
 
-    console.log("Closes value: " + closestKey + "(" + dnaTMDictionary[closestKey] + ")")
+    console.log("Closest value: " + closestKey + "(" + dnaTMDictionary[closestKey] + ")")
     let optimizedAA = closestKey;
 
     return optimizedAA;
@@ -256,29 +253,23 @@ function createInsertionPrimers(dnaSequence, aaSequence, insertionPos) {
                 const newSpanStart = spanStart + homologousSequenceFwd.length;
                 const newSpanEnd = spanEnd + homologousSequenceFwd.length;
                 value.span = newSpanStart + ".." + newSpanEnd;
-                console.log("Scooch over nerd.")
             } else if (spanStart < insertStringPosition && insertStringPosition < spanEnd) {
-                console.log("Get deleted nerd!")
                 delete features[key];
             }
         }
     });
     let newFeatureName = "Insertion"
     let i = 2;
-    console.log("Previous insertion present? ", Object.keys(features))
     while (newFeatureName in features) {
         newFeatureName =  newFeatureName.replace("" + i-1, "")
         newFeatureName += i;
-        console.log(newFeatureName)
         i++;
     }
-    console.log("NEW FEATURES!! ", newFeatureName);
     const tempDict = {}
     tempDict.label = newFeatureName;
     const insertStringPositionStart = insertStringPosition + 1;
     const insertStringPositionEnd = insertStringPositionStart + homologousSequenceFwd.length - 1;
     tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
-    console.log("TEMP DICT SPAN " + tempDict.span)
     tempDict.note = "";
     features[newFeatureName] = tempDict
 
@@ -316,12 +307,9 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
                 const newSpanStart = spanStart - deletionSpan;
                 const newSpanEnd = spanEnd - deletionSpan;
                 value.span = newSpanStart + ".." + newSpanEnd;
-                console.log("Scooch over nerd.", value.label, value.span)
             } else if (spanStart < deletionEndPos && spanStart > deletionStartPos) {
-                console.log("Get deleted nerd!", value.label, spanStart < deletionEndPos, deletionStartPos < spanEnd)
                 delete features[key];
             } else if (spanEnd < deletionEndPos && spanEnd > deletionStartPos) {
-                console.log("Get deleted nerd!", value.label, spanStart < deletionEndPos, deletionStartPos < spanEnd)
                 delete features[key];
             }
         }
@@ -355,10 +343,8 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
             const spanStart = currSpan[0];
             const spanEnd = currSpan[1];
             if (spanStart < mutaEndPos && spanStart > mutaStartPos) {
-                console.log("Get deleted nerd!", value.label, spanStart < mutaEndPos, mutaStartPos < spanEnd)
                 delete features[key];
             } else if (spanEnd < mutaEndPos && spanEnd > mutaStartPos) {
-                console.log("Get deleted nerd!", value.label, spanStart < mutaEndPos, mutaStartPos < spanEnd)
                 delete features[key];
             }
         }
@@ -367,20 +353,16 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
 
     let newFeatureName = "Mutagenesis"
     let i = 2;
-    console.log("Previous insertion present? ", Object.keys(features))
     while (newFeatureName in features) {
         newFeatureName =  newFeatureName.replace("" + i-1, "")
         newFeatureName += i;
-        console.log(newFeatureName)
         i++;
     }
-    console.log("NEW FEATURES!! ", newFeatureName);
     const tempDict = {}
     tempDict.label = newFeatureName;
     const insertStringPositionStart = mutaStartPos + 1;
     const insertStringPositionEnd = mutaEndPos;
     tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
-    console.log("TEMP DICT SPAN " + tempDict.span)
     tempDict.note = "";
     features[newFeatureName] = tempDict
 
@@ -452,8 +434,6 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
           }
           clearSelection();
 
-          console.log("Iterating from: " + startRowIndex + ", " + startCellIndex);
-          console.log("To: " + endRowIndex + ", " + endCellIndex);
           // Iterate over cells between start and end cells
           for (let i = startRowIndex; i <= endRowIndex; i++) {
             const row = element.rows[i];
@@ -511,35 +491,27 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
                     const newSpanStart = spanStart + subcloningInsertionSequence.length - (subcloningInsertPositionEnd - subcloningInsertPositionStart);
                     const newSpanEnd = spanEnd + subcloningInsertionSequence.length - (subcloningInsertPositionEnd - subcloningInsertPositionStart);
                     value.span = newSpanStart + ".." + newSpanEnd;
-                    console.log("Scooch over nerd.")
                 } else if (subcloningInsertPositionStart < spanStart && subcloningInsertPositionEnd > spanStart) {
-                    console.log("Get deleted nerd!")
                     delete features2[key];
                 } else if(subcloningInsertPositionStart < spanEnd && subcloningInsertPositionEnd > spanEnd) {
-                    console.log("Get deleted nerd!")
                     delete features2[key];
                 } else if (spanStart < subcloningInsertPositionStart && subcloningInsertPositionEnd < spanEnd) {
-                    console.log("Get deleted nerd!")
                     delete features2[key];
                 }
             }
         });
         let newFeatureName = "Subcloning"
         let i = 2;
-        console.log("Previous insertion present? ", Object.keys(features2))
         while (newFeatureName in features2) {
             newFeatureName =  newFeatureName.replace("" + i-1, "")
             newFeatureName += i;
-            console.log(newFeatureName)
             i++;
         }
-        console.log("NEW FEATURES!! ", newFeatureName);
         const tempDict = {}
         tempDict.label = newFeatureName;
         const insertStringPositionStart = subcloningInsertPositionStart + 1;
         const insertStringPositionEnd = insertStringPositionStart + subcloningInsertionSequence.length - 1;
         tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
-        console.log("TEMP DICT SPAN " + tempDict.span)
         tempDict.note = "";
         features2[newFeatureName] = tempDict
 
@@ -549,7 +521,6 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
     // Listen for click events on the document
     document.addEventListener('click', function() {
         // Your code here for what should happen when something outside the element is clicked
-        console.log('Clicked outside the element. Aborting...');
         // Reset the cursor
         element.style.cursor = 'default';
         return;
