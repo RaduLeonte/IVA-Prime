@@ -321,6 +321,7 @@ function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
 
 function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStructure) {
   console.log("Merge cells1: ", row, col, rowspan, colspan, text)
+  // Check which grid were doing
   let table = null;
   if (pNr === 1){
     table = document.getElementById('sequence-grid');
@@ -329,7 +330,7 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
   }
   
   
-  // Adjust col pos
+  // Check to see if there is already an annotation on this row
   let occupiedCells = 0;
   if (table.rows[row].cells.length !== gridWidth) {
     for (let i = 0; i < table.rows[row].cells.length; i++) {
@@ -384,7 +385,6 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
     mainCell= table.rows[row].cells[col];
   }
 
-  // If fails again, just abort the function calls
   mainCell.rowSpan = rowspan;
   if (col + colspan > gridWidth) {
     colspan = gridWidth - col;
@@ -392,7 +392,6 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
   mainCell.colSpan = colspan;
   mainCell.style.backgroundColor = color;
 
-  //throw new Error('Script aborted due to a specific condition.');
   // Adjust col pos
   occupiedCells = 0;
   if (table.rows[row].cells.length !== gridWidth) {
@@ -419,9 +418,7 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
   let k = 0;
   for (let j = col + 1; j < col + colspan; j++) {
     const cell = table.rows[row].cells[j - k];
-    if (cell) {
-      cell.parentNode.removeChild(cell);
-    }
+    cell.parentNode.removeChild(cell);
     k++;
   }
 
