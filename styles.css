@@ -265,6 +265,10 @@ nav ul li a {
   .sequence-grid td.selected-cell-subcloning-target {
     background-color: rgba(128, 0, 128, 0.2);
   }
+
+  .sequence-grid td.selected-cell-search {
+    background-color: yellow;
+  }
   
   #sequence-row, #complementary-row, #empty-row {
     display: flex;

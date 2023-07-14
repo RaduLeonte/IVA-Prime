@@ -111,6 +111,7 @@ window.onload = function() {
                     fileInputSecond.click();
                 });
               });
+              initiateSearchFunctionality();
           };
 
           reader.readAsText(file);
