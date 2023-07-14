@@ -45,31 +45,33 @@ function parsePlasmidFile(fileContent, pNr) {
         
         for (const feature of featureList) {
           const lines = feature.split('\n').map(line => line.trim()).filter(line => line);
-          let featureName = lines[0].substring(0, lines[0].indexOf(' '));
-          let i = 0;
-        
-          while (featureName in featuresDict) {
-            if (`${featureName}${i}` in featuresDict) {
-              i++;
-            } else {
-              featureName = `${featureName}${i}`;
-              break;
+          if (!lines[0].includes("join")) {
+            let featureName = lines[0].substring(0, lines[0].indexOf(' '));
+            let i = 0;
+          
+            while (featureName in featuresDict) {
+              if (`${featureName}${i}` in featuresDict) {
+                i++;
+              } else {
+                featureName = `${featureName}${i}`;
+                break;
+              }
             }
+          
+            const featureInfo = {
+              span: lines[0].includes('complement') ? lines[0].substring(lines[0].indexOf('complement')) : lines[0].replace(featureName, '').trim()
+            };
+          
+            for (let j = 1; j < lines.length; j++) {
+              const property = lines[j];
+              const propertyName = property.substring(0, property.indexOf('=')).replace('/', '').replace('"', '');
+              const propertyBody = property.substring(property.indexOf('=') + 1).replace(/"/g, '').trim();
+          
+              featureInfo[propertyName] = propertyBody;
+            }
+          
+            featuresDict[featureName] = featureInfo;
           }
-        
-          const featureInfo = {
-            span: lines[0].includes('complement') ? lines[0].substring(lines[0].indexOf('complement')) : lines[0].replace(featureName, '').trim()
-          };
-        
-          for (let j = 1; j < lines.length; j++) {
-            const property = lines[j];
-            const propertyName = property.substring(0, property.indexOf('=')).replace('/', '').replace('"', '');
-            const propertyBody = property.substring(property.indexOf('=') + 1).replace(/"/g, '').trim();
-        
-            featureInfo[propertyName] = propertyBody;
-          }
-        
-          featuresDict[featureName] = featureInfo;
         }
         
         return featuresDict;

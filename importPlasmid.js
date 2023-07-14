@@ -319,6 +319,7 @@ function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
 
 
 function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStructure) {
+  console.log("Merge cells1: ", row, col, rowspan, colspan, text)
   let table = null;
   if (pNr === 1){
     table = document.getElementById('sequence-grid');
@@ -382,7 +383,7 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
     mainCell= table.rows[row].cells[col];
   }
 
-  // If fails again, just abort the function call
+  // If fails again, just abort the function calls
   mainCell.rowSpan = rowspan;
   if (col + colspan > gridWidth) {
     colspan = gridWidth - col;
@@ -391,19 +392,40 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
   mainCell.style.backgroundColor = color;
 
   //throw new Error('Script aborted due to a specific condition.');
-
-  // Remove extra cells
-  for (let i = row; i < row + rowspan; i++) {
-    let k = 0;
-    for (let j = col + 1; j < col + colspan; j++) {
-      const cell = table.rows[i].cells[j - k];
-      cell.parentNode.removeChild(cell);
-      k++;
+  // Adjust col pos
+  occupiedCells = 0;
+  if (table.rows[row].cells.length !== gridWidth) {
+    for (let i = 0; i < table.rows[row].cells.length; i++) {
+      if (i + occupiedCells <= col){
+        if (table.rows[row].cells[i].attributes.colspan) {
+          occupiedCells += parseInt(table.rows[row].cells[i].attributes.colspan.value);
+        }
+      }
     }
+    if ((col + 1 < gridWidth) && occupiedCells !== 0) {
+      col++;
+    }
+  }
+  if (col - occupiedCells < 0) {
+    row++;
+    col--;
+  } else {
+    col = col - occupiedCells;
+  }
+
+  console.log("Merge cells2: ", row, col, rowspan, colspan, text)
+  // Remove extra cells
+  let k = 0;
+  for (let j = col + 1; j < col + colspan; j++) {
+    const cell = table.rows[row].cells[j - k];
+    if (cell) {
+      cell.parentNode.removeChild(cell);
+    }
+    k++;
   }
 
   // Add text to the center of the merged cell
-  const textNode = document.createTextNode(text);
+  const textNode = document.createTextNode(text.slice(0, colspan - 3) + "...");
   mainCell.appendChild(textNode);
   mainCell.style.textAlign = 'center';
 }

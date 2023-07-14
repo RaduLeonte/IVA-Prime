@@ -74,8 +74,8 @@ function displayPrimers(primersType, primersList, textColor, templateColor, homo
     // Find the <p> with the id "primers-type"
 
     // Insert the new paragraphs after the <p> with id "primers-type"
-    sidebarContentDiv.appendChild(paragraph1);
     sidebarContentDiv.appendChild(paragraph2);
+    sidebarContentDiv.appendChild(paragraph1);
 }
 
 function primerExtension(startingPos, direction, targetTm, minLength, pNr) {
@@ -329,7 +329,7 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
     let homoRev = primerExtension(mutaStartPos, "backward", homoRegionTm, 7, 1);
     let tempRev = primerExtension(mutaStartPos - homoRev.length, "backward", tempRegionTm, 7, 1);
     let tempFwd = primerExtension(mutaEndPos, "forward", tempRegionTm, 7, 1);
-    let homoFwd = getComplementaryStrand(homoRev);
+    let homoFwd = getComplementaryStrand(homoRev).split("").reverse().join("");
     displayPrimers("Mutagenesis", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)", mutationSeq);
 
     // Update stuff
