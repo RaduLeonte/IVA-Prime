@@ -25,14 +25,27 @@ function initiateSearchFunctionality() {
         }
       }
 
-    function scrollToFirstSelectedCell() {
+      function scrollToNextSelectedCell() {
         const table = document.getElementById("sequence-grid");
-        const selectedCell = table.querySelector(".selected-cell-search");
+        const selectedCells = Array.from(table.getElementsByClassName("selected-cell-search"));
       
-        if (selectedCell) {
-          selectedCell.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+        if (selectedCells.length > 0) {
+          const currentIndex = selectedCells.findIndex(cell => {
+            const rect = cell.getBoundingClientRect();
+            return rect.top >= 0 && rect.bottom <= window.innerHeight;
+          });
+      
+          if (currentIndex > -1) {
+            const nextIndex = currentIndex + 1;
+            const nextCell = selectedCells[nextIndex];
+      
+            if (nextCell) {
+              nextCell.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+            }
+          }
         }
       }
+      
 
     function searchOccurrences() {
         resetTableCells();
@@ -58,7 +71,7 @@ function initiateSearchFunctionality() {
                     cell.classList.add("selected-cell-search");
                 }
             }
-            scrollToFirstSelectedCell();
+            scrollToNextSelectedCell();
         }
     }
 }

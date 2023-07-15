@@ -377,14 +377,14 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
   }
 
   // Add text to the center of the merged cell
-  if (text.length / 1.5 > colspan)  {
+  if (text.length > colspan)  {
     if (colspan <= 3) {
       text = "";
       for (let l = 0; l < colspan; l++) {
         text += ".";
       }
     } else {
-      text = text.slice(0, text.length - colspan - 3).replace(/\./g, "") + "...";
+      text = text.slice(0, colspan - 3).replace(/\./g, "") + "...";
     }
   }
   const textNode = document.createTextNode(text);

@@ -418,3 +418,14 @@ nav ul li a {
 .loading * {
   cursor: wait !important;
 }
+
+.search-bar {
+  display: none;
+  background-color: #333;
+  color: #fff;
+  border: none;
+  position: sticky;
+  top: 10px;
+  right: 0;
+  z-index: 9999;
+}
