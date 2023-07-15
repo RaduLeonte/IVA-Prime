@@ -25,7 +25,8 @@ function parseDNAFile(fileContent, pNr) {
     currComplementarySequence = getComplementaryStrand(currSequence);
 
     // Features
-    let featuresString = fileContent.slice(fileContent.indexOf("<Features"));
+    let featuresString = fileContent.slice(fileContent.indexOf("<Features"), fileContent.indexOf("</Feature></Features>") + "</Feature></Features>".length);
+    console.log(featuresString)
 
 
     const parser = new DOMParser();

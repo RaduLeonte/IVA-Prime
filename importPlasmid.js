@@ -8,7 +8,7 @@ const gridStructure2 = ["Forward Strand",
                         "Indices",
                         "Amino Acids",
                         "Annotations"];
-const gridWidth = 40;
+const gridWidth = 60;
 let sequence = "";
 let complementaryStrand = "";
 let features = null;
@@ -16,8 +16,6 @@ let features = null;
 let sequence2 = "";
 let complementaryStrand2 = "";
 let features2 = null;
-
-let recentColor = null;
 
 window.onload = function() {
     const contentDiv = document.querySelector('.content');
@@ -283,7 +281,7 @@ function makeContentGrid(pNr, callback) {
 }
 
 function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
-  const annotationColor = getRandomBackgroundColor();
+  const annotationColor = generateRandomUniqueColor();
   recentColor = annotationColor;
   let row = (Math.floor(rStart / gridWidth)) * currGridStructure.length;
   let col = rStart - (row/currGridStructure.length)*gridWidth;
@@ -301,7 +299,7 @@ function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
     if (col + currentSpan > gridWidth) {
       carryOver = col + currentSpan - gridWidth;
       currentSpan = gridWidth - col;
-      mergeCells(row, col, 1, currentSpan, text, annotationColor, pNr,currGridStructure);
+      mergeCells(row, col, 1, currentSpan, text + "...", annotationColor, pNr,currGridStructure);
       currentSpan = carryOver;
       row = row + currGridStructure.length;
       col = 0;
@@ -328,92 +326,48 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
   } else {
     table = document.getElementById('sequence-grid2');
   }
-  
-  
-  // Check to see if there is already an annotation on this row
-  let occupiedCells = 0;
-  if (table.rows[row].cells.length !== gridWidth) {
-    for (let i = 0; i < table.rows[row].cells.length; i++) {
-      if (i + occupiedCells <= col){
-        if (table.rows[row].cells[i].attributes.colspan) {
-          occupiedCells += parseInt(table.rows[row].cells[i].attributes.colspan.value);
-        }
-      }
-    }
-    if ((col + 1 < gridWidth) && occupiedCells !== 0) {
-      col++;
-    }
-  }
-  
-  if (col - occupiedCells < 0) {
-    row++;
-    col--;
-  } else {
-    col = col - occupiedCells;
-  }
 
-  
-  let mainCell = 0;
-  for (let i = 0; i < currGridStructure.filter(item => item === "Annotations").length; i++) {
-    mainCell = table.rows[row].cells[col];
-    if (!mainCell) {
-      row++;
-      mainCell = table.rows[row].cells[col];
-    }
-  }
-
-  if (mainCell.innerText.trim() !== '') {
-    row++;
-    col = col + occupiedCells;
-    occupiedCells = 0;
-    if (table.rows[row].cells.length !== gridWidth) {
+  // Adjust row and col
+  let occupiedCellsList = [];
+  for (let i = 0; i < currGridStructure.length; i++) {
+    if (currGridStructure[i] === "Annotations") {
+      // Find already occupied cells
+      occupiedCellsList = [];
       for (let i = 0; i < table.rows[row].cells.length; i++) {
-        if (i + occupiedCells < col){
-          if (table.rows[row].cells[i].attributes.colspan) {
-            occupiedCells += parseInt(table.rows[row].cells[i].attributes.colspan.value);
+        if (table.rows[row].cells[i].attributes.hasOwnProperty('colspan')) {
+          let currColSpan = parseInt(table.rows[row].cells[i].attributes["colspan"].value);
+          console.log("Colspan ", currColSpan);
+          for (let i = 0; i <  currColSpan; i++) {
+            occupiedCellsList.push(true);
           }
+        } else {
+          occupiedCellsList.push(false);
         }
       }
+      
+      console.log(col, col+colspan-1, row, occupiedCellsList);
+      if (occupiedCellsList.slice(col, col + colspan - 1).every(value => value !== true)) {
+        console.log("Go right ahead sir.")
+        break;
+      } else {
+        console.log("Try next row.")
+        row++;
+      }
     }
-    
-    if (col - occupiedCells < 0) {
-      row++;
-      col--;
-    } else {
-      col = col - occupiedCells;
-    }
-    mainCell= table.rows[row].cells[col];
   }
-
+  
+  let nrOccupiedCells = occupiedCellsList.slice(0, col).filter(value => value === true).length;
+  console.log("nrOccupiedCells ", nrOccupiedCells, occupiedCellsList.slice(0, col))
+  console.log("Merge cells1.5 : ", row, col, rowspan, colspan, text)
+  if (nrOccupiedCells !== 0) {
+    col -= nrOccupiedCells;
+    col++;
+  }
+  console.log("Merge cells2: ", row, col, rowspan, colspan, text)
+  let mainCell = table.rows[row].cells[col];
   mainCell.rowSpan = rowspan;
-  if (col + colspan > gridWidth) {
-    colspan = gridWidth - col;
-  };
   mainCell.colSpan = colspan;
   mainCell.style.backgroundColor = color;
-
-  // Adjust col pos
-  occupiedCells = 0;
-  if (table.rows[row].cells.length !== gridWidth) {
-    for (let i = 0; i < table.rows[row].cells.length; i++) {
-      if (i + occupiedCells <= col){
-        if (table.rows[row].cells[i].attributes.colspan) {
-          occupiedCells += parseInt(table.rows[row].cells[i].attributes.colspan.value);
-        }
-      }
-    }
-    if ((col + 1 < gridWidth) && occupiedCells !== 0) {
-      col++;
-    }
-  }
-  if (col - occupiedCells < 0) {
-    row++;
-    col--;
-  } else {
-    col = col - occupiedCells;
-  }
-
-  console.log("Merge cells2: ", row, col, rowspan, colspan, text)
   // Remove extra cells
   let k = 0;
   for (let j = col + 1; j < col + colspan; j++) {
@@ -423,22 +377,66 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
   }
 
   // Add text to the center of the merged cell
-  const textNode = document.createTextNode(text.slice(0, colspan - 3) + "...");
+  if (text.length / 1.5 > colspan)  {
+    if (colspan <= 3) {
+      text = "";
+      for (let l = 0; l < colspan; l++) {
+        text += ".";
+      }
+    } else {
+      text = text.slice(0, text.length - colspan - 3).replace(/\./g, "") + "...";
+    }
+  }
+  const textNode = document.createTextNode(text);
   mainCell.appendChild(textNode);
   mainCell.style.textAlign = 'center';
 }
 
 function getRandomBackgroundColor() {
-  const colors = ["#FFB6C1", "#FFDAB9", "#FFA07A", "#FFC0CB", "#87CEFA", "#98FB98", "#FF69B4", "#90EE90"];
+  const baseColors = ["#FFB6C1", "#FFDAB9", "#FFA07A", "#FFC0CB", "#87CEFA", "#98FB98", "#FF69B4", "#90EE90"];
 
-  let randomColor = recentColor;
-  while (randomColor === recentColor) {
-    const randomIndex = Math.floor(Math.random() * colors.length);
-    randomColor = colors[randomIndex];
-  }
+  const remainingColors = baseColors.filter(color => color !== recentColor);
+  const randomIndex = Math.floor(Math.random() * remainingColors.length);
+  const randomColor = remainingColors[randomIndex];
 
   return randomColor;
 }
+
+function shiftColor(color) {
+  const colorValue = parseInt(color.slice(1), 16);
+  const shiftAmount = 30; // Adjust the shift amount as desired
+
+  const r = (colorValue >> 16) & 0xff;
+  const g = (colorValue >> 8) & 0xff;
+  const b = colorValue & 0xff;
+
+  const shiftedR = Math.max(0, Math.min(255, r + shiftAmount));
+  const shiftedG = Math.max(0, Math.min(255, g + shiftAmount));
+  const shiftedB = Math.max(0, Math.min(255, b + shiftAmount));
+
+  const shiftedHex = `#${(shiftedR << 16 | shiftedG << 8 | shiftedB).toString(16).padStart(6, '0')}`;
+
+  return shiftedHex;
+}
+
+let recentColor = '';
+
+function generateRandomUniqueColor() {
+  let randomColor = getRandomBackgroundColor();
+  
+  // Ensure the generated color is different from the recent color
+  while (randomColor === recentColor) {
+    randomColor = getRandomBackgroundColor();
+  }
+  
+  // Update the recent color to the newly generated color
+  recentColor = randomColor;
+
+  return randomColor;
+}
+
+
+
 
 const promoters = {
   "CMV": "CGCAAATGGGCGGTAGGCGTG",
