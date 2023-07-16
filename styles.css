@@ -44,7 +44,7 @@ nav ul li a {
     padding: 20px;
     position: relative;
     overflow-y: scroll; /* Enables content scrolling */
-    margin-top: 40px; /* Adjusts the top margin to exclude the menu bar */
+    margin-top: 50px; /* Adjusts the top margin to exclude the menu bar */
     font-family: "Anonymous Pro", sans-serif;
 }
 
@@ -426,6 +426,6 @@ nav ul li a {
   border: none;
   position: sticky;
   top: 10px;
-  right: 0;
+  right: 10px;
   z-index: 9999;
 }

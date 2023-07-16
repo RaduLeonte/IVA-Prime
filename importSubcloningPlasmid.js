@@ -73,6 +73,7 @@ function handleFileSelectSecond(event) {
 
               // Create content grid
               makeContentGrid(2);
+              initiateSearchFunctionality(2);
           };
 
           reader.readAsText(file);

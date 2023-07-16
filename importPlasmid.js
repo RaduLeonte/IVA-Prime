@@ -109,7 +109,7 @@ window.onload = function() {
                     fileInputSecond.click();
                 });
               });
-              initiateSearchFunctionality();
+              initiateSearchFunctionality(1);
           };
 
           reader.readAsText(file);

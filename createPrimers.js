@@ -7,14 +7,16 @@ let operationNr = 1;
 
 function displayPrimers(primersType, primersList, textColor, templateColor, homoColor, mutSeq) {
     const sidebarContentDiv = document.querySelector('.sidebar-content');
+
+    var element = document.getElementById("primers-type");
+    element.textContent = "Primers:";
+
+
     const p = document.createElement('p');
     p.id = 'primers-type';
     p.textContent = operationNr + '. ' + primersType;
     operationNr++;
     sidebarContentDiv.appendChild(p);
-
-    var element = document.getElementById("primers-type");
-    element.textContent = "Primers:";
 
     // Create the first paragraph
     const paragraph1 = document.createElement('p');
