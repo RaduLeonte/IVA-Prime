@@ -275,6 +275,7 @@ function createInsertionPrimers(dnaSequence, aaSequence, insertionPos) {
     tempDict.note = "";
     features[newFeatureName] = tempDict
 
+    createSideBar(1);
     makeContentGrid(1);
 }
 
@@ -316,6 +317,7 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
             }
         }
     });
+    createSideBar(1);
     makeContentGrid(1);
 }
 
@@ -368,6 +370,7 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
     tempDict.note = "";
     features[newFeatureName] = tempDict
 
+    createSideBar(1);
     makeContentGrid(1);
 }
 
@@ -517,6 +520,7 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
         tempDict.note = "";
         features2[newFeatureName] = tempDict
 
+        createSideBar(2);
         makeContentGrid(2);
     }, { once: true });
 

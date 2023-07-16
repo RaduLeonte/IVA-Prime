@@ -43,53 +43,8 @@ window.onload = function() {
               headerList.innerHTML = headerList.innerHTML + "<li><a>" + file.name + "</a></li>";
               
 
-              // Sidebar contents
-              const sidebarTable = document.getElementById('sidebar-table');
-              sidebarTable.innerHTML = `
-                  <tr>
-                      <th>Feature</th>
-                      <th>Label</th>
-                      <th>Range</th>
-                      <th>Note</th>
-                  </tr>
-              `; // Set table headers
-
               // SIDEBAR
-              for (const featureName in features) {
-                  if (!featureName.includes("LOCUS") && !featureName.includes("source")) {
-                    const feature = features[featureName];
-              
-                    // Create a new table row
-                    let row = document.createElement('tr');
-                
-                    // Add feature name
-                    const nameCell = document.createElement('td');
-                    nameCell.textContent = featureName;
-                    nameCell.className = 'wrap-text';
-                    row.appendChild(nameCell);
-                
-                    // Add feature label
-                    const labelCell = document.createElement('td');
-                    labelCell.textContent = feature.label || '';
-                    labelCell.className = 'wrap-text';
-                    row.appendChild(labelCell);
-                
-                    // Add feature range
-                    const rangeCell = document.createElement('td');
-                    rangeCell.textContent = feature.span.replace("misc_feature ", "");
-                    rangeCell.className = 'wrap-text';
-                    row.appendChild(rangeCell);
-                
-                    // Add feature note
-                    const noteCell = document.createElement('td');
-                    noteCell.textContent = feature.note || '';
-                    noteCell.className = 'wrap-text';
-                    row.appendChild(noteCell);
-                
-                    sidebarTable.appendChild(row);
-                  }
-                  
-              }
+              createSideBar(1);
 
               // Create content grid
               makeContentGrid(1, function() {
@@ -126,6 +81,64 @@ window.onload = function() {
         fileInput.click();
     });
 };
+
+function createSideBar(pNr) {
+  // Sidebar contents
+  let currFeatures = null;
+  let sidebarTable = null;
+  if (pNr === 1) {
+    currFeatures = features;
+    sidebarTable = document.getElementById('sidebar-table');
+  } else {
+    currFeatures = features2;
+    sidebarTable = document.getElementById('sidebar-table2');
+  }
+
+  sidebarTable.innerHTML = `
+      <tr>
+          <th>Feature</th>
+          <th>Label</th>
+          <th>Range</th>
+          <th>Note</th>
+      </tr>
+  `; // Set table headers
+
+  for (const featureName in currFeatures) {
+    if (!featureName.includes("LOCUS") && !featureName.includes("source")) {
+      const feature = currFeatures[featureName];
+
+      // Create a new table row
+      let row = document.createElement('tr');
+  
+      // Add feature name
+      const nameCell = document.createElement('td');
+      nameCell.textContent = featureName;
+      nameCell.className = 'wrap-text';
+      row.appendChild(nameCell);
+  
+      // Add feature label
+      const labelCell = document.createElement('td');
+      labelCell.textContent = feature.label || '';
+      labelCell.className = 'wrap-text';
+      row.appendChild(labelCell);
+  
+      // Add feature range
+      const rangeCell = document.createElement('td');
+      rangeCell.textContent = feature.span.replace("misc_feature ", "");
+      rangeCell.className = 'wrap-text';
+      row.appendChild(rangeCell);
+  
+      // Add feature note
+      const noteCell = document.createElement('td');
+      noteCell.textContent = feature.note || '';
+      noteCell.className = 'wrap-text';
+      row.appendChild(noteCell);
+  
+      sidebarTable.appendChild(row);
+    }
+    
+  }
+}
 
 function checkAnnotationOverlap(inputFeatures, pNr) {
   let maximumOverlap = 0;
@@ -296,18 +309,21 @@ function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
     if (i != 0) {
         text = "..." + text.replace("...", "");
     }
-    if (col + currentSpan > gridWidth) {
+    if (col + currentSpan >= gridWidth) {
+      console.log("MA1");
       carryOver = col + currentSpan - gridWidth;
       currentSpan = gridWidth - col;
       mergeCells(row, col, 1, currentSpan, text + "...", annotationColor, pNr,currGridStructure);
       currentSpan = carryOver;
       row = row + currGridStructure.length;
       col = 0;
-    } else if (currentSpan === 40) {
+    } else if (currentSpan === gridWidth) {
+      console.log("MA2");
       mergeCells(row, col, 1, currentSpan, text, annotationColor, pNr,currGridStructure);
       mergeCells(row + currGridStructure.length, col, 1, 1, text, annotationColor, pNr,currGridStructure);
       carryOver = 0;
     } else {
+      console.log("MA3");
       mergeCells(row, col, 1, currentSpan + 1, text, annotationColor, pNr, currGridStructure);
       carryOver = 0;
     }
@@ -318,7 +334,7 @@ function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
 
 
 function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStructure) {
-  console.log("Merge cells1: ", row, col, rowspan, colspan, text)
+  console.log("Merge cells1: ", row, col, colspan, text)
   // Check which grid were doing
   let table = null;
   if (pNr === 1){
@@ -329,14 +345,17 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
 
   // Adjust row and col
   let occupiedCellsList = [];
+  let occupiedCellsCounter = 0;
   for (let i = 0; i < currGridStructure.length; i++) {
     if (currGridStructure[i] === "Annotations") {
       // Find already occupied cells
       occupiedCellsList = [];
+      occupiedCellsCounter = 0;
       for (let i = 0; i < table.rows[row].cells.length; i++) {
         if (table.rows[row].cells[i].attributes.hasOwnProperty('colspan')) {
           let currColSpan = parseInt(table.rows[row].cells[i].attributes["colspan"].value);
           console.log("Colspan ", currColSpan);
+          occupiedCellsCounter++;
           for (let i = 0; i <  currColSpan; i++) {
             occupiedCellsList.push(true);
           }
@@ -358,24 +377,16 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
   
   let nrOccupiedCells = occupiedCellsList.slice(0, col).filter(value => value === true).length;
   console.log("nrOccupiedCells ", nrOccupiedCells, occupiedCellsList.slice(0, col))
-  console.log("Merge cells1.5 : ", row, col, rowspan, colspan, text)
+  console.log("Merge cells1.5 : ", row, col, colspan, text)
   if (nrOccupiedCells !== 0) {
     col -= nrOccupiedCells;
-    col++;
+    col += occupiedCellsCounter;
   }
-  console.log("Merge cells2: ", row, col, rowspan, colspan, text)
+  console.log("Merge cells2: ", row, col, colspan, text)
   let mainCell = table.rows[row].cells[col];
   mainCell.rowSpan = rowspan;
   mainCell.colSpan = colspan;
   mainCell.style.backgroundColor = color;
-  // Remove extra cells
-  let k = 0;
-  for (let j = col + 1; j < col + colspan; j++) {
-    const cell = table.rows[row].cells[j - k];
-    cell.parentNode.removeChild(cell);
-    k++;
-  }
-
   // Add text to the center of the merged cell
   if (text.length > colspan)  {
     if (colspan <= 3) {
@@ -390,6 +401,14 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
   const textNode = document.createTextNode(text);
   mainCell.appendChild(textNode);
   mainCell.style.textAlign = 'center';
+
+  // Remove extra cells
+  let k = 0;
+  for (let j = col + 1; j < col + colspan; j++) {
+    const cell = table.rows[row].cells[j - k];
+    cell.parentNode.removeChild(cell);
+    k++;
+  }
 }
 
 function getRandomBackgroundColor() {
