@@ -324,7 +324,8 @@ function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
       carryOver = 0;
     } else {
       console.log("MA3");
-      mergeCells(row, col, 1, currentSpan + 1, text, annotationColor, pNr, currGridStructure);
+      mergeCells(row, col, 1, currentSpan + 1
+        , text, annotationColor, pNr, currGridStructure);
       carryOver = 0;
     }
     i++;
