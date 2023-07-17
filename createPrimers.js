@@ -78,6 +78,30 @@ function displayPrimers(primersType, primersList, textColor, templateColor, homo
     // Insert the new paragraphs after the <p> with id "primers-type"
     sidebarContentDiv.appendChild(paragraph2);
     sidebarContentDiv.appendChild(paragraph1);
+    if (primersType === "Subcloning") {
+        const paragraph3 = document.createElement('p');
+        const paragraph4 = document.createElement('p');
+        paragraph3.style.wordWrap = 'break-word';
+        paragraph4.style.wordWrap = 'break-word'; // Add CSS style for word wrapping
+        
+        // Create the first span with red text and bold
+        const span3 = document.createElement('span');
+        span3.style.color = textColor;
+        span3.style.backgroundColor = homoColor;
+        span3.style.fontWeight = 'bold';
+        span3.textContent = primersList[4];
+        paragraph3.appendChild(span3);
+
+        const span4 = document.createElement('span');
+        span4.style.color = textColor;
+        span4.style.backgroundColor = homoColor;
+        span4.style.fontWeight = 'bold';
+        span4.textContent = primersList[5];
+        paragraph4.appendChild(span4);
+
+        sidebarContentDiv.appendChild(paragraph3);
+        sidebarContentDiv.appendChild(paragraph4);
+    }
 }
 
 function primerExtension(startingPos, direction, targetTm, minLength, pNr) {
@@ -473,14 +497,26 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
         }
         
 
-        let tempFwd = primerExtension(subcloningStartPos, "forward", tempRegionTm, 7, 1);
-        let homoFwd = primerExtension(subcloningInsertPositionStart, "backward", tempRegionTm, 7, 2);
+        let insertTempFwd = primerExtension(subcloningStartPos, "forward", tempRegionTm, 7, 1); // 60
+        let insertTempRev = primerExtension(subcloningEndPos, "backward", tempRegionTm, 7, 1); // 60
 
-        let tempRev = primerExtension(subcloningEndPos, "backward", tempRegionTm, 7, 1);
-        let homoRev = primerExtension(subcloningInsertPositionEnd, "forward", tempRegionTm, 7, 2);
+        let vecFwd = primerExtension(subcloningInsertPositionEnd, "forward", tempRegionTm, 7, 2); // 60
+        let vecRev = primerExtension(subcloningInsertPositionStart, "backward", tempRegionTm, 7, 2); // 60
+
+        let insertHomoFwd = getComplementaryStrand(vecRev);
+        while (get_tm(insertHomoFwd, primerConc, saltConc) > homoRegionTm) {
+            insertHomoFwd = insertHomoFwd.slice(0, -1);
+        };
+        insertHomoFwd = insertHomoFwd.split("").reverse().join("");
+
+        let insertHomoRev = getComplementaryStrand(vecFwd);
+        while (get_tm(insertHomoRev, primerConc, saltConc) > homoRegionTm) {
+            insertHomoRev = insertHomoRev.slice(0, -1);
+        };
+        insertHomoRev = insertHomoRev.split("").reverse().join("");
 
 
-        displayPrimers("Subcloning", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(107, 96, 157)", "rgb(140, 202, 242)");
+        displayPrimers("Subcloning", [insertHomoFwd, insertTempFwd, insertHomoRev, insertTempRev, vecFwd, vecRev], "white", "rgb(107, 96, 157)", "rgb(140, 202, 242)");
 
         // Update stuff
         subcloningInsertPositionStart--;
