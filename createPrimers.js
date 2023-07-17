@@ -353,12 +353,25 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
     }
     console.log('Creating Mutagenesis primers...', mutationSeq, mutaStartPos, mutaEndPos);
 
-    
-    let homoRev = primerExtension(mutaStartPos, "backward", homoRegionTm, 7, 1);
-    let tempRev = primerExtension(mutaStartPos - homoRev.length, "backward", tempRegionTm, 7, 1);
-    let tempFwd = primerExtension(mutaEndPos, "forward", tempRegionTm, 7, 1);
-    let homoFwd = getComplementaryStrand(homoRev).split("").reverse().join("");
-    displayPrimers("Mutagenesis", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)", mutationSeq);
+    let homoRev = "";
+    let tempRev = "";
+    let tempFwd = "";
+    let homoFwd = "";
+    if (mutaEndPos - mutaStartPos === mutationSeq.length && mutationSeq.length <= 3) { // Standard mutate stuff
+        homoRev = primerExtension(mutaStartPos, "backward", homoRegionTm, 7, 1);
+        tempRev = primerExtension(mutaStartPos - homoRev.length, "backward", tempRegionTm, 7, 1);
+        tempFwd = primerExtension(mutaEndPos, "forward", tempRegionTm, 7, 1);
+        homoFwd = getComplementaryStrand(homoRev).split("").reverse().join("");
+        
+        displayPrimers("Mutagenesis", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)", mutationSeq);
+    } else { // Delete and replace
+        homoFwd = mutationSeq;
+        tempFwd = primerExtension(mutaEndPos, "forward", tempRegionTm, 7, 1);
+        homoRev = getComplementaryStrand(homoFwd);
+        tempRev = primerExtension(mutaStartPos, "backward", tempRegionTm, 7, 1);
+
+        displayPrimers("Mutagenesis", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)");
+    }
 
     // Update stuff
     mutaStartPos--;
@@ -389,7 +402,7 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
     const tempDict = {}
     tempDict.label = newFeatureName;
     const insertStringPositionStart = mutaStartPos + 1;
-    const insertStringPositionEnd = mutaEndPos;
+    const insertStringPositionEnd = mutaStartPos + mutationSeq.length;
     tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
     tempDict.note = "";
     features[newFeatureName] = tempDict

@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const inputLength = mutateToSequenceInput.value.length;
     const selectionLength = Math.abs(selectionEndPos - selectionStartPos);
 
-    if (inputLength === selectionLength) {
+    if (inputLength > 0) {
       createMutagenesisPrimersButton.removeAttribute('disabled');
     } else {
       createMutagenesisPrimersButton.setAttribute('disabled', 'disabled');
