@@ -141,6 +141,7 @@ function createSideBar(pNr) {
 }
 
 function checkAnnotationOverlap(inputFeatures, pNr) {
+  console.log("CAO: ", gridStructure)
   let maximumOverlap = 0;
   const spansList = [];
   Object.entries(inputFeatures).forEach(([key, value]) => {
@@ -162,11 +163,15 @@ function checkAnnotationOverlap(inputFeatures, pNr) {
   for (let i = 0; i < spansList.length; i++) {
     const [startA, endA] = spansList[i];
     let currentOverlap = 0;
-  
     for (let j = 0; j < spansList.length; j++) {
       if (i !== j) {
         const [startB, endB] = spansList[j];
-        if (startA <= endB && endA >= startB) {
+        console.log(startA, endA, startB, endB)
+        if (startA >= startB && startA <= endB) {
+          console.log("++")
+          currentOverlap++;
+        } else if (endA >= startB && endA <= endB) {
+          console.log("++")
           currentOverlap++;
         }
       }
@@ -176,6 +181,8 @@ function checkAnnotationOverlap(inputFeatures, pNr) {
       maximumOverlap = currentOverlap;
     }
   }
+  console.log(maximumOverlap)
+  maximumOverlap++;
 
   let count = 0;
 
@@ -204,7 +211,7 @@ function checkAnnotationOverlap(inputFeatures, pNr) {
       }
     }
   }
-
+  console.log("CAO2: ", gridStructure)
   return
 }
 
