@@ -21,7 +21,7 @@ function parseDNAFile(fileContent, pNr) {
 
     // Sequence
     let sequenceBA = fileBA.slice(25, findSubarrayIndex(fileBA, [2, 0, 0]));
-    currSequence = new TextDecoder().decode(sequenceBA).toUpperCase();
+    currSequence = new TextDecoder().decode(sequenceBA).toUpperCase().replace(/[^TACG]/gi, '');
     currComplementarySequence = getComplementaryStrand(currSequence);
 
     // Features
