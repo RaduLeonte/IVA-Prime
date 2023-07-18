@@ -104,23 +104,26 @@ function displayPrimers(primersType, primersList, textColor, templateColor, homo
     }
 }
 
-function primerExtension(startingPos, direction, targetTm, minLength, pNr) {
+function primerExtension(startingPos, targetStrand, direction, targetTm, minLength, pNr) {
     let p_start_index = startingPos - 1;
     let length = minLength;
 
-    let backbone = direction === 'forward' ? sequence : complementaryStrand;
+    let currStrand = targetStrand === 'fwdStrand' ? sequence : complementaryStrand;
     if (pNr === 2) {
-        backbone = direction === 'forward' ? sequence2 : complementaryStrand2;
+        currStrand = targetStrand === 'fwdStrand' ? sequence2 : complementaryStrand2;
+    }
+    if (direction !== "forward") {
+        currStrand = currStrand.split('').reverse().join('');
     }
     
     //let prev_p = direction === 'forward' ? backbone.slice(p_start_index, p_start_index + length - 1): backbone.slice(p_start_index - length, p_start_index);
-    let prev_p = direction === 'forward' ? repeatingSlice(backbone, p_start_index, p_start_index + length - 1): repeatingSlice(backbone, p_start_index - length, p_start_index);
+    let prev_p = targetStrand === 'fwdStrand' ? repeatingSlice(currStrand, p_start_index, p_start_index + length - 1): repeatingSlice(currStrand, p_start_index - length, p_start_index);
     let prev_tm = get_tm(prev_p, primerConc, saltConc);
     const maxIter = 50;
     let i = 0;
     while (i < maxIter) {
         //let curr_p = direction === 'forward' ? backbone.slice(p_start_index, p_start_index + length): backbone.slice(p_start_index - length - 1, p_start_index);
-        let curr_p = direction === 'forward' ? repeatingSlice(backbone, p_start_index, p_start_index + length): repeatingSlice(backbone, p_start_index - length - 1, p_start_index);
+        let curr_p = targetStrand === 'fwdStrand' ? repeatingSlice(currStrand, p_start_index, p_start_index + length): repeatingSlice(currStrand, p_start_index - length - 1, p_start_index);
         let curr_tm = get_tm(curr_p, primerConc, saltConc);
 
         if (curr_tm >= targetTm) {
@@ -139,7 +142,7 @@ function primerExtension(startingPos, direction, targetTm, minLength, pNr) {
         length += 1;
         i++;
     }
-    if (direction !== "forward") {
+    if (targetStrand !== "fwdStrand") {
         primer_fwd = primer_fwd.split('').reverse().join('');
     }
 
@@ -261,9 +264,9 @@ function createInsertionPrimers(dnaSequence, aaSequence, insertionPos) {
     }
 
     let homoFwd = homologousSequenceFwd;
-    let tempFwd = primerExtension(insertionPos, "forward", tempRegionTm, 7, 1)
+    let tempFwd = primerExtension(insertionPos, "fwdStrand", "forward", tempRegionTm, 7, 1)
     let homoRev = homologousSequenceRev;
-    let tempRev = primerExtension(insertionPos, "backward", tempRegionTm, 7, 1)
+    let tempRev = primerExtension(insertionPos, "compStrand", "forward", tempRegionTm, 7, 1)
     displayPrimers("Insertion", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)");
 
     // Update stuff
@@ -297,7 +300,8 @@ function createInsertionPrimers(dnaSequence, aaSequence, insertionPos) {
     const insertStringPositionEnd = insertStringPositionStart + homologousSequenceFwd.length - 1;
     tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
     tempDict.note = "";
-    features[newFeatureName] = tempDict
+    features[newFeatureName] = tempDict;
+    features = sortBySpan(features);
 
     createSideBar(1);
     makeContentGrid(1);
@@ -311,11 +315,11 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
     }
     console.log('Creating deletion primers...', selectedText, deletionStartPos, deletionEndPos);
 
-    let homoRev = primerExtension(deletionStartPos, "backward", homoRegionTm, 7, 1);
+    let homoRev = primerExtension(deletionStartPos, "compStrand", "forward", homoRegionTm, 7, 1);
     let homoFwd = getComplementaryStrand(homoRev);
     
-    let tempFwd = primerExtension(deletionEndPos, "forward", tempRegionTm, 7, 1);
-    let tempRev = primerExtension(deletionStartPos - homoRev.length, "backward", tempRegionTm, 7, 1);
+    let tempFwd = primerExtension(deletionEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
+    let tempRev = primerExtension(deletionStartPos - homoRev.length, "compStrand", "forward", tempRegionTm, 7, 1);
 
     displayPrimers("Deletion", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)");
 
@@ -358,17 +362,24 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
     let tempFwd = "";
     let homoFwd = "";
     if (mutaEndPos - mutaStartPos === mutationSeq.length && mutationSeq.length <= 3) { // Standard mutate stuff
-        homoRev = primerExtension(mutaStartPos, "backward", homoRegionTm, 7, 1);
-        tempRev = primerExtension(mutaStartPos - homoRev.length, "backward", tempRegionTm, 7, 1);
-        tempFwd = primerExtension(mutaEndPos, "forward", tempRegionTm, 7, 1);
+        console.log("TestMut1")
+        homoRev = primerExtension(mutaStartPos, "compStrand", "forward", homoRegionTm, 7, 1);
+        tempRev = primerExtension(mutaStartPos - homoRev.length, "compStrand", "forward", tempRegionTm, 7, 1);
+        tempFwd = primerExtension(mutaEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
         homoFwd = getComplementaryStrand(homoRev).split("").reverse().join("");
+
+        homoRev = homoRev + tempRev;
+        while (get_tm(homoRev, primerConc, saltConc) > tempRegionTm) {
+            homoRev = homoRev.slice(0, -1)
+        }
         
-        displayPrimers("Mutagenesis", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)", mutationSeq);
+        displayPrimers("Mutagenesis", [homoFwd, tempFwd, homoRev, ""], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)", mutationSeq);
     } else { // Delete and replace
-        homoFwd = mutationSeq;
-        tempFwd = primerExtension(mutaEndPos, "forward", tempRegionTm, 7, 1);
+        console.log("TestMut2")
+        homoFwd = primerExtension(mutaStartPos, "fwdStrand", "forward", homoRegionTm, 7, 1) + mutationSeq;
+        tempFwd = primerExtension(mutaEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
         homoRev = getComplementaryStrand(homoFwd);
-        tempRev = primerExtension(mutaStartPos, "backward", tempRegionTm, 7, 1);
+        tempRev = primerExtension(mutaStartPos, "compStrand", "forward", tempRegionTm, 7, 1);
 
         displayPrimers("Mutagenesis", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)");
     }
@@ -376,7 +387,7 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
     // Update stuff
     mutaStartPos--;
     mutaEndPos--;
-    sequence = sequence.slice(0, mutaStartPos) + mutationSeq + sequence.slice(mutaEndPos);
+    sequence = sequence.substring(0, mutaStartPos) + mutationSeq + sequence.substring(mutaEndPos);
     complementaryStrand = getComplementaryStrand(sequence);
     Object.entries(features).forEach(([key, value]) => {
         if (value.span && !key.includes("source")) {
@@ -387,12 +398,28 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
                 delete features[key];
             } else if (spanEnd < mutaEndPos && spanEnd > mutaStartPos) {
                 delete features[key];
+            } else if (spanEnd > mutaStartPos && spanEnd > mutaEndPos) {
+                if (mutationSeq.length < mutaEndPos - mutaStartPos) {
+                    const spanAdjustment = (mutaEndPos - mutaStartPos) - mutationSeq.length;
+                    const newSpanStart = spanStart - spanAdjustment;
+                    const newSpanEnd = spanEnd - spanAdjustment;
+                    value.span = newSpanStart + ".." + newSpanEnd;
+                } else {
+                    const spanAdjustment = mutationSeq.length - (mutaEndPos - mutaStartPos);
+                    const newSpanStart = spanStart + spanAdjustment;
+                    const newSpanEnd = spanEnd + spanAdjustment;
+                    value.span = newSpanStart + ".." + newSpanEnd;
+                }
+                
             }
         }
     });
 
 
-    let newFeatureName = "Mutagenesis"
+    let newFeatureName = "Mut"
+    if (mutationSeq.length > 7) {
+        newFeatureName = "Mutation"
+    }
     let i = 2;
     while (newFeatureName in features) {
         newFeatureName =  newFeatureName.replace("" + i-1, "")
@@ -406,6 +433,7 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
     tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
     tempDict.note = "";
     features[newFeatureName] = tempDict
+    features = sortBySpan(features)
 
     createSideBar(1);
     makeContentGrid(1);
@@ -510,11 +538,11 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
         }
         
 
-        let insertTempFwd = primerExtension(subcloningStartPos, "forward", tempRegionTm, 7, 1); // 60
-        let insertTempRev = primerExtension(subcloningEndPos, "backward", tempRegionTm, 7, 1); // 60
+        let insertTempFwd = primerExtension(subcloningStartPos, "fwdStrand", "forward", tempRegionTm, 7, 1); // 60
+        let insertTempRev = primerExtension(subcloningEndPos, "compStrand", "backward", tempRegionTm, 7, 1); // 60
 
-        let vecFwd = primerExtension(subcloningInsertPositionEnd, "forward", tempRegionTm, 7, 2); // 60
-        let vecRev = primerExtension(subcloningInsertPositionStart, "backward", tempRegionTm, 7, 2); // 60
+        let vecFwd = primerExtension(subcloningInsertPositionEnd, "fwdStrand", "forward", tempRegionTm, 7, 2); // 60
+        let vecRev = primerExtension(subcloningInsertPositionStart, "compStrand", "forward", tempRegionTm, 7, 2); // 60
 
         let insertHomoFwd = getComplementaryStrand(vecRev);
         while (get_tm(insertHomoFwd, primerConc, saltConc) > homoRegionTm) {
@@ -568,6 +596,7 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
         tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
         tempDict.note = "";
         features2[newFeatureName] = tempDict
+        features2 = sortBySpan(features2)
 
         createSideBar(2);
         makeContentGrid(2);
@@ -581,3 +610,22 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
         return;
     }, { once: true });
 }
+
+
+function sortBySpan(dict) {
+    // Convert the dictionary to an array of key-value pairs
+    const valueKey = "span";
+    const entries = Object.entries(dict);
+  
+    // Sort the array based on the first number in the value key
+    entries.sort((a, b) => {
+      const aValue = Number(a[1][valueKey].split('..')[0]);
+      const bValue = Number(b[1][valueKey].split('..')[0]);
+      return aValue - bValue;
+    });
+  
+    // Convert the sorted array back to a dictionary
+    const sortedDict = Object.fromEntries(entries);
+  
+    return sortedDict;
+  }
