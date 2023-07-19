@@ -104,7 +104,7 @@ function displayPrimers(primersType, primersList, textColor, templateColor, homo
     }
 }
 
-function primerExtension(startingPos, targetStrand, direction, targetTm, minLength, pNr) {
+function primerExtension(startingPos, targetStrand, direction, targetTm, minLength, pNr, mutSeq) {
     let p_start_index = startingPos - 1;
     let length = minLength;
 
@@ -112,18 +112,32 @@ function primerExtension(startingPos, targetStrand, direction, targetTm, minLeng
     if (pNr === 2) {
         currStrand = targetStrand === 'fwdStrand' ? sequence2 : complementaryStrand2;
     }
-    if (direction !== "forward") {
-        currStrand = currStrand.split('').reverse().join('');
+
+    let accessory = ""
+    if (mutSeq) {
+        accessory = mutSeq;
     }
+
     
     //let prev_p = direction === 'forward' ? backbone.slice(p_start_index, p_start_index + length - 1): backbone.slice(p_start_index - length, p_start_index);
-    let prev_p = targetStrand === 'fwdStrand' ? repeatingSlice(currStrand, p_start_index, p_start_index + length - 1): repeatingSlice(currStrand, p_start_index - length, p_start_index);
+    let prev_p = "";
+    if (direction === "forward") {
+        prev_p = targetStrand === 'fwdStrand' ? repeatingSlice(currStrand, p_start_index, p_start_index + length - 1) + accessory: repeatingSlice(currStrand, p_start_index - length, p_start_index);
+    } else {
+        prev_p = targetStrand === 'fwdStrand' ? repeatingSlice(currStrand, p_start_index - length + 1, p_start_index) + accessory: repeatingSlice(currStrand, p_start_index, p_start_index - length);
+    }
+    console.log("prev_p", targetStrand, direction, p_start_index, prev_p)
     let prev_tm = get_tm(prev_p, primerConc, saltConc);
     const maxIter = 50;
     let i = 0;
     while (i < maxIter) {
         //let curr_p = direction === 'forward' ? backbone.slice(p_start_index, p_start_index + length): backbone.slice(p_start_index - length - 1, p_start_index);
-        let curr_p = targetStrand === 'fwdStrand' ? repeatingSlice(currStrand, p_start_index, p_start_index + length): repeatingSlice(currStrand, p_start_index - length - 1, p_start_index);
+        let curr_p = "";
+        if (direction === "forward") {
+            curr_p = targetStrand === 'fwdStrand' ? repeatingSlice(currStrand, p_start_index, p_start_index + length) + accessory: repeatingSlice(currStrand, p_start_index - length - 1, p_start_index);
+        } else {
+            curr_p = targetStrand === 'fwdStrand' ? repeatingSlice(currStrand, p_start_index - length, p_start_index) + accessory: repeatingSlice(currStrand, p_start_index, p_start_index - length - 1);
+        }
         let curr_tm = get_tm(curr_p, primerConc, saltConc);
 
         if (curr_tm >= targetTm) {
@@ -144,6 +158,11 @@ function primerExtension(startingPos, targetStrand, direction, targetTm, minLeng
     }
     if (targetStrand !== "fwdStrand") {
         primer_fwd = primer_fwd.split('').reverse().join('');
+    }
+
+    if (direction !== "forward") {
+        //primer_fwd = primer_fwd.split('').reverse().join('');
+        primer_fwd = primer_fwd.replace(accessory, "") + accessory;
     }
 
     // console.log(primer_fwd, primer_fwd_tm)
@@ -316,12 +335,17 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
     console.log('Creating deletion primers...', selectedText, deletionStartPos, deletionEndPos);
 
     let homoRev = primerExtension(deletionStartPos, "compStrand", "forward", homoRegionTm, 7, 1);
-    let homoFwd = getComplementaryStrand(homoRev);
+    let homoFwd = getComplementaryStrand(homoRev).split("").reverse().join("");;
     
     let tempFwd = primerExtension(deletionEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
     let tempRev = primerExtension(deletionStartPos - homoRev.length, "compStrand", "forward", tempRegionTm, 7, 1);
 
-    displayPrimers("Deletion", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)");
+    let revPrimer = homoRev + tempRev;
+    while (get_tm(revPrimer, primerConc, saltConc) > homoRegionTm) {
+        revPrimer = revPrimer.slice(0, -1)
+    }
+
+    displayPrimers("Deletion", [homoFwd, tempFwd, revPrimer, ""], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)");
 
     // Update stuff
     deletionStartPos--;
@@ -361,24 +385,35 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
     let tempRev = "";
     let tempFwd = "";
     let homoFwd = "";
-    if (mutaEndPos - mutaStartPos === mutationSeq.length && mutationSeq.length <= 3) { // Standard mutate stuff
-        console.log("TestMut1")
-        homoRev = primerExtension(mutaStartPos, "compStrand", "forward", homoRegionTm, 7, 1);
-        tempRev = primerExtension(mutaStartPos - homoRev.length, "compStrand", "forward", tempRegionTm, 7, 1);
-        tempFwd = primerExtension(mutaEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
-        homoFwd = getComplementaryStrand(homoRev).split("").reverse().join("");
-
-        homoRev = homoRev + tempRev;
-        while (get_tm(homoRev, primerConc, saltConc) > tempRegionTm) {
-            homoRev = homoRev.slice(0, -1)
-        }
+    //if (mutaEndPos - mutaStartPos === mutationSeq.length && mutationSeq.length <= 3) {
+    //    console.log("TestMut1")
+    //    homoRev = primerExtension(mutaStartPos, "compStrand", "forward", homoRegionTm, 7, 1);
+    //    tempRev = primerExtension(mutaStartPos - homoRev.length, "compStrand", "forward", tempRegionTm, 7, 1);
+    //    tempFwd = primerExtension(mutaEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
+    //    homoFwd = getComplementaryStrand(homoRev).split("").reverse().join("");
+    //
+    //        homoRev = homoRev + tempRev;
+    //    while (get_tm(homoRev, primerConc, saltConc) > homoRegionTm) {
+    //        homoRev = homoRev.slice(0, -1)
+    //    }
         
-        displayPrimers("Mutagenesis", [homoFwd, tempFwd, homoRev, ""], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)", mutationSeq);
+    //    displayPrimers("Mutagenesis", [homoFwd, tempFwd, homoRev, ""], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)", mutationSeq);
+    //} // Standard mutate stuff
+    if (get_tm(mutationSeq, primerConc, saltConc) < homoRegionTm) {
+        console.log("TestMut2")
+        tempFwd = primerExtension(mutaEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
+        homoFwd = primerExtension(mutaStartPos, "fwdStrand", "backward", homoRegionTm, 7, 1) + mutationSeq;
+
+        homoRev = "";
+        tempRev = primerExtension(mutaStartPos, "compStrand", "forward", tempRegionTm, 7, 1);
+
+        displayPrimers("Mutagenesis", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)");
     } else { // Delete and replace
         console.log("TestMut2")
-        homoFwd = primerExtension(mutaStartPos, "fwdStrand", "forward", homoRegionTm, 7, 1) + mutationSeq;
         tempFwd = primerExtension(mutaEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
-        homoRev = getComplementaryStrand(homoFwd);
+        homoFwd = primerExtension(mutaStartPos, "fwdStrand", "backward", homoRegionTm, 7, 1) + mutationSeq;
+
+        homoRev = "";
         tempRev = primerExtension(mutaStartPos, "compStrand", "forward", tempRegionTm, 7, 1);
 
         displayPrimers("Mutagenesis", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)");
