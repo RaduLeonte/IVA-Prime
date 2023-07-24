@@ -105,6 +105,7 @@ function displayPrimers(primersType, primersList, textColor, templateColor, homo
 }
 
 function primerExtension(startingPos, targetStrand, direction, targetTm, minLength, pNr, mutSeq) {
+    console.log("PE", startingPos, targetStrand, direction, targetTm, minLength, pNr, mutSeq)
     let p_start_index = startingPos - 1;
     let length = minLength;
 
@@ -259,6 +260,115 @@ function repeatingSlice(str, startIndex, endIndex) {
     return repeatedStr.slice(startIndex + str.length, endIndex + str.length);
 }
 
+function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, replaceEndPos) {
+    let operationType = "Mutation/Replacement";
+    if (!replaceEndPos) {
+        replaceEndPos = replaceStartPos;
+        operationType = "Insertion"
+    }
+    if (replaceStartPos > replaceEndPos) {
+        let temp = replaceStartPos;
+        replaceStartPos = replaceEndPos;
+        replaceEndPos = temp;
+    }
+
+    // Sequence for testing
+    if (!aaToInsert && !dnaToInsert) {
+        aaToInsert = "GGGGS";
+    }
+
+    // Optimize aa sequence
+    let seqToInsert = "";
+    if (aaToInsert) {
+        console.log("Optimizing aa sequence to 49.5 C.");
+        seqToInsert = optimizeAA(aaToInsert);
+    } else {
+        seqToInsert = dnaToInsert;
+    }
+    
+    let homoFwd = "";
+    let tempFwd = "";
+    let homoRev = "";
+    let tempRev = "";
+
+    if (get_tm(seqToInsert, primerConc, saltConc) < homoRegionTm) { // Mutation < 49 C, need homolog region
+        console.log("TestMut1")
+        tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
+        homoFwd = primerExtension(replaceStartPos, "fwdStrand", "backward", homoRegionTm, 7, 1) + mutationSeq;
+
+        homoRev = "";
+        tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, 7, 1);
+
+        displayPrimers(operationType, [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)");
+    } else { //  // Mutation > 49 C
+        console.log("TestMut2")
+        tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
+        homoFwd = seqToInsert;
+
+        homoRev = getComplementaryStrand(homoFwd).split('').reverse().join('');;
+        while (get_tm(homoRev, primerConc, saltConc) > homoRegionTm) {
+            homoRev = homoRev.slice(1);
+        }
+        tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, 7, 1);
+
+        displayPrimers(operationType, [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)");
+    }
+
+    // Update stuff
+    replaceStartPos--;
+    replaceEndPos--;
+    sequence = sequence.substring(0, replaceStartPos) + seqToInsert + sequence.substring(replaceEndPos);
+    complementaryStrand = getComplementaryStrand(sequence);
+    Object.entries(features).forEach(([key, value]) => {
+        if (value.span && !key.includes("source")) {
+            const currSpan = value.span.split("..").map(Number);
+            const spanStart = currSpan[0];
+            const spanEnd = currSpan[1];
+            if (spanStart < replaceEndPos && spanStart > replaceStartPos) {
+                delete features[key];
+            } else if (spanEnd < replaceEndPos && spanEnd > replaceStartPos) {
+                delete features[key];
+            } else if (spanEnd > replaceStartPos && spanEnd > replaceEndPos) {
+                if (seqToInsert.length < replaceEndPos - replaceStartPos) {
+                    const spanAdjustment = (replaceEndPos - replaceStartPos) - seqToInsert.length;
+                    const newSpanStart = spanStart - spanAdjustment;
+                    const newSpanEnd = spanEnd - spanAdjustment;
+                    value.span = newSpanStart + ".." + newSpanEnd;
+                } else {
+                    const spanAdjustment = seqToInsert.length - (replaceEndPos - replaceStartPos);
+                    const newSpanStart = spanStart + spanAdjustment;
+                    const newSpanEnd = spanEnd + spanAdjustment;
+                    value.span = newSpanStart + ".." + newSpanEnd;
+                }
+                
+            }
+        }
+    });
+
+    let newFeatureName = "Ins"
+    if (seqToInsert.length > 7) {
+        newFeatureName = "Insertion"
+    }
+    let i = 2;
+    while (newFeatureName in features) {
+        newFeatureName =  newFeatureName.replace("" + i-1, "")
+        newFeatureName += i;
+        i++;
+    }
+    const tempDict = {}
+    tempDict.label = newFeatureName;
+    const insertStringPositionStart = replaceStartPos + 1;
+    const insertStringPositionEnd = replaceStartPos + seqToInsert.length;
+    tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
+    tempDict.note = "";
+    features[newFeatureName] = tempDict
+    features = sortBySpan(features)
+
+    createSideBar(1);
+    makeContentGrid(1);
+
+}
+
 
 function createInsertionPrimers(dnaSequence, aaSequence, insertionPos) {
     // Insertion logic using dnaSequenceInput and aminoAcidSequenceInput
@@ -278,10 +388,15 @@ function createInsertionPrimers(dnaSequence, aaSequence, insertionPos) {
     }
 
     let homologousSequenceRev = getComplementaryStrand(homologousSequenceFwd).split('').reverse().join('');
-    while (get_tm(homologousSequenceRev, primerConc, saltConc) > 52) {
+    while (get_tm(homologousSequenceRev, primerConc, saltConc) > homoRegionTm) {
         homologousSequenceRev = homologousSequenceRev.slice(0, -1);
     }
 
+    if (get_tm(mutationSeq, primerConc, saltConc) < homoRegionTm) { // Need additional region
+    }
+    else { // No need
+
+    }
     let homoFwd = homologousSequenceFwd;
     let tempFwd = primerExtension(insertionPos, "fwdStrand", "forward", tempRegionTm, 7, 1)
     let homoRev = homologousSequenceRev;
@@ -385,22 +500,9 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
     let tempRev = "";
     let tempFwd = "";
     let homoFwd = "";
-    //if (mutaEndPos - mutaStartPos === mutationSeq.length && mutationSeq.length <= 3) {
-    //    console.log("TestMut1")
-    //    homoRev = primerExtension(mutaStartPos, "compStrand", "forward", homoRegionTm, 7, 1);
-    //    tempRev = primerExtension(mutaStartPos - homoRev.length, "compStrand", "forward", tempRegionTm, 7, 1);
-    //    tempFwd = primerExtension(mutaEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
-    //    homoFwd = getComplementaryStrand(homoRev).split("").reverse().join("");
-    //
-    //        homoRev = homoRev + tempRev;
-    //    while (get_tm(homoRev, primerConc, saltConc) > homoRegionTm) {
-    //        homoRev = homoRev.slice(0, -1)
-    //    }
-        
-    //    displayPrimers("Mutagenesis", [homoFwd, tempFwd, homoRev, ""], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)", mutationSeq);
-    //} // Standard mutate stuff
-    if (get_tm(mutationSeq, primerConc, saltConc) < homoRegionTm) {
-        console.log("TestMut2")
+
+    if (get_tm(mutationSeq, primerConc, saltConc) < homoRegionTm) { // Mutation < 49 C, need homolog region
+        console.log("TestMut1")
         tempFwd = primerExtension(mutaEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
         homoFwd = primerExtension(mutaStartPos, "fwdStrand", "backward", homoRegionTm, 7, 1) + mutationSeq;
 
@@ -408,12 +510,15 @@ function createMutagenesisPrimers(mutationSeq, mutaStartPos, mutaEndPos) {
         tempRev = primerExtension(mutaStartPos, "compStrand", "forward", tempRegionTm, 7, 1);
 
         displayPrimers("Mutagenesis", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)");
-    } else { // Delete and replace
+    } else { //  // Mutation > 49 C
         console.log("TestMut2")
         tempFwd = primerExtension(mutaEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
-        homoFwd = primerExtension(mutaStartPos, "fwdStrand", "backward", homoRegionTm, 7, 1) + mutationSeq;
+        homoFwd = mutationSeq;
 
-        homoRev = "";
+        homoRev = getComplementaryStrand(homoFwd).split('').reverse().join('');;
+        while (get_tm(homoRev, primerConc, saltConc) > homoRegionTm) {
+            homoRev = homoRev.slice(1);
+        }
         tempRev = primerExtension(mutaStartPos, "compStrand", "forward", tempRegionTm, 7, 1);
 
         displayPrimers("Mutagenesis", [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)");

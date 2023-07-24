@@ -69,9 +69,14 @@ document.addEventListener('DOMContentLoaded', function () {
       dnaSequenceInput = document.getElementById('dna-sequence-input').value;
       aminoAcidSequenceInput = document.getElementById('amino-acid-sequence-input').value;
 
-
       // Call the function to create insertion primers
-      createInsertionPrimers(dnaSequenceInput, aminoAcidSequenceInput,insertionPosition);
+      //createInsertionPrimers(dnaSequenceInput, aminoAcidSequenceInput,insertionPosition);
+      if (!selectionEndPos) {
+        createReplacementPrimers(dnaSequenceInput, aminoAcidSequenceInput, insertionPosition);
+      } else {
+        createReplacementPrimers(dnaSequenceInput, aminoAcidSequenceInput, selectionStartPos, selectionEndPos);
+      }
+      
 
       // Clear the text inputs
       document.getElementById('dna-sequence-input').value = '';

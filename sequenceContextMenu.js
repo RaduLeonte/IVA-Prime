@@ -132,7 +132,8 @@ document.addEventListener('DOMContentLoaded', function () {
       // Deletion logic here
     } else if (menuItemId === 'mutation') {
       console.log('Mutation selected');
-      showMutationPopupWindow();
+      //showMutationPopupWindow();
+      showPopupWindow();
       // Mutation logic here
     } else if (menuItemId === 'subcloning') {
       console.log('Subcloning selected');
