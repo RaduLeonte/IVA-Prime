@@ -67,7 +67,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (event.target.id === 'create-primers-button') {
       // Get the entered values from the text inputs
       dnaSequenceInput = document.getElementById('dna-sequence-input').value;
-      aminoAcidSequenceInput = document.getElementById('amino-acid-sequence-input').value;
+      aminoAcidSequenceInput = document.getElementById('amino-acid-sequence-input').value.replace("-", "X");
+      console.log("DNA: ", dnaSequenceInput, "AA: ", aminoAcidSequenceInput);
 
       // Call the function to create insertion primers
       //createInsertionPrimers(dnaSequenceInput, aminoAcidSequenceInput,insertionPosition);

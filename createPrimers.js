@@ -38,7 +38,14 @@ function displayPrimers(primersType, primersList, textColor, templateColor, homo
     paragraph1.appendChild(span1b);
 
     const spanTm1 = document.createElement('span');
-    spanTm1.textContent = " (" + get_tm(primersList[2], primerConc, saltConc).toFixed(1) + ", " + get_tm(primersList[3], primerConc, saltConc).toFixed(1) + ")";
+    let tmTuple = [];
+    if (primersList[2] !== "") {
+        tmTuple.push(get_tm(primersList[2], primerConc, saltConc).toFixed(2))
+    }
+    if (primersList[3] !== "") {
+        tmTuple.push(get_tm(primersList[3], primerConc, saltConc).toFixed(2))
+    }
+    spanTm1.textContent = `(${tmTuple.join(',')})`
     paragraph1.appendChild(spanTm1);
 
     // Create the second paragraph
@@ -70,7 +77,15 @@ function displayPrimers(primersType, primersList, textColor, templateColor, homo
     paragraph2.appendChild(span2b);
 
     const spanTm2 = document.createElement('span');
-    spanTm2.textContent = " (" + get_tm(primersList[0], primerConc, saltConc).toFixed(1) + ", " + get_tm(primersList[1], primerConc, saltConc).toFixed(1) + ")";
+    tmTuple = [];
+    if (primersList[0] !== "") {
+        tmTuple.push(get_tm(primersList[0], primerConc, saltConc).toFixed(2))
+    }
+    if (primersList[1] !== "") {
+        tmTuple.push(get_tm(primersList[1], primerConc, saltConc).toFixed(2))
+    }
+    spanTm2.textContent = `(${tmTuple.join(',')})`
+    //spanTm2.textContent = " (" + get_tm(primersList[0], primerConc, saltConc).toFixed(1) + ", " + get_tm(primersList[1], primerConc, saltConc).toFixed(1) + ")";
     paragraph2.appendChild(spanTm2);
 
     // Find the <p> with the id "primers-type"
@@ -294,12 +309,12 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, repl
     if (get_tm(seqToInsert, primerConc, saltConc) < homoRegionTm) { // Mutation < 49 C, need homolog region
         console.log("TestMut1")
         tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
-        homoFwd = primerExtension(replaceStartPos, "fwdStrand", "backward", homoRegionTm, 7, 1) + mutationSeq;
+        homoFwd = primerExtension(replaceStartPos, "fwdStrand", "backward", homoRegionTm, 7, 1);
 
         homoRev = "";
         tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, 7, 1);
 
-        displayPrimers(operationType, [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)");
+        displayPrimers(operationType, [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)", seqToInsert);
     } else { //  // Mutation > 49 C
         console.log("TestMut2")
         tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
