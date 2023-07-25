@@ -226,7 +226,18 @@ function generateDNASequences(aminoAcidSequence) {
       }
     }
   
-    generateSequences(aminoAcidSequence, 0, '');
+    if (aminoAcidSequence.length < 10) {
+        generateSequences(aminoAcidSequence, 0, '');
+    } else {
+        let basicSeq = "";
+        for (let aminoAcid of aminoAcidSequence) {
+            const possibleCodons = codons[aminoAcid];
+            const selectedCodon = possibleCodons[0];
+            basicSeq += selectedCodon;
+          }
+        results.push(basicSeq);
+    }
+
   
     return results;
   }
@@ -465,7 +476,7 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
     console.log('Creating deletion primers...', selectedText, deletionStartPos, deletionEndPos);
 
     let homoRev = primerExtension(deletionStartPos, "compStrand", "forward", homoRegionTm, 7, 1);
-    let homoFwd = getComplementaryStrand(homoRev).split("").reverse().join("");;
+    let homoFwd = getComplementaryStrand(homoRev).split("").reverse().join("");
     
     let tempFwd = primerExtension(deletionEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
     let tempRev = primerExtension(deletionStartPos - homoRev.length, "compStrand", "forward", tempRegionTm, 7, 1);
