@@ -705,7 +705,7 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
         
 
         let insertTempFwd = primerExtension(subcloningStartPos, "fwdStrand", "forward", tempRegionTm, 7, 1); // 60
-        let insertTempRev = primerExtension(subcloningEndPos, "compStrand", "backward", tempRegionTm, 7, 1); // 60
+        let insertTempRev = primerExtension(subcloningEndPos, "compStrand", "forward", tempRegionTm, 7, 1); // 60
 
         let vecFwd = primerExtension(subcloningInsertPositionEnd, "fwdStrand", "forward", tempRegionTm, 7, 2); // 60
         let vecRev = primerExtension(subcloningInsertPositionStart, "compStrand", "forward", tempRegionTm, 7, 2); // 60
