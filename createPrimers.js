@@ -482,7 +482,7 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
     let tempRev = primerExtension(deletionStartPos - homoRev.length, "compStrand", "forward", tempRegionTm, 7, 1);
 
     let revPrimer = homoRev + tempRev;
-    while (get_tm(revPrimer, primerConc, saltConc) > homoRegionTm) {
+    while (get_tm(revPrimer, primerConc, saltConc) > tempRegionTm) {
         revPrimer = revPrimer.slice(0, -1)
     }
 
