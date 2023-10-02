@@ -1,28 +1,41 @@
 
-let primerConc = 100E-9; // M
-let saltConc = 0.5; // M
-let homoRegionTm = 49.5;
-let tempRegionTm = 60;
-let operationNr = 1;
+let primerConc = 100E-9; // M, primer concentration for melting temperatures
+let saltConc = 0.5; // M, primer concentration for melting temperatures
 
+let homoRegionTm = 49.5; // C, target temperature for the homologous region
+let tempRegionTm = 60; // C, target temperature for the template region
+
+let operationNr = 1; // modification counter
+
+
+/**
+ * Display the primer pair in the sidebar by appending <p>s
+ * 
+ * TO DO:
+ * - group <p>s into div
+ * - save to dict so they can be used later to generate a protocol?
+ */
 function displayPrimers(primersType, primersList, textColor, templateColor, homoColor, mutSeq) {
-    const sidebarContentDiv = document.querySelector('.sidebar-content');
+    const sidebarContentDiv = document.querySelector('.sidebar-content'); // Select sidebar
 
+    // Change sidebar headline
     var element = document.getElementById("primers-type");
     element.textContent = "Primers:";
 
 
+    // Display primer pair nr and type of mod
     const p = document.createElement('p');
     p.id = 'primers-type';
     p.textContent = operationNr + '. ' + primersType;
     operationNr++;
     sidebarContentDiv.appendChild(p);
 
-    // Create the first paragraph
+
+    // First Pair of primers
     const paragraph1 = document.createElement('p');
     paragraph1.style.wordWrap = 'break-word'; // Add CSS style for word wrapping
-    // Create the first span with red text and bold
-    const span1a = document.createElement('span');
+    // Create individual spans for the homologous and template regions of the primers  with different colors
+    const span1a = document.createElement('span'); 
     span1a.style.color = textColor;
     span1a.style.backgroundColor = homoColor;
     span1a.style.fontWeight = 'bold';
