@@ -321,6 +321,10 @@ function generateDNASequences(aminoAcidSequence) {
      *                -------------------	              -------------------
      *                |                 |                 |                 |
      *    [TGG][TAT][GAT]   [TGG][TAT][GAC]   [TGG][TAC][GAT]   [TGG][TAT][GAC] } -> Results
+     * 
+     * aminoAcidSeq - full amino acid sequence
+     * index - current tree depth and sequence index
+     * currentSeq - the current sequence with all codons appended so far
      */
     function generateSequences(aminoAcidSeq, index, currentSeq) {
         // Check if we've reached the end of the recursive tree
@@ -354,29 +358,30 @@ function generateDNASequences(aminoAcidSequence) {
     return results;
   }
 
-function createDNATMMapping(dnaSequences, primerConc, saltConc) {
-    const dnaTMDictionary = {};
-
-    for (let sequence of dnaSequences) {
-        const tm = get_tm(sequence, primerConc, saltConc);
-        dnaTMDictionary[sequence] = tm;
-    }
-
-    return dnaTMDictionary;
-}
-
+/**
+ * Takes in a sequence of amino acids (inputAA) as input and returns the DNA sequence with
+ * the lowest melting temperature. This function calls generateDNASequences to create all
+ * possible DNA sequences for the specified amino acid sequence.
+ * 
+ * inputAA - amino acid sequence to optimize
+ * 
+ * TO DO:
+ * - add options to optimize the AA sequence for a specific organism
+ */
 function optimizeAA(inputAA) {
+    // Call function to generate all possible DNA sequence that result in the input amino acid sequence
     let dnaSequences = generateDNASequences(inputAA);
 
+    // creates a dictionary with each DNA sequence as the key and its corresponding melting temperature as the entry.
     const dnaTMDictionary = {};
     for (let sequence of dnaSequences) {
         const tm = get_tm(sequence, primerConc, saltConc);
         dnaTMDictionary[sequence] = tm;
     }
 
+    // Iterate over the dict and find the DNA sequence with the lowest melting temperature
     let closestKey = null;
     let closestDiff = Infinity;
-
     for (let key in dnaTMDictionary) {
         const tm = dnaTMDictionary[key];
         const diff = Math.abs(tm - homoRegionTm);
@@ -388,22 +393,83 @@ function optimizeAA(inputAA) {
     }
 
     console.log("Closest value: " + closestKey + "(" + dnaTMDictionary[closestKey] + ")")
-    let optimizedAA = closestKey;
-
-    return optimizedAA;
+    return closestKey;
 }
 
+/**
+ * Improved slice() function that allows for negative indices or indices longer than the string length by assuming
+ * the string loops.
+ * 
+ * Example:
+ *         startIndex            endIndex
+ *             ▼                    ▼
+ *         -3 -2 -1 0 1 2 3 4 5 6 7 8 9
+ * str ->   _  _  _ A B C D E F G _ _ _
+ * 
+ * Result -> FGABCDEFGAB
+ * 
+ * str - string to be sliced
+ * startIndex, endIndex - slice indices
+ */
 function repeatingSlice(str, startIndex, endIndex) {
-    const repeatedStr = str.repeat(3); // ABC_ABC_ABC
-    return repeatedStr.slice(startIndex + str.length, endIndex + str.length);
+    const repeatedStr = str.repeat(3); // Copy the string 3 times: ABC_ABC_ABC
+    return repeatedStr.slice(startIndex + str.length, endIndex + str.length); // Remap indices to new string then return
 }
 
+/**
+ * Creates the replacement primers. Takes in either a DNA sequence or an amino acid sequence and creates primers
+ * that will delete the section between the start and end positions specified and then insert the DNA sequence.
+ * The melting temperature of the DNA sequence to be inserted determines the amount of overhang in the primers.
+ * 
+ * Examples:
+ * 
+ * 1. Same start and end position, inserting ATG:
+ * (homologous and template binding regions are extended until they reach their specified melting temperatures)
+ * 
+ *                       homologous region  insertion      template binding region
+ *                                    |         |            |
+ *                            ┏---------------┓┏-┓┏------------------------┓
+ *                            TTATATATGGGGAAAAAATGTTTATATATGGGGAAAAAAAATTTA  
+ * fwdStrand  -> GGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATAT
+ * compStrand -> ATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCC
+ *                       ATTTTTTTTCCCCATATATAAATTT
+ *                       ┗-----------------------┛   
+ *                                   |
+ *                      homologous region
+ * 
+ * 2. Different start and end positions (3 bp difference), inserting a long sequence (CATCATCATCATCATCATCAT):
+ * (template binding regions are extended until their target temperature,
+ * the insertion can be as long as it needs to be
+ * BUT the reverse complement of the insertion needs to be truncated to only reach the target temperature
+ * of the homologous region)
+ * 
+ *                             insertion in full    template binding region
+ *                                      |                     |
+ *                           ┏-------------------┓┏------------------------┓
+ *                           CATCATCATCATCATCATCATTTTATATATGGGGAAAAAAAATTTA  
+ * fwdStrand  -> GGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATAT
+ * compStrand -> ATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCC
+ *                    ATTTTTTTTCCCCATATATAAATTTGTAGTAGTAGTAGTAGTAG
+ *                    ┗-----------------------┛┗-----------------┛   
+ *                                |                      |
+ *                   homologous region     reverse complement of insertion
+
+ * 
+ * dnaToInsert - DNA sequence to be inserted between the specified indices
+ * aaToInsert - amino acid sequence to be inserted, it will be converted to the DNA sequence with the lowest possible melting temperature
+ * replaceStartPos, replaceEndPos - indices of the segment to be deleted, then filled with the new DNA sequence
+ * 
+ * TO DO:
+ * - check at which point the tool should just recommend a long piece of dsDNA to order and use as a subcloning target
+ */
 function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, replaceEndPos) {
+    // Define operation type
     let operationType = "Mutation/Replacement";
-    if (!replaceEndPos) {
+    if (!replaceEndPos) { // if startPos equals endPos then its just an insertion
         replaceEndPos = replaceStartPos;
         operationType = "Insertion"
     }
+    // Swap
     if (replaceStartPos > replaceEndPos) {
         let temp = replaceStartPos;
         replaceStartPos = replaceEndPos;
