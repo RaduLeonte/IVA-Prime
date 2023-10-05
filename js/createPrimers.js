@@ -469,19 +469,20 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, repl
         replaceEndPos = replaceStartPos;
         operationType = "Insertion"
     }
-    // Swap
+    // Make sure that startPos is the smaller number
     if (replaceStartPos > replaceEndPos) {
         let temp = replaceStartPos;
         replaceStartPos = replaceEndPos;
         replaceEndPos = temp;
     }
 
-    // Sequence for testing
+    // If theres no input, use the default sequence for testing
     if (!aaToInsert && !dnaToInsert) {
         aaToInsert = "GGGGS";
     }
 
-    // Optimize aa sequence
+    // If an animo acid sequence is given, send it for optimization (lowest melting temperature)
+    // otherwise use the DNA sequence given.
     let seqToInsert = "";
     if (aaToInsert) {
         console.log("Optimizing aa sequence to 49.5 C.");
@@ -490,35 +491,50 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, repl
         seqToInsert = dnaToInsert;
     }
     
+
+
+    // Make the primers
     let homoFwd = "";
     let tempFwd = "";
     let homoRev = "";
     let tempRev = "";
-
+    // If the sequence to be inserted has a melting temperature lower than 49 C, extende the primer backward
     if (get_tm(seqToInsert, primerConc, saltConc) < homoRegionTm) { // Mutation < 49 C, need homolog region
-        console.log("TestMut1")
-        tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
-        homoFwd = primerExtension(replaceStartPos, "fwdStrand", "backward", homoRegionTm, 7, 1);
 
+        // Forward template binding region, extend forward on the forward strand from the end position
+        tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
+        // Forward homologous region, extend backwards on the forward strand from the start position
+        homoFwd = primerExtension(replaceStartPos, "fwdStrand", "backward", homoRegionTm, 7, 1);
+        
+        // There is no need for a homologous region in the reverse primer, the homologous region of the forward primer
+        // will bind to the template binding region of the reverse primer instead.
         homoRev = "";
+        // Reverse template binding region, extend forward on the complementary strand from the start position
         tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, 7, 1);
 
+        // Display primers in the sidebar
         displayPrimers(operationType, [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)", seqToInsert);
     } else { //  // Mutation > 49 C
-        console.log("TestMut2")
-        tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
-        homoFwd = seqToInsert;
 
+        // Forward template bindin region
+        tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
+        // Forward homologous region is just the sequence to be inserted
+        homoFwd = seqToInsert;
+        
+        // The reverse starts of as the complementary sequence to the sequence to be inserted
+        // but wil be shortened until the optimal target melting temperature is reached
         homoRev = getComplementaryStrand(homoFwd).split('').reverse().join('');;
         while (get_tm(homoRev, primerConc, saltConc) > homoRegionTm) {
             homoRev = homoRev.slice(1);
         }
+        // Reverse template binding region
         tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, 7, 1);
 
+        // Display primers in the sidebar
         displayPrimers(operationType, [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)");
     }
 
-    // Update stuff
+    // Update the sequence and features
     replaceStartPos--;
     replaceEndPos--;
     sequence = sequence.substring(0, replaceStartPos) + seqToInsert + sequence.substring(replaceEndPos);
@@ -568,6 +584,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, repl
     features[newFeatureName] = tempDict
     features = sortBySpan(features)
 
+    // Remake the sidebar and content grid 
     createSideBar(1);
     makeContentGrid(1);
 
