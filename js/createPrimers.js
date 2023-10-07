@@ -751,121 +751,186 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
     makeContentGrid(1);
 }
 
+/**
+ * Creates the subcloning primers. Explanation here.
+ * 
+ * Example:
+ * 
+ *  Insert:
+ *                                                                      subcloning target
+ *                                        ┏-----------------------------------------------------------------------------┓
+ *                                        |                                                                             |
+ *forward insert homologous region        |  forward template binding region                                            |
+ *                            |           |         |                                                                   |
+ *               ┏-----------------------┓┏------------------------┓                                                     |
+ *               ATATAAATTTTTTTTCCCCATATATTTTATATATGGGGAAAAAAAATTTA                                                     |
+ * fwdStrand  ->         TATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGATATGGGAT
+ * compStrand ->         TCCCCATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCCATATTCCCCATA
+ *                                                                                              TATAAATTTTTTTTCCCCATATTCCAAAAAAATTTATATATGGGGAAAAAAAA
+ *                                                                                              ┗-----------------------┛┗---------------------------┛   
+ *                                                                                                          |                          |
+ *                                                                                        reverse template binding region         reverse insert homologous region
+ * 
+ *  Vector:
+ *                                         forward vector template binding region
+ *                                                        |
+ *                                         ┏--------------------------┓
+ *                                         AAAAAAATTTATATATGGGGAAAAAAAA  
+ * fwdStrand  -> GGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATAT
+ * compStrand -> ATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCC
+ *                 ATATAAATTTTTTTTCCCCATATAT
+ *                 ┗-----------------------┛   
+ *                             |          
+ *             reverse vector template binding region
+ * 
+ * subcloningStartPos, subcloningEndPos - indices of the segment to be subcloned into the second plasmid
+ * 
+ * TO DO:
+ * - 
+ */
+
 function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
+    // Initialise variables
     let subcloningInsertPositionStart = null;
     let subcloningInsertPositionEnd = null;
-    let selectingSubcloningTarget = false;
-    let subcloningInsertionSequence = selectedText;
+    let selectingSubcloningTarget = false; // Set the state to not currently seleting on the subcloning vector
+    let subcloningInsertionSequence = selectedText; // Capture currently selected text
+    
+    // Switch indices so that the start position is always smaller
     if (subcloningStartPos > subcloningEndPos) {
         let temp = subcloningStartPos;
         subcloningStartPos = subcloningEndPos;
         subcloningEndPos = temp;
     }
+
     console.log('Creating subcloning primers...', subcloningInsertionSequence, subcloningStartPos, subcloningEndPos);
 
+    // Select the second plasmid's sequence grid
     const element = document.getElementById('sequence-grid2');
     // Change the cursor to a pointer when it's over the element
     element.style.cursor = 'pointer';
+
     // Listen for click events on the element
     let startCell = null;
     let endCell = null;
     element.addEventListener('mousedown', function(event) {
         event.stopPropagation(); // Prevent the event from bubbling up to the document
-        // Your code here for what should happen when the element is clicked
-        subcloningInsertPositionStart = basePosition2;
+        // Once the mouse is clicked inside the second sequence grid
+        subcloningInsertPositionStart = basePosition2; // Capture mouse position
+        // Reset selection variables
         startCell = null;
         endCell = null;
         console.log('start: ', subcloningInsertPositionStart);
-        selectingSubcloningTarget = true;
+        selectingSubcloningTarget = true; // Signal that the selection has started
     }, { once: true });
 
+    // Listen for mouse movement
     element.addEventListener('mousemove', function(event) {
+        // Check if we have started a selection, we have a start position for the selection, and the mouse has since moved from the initial position
         if (selectingSubcloningTarget && subcloningInsertPositionStart && subcloningInsertPositionStart !== basePosition2) {
-        subcloningInsertPositionEnd = basePosition2;
-            // Get the indices of the start and end cells
-          let startCoords = null;
-          let startRowIndex = null;
-          let startCellIndex = null;
-          let endCoords = null;
-          let endRowIndex = null;
-          let endCellIndex = null;
+            subcloningInsertPositionEnd = basePosition2; // Update the end of the selection to the current mouse position
+            // Initialise variables for table coordinates
+            let startCoords = null;
+            let startRowIndex = null;
+            let startCellIndex = null;
+            let endCoords = null;
+            let endRowIndex = null;
+            let endCellIndex = null;
 
-          if (subcloningInsertPositionStart < subcloningInsertPositionEnd) {
-            startCoords = seqIndexToCoords(subcloningInsertPositionStart, 0, gridStructure2);
-            startRowIndex = startCoords[0];
-            startCellIndex = startCoords[1];
-            endCoords = seqIndexToCoords(subcloningInsertPositionEnd, 0, gridStructure2);
-            endRowIndex = endCoords[0];
-            endCellIndex = endCoords[1] - 1;
-          } else {
-            startCoords = seqIndexToCoords(subcloningInsertPositionEnd, 0, gridStructure2);
-            startRowIndex = startCoords[0];
-            startCellIndex = startCoords[1];
-            endCoords = seqIndexToCoords(subcloningInsertPositionStart, 0, gridStructure2);
-            endRowIndex = endCoords[0];
-            endCellIndex = endCoords[1] - 1;
-          }
-
-          // Clear the previous selection
-          function clearSelection() {
-            const selectedCells = element.querySelectorAll('.selected-cell-subcloning-target');
-            selectedCells.forEach((cell) => {
-              cell.classList.remove('selected-cell-subcloning-target');
-            });
-            selectedText2 = "";
-          }
-          clearSelection();
-
-          // Iterate over cells between start and end cells
-          for (let i = startRowIndex; i <= endRowIndex; i++) {
-            const row = element.rows[i];
-            const start = (i === startRowIndex) ? startCellIndex : 0;
-            const end = (i === endRowIndex) ? endCellIndex : row.cells.length - 1;
-
-            for (let j = start; j <= end; j++) {
-              const selectedCell = row.cells[j];
-              if (selectedCell.id === "Forward Strand" && selectedCell.innerText.trim() !== "") {
-                selectedCell.classList.add('selected-cell-subcloning-target');
-              }
+            // Convert sequence index to table coordinates
+            if (subcloningInsertPositionStart < subcloningInsertPositionEnd) {
+                startCoords = seqIndexToCoords(subcloningInsertPositionStart, 0, gridStructure2);
+                startRowIndex = startCoords[0];
+                startCellIndex = startCoords[1];
+                endCoords = seqIndexToCoords(subcloningInsertPositionEnd, 0, gridStructure2);
+                endRowIndex = endCoords[0];
+                endCellIndex = endCoords[1] - 1;
+            } else {
+                startCoords = seqIndexToCoords(subcloningInsertPositionEnd, 0, gridStructure2);
+                startRowIndex = startCoords[0];
+                startCellIndex = startCoords[1];
+                endCoords = seqIndexToCoords(subcloningInsertPositionStart, 0, gridStructure2);
+                endRowIndex = endCoords[0];
+                endCellIndex = endCoords[1] - 1;
             }
-          }
 
-          // Update the end cell
-          //endCell = cell;
+            // Clears the previous selection in the second sequence grid
+            function clearSelection() {
+                const selectedCells = element.querySelectorAll('.selected-cell-subcloning-target');
+                selectedCells.forEach((cell) => {
+                cell.classList.remove('selected-cell-subcloning-target');
+                });
+                selectedText2 = "";
+            }
+            clearSelection();
+
+            // Iterate over cells between start and end cells and mark them as selected by adding a css class
+            // Iterate over all rows
+            for (let i = startRowIndex; i <= endRowIndex; i++) {
+                const row = element.rows[i]; // Get current row
+                const start = (i === startRowIndex) ? startCellIndex : 0; // If first row, start is the cell's index, otherwise start at the beginnig of the row
+                const end = (i === endRowIndex) ? endCellIndex : row.cells.length - 1; // If in the last row, stop at the selection end, otherwise cover the row
+
+                for (let j = start; j <= end; j++) { // Itterate over cells in row
+                    const selectedCell = row.cells[j]; // Fetch current cell
+                    // Check if the selected cell is in the forward strand row and selected cell is not empty
+                    if (selectedCell.id === "Forward Strand" && selectedCell.innerText.trim() !== "") {
+                        selectedCell.classList.add('selected-cell-subcloning-target');
+                    }
+                }
+            }
         }
     });
 
+    // Look for mouse up to end the selection
     element.addEventListener('mouseup', function(event) {
         event.stopPropagation(); // Prevent the event from bubbling up to the document
-        // Your code here for what should happen when the element is clicked
-        subcloningInsertPositionEnd = basePosition2;
-        console.log('end: ', subcloningInsertPositionEnd);
-        element.style.cursor = 'default';
-        selectingSubcloningTarget = false;
 
+        subcloningInsertPositionEnd = basePosition2; // Fetch the mouse's final position
+        console.log('end: ', subcloningInsertPositionEnd);
+        element.style.cursor = 'default'; // Reset mouse icon
+        selectingSubcloningTarget = false; // Signal that the selection has ended
+
+        // Swap indices if they are ordered wrong
         if (subcloningInsertPositionStart > subcloningInsertPositionEnd) {
             let temp = subcloningInsertPositionStart;
             subcloningInsertPositionStart = subcloningInsertPositionEnd;
             subcloningInsertPositionEnd = temp;
         }
         
-
+        /**
+         * Make the primers
+         */
+        // Extend the insert template binding regions
         let insertTempFwd = primerExtension(subcloningStartPos, "fwdStrand", "forward", tempRegionTm, 7, 1); // 60
         let insertTempRev = primerExtension(subcloningEndPos, "compStrand", "forward", tempRegionTm, 7, 1); // 60
 
+        // Extend the vector template binding regions
         let vecFwd = primerExtension(subcloningInsertPositionEnd, "fwdStrand", "forward", tempRegionTm, 7, 2); // 60
         let vecRev = primerExtension(subcloningInsertPositionStart, "compStrand", "forward", tempRegionTm, 7, 2); // 60
 
+        // Creat the insert homologous regions by getting the complementary sequence of the vecor template binding regions
+        // and slicing them until they are the target temperatures for homologous regions
         let insertHomoFwd = getComplementaryStrand(vecRev);
-        while (get_tm(insertHomoFwd, primerConc, saltConc) > homoRegionTm) {
+        while (get_tm(insertHomoFwd.slice(0, -1), primerConc, saltConc) > homoRegionTm) {
             insertHomoFwd = insertHomoFwd.slice(0, -1);
         };
+        let oldTm = get_tm(insertHomoFwd, primerConc, saltConc);
+        let newTm = get_tm(insertHomoFwd.slice(0, -1), primerConc, saltConc);
+        if (Math.abs(oldTm - homoRegionTm) >= Math.abs(newTm - homoRegionTm)) { // Check which is closer to target tm
+            insertHomoFwd = insertHomoFwd.slice(0, -1);
+        }
         insertHomoFwd = insertHomoFwd.split("").reverse().join("");
 
         let insertHomoRev = getComplementaryStrand(vecFwd);
-        while (get_tm(insertHomoRev, primerConc, saltConc) > homoRegionTm) {
+        while (get_tm(insertHomoRev.slice(0, -1), primerConc, saltConc) > homoRegionTm) { // Check which is closer to target tm
             insertHomoRev = insertHomoRev.slice(0, -1);
         };
+        oldTm = get_tm(insertHomoRev, primerConc, saltConc);
+        newTm = get_tm(insertHomoRev.slice(0, -1), primerConc, saltConc);
+        if (Math.abs(oldTm - homoRegionTm) >= Math.abs(newTm - homoRegionTm)) {
+            insertHomoRev = insertHomoRev.slice(0, -1);
+        }
         insertHomoRev = insertHomoRev.split("").reverse().join("");
 
 
@@ -923,7 +988,9 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
     }, { once: true });
 }
 
-
+/**
+ * Sort the features dict by span so that the features appear in order in the sidebar.
+ */
 function sortBySpan(dict) {
     // Convert the dictionary to an array of key-value pairs
     const valueKey = "span";
@@ -940,4 +1007,4 @@ function sortBySpan(dict) {
     const sortedDict = Object.fromEntries(entries);
   
     return sortedDict;
-  }
+}
