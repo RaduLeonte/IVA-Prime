@@ -628,42 +628,22 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, repl
 }
 
 /**
- * Creates the replacement primers. Takes in either a DNA sequence or an amino acid sequence and creates primers
- * that will delete the section between the start and end positions specified and then insert the DNA sequence.
- * The melting temperature of the DNA sequence to be inserted determines the amount of overhang in the primers.
+ * Creates the deletion primers that will delete the segment between the two specified indices.
  * 
  * Examples:
- * 
- * 1. Same start and end position, inserting ATG:
+ * Everything between deletion start and deletion end will not be present after recombination.
  * (homologous and template binding regions are extended until they reach their specified melting temperatures)
  * 
- *                       homologous region  insertion      template binding region
- *                                    |         |            |
- *                            ┏---------------┓┏-┓┏------------------------┓
- *                            TTATATATGGGGAAAAAATGTTTATATATGGGGAAAAAAAATTTA  
+ *                      homologous region   deletion end  template binding region
+ *                                    |           |          |
+ *                       ┏-----------------------┓┏------------------------┓
+ *                       TATATGGGGAAAAAAAATTTATATATTTATATATGGGGAAAAAAAATTTA  
  * fwdStrand  -> GGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATAT
  * compStrand -> ATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCC
- *                       ATTTTTTTTCCCCATATATAAATTT
- *                       ┗-----------------------┛   
- *                                   |
- *                      homologous region
- * 
- * 2. Different start and end positions (3 bp difference), inserting a long sequence (CATCATCATCATCATCATCAT):
- * (template binding regions are extended until their target temperature,
- * the insertion can be as long as it needs to be
- * BUT the reverse complement of the insertion needs to be truncated to only reach the target temperature
- * of the homologous region)
- * 
- *                             insertion in full    template binding region
- *                                      |                     |
- *                           ┏-------------------┓┏------------------------┓
- *                           CATCATCATCATCATCATCATTTTATATATGGGGAAAAAAAATTTA  
- * fwdStrand  -> GGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATAT
- * compStrand -> ATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCC
- *                    ATTTTTTTTCCCCATATATAAATTTGTAGTAGTAGTAGTAGTAG
- *                    ┗-----------------------┛┗-----------------┛   
- *                                |                      |
- *                   homologous region     reverse complement of insertion
+ *                TATATAAATTTTTTTTCCCCATATA
+ *                ┗-----------------------┛   
+ *                            |           |
+ *         template binding region     deletion start
 
  * 
  * deletionStartPos, deletionEndPos - indices of the segment to be deleted
@@ -672,6 +652,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, repl
  * - 
  */
 function createDeletionPrimers(deletionStartPos, deletionEndPos) {
+    // Swap indices so start is always the smaller index
     if (deletionStartPos > deletionEndPos) {
         let temp = deletionStartPos;
         deletionStartPos = deletionEndPos;
@@ -679,41 +660,93 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
     }
     console.log('Creating deletion primers...', selectedText, deletionStartPos, deletionEndPos);
 
-    let homoRev = primerExtension(deletionStartPos, "compStrand", "forward", homoRegionTm, 7, 1);
-    let homoFwd = getComplementaryStrand(homoRev).split("").reverse().join("");
-    
+    // Forward template binding region, extend forward on the forward strand from the end position
     let tempFwd = primerExtension(deletionEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
-    let tempRev = primerExtension(deletionStartPos - homoRev.length, "compStrand", "forward", tempRegionTm, 7, 1);
 
-    let revPrimer = homoRev + tempRev;
-    while (get_tm(revPrimer, primerConc, saltConc) > tempRegionTm) {
-        revPrimer = revPrimer.slice(0, -1)
+    // Reverse homologous region, but extend it up to the melting temperature of the template region
+    let tempRev = primerExtension(deletionStartPos, "compStrand", "forward", tempRegionTm, 7, 1);
+
+    // The forward homologous region is the reverse complement of the reverse homologous region
+    let homoFwd = getComplementaryStrand(tempRev);
+
+    // Slice the forward homologous region until target temperature is reached
+    while (get_tm(homoFwd.slice(0, -1), primerConc, saltConc) > homoRegionTm) {
+        homoFwd = homoFwd.slice(0, -1);
     }
+    // Check if slicing one more base would get us closer to the target temp
+    const oldTm = get_tm(homoFwd, primerConc, saltConc);
+    const newTm = get_tm(homoFwd.slice(0, -1), primerConc, saltConc);
+    if (Math.abs(oldTm - homoRegionTm) >= Math.abs(newTm - homoRegionTm)) {
+        homoFwd = homoFwd.slice(0, -1);
+    }
+    // Flip primer for display
+    homoFwd = homoFwd.split("").reverse().join("");
 
-    displayPrimers("Deletion", [homoFwd, tempFwd, revPrimer, ""], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)");
+    displayPrimers("Deletion", [homoFwd, tempFwd, tempRev, ""], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)");
 
-    // Update stuff
+    // Update the sequence and features
+    // Convert back from sequence indices to string indices
     deletionStartPos--;
     deletionEndPos--;
+    // Span of the adjusment
     const deletionSpan = deletionEndPos - deletionStartPos;
+    // Update the main sequence and empty the span of the deletion and remake the complementary strand
     sequence = sequence.slice(0, deletionStartPos) + sequence.slice(deletionEndPos);
     complementaryStrand = getComplementaryStrand(sequence);
-    Object.entries(features).forEach(([key, value]) => {
+    // Loop over each feature and if it occurs after the deletion, update its span
+    Object.entries(features).forEach(([key, value]) => { // exclude "source" feature as it spans the entire plasmid
         if (value.span && !key.includes("source")) {
+            // Get span of current feature
             const currSpan = value.span.split("..").map(Number);
             const spanStart = currSpan[0];
             const spanEnd = currSpan[1];
-            if (deletionEndPos < spanStart) {
+            /**
+             * Scenarios:
+             * 
+             * 1.
+             * feature                 [         ]
+             * deletion    [        ]
+             * -> shift
+             * 
+             * 2.
+             * feature          [         ]
+             * deletion    [        ]
+             * -> delete feature
+             * 
+             * 3.
+             * feature          [         ]
+             * deletion    [                 ] 
+             * -> delete feature
+             * 
+             * 4.
+             * feature          [         ]
+             * deletion               [                 ] 
+             * -> delete feature
+             * 
+             * 5.
+             * feature          [         ]
+             * deletion                        [                 ] 
+             * -> do nothing
+             */
+            if (deletionStartPos < spanStart && deletionEndPos < spanStart && deletionStartPos < spanEnd && deletionEndPos < spanEnd) {
+                // 1. Deletion happens before feature's span
                 const newSpanStart = spanStart - deletionSpan;
                 const newSpanEnd = spanEnd - deletionSpan;
-                value.span = newSpanStart + ".." + newSpanEnd;
-            } else if (spanStart < deletionEndPos && spanStart > deletionStartPos) {
+                value.span = newSpanStart + ".." + newSpanEnd; // update the span
+            } else if (deletionStartPos < spanStart && deletionEndPos > spanStart && deletionStartPos < spanEnd && deletionEndPos < spanEnd) {
+                // 2.
                 delete features[key];
-            } else if (spanEnd < deletionEndPos && spanEnd > deletionStartPos) {
+            } else if (deletionStartPos < spanStart && deletionEndPos > spanStart && deletionStartPos < spanEnd && deletionEndPos > spanEnd) {
+                // 3. 
+                delete features[key];
+            } else if (deletionStartPos > spanStart && deletionEndPos > spanStart && deletionStartPos < spanEnd && deletionEndPos > spanEnd) {
+                // 4. 
                 delete features[key];
             }
         }
     });
+
+    // Remake the sidebar and content grid 
     createSideBar(1);
     makeContentGrid(1);
 }
