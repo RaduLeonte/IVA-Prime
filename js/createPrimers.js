@@ -461,6 +461,7 @@ function repeatingSlice(str, startIndex, endIndex) {
  * 
  * TO DO:
  * - check at which point the tool should just recommend a long piece of dsDNA to order and use as a subcloning target
+ * - fix the feature updater and maybe make a function of it
  */
 function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, replaceEndPos) {
     // Define operation type
@@ -527,6 +528,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, repl
         while (get_tm(homoRev, primerConc, saltConc) > homoRegionTm) {
             homoRev = homoRev.slice(1);
         }
+
         // Reverse template binding region
         tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, 7, 1);
 
@@ -535,62 +537,140 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, repl
     }
 
     // Update the sequence and features
+    // Convert back from sequence indices to string indices
     replaceStartPos--;
     replaceEndPos--;
+    // Insertion is added into the main sequence and complementary strand is remade
     sequence = sequence.substring(0, replaceStartPos) + seqToInsert + sequence.substring(replaceEndPos);
     complementaryStrand = getComplementaryStrand(sequence);
+    // Loop over every feature and either shift it if it occurs after the replacement or delete it if it
+    // overlapped with the replacement
     Object.entries(features).forEach(([key, value]) => {
-        if (value.span && !key.includes("source")) {
+        if (value.span && !key.includes("source")) { // exclude "source" feature as it spans the entire plasmid
+            // Get span of current feature
             const currSpan = value.span.split("..").map(Number);
             const spanStart = currSpan[0];
             const spanEnd = currSpan[1];
-            if (spanStart < replaceEndPos && spanStart > replaceStartPos) {
+            /**
+             * Scenarios:
+             * 
+             * 1.
+             * old                [         ]
+             * new    [        ]
+             * -> shift
+             * 
+             * 2.
+             * old         [         ]
+             * new    [        ]
+             * -> deletion
+             * 
+             * 3.
+             * old          [         ]
+             * new    [                 ] 
+             * -> deletion
+             * 
+             * 4.
+             * old          [         ]
+             * new               [                 ] 
+             * -> deletion
+             * 
+             * 5.
+             * old          [         ]
+             * new                        [                 ] 
+             * -> do nothing
+             */
+            if (replaceStartPos < spanStart && replaceEndPos < spanStart && replaceStartPos < spanEnd && replaceEndPos < spanEnd) {
+                // 1. Find how much to shift features after the insertion
+                const spanAdjustment = seqToInsert.length - (replaceEndPos - replaceStartPos);
+                const newSpanStart = spanStart + spanAdjustment;
+                const newSpanEnd = spanEnd + spanAdjustment;
+                value.span = newSpanStart + ".." + newSpanEnd; // Update span of the feature
+            } else if (replaceStartPos < spanStart && replaceEndPos > spanStart && replaceStartPos < spanEnd && replaceEndPos < spanEnd) {
+                // 2.
                 delete features[key];
-            } else if (spanEnd < replaceEndPos && spanEnd > replaceStartPos) {
+            } else if (replaceStartPos < spanStart && replaceEndPos > spanStart && replaceStartPos < spanEnd && replaceEndPos > spanEnd) {
+                // 3.
                 delete features[key];
-            } else if (spanEnd > replaceStartPos && spanEnd > replaceEndPos) {
-                if (seqToInsert.length < replaceEndPos - replaceStartPos) {
-                    const spanAdjustment = (replaceEndPos - replaceStartPos) - seqToInsert.length;
-                    const newSpanStart = spanStart - spanAdjustment;
-                    const newSpanEnd = spanEnd - spanAdjustment;
-                    value.span = newSpanStart + ".." + newSpanEnd;
-                } else {
-                    const spanAdjustment = seqToInsert.length - (replaceEndPos - replaceStartPos);
-                    const newSpanStart = spanStart + spanAdjustment;
-                    const newSpanEnd = spanEnd + spanAdjustment;
-                    value.span = newSpanStart + ".." + newSpanEnd;
-                }
-                
-            }
+            } else if (replaceStartPos > spanStart && replaceEndPos > spanStart && replaceStartPos < spanEnd && replaceEndPos > spanEnd) {
+                // 4.
+                delete features[key];
+            } 
         }
     });
 
+    // Name of the new feature
     let newFeatureName = "Ins"
     if (seqToInsert.length > 7) {
         newFeatureName = "Insertion"
     }
+
+    // Check if there is a previous insertion and if there is, increment the nr at the end
     let i = 2;
     while (newFeatureName in features) {
         newFeatureName =  newFeatureName.replace("" + i-1, "")
         newFeatureName += i;
         i++;
     }
-    const tempDict = {}
+
+    // Creat the new feature
+    const tempDict = {} // init feature dict
     tempDict.label = newFeatureName;
     const insertStringPositionStart = replaceStartPos + 1;
     const insertStringPositionEnd = replaceStartPos + seqToInsert.length;
     tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
     tempDict.note = "";
-    features[newFeatureName] = tempDict
-    features = sortBySpan(features)
+    features[newFeatureName] = tempDict // add feature to features dict
+    features = sortBySpan(features) // resort feature dict by their order of appearance in the sequence
 
     // Remake the sidebar and content grid 
     createSideBar(1);
     makeContentGrid(1);
-
 }
 
+/**
+ * Creates the replacement primers. Takes in either a DNA sequence or an amino acid sequence and creates primers
+ * that will delete the section between the start and end positions specified and then insert the DNA sequence.
+ * The melting temperature of the DNA sequence to be inserted determines the amount of overhang in the primers.
+ * 
+ * Examples:
+ * 
+ * 1. Same start and end position, inserting ATG:
+ * (homologous and template binding regions are extended until they reach their specified melting temperatures)
+ * 
+ *                       homologous region  insertion      template binding region
+ *                                    |         |            |
+ *                            ┏---------------┓┏-┓┏------------------------┓
+ *                            TTATATATGGGGAAAAAATGTTTATATATGGGGAAAAAAAATTTA  
+ * fwdStrand  -> GGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATAT
+ * compStrand -> ATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCC
+ *                       ATTTTTTTTCCCCATATATAAATTT
+ *                       ┗-----------------------┛   
+ *                                   |
+ *                      homologous region
+ * 
+ * 2. Different start and end positions (3 bp difference), inserting a long sequence (CATCATCATCATCATCATCAT):
+ * (template binding regions are extended until their target temperature,
+ * the insertion can be as long as it needs to be
+ * BUT the reverse complement of the insertion needs to be truncated to only reach the target temperature
+ * of the homologous region)
+ * 
+ *                             insertion in full    template binding region
+ *                                      |                     |
+ *                           ┏-------------------┓┏------------------------┓
+ *                           CATCATCATCATCATCATCATTTTATATATGGGGAAAAAAAATTTA  
+ * fwdStrand  -> GGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATAT
+ * compStrand -> ATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCC
+ *                    ATTTTTTTTCCCCATATATAAATTTGTAGTAGTAGTAGTAGTAG
+ *                    ┗-----------------------┛┗-----------------┛   
+ *                                |                      |
+ *                   homologous region     reverse complement of insertion
 
+ * 
+ * deletionStartPos, deletionEndPos - indices of the segment to be deleted
+ * 
+ * TO DO:
+ * - 
+ */
 function createDeletionPrimers(deletionStartPos, deletionEndPos) {
     if (deletionStartPos > deletionEndPos) {
         let temp = deletionStartPos;
