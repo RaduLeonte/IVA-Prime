@@ -774,8 +774,8 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
  *  Vector:
  *                                         forward vector template binding region
  *                                                        |
- *                                         ┏--------------------------┓
- *                                         AAAAAAATTTATATATGGGGAAAAAAAA  
+ *                                          ┏-------------------------┓
+ *                                          AAAAAATTTATATATGGGGAAAAAAAA  
  * fwdStrand  -> GGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATAT
  * compStrand -> ATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCC
  *                 ATATAAATTTTTTTTCCCCATATAT
