@@ -23,6 +23,10 @@ let complementaryStrand2 = "";
 let features2 = null;
 
 
+
+/**
+ * On window load.
+ */
 window.onload = function() {
 
     // Select content div
@@ -39,51 +43,55 @@ window.onload = function() {
         if (acceptedFileExtensions.includes(fileExtension)) {
           // Initialise file reader
           const reader = new FileReader();
+
+          // Define reader
           reader.onload = function(e) {
-              const fileContent = e.target.result;
+            const fileContent = e.target.result; // Read file content
+            
+            // Depending on file extension pass the file content to the appropiate parser
+            if (fileExtension === ".dna") {
+              parseDNAFile(fileContent, 1);
+            } else {
+              parseGBFile(fileContent, 1);
+            }
+            
+            // Update header with filename
+            const headerList = document.getElementById('header-list');
+            headerList.innerHTML = headerList.innerHTML + "<li><a>" + file.name + "</a></li>";
+            
+            // Create the sidebar
+            createSideBar(1);
+
+            // Create content grid
+            makeContentGrid(1, function() {
+              contentDiv.style.overflow = 'auto'; // Enable scrolling after file import
               
-              // Parse the file content into variables
-              if (fileExtension === ".dna") {
-                parseDNAFile(fileContent, 1);
-              } else {
-                parseGBFile(fileContent, 1);
-              }
-              
+              // Show the second import button after the first file is imported
+              const importSecondButton = document.getElementById('import-second-btn');
+              importSecondButton.style.display = 'block';
 
-              // Update header with filename
-              const headerList = document.getElementById('header-list');
-              headerList.innerHTML = headerList.innerHTML + "<li><a>" + file.name + "</a></li>";
-              
-
-              // SIDEBAR
-              createSideBar(1);
-
-              // Create content grid
-              makeContentGrid(1, function() {
-                contentDiv.style.overflow = 'auto'; // Enable scrolling after file import
-                
-                // Show the second import button after the first file is imported
-                const importSecondButton = document.getElementById('import-second-btn');
-                importSecondButton.style.display = 'block';
-
-
-                // Add an event listener to the second import button
-                const fileInputSecond = document.createElement('input');
-                fileInputSecond.setAttribute('type', 'file');
-                fileInputSecond.addEventListener('change', handleFileSelectSecond);
-                importSecondButton.addEventListener('click', function(event) {
-                    event.preventDefault();
-                    fileInputSecond.click();
-                });
+              // Add an event listener to the second import button
+              const fileInputSecond = document.createElement('input');
+              fileInputSecond.setAttribute('type', 'file');
+              fileInputSecond.addEventListener('change', handleFileSelectSecond);
+              // Button listener
+              importSecondButton.addEventListener('click', function(event) {
+                  event.preventDefault();
+                  fileInputSecond.click();
               });
-              initiateSearchFunctionality(1);
+            });
+            
+            // Once the file is loaded, enable search function
+            initiateSearchFunctionality(1);
           };
 
-          reader.readAsText(file);
+            // Run reader
+            reader.readAsText(file);
           }
         
-    }
+    };
 
+    // Create file input element and run the file select on click
     const fileInput = document.createElement('input');
     fileInput.setAttribute('type', 'file');
     fileInput.addEventListener('change', handleFileSelect);
@@ -94,6 +102,261 @@ window.onload = function() {
     });
 };
 
+
+/**
+ * Genebank file parser.
+ * 
+ * 
+ * TO DO:
+ * - fix joined features
+ * - retain all information about the features (colour, complementary strand features)
+ */
+function parseGBFile(fileContent, pNr) {
+
+  /**
+   * Extracts the sequence from the end of the file.
+   * Data is structure as:
+   * ORIGIN      
+        1 tcaatattgg ccattagcca tattattcat tggttatata gcataaatca atattggcta
+       61 ttggccattg catacgttgt atctatatca taatatgtac atttatattg gctcatgtcc
+      121 aatatgaccg ccatgttggc attgattatt gactagttat taatagtaat caattacggg
+   */
+  function extractSequence(input) {
+    // Find "ORIGIN" and delete everything before the sequence
+    input = input.substring(input.indexOf("ORIGIN") + "ORIGIN".length);
+    // Regular expressions to get the sequence out
+    let output = input.replace(/\n/g, '').replace(/\/\//g, '').split(' ').filter(x => !/\d/.test(x));
+    output = output.join('').toUpperCase().trim().replace(/[\r\n]+/g, "")
+    return output;
+  }
+  
+
+  /**
+   * Extracts the features.
+   * Data structure:
+   * regulatory      1..742
+                     /regulatory_class="promoter"
+                     /note="CMV immediate/early promoter"
+                     /label="CMV immediate/early promoter regulatory"
+     intron          857..989
+                     /note="chimeric intron"
+                     /label="chimeric intron"
+     regulatory      1033..1052
+                     /regulatory_class="promoter"
+                     /note="T7 RNA polymerase promoter"
+                     /label="T7 RNA polymerase promoter regulatory"
+   */
+  function extractFeatures(input) {
+    // Convert file content to list of lines
+    const inputLines = input.split('\n').map(line => line.trim()).filter(line => line);
+    
+    const featuresDict = {}; // initialise features dict
+
+    // Add LOCUS feature which is defined on the first line
+    const firstLine = inputLines[0];
+    const locusNote = firstLine.trim();
+    featuresDict['LOCUS'] = { note: locusNote.replace("LOCUS ", ""), span: "", label: ""};
+
+    // Start deleting lines until we find the lines with "FEATURES"
+    while (inputLines.length > 0 && !inputLines[0].includes("FEATURES")) {
+        inputLines.shift(); // Remove the first item
+    }
+    inputLines.shift(); // Remove the line with "FEATURES"
+    
+
+    // Iterate over the remaining lines and group the lines based on what feature they belong to
+    const featureList = [];
+    let currentFeature = '';
+    for (const line of inputLines) {
+      if (line.includes('..')) { // If the line has .., then its probalby the line with the span
+        if (currentFeature !== '') {
+          featureList.push(currentFeature); // If this is not the first loop, send the feature with the lines collected so far
+        }
+        currentFeature = ''; // Reset
+      }
+      // Add the current line to the current feature
+      currentFeature += line + '\n';
+    }
+    
+    // If theres still a feature not yet pushed, push it
+    if (currentFeature !== '') {
+      featureList.push(currentFeature);
+    }
+    
+    
+    // Iterate over the list of features and parse them into a dict
+    for (const feature of featureList) {
+      // Split current feature into a list of lines
+      const lines = feature.split('\n').map(line => line.trim()).filter(line => line);
+
+      // Ignore joined features for now
+      if (!lines[0].includes("join")) {
+        // Get feature name
+        let featureName = lines[0].substring(0, lines[0].indexOf(' '));
+        // If theres an identical feature in the dict, give it a different name
+        let i = 0;
+        while (featureName in featuresDict) {
+          if (`${featureName}${i}` in featuresDict) {
+            i++;
+          } else {
+            featureName = `${featureName}${i}`;
+            break;
+          }
+        }
+        
+        // Start collecting info about the feature, starting with the span
+        // Span is always on the first line, for now ignore complement spans
+        const featureInfo = {
+          span: lines[0].includes('complement') ? lines[0].substring(lines[0].indexOf('complement')) : lines[0].replace(featureName, '').trim()
+        };
+      
+        // Iterate over the rest of the lines and save the properties to the feature info dict
+        for (let j = 1; j < lines.length; j++) {
+          const property = lines[j];
+          const propertyName = property.substring(0, property.indexOf('=')).replace('/', '').replace('"', '');
+          const propertyBody = property.substring(property.indexOf('=') + 1).replace(/"/g, '').trim();
+      
+          featureInfo[propertyName] = propertyBody;
+        }
+      
+        // Add the feature info dict to the features dict
+        featuresDict[featureName] = featureInfo;
+      }
+    }
+    
+    // Return the dict
+    return featuresDict;
+  }
+    
+
+  // Extract the sequence and features and save it to the specified plasmid variables
+  if (pNr === 1) {
+    features = extractFeatures(fileContent);
+    sequence = extractSequence(fileContent);
+    complementaryStrand = getComplementaryStrand(sequence);
+  } else {
+    features2 = extractFeatures(fileContent);
+    sequence2 = extractSequence(fileContent);
+    complementaryStrand2 = getComplementaryStrand(sequence2);
+  }
+}
+
+
+/**
+ * Snapgene file parser.
+ * 
+ * 
+ * TO DO:
+ * - try more dna files to make sure parses works
+ */
+function parseDNAFile(fileContent, pNr) {
+  // File needs to be read as byte stream
+  let fileBA = new TextEncoder().encode(fileContent);
+
+  /**
+   * Return the index of the matching subarray of bytes in the input byteArray.
+   */
+  function findSubarrayIndex(byteArray, subarray) {
+    for (let i = 0; i <= byteArray.length - subarray.length; i++) {
+      let match = true;
+      for (let j = 0; j < subarray.length; j++) {
+        if (byteArray[i + j] !== subarray[j]) {
+          match = false;
+          break;
+        }
+      }
+      if (match) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  // Extract sequence data
+  // Sequence data USUALLY ends in byte array 02 00 00, so find that and keep only stuff before it
+  let sequenceBA = fileBA.slice(25, findSubarrayIndex(fileBA, [2, 0, 0]));
+  let currSequence = new TextDecoder().decode(sequenceBA).toUpperCase().replace(/[^TACG]/gi, ''); // Convert to string and only keep ACTG
+  let currComplementarySequence = getComplementaryStrand(currSequence); // Create complementary strand
+
+  // Extract features
+  // Towards the end of the file there is an XML tree containing the data for the features
+  // Extract XML tree
+  let featuresString = fileContent.slice(fileContent.indexOf("<Features"), fileContent.indexOf("</Feature></Features>") + "</Feature></Features>".length);
+
+  // Parse the string into an XML object
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(featuresString, 'text/xml');
+  
+  // Initialize dict and iterate over all feature elements in the object
+  const featuresDict = {};
+  const featuresList = xmlDoc.getElementsByTagName('Feature');
+  for (let i = 0; i < featuresList.length; i++) {
+      const feature = featuresList[i]; // Current feature
+      const featureName = feature.getAttribute('name') + i; // Feature id
+
+      // All the feature properties
+      const featureInfo = {}
+      featureInfo["label"] = feature.getAttribute('name'); // Display name
+      featureInfo["span"] = "";
+      featureInfo["note"] = "";
+      let spanStart = null;
+      let spanEnd = null;
+
+      // Iterate over children to find properties
+      const featureChildren = feature.children;
+      for (let j = 0; j < featureChildren.length; j++) {
+          const child = featureChildren[j]; // Current child
+          const childName = child.nodeName; // Get the node name
+
+          // Nodes with the name "Segment" contain:
+          // span, color, type, translated
+          if (childName === "Segment") {
+              let currSpan = child.getAttribute('range').split("-"); // Get span and split into list
+              // Add span to feature info
+              featureInfo["span"] = currSpan[0] + ".." + currSpan[1];
+          }
+          // Nodes with the name "Q" contain:
+          // feature name, "V" nodes (contains the note text or a number)
+          if (childName === "Q") {
+              const subNoteName = child.getAttribute('name'); // Get name
+              let subNoteEntry = "";
+              // If the V node is an int
+              if (child.children[0].attributes.getNamedItem("int")) {
+                  subNoteEntry = child.children[0].getAttribute("int");
+              }
+              // If the V node has text
+              if (child.children[0].attributes.getNamedItem("text")) {
+                  subNoteEntry = child.children[0].getAttribute("text"); // Get text entry
+                  subNoteEntry = new DOMParser().parseFromString(subNoteEntry, 'text/html').body.textContent; // Sometimes the text contains html
+              }
+              // Save note to the dict
+              featureInfo["note"] += subNoteName + ": " + subNoteEntry + "; ";
+          }
+      }
+
+      // Append feature info the corresponding feature in the dict
+      featuresDict[featureName] = featureInfo;
+
+  }
+
+  // Extract the sequence and features and save it to the specified plasmid variables
+  if (pNr === 1) {
+      sequence = currSequence;
+      complementaryStrand = currComplementarySequence;
+      features = featuresDict;
+  } else {
+      sequence2 = currSequence;
+      complementaryStrand2 = currComplementarySequence;
+      features2 = featuresDict;
+  }
+}
+
+/**
+ * Populate the sidebar-
+ * 
+ * TO DO:
+ * - 
+ */
 function createSideBar(pNr) {
   // Sidebar contents
   let currFeatures = null;
@@ -351,8 +614,6 @@ function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
   }
 }
 
-
-
 function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStructure) {
   console.log("Merge cells1: ", row, col, colspan, text)
   // Check which grid were doing
@@ -474,9 +735,6 @@ function generateRandomUniqueColor() {
   return randomColor;
 }
 
-
-
-
 const promoters = {
   "CMV": "CGCAAATGGGCGGTAGGCGTG",
   "EF1α": "CCACGGGACACCATCTTTAC",
@@ -573,7 +831,6 @@ function promoterTranslation(pNr) {
     }
   }
 }
-
 
 function featureTranslation(pNr) {
 
@@ -677,186 +934,3 @@ function fillAACells(row, col, text, pNr) {
   mainCell.textContent = text;
   mainCell.style.textAlign = 'center';
 }
-
-function parseGBFile(fileContent, pNr) {
-  if (pNr === 1) {
-    features = extractFeatures(fileContent);
-    sequence = extractSequence(fileContent);
-    complementaryStrand = getComplementaryStrand(sequence);
-  } else {
-    features2 = extractFeatures(fileContent);
-    sequence2 = extractSequence(fileContent);
-    complementaryStrand2 = getComplementaryStrand(sequence2);
-  }
-  
-
-  // Adapted extract_features function
-  function extractFeatures(input) {
-
-      const inputLines = input.split('\n').map(line => line.trim()).filter(line => line);
-      // Add LOCUS feature
-      const featuresDict = {};
-      const firstLine = inputLines[0];
-      const locusNote = firstLine.trim();
-      featuresDict['LOCUS'] = { note: locusNote.replace("LOCUS ", ""), span: "", label: ""};
-      while (inputLines.length > 0 && !inputLines[0].includes("FEATURES")) {
-          inputLines.shift(); // Remove the first item
-      }
-      inputLines.shift();
-      
-      const featureList = [];
-      let currentFeature = '';
-      
-      for (const line of inputLines) {
-        if (line.includes('..')) {
-          if (currentFeature !== '') {
-            featureList.push(currentFeature);
-          }
-          currentFeature = '';
-        }
-      
-        currentFeature += line + '\n';
-      }
-      
-      if (currentFeature !== '') {
-        featureList.push(currentFeature);
-      }
-      
-      
-      for (const feature of featureList) {
-        const lines = feature.split('\n').map(line => line.trim()).filter(line => line);
-        if (!lines[0].includes("join")) {
-          let featureName = lines[0].substring(0, lines[0].indexOf(' '));
-          let i = 0;
-        
-          while (featureName in featuresDict) {
-            if (`${featureName}${i}` in featuresDict) {
-              i++;
-            } else {
-              featureName = `${featureName}${i}`;
-              break;
-            }
-          }
-        
-          const featureInfo = {
-            span: lines[0].includes('complement') ? lines[0].substring(lines[0].indexOf('complement')) : lines[0].replace(featureName, '').trim()
-          };
-        
-          for (let j = 1; j < lines.length; j++) {
-            const property = lines[j];
-            const propertyName = property.substring(0, property.indexOf('=')).replace('/', '').replace('"', '');
-            const propertyBody = property.substring(property.indexOf('=') + 1).replace(/"/g, '').trim();
-        
-            featureInfo[propertyName] = propertyBody;
-          }
-        
-          featuresDict[featureName] = featureInfo;
-        }
-      }
-      
-      return featuresDict;
-    }
-    
-  
-  function extractSequence(input) {
-      input = input.substring(input.indexOf("ORIGIN") + "ORIGIN".length);
-      let output = input.replace(/\n/g, '').replace(/\/\//g, '').split(' ').filter(x => !/\d/.test(x));
-      output = output.join('').toUpperCase().trim().replace(/[\r\n]+/g, "")
-      return output;
-  }
-}
-
-
-function findSubarrayIndex(byteArray, subarray) {
-  for (let i = 0; i <= byteArray.length - subarray.length; i++) {
-    let match = true;
-    for (let j = 0; j < subarray.length; j++) {
-      if (byteArray[i + j] !== subarray[j]) {
-        match = false;
-        break;
-      }
-    }
-    if (match) {
-      return i;
-    }
-  }
-  return -1;
-}
-
-
-function parseDNAFile(fileContent, pNr) {
-  let fileBA = new TextEncoder().encode(fileContent);
-
-  // Sequence
-  let sequenceBA = fileBA.slice(25, findSubarrayIndex(fileBA, [2, 0, 0]));
-  currSequence = new TextDecoder().decode(sequenceBA).toUpperCase().replace(/[^TACG]/gi, '');
-  currComplementarySequence = getComplementaryStrand(currSequence);
-
-  // Features
-  let featuresString = fileContent.slice(fileContent.indexOf("<Features"), fileContent.indexOf("</Feature></Features>") + "</Feature></Features>".length);
-  console.log(featuresString)
-
-
-  const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(featuresString, 'text/xml');
-  
-  const featuresDict = {};
-  const featuresList = xmlDoc.getElementsByTagName('Feature');
-  for (let i = 0; i < featuresList.length; i++) {
-      const feature = featuresList[i];
-
-      const featureName = feature.getAttribute('name') + i;
-
-      const featureInfo = {}
-      featureInfo["label"] = feature.getAttribute('name');
-      featureInfo["span"] = "";
-      featureInfo["note"] = "";
-      let spanStart = null;
-      let spanEnd = null;
-      const featureChildren = feature.children;
-      for (let j = 0; j < featureChildren.length; j++) {
-          const child = featureChildren[j];
-          const childName = child.nodeName;
-          if (childName === "Segment") {
-              let currSpan = child.getAttribute('range').split("-");
-
-              let currSpanStart = currSpan[0];
-              if (!spanStart || spanStart > currSpanStart) {
-                  spanStart = currSpanStart;
-              }
-
-              let currSpanEnd = currSpan[1];
-              if (!spanEnd || currSpanEnd > spanEnd) {
-                  spanEnd = currSpanEnd;
-              }
-          }
-          if (childName === "Q") {
-              const subNoteName = child.getAttribute('name');
-              let subNoteEntry = "";
-              if (child.children[0].attributes.getNamedItem("int")) {
-                  subNoteEntry = child.children[0].getAttribute("int");
-              }
-              if (child.children[0].attributes.getNamedItem("text")) {
-                  subNoteEntry = child.children[0].getAttribute("text");
-                  subNoteEntry = new DOMParser().parseFromString(subNoteEntry, 'text/html').body.textContent;
-              }
-              featureInfo["note"] += subNoteName + ": " + subNoteEntry + "; ";
-          }
-      }
-      
-      featureInfo["span"] = spanStart + ".." + spanEnd;
-      featuresDict[featureName] = featureInfo;
-
-  }
-
-  if (pNr === 1) {
-      sequence = currSequence;
-      complementaryStrand = currComplementarySequence;
-      features = featuresDict;
-  } else {
-      sequence2 = currSequence;
-      complementaryStrand2 = currComplementarySequence;
-      features2 = featuresDict;
-  }
-}
-
