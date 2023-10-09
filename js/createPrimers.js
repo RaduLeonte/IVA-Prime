@@ -537,94 +537,8 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, repl
     }
 
     // Update the sequence and features
-    // Convert back from sequence indices to string indices
-    replaceStartPos--;
-    replaceEndPos--;
-    // Insertion is added into the main sequence and complementary strand is remade
-    sequence = sequence.substring(0, replaceStartPos) + seqToInsert + sequence.substring(replaceEndPos);
-    complementaryStrand = getComplementaryStrand(sequence);
-    // Loop over every feature and either shift it if it occurs after the replacement or delete it if it
-    // overlapped with the replacement
-    Object.entries(features).forEach(([key, value]) => {
-        if (value.span && !key.includes("source")) { // exclude "source" feature as it spans the entire plasmid
-            // Get span of current feature
-            const currSpan = value.span.split("..").map(Number);
-            const spanStart = currSpan[0];
-            const spanEnd = currSpan[1];
-            /**
-             * Scenarios:
-             * 
-             * 1.
-             * old                [         ]
-             * new    [        ]
-             * -> shift
-             * 
-             * 2.
-             * old         [         ]
-             * new    [        ]
-             * -> deletion
-             * 
-             * 3.
-             * old          [         ]
-             * new    [                 ] 
-             * -> deletion
-             * 
-             * 4.
-             * old          [         ]
-             * new               [                 ] 
-             * -> deletion
-             * 
-             * 5.
-             * old          [         ]
-             * new                        [                 ] 
-             * -> do nothing
-             */
-            if (replaceStartPos < spanStart && replaceEndPos < spanStart && replaceStartPos < spanEnd && replaceEndPos < spanEnd) {
-                // 1. Find how much to shift features after the insertion
-                const spanAdjustment = seqToInsert.length - (replaceEndPos - replaceStartPos);
-                const newSpanStart = spanStart + spanAdjustment;
-                const newSpanEnd = spanEnd + spanAdjustment;
-                value.span = newSpanStart + ".." + newSpanEnd; // Update span of the feature
-            } else if (replaceStartPos < spanStart && replaceEndPos > spanStart && replaceStartPos < spanEnd && replaceEndPos < spanEnd) {
-                // 2.
-                delete features[key];
-            } else if (replaceStartPos < spanStart && replaceEndPos > spanStart && replaceStartPos < spanEnd && replaceEndPos > spanEnd) {
-                // 3.
-                delete features[key];
-            } else if (replaceStartPos > spanStart && replaceEndPos > spanStart && replaceStartPos < spanEnd && replaceEndPos > spanEnd) {
-                // 4.
-                delete features[key];
-            } 
-        }
-    });
-
-    // Name of the new feature
-    let newFeatureName = "Ins"
-    if (seqToInsert.length > 7) {
-        newFeatureName = "Insertion"
-    }
-
-    // Check if there is a previous insertion and if there is, increment the nr at the end
-    let i = 2;
-    while (newFeatureName in features) {
-        newFeatureName =  newFeatureName.replace("" + i-1, "")
-        newFeatureName += i;
-        i++;
-    }
-
-    // Creat the new feature
-    const tempDict = {} // init feature dict
-    tempDict.label = newFeatureName;
-    const insertStringPositionStart = replaceStartPos + 1;
-    const insertStringPositionEnd = replaceStartPos + seqToInsert.length;
-    tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
-    tempDict.note = "";
-    features[newFeatureName] = tempDict // add feature to features dict
-    features = sortBySpan(features) // resort feature dict by their order of appearance in the sequence
-
-    // Remake the sidebar and content grid 
-    createSideBar(1);
-    makeContentGrid(1);
+    const plasmidLengthDiff = seqToInsert.length - (replaceEndPos - replaceStartPos)
+    updateFeatures(operationType, seqToInsert, replaceStartPos, replaceEndPos, plasmidLengthDiff, 1);
 }
 
 /**
@@ -685,70 +599,8 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
     displayPrimers("Deletion", [homoFwd, tempFwd, tempRev, ""], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)");
 
     // Update the sequence and features
-    // Convert back from sequence indices to string indices
-    deletionStartPos--;
-    deletionEndPos--;
-    // Span of the adjusment
-    const deletionSpan = deletionEndPos - deletionStartPos;
-    // Update the main sequence and empty the span of the deletion and remake the complementary strand
-    sequence = sequence.slice(0, deletionStartPos) + sequence.slice(deletionEndPos);
-    complementaryStrand = getComplementaryStrand(sequence);
-    // Loop over each feature and if it occurs after the deletion, update its span
-    Object.entries(features).forEach(([key, value]) => { // exclude "source" feature as it spans the entire plasmid
-        if (value.span && !key.includes("source")) {
-            // Get span of current feature
-            const currSpan = value.span.split("..").map(Number);
-            const spanStart = currSpan[0];
-            const spanEnd = currSpan[1];
-            /**
-             * Scenarios:
-             * 
-             * 1.
-             * feature                 [         ]
-             * deletion    [        ]
-             * -> shift
-             * 
-             * 2.
-             * feature          [         ]
-             * deletion    [        ]
-             * -> delete feature
-             * 
-             * 3.
-             * feature          [         ]
-             * deletion    [                 ] 
-             * -> delete feature
-             * 
-             * 4.
-             * feature          [         ]
-             * deletion               [                 ] 
-             * -> delete feature
-             * 
-             * 5.
-             * feature          [         ]
-             * deletion                        [                 ] 
-             * -> do nothing
-             */
-            if (deletionStartPos < spanStart && deletionEndPos < spanStart && deletionStartPos < spanEnd && deletionEndPos < spanEnd) {
-                // 1. Deletion happens before feature's span
-                const newSpanStart = spanStart - deletionSpan;
-                const newSpanEnd = spanEnd - deletionSpan;
-                value.span = newSpanStart + ".." + newSpanEnd; // update the span
-            } else if (deletionStartPos < spanStart && deletionEndPos > spanStart && deletionStartPos < spanEnd && deletionEndPos < spanEnd) {
-                // 2.
-                delete features[key];
-            } else if (deletionStartPos < spanStart && deletionEndPos > spanStart && deletionStartPos < spanEnd && deletionEndPos > spanEnd) {
-                // 3. 
-                delete features[key];
-            } else if (deletionStartPos > spanStart && deletionEndPos > spanStart && deletionStartPos < spanEnd && deletionEndPos > spanEnd) {
-                // 4. 
-                delete features[key];
-            }
-        }
-    });
-
-    // Remake the sidebar and content grid 
-    createSideBar(1);
-    makeContentGrid(1);
+    const plasmidLengthDiff = 0 - (deletionEndPos - deletionStartPos);
+    updateFeatures("Deletion", "", deletionStartPos, deletionEndPos, plasmidLengthDiff, 1);
 }
 
 /**
@@ -937,46 +789,8 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
         displayPrimers("Subcloning", [insertHomoFwd, insertTempFwd, insertHomoRev, insertTempRev, vecFwd, vecRev], "white", "rgb(107, 96, 157)", "rgb(140, 202, 242)");
 
         // Update stuff
-        subcloningInsertPositionStart--;
-        subcloningInsertPositionEnd--;
-        sequence2 = sequence2.slice(0, subcloningInsertPositionStart) + subcloningInsertionSequence + sequence2.slice(subcloningInsertPositionEnd);
-        complementaryStrand2 = getComplementaryStrand(sequence2);
-        Object.entries(features2).forEach(([key, value]) => {
-            if (value.span && !key.includes("source")) {
-                const currSpan = value.span.split("..").map(Number);
-                const spanStart = currSpan[0];
-                const spanEnd = currSpan[1];
-                if (subcloningInsertPositionStart < spanStart && subcloningInsertPositionEnd < spanStart) {
-                    const newSpanStart = spanStart + subcloningInsertionSequence.length - (subcloningInsertPositionEnd - subcloningInsertPositionStart);
-                    const newSpanEnd = spanEnd + subcloningInsertionSequence.length - (subcloningInsertPositionEnd - subcloningInsertPositionStart);
-                    value.span = newSpanStart + ".." + newSpanEnd;
-                } else if (subcloningInsertPositionStart < spanStart && subcloningInsertPositionEnd > spanStart) {
-                    delete features2[key];
-                } else if(subcloningInsertPositionStart < spanEnd && subcloningInsertPositionEnd > spanEnd) {
-                    delete features2[key];
-                } else if (spanStart < subcloningInsertPositionStart && subcloningInsertPositionEnd < spanEnd) {
-                    delete features2[key];
-                }
-            }
-        });
-        let newFeatureName = "Subcloning"
-        let i = 2;
-        while (newFeatureName in features2) {
-            newFeatureName =  newFeatureName.replace("" + i-1, "")
-            newFeatureName += i;
-            i++;
-        }
-        const tempDict = {}
-        tempDict.label = newFeatureName;
-        const insertStringPositionStart = subcloningInsertPositionStart + 1;
-        const insertStringPositionEnd = insertStringPositionStart + subcloningInsertionSequence.length - 1;
-        tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
-        tempDict.note = "";
-        features2[newFeatureName] = tempDict
-        features2 = sortBySpan(features2)
-
-        createSideBar(2);
-        makeContentGrid(2);
+        const plasmidLengthDiff = (subcloningEndPos - subcloningStartPos) - (subcloningInsertPositionEnd - subcloningInsertPositionStart);
+        updateFeatures("Subcloning", subcloningInsertionSequence, subcloningInsertPositionStart, subcloningInsertPositionEnd, plasmidLengthDiff, 2);
     }, { once: true });
 
     // Listen for click events on the document
@@ -987,6 +801,183 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
         return;
     }, { once: true });
 }
+
+function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, segmentEndPos, featureShift, pNr) {
+    // Update the sequence and features
+    // Convert back from sequence indices to string indices
+    segmentStartPos--;
+    segmentEndPos--;
+    // Insertion is added into the main sequence and complementary strand is remade
+    if (pNr === 1) {
+        sequence = sequence.substring(0, segmentStartPos) + newFeatureSequence + sequence.substring(segmentEndPos);
+        complementaryStrand = getComplementaryStrand(sequence);
+    } else {
+        sequence2 = sequence2.substring(0, segmentStartPos) + newFeatureSequence + sequence2.substring(segmentEndPos);
+        complementaryStrand2= getComplementaryStrand(sequence2);
+    }
+
+    // Loop over every feature and either shift it if it occurs after the replacement or delete it if it
+    // overlapped with the replacemen
+    if (pNr === 1) {
+        Object.entries(features).forEach(([key, value]) => {
+            const decision = checkNewFeatureOverlap(key, value, segmentStartPos, segmentEndPos, featureShift);
+            if (decision === "shift") {
+                const currSpan = value.span.split("..").map(Number);
+                const newSpanStart = currSpan[0] + featureShift;
+                const newSpanEnd = currSpan[1] + featureShift;
+                features[key].span = newSpanStart + ".." + newSpanEnd; // Update span of the feature
+            } else if (decision === "delete") {
+                delete features[key];
+            }
+        });
+    } else {
+        Object.entries(features2).forEach(([key, value]) => {
+            const decision = checkNewFeatureOverlap(key, value, segmentStartPos, segmentEndPos,);
+            if (decision === "shift") {
+                const currSpan = value.span.split("..").map(Number);
+                const newSpanStart = currSpan[0] + featureShift;
+                const newSpanEnd = currSpan[1] + featureShift;
+                features2[key].span = newSpanStart + ".." + newSpanEnd; // Update span of the feature
+            } else if (decision === "delete") {
+                delete features2[key];
+            }
+        });
+    }
+
+    // Name of the new feature
+    let newFeatureName = newFeatureType; // Long name
+    if (newFeatureSequence.length < 7) { // If theres no space, abbreviate to first 3 letters
+        newFeatureName = newFeatureName.slice(0, 3)
+    }
+
+    // Check if there is a previous insertion and if there is, increment the nr at the end
+    let i = 2;
+    let targetFeaturesDict = features;
+    if (pNr === 2) {
+        targetFeaturesDict = features2;
+    }
+    while (newFeatureName in targetFeaturesDict) {
+        newFeatureName =  newFeatureName.replace("" + i-1, "")
+        newFeatureName += i;
+        i++;
+    }
+
+    // Creat the new feature
+    if (newFeatureType !== "Deletion") {
+        const tempDict = {} // init feature dict
+        tempDict.label = newFeatureName;
+        const insertStringPositionStart = segmentStartPos + 1;
+        const insertStringPositionEnd = segmentStartPos + newFeatureSequence.length;
+        tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
+        tempDict.note = "";
+        if (pNr === 1) {
+            features[newFeatureName] = tempDict // add feature to features dict
+            features = sortBySpan(features) // resort feature dict by their order of appearance in the sequence
+        } else {
+            features2[newFeatureName] = tempDict // add feature to features dict
+            features2 = sortBySpan(features2) // resort feature dict by their order of appearance in the sequence
+        }
+    }
+    // Remake the sidebar and content grid 
+    createSideBar(pNr);
+    makeContentGrid(pNr);
+
+}
+
+function checkNewFeatureOverlap(elementKey, elementValue, featureStart, featureEnd) {
+    if (featureStart === featureEnd) {
+        featureStart++;
+        featureEnd++;
+    } else {
+        featureStart++;
+    }
+    if (elementValue.span && !elementKey.includes("source")) { // exclude "source" feature as it spans the entire plasmid
+        // Get span of current feature
+        const currSpan = elementValue.span.split("..").map(Number);
+        const spanStart = currSpan[0];
+        const spanEnd = currSpan[1];
+        /**
+         * Scenarios:
+         * 
+         * 0.
+         * old                [         ]
+         * new                 [      ]
+         * -> shift
+         * 
+         * 1.
+         * old                [         ]
+         * new    [        ]
+         * -> shift
+         * 
+         * 2.
+         * old         [         ]
+         * new    [        ]
+         * -> deletion
+         * 
+         * 3.
+         * old          [         ]
+         * new    [                 ] 
+         * -> deletion
+         * 
+         * 4.
+         * old          [         ]
+         * new               [                 ] 
+         * -> deletion
+         * 
+         * 5.
+         * old          [         ]
+         * new                        [                 ] 
+         * -> do nothing
+         */
+
+        if (featureStart === featureEnd) {
+            if (featureStart < spanStart) {
+                //way before, just shift
+                console.log("Case Insertion shift")
+                return "shift";
+            } else if (spanStart === featureStart) {
+                //Insert right before
+                console.log("Case Insertion right before")
+                return "shift";
+            } else if (featureStart < spanEnd) {
+                //Inside, delete
+                console.log("Case Insertion inside")
+                return "delete";
+            } else if (featureStart > spanEnd) {
+                //way after, do noghing
+                console.log("Case Insertion right before")
+                return null;
+            }
+        }
+
+        if (featureStart >= spanStart && featureEnd >= spanStart && featureStart <= spanEnd && featureEnd <= spanEnd && featureStart !== featureEnd) {
+            // 0. new feature is inside the old feature, delete
+            console.log("Feature Overlap Case 0", featureStart, featureEnd, spanStart, spanEnd)
+            return "delete";
+        } else if (featureStart < spanStart && featureEnd < spanStart && featureStart < spanEnd && featureEnd < spanEnd) {
+            // 1. Find how much t"o shift features after the insertion
+            console.log("Feature Overlap Case 1", featureStart, featureEnd, spanStart, spanEnd)
+            return "shift";
+        } else if (featureStart < spanStart && featureEnd >= spanStart && featureStart < spanEnd && featureEnd <= spanEnd) {
+            // 2.
+            console.log("Feature Overlap Case 2", featureStart, featureEnd, spanStart, spanEnd)
+            return "delete";
+        } else if (featureStart < spanStart && featureEnd > spanStart && featureStart < spanEnd && featureEnd > spanEnd) {
+            // 3.
+            console.log("Feature Overlap Case 3", featureStart, featureEnd, spanStart, spanEnd)
+            return "delete";
+        } else if (featureStart >= spanStart && featureEnd > spanStart && featureStart <= spanEnd && featureEnd > spanEnd) {
+            // 4.
+            console.log("Feature Overlap Case 4", featureStart, featureEnd, spanStart, spanEnd)
+            return "delete";
+        } else if (featureStart === featureEnd && featureStart <= spanEnd) {
+            return "shift";
+        } else {
+            console.log("Feature Overlap Case 5", featureStart, featureEnd, spanStart, spanEnd)
+            return null;
+        }
+    }
+};
 
 /**
  * Sort the features dict by span so that the features appear in order in the sidebar.
