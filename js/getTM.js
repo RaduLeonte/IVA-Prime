@@ -1,47 +1,62 @@
-function find_in_dict(dictionary, pair) {
-  let key = null;
-
-  // Check for pair in the first 2 characters of dict keys
-  for (const dictKey of Object.keys(dictionary)) {
-    if (dictKey.slice(0, 2) === pair) {
-      key = dictKey;
-      return dictionary[key];
-    }
-  }
-
-  // Check for reverse of pair in the first 2 characters of dict keys
-  for (const dictKey of Object.keys(dictionary)) {
-    if (dictKey.slice(0, 2) === pair.split('').reverse().join('')) {
-      key = dictKey;
-      return dictionary[key];
-    }
-  }
-
-  // Check for pair in the last 2 characters of dict keys
-  for (const dictKey of Object.keys(dictionary)) {
-    if (dictKey.slice(-2) === pair) {
-      key = dictKey;
-      return dictionary[key];
-    }
-  }
-
-  // Check for reverse of pair in the last 2 characters of dict keys
-  for (const dictKey of Object.keys(dictionary)) {
-    if (dictKey.slice(-2) === pair.split('').reverse().join('')) {
-      key = dictKey;
-      return dictionary[key];
-    }
-  }
-
-  return null;
-}
+/**
+ * Melting temperature calculator for DNA duplexes.
+ * 
+ * sequence - primer of interest
+ * c - primer concentration in M
+ * m - salt concentration in M
+ * 
+ * TO DO:
+ * - 
+ */
 
 function get_tm(sequence, c, m) {
+
+    /**
+     * Find nucleotide pair in the enthalpy or entropy dictionaries. Function searches for the presence of the 
+     * nucleotide pair or its reverse in the dictionary keys.
+     */
+    function find_in_dict(dictionary, pair) {
+      let key = null;
+
+      // Check for pair in the first 2 characters of dict keys
+      for (const dictKey of Object.keys(dictionary)) {
+        if (dictKey.slice(0, 2) === pair) {
+          key = dictKey;
+          return dictionary[key];
+        }
+      }
+    
+      // Check for reverse of pair in the first 2 characters of dict keys
+      for (const dictKey of Object.keys(dictionary)) {
+        if (dictKey.slice(0, 2) === pair.split('').reverse().join('')) {
+          key = dictKey;
+          return dictionary[key];
+        }
+      }
+    
+      // Check for pair in the last 2 characters of dict keys
+      for (const dictKey of Object.keys(dictionary)) {
+        if (dictKey.slice(-2) === pair) {
+          key = dictKey;
+          return dictionary[key];
+        }
+      }
+    
+      // Check for reverse of pair in the last 2 characters of dict keys
+      for (const dictKey of Object.keys(dictionary)) {
+        if (dictKey.slice(-2) === pair.split('').reverse().join('')) {
+          key = dictKey;
+          return dictionary[key];
+        }
+      }
+    
+      return null;
+    }
 
     // Constants or params
     const R = 1.987; // cal mol-1 K-1 universal gas constant
 
-    // cal mol-1
+    // Enthalpy data (cal mol-1)
     const deltaH_dict = {
         "AA/TT": -7.9E3,
         "AT/TA": -7.2E3,
@@ -55,7 +70,7 @@ function get_tm(sequence, c, m) {
         "GG/CC": -8.0E3
     }; 
 
-    // cal k-1 mol-1
+    // Entropy data (cal k-1 mol-1)
     const deltaS_dict = {
         "AA/TT": -22.2,
         "AT/TA": -20.4,
@@ -69,13 +84,15 @@ function get_tm(sequence, c, m) {
         "GG/CC": -19.9
     };
 
-    /*
-    H0 and S0
-    */
+    /**
+     * Initialize enthalpy and entropy
+     */
     let deltaH0 = 0; // cal * mol-1 enthalpy
     let deltaS0 = 0; // cal K-1 mol-1 entropy
 
     // Symmetry correction
+    // If the primer is completely symmetric, there is an entropy gain and the symmetry fraction
+    // is different
     let symm_fraction = 4;
     const complementary = getComplementaryStrand(sequence);
     if (sequence === complementary) {
@@ -84,6 +101,9 @@ function get_tm(sequence, c, m) {
     }
 
     // Nucleation term
+    // The first pair to anneal is the nucleation point, but since G-C bonds are so strong it basically
+    // always starts annealing there. If there is a G or C anywhere in the sequence add GC contributions
+    // otherwise, the AT contributions.
     if (sequence.includes("G") || sequence.includes("C")) {
         deltaH0 += 0.1E3;
         deltaS0 += -2.8;
@@ -92,6 +112,7 @@ function get_tm(sequence, c, m) {
         deltaS0 += 4.1;
     }
 
+    // Loop over the sequence and add the contributions of each pair of nucleotides.
     for (let i = 0; i < sequence.length - 1; i++) {
         const pair = sequence[i] + sequence[i + 1];
 
@@ -102,8 +123,9 @@ function get_tm(sequence, c, m) {
         deltaS0 += to_addS
     }
     
-
+    // Calculate the melting temperature and convert from K to C
     const tm = (deltaH0 / (deltaS0 + R * Math.log(c / symm_fraction))) - 273.15; 
+    // Add a salt correction
     const tm_corr = tm + 16.6 * Math.log(m);
 
     return tm_corr;
