@@ -1006,5 +1006,29 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
     // Remake the sidebar and content grid 
     createSideBar(pNr);
     makeContentGrid(pNr);
+}
 
+/**
+ * Create the complementary strand to a given DNA sequence.
+ * 
+ * TO DO:
+ * - sanitize input?
+ */
+function getComplementaryStrand(sequence) {
+    // Map
+    const nucleotideComplements = {
+        'A': 'T',
+        'T': 'A',
+        'G': 'C',
+        'C': 'G'
+    };
+
+    // Convert to uppercase, make into list, map to complementary base, then turn back into string
+    const complementaryStrand = sequence
+        .toUpperCase()
+        .split('')
+        .map(nucleotide => nucleotideComplements[nucleotide])
+        .join('');
+
+    return complementaryStrand;
 }
