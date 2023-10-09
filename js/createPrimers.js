@@ -204,6 +204,26 @@ function primerExtension(startingPos, targetStrand, direction, targetTm, minLeng
         accessory = mutSeq;
     }
 
+    /**
+     * Improved slice() function that allows for negative indices or indices longer than the string length by assuming
+     * the string loops.
+     * 
+     * Example:
+     *         startIndex            endIndex
+     *             ▼                    ▼
+     *         -3 -2 -1 0 1 2 3 4 5 6 7 8 9
+     * str ->   _  _  _ A B C D E F G _ _ _
+     * 
+     * Result -> FGABCDEFGAB
+     * 
+     * str - string to be sliced
+     * startIndex, endIndex - slice indices
+     */
+    function repeatingSlice(str, startIndex, endIndex) {
+        const repeatedStr = str.repeat(3); // Copy the string 3 times: ABC_ABC_ABC
+        return repeatedStr.slice(startIndex + str.length, endIndex + str.length); // Remap indices to new string then return
+    }
+
     // Initialise previous primer based on target strand and direction and using the min length
     let prev_p = "";
     if (direction === "forward") {
@@ -261,102 +281,6 @@ function primerExtension(startingPos, targetStrand, direction, targetTm, minLeng
 }
 
 
-/**
- * Function that recursively creates every possible DNA sequence for the specificied amino acid sequence if
- * the length is under 10 amino acids, in which case it only returns the first DNA sequence generated.
- *  
- * TO DO:
- * - Make the algorithm not have an O(n!), maybe cache the melting temperatures of the codons
- * - Add an option to optimize for a specific organism
- * - Maybe optimize GC content?
- */
-function generateDNASequences(aminoAcidSequence) {
-    // Possible codons resulting in each amino acid
-    const codons = {
-      A: ['GCT', 'GCC', 'GCA', 'GCG'],
-      R: ['CGT', 'CGC', 'CGA', 'CGG', 'AGA', 'AGG'],
-      N: ['AAT', 'AAC'],
-      D: ['GAT', 'GAC'],
-      C: ['TGT', 'TGC'],
-      E: ['GAA', 'GAG'],
-      Q: ['CAA', 'CAG'],
-      G: ['GGT', 'GGC', 'GGA', 'GGG'],
-      H: ['CAT', 'CAC'],
-      I: ['ATT', 'ATC', 'ATA'],
-      L: ['TTA', 'TTG', 'CTT', 'CTC', 'CTA', 'CTG'],
-      K: ['AAA', 'AAG'],
-      M: ['ATG'],
-      F: ['TTT', 'TTC'],
-      P: ['CCT', 'CCC', 'CCA', 'CCG'],
-      S: ['TCT', 'TCC', 'TCA', 'TCG', 'AGT', 'AGC'],
-      T: ['ACT', 'ACC', 'ACA', 'ACG'],
-      W: ['TGG'],
-      Y: ['TAT', 'TAC'],
-      V: ['GTT', 'GTC', 'GTA', 'GTG'],
-      X: ['TAA', 'TAG', 'TGA']
-    };
-  
-    const results = []; // Initialize empty list for generated sequences
-  
-    /**
-     * The function looks at the amino acid in the amino acid sequence specified by the index and calls itself for each possible codon
-     * that corresponds to the current amino acid.
-     * 
-     * Example for WYD:
-     * 
-     *                                           W
-     *                                           |
-     *                                           |
-     *                                         [TGG]
-     *                                           |
-     *                                           |
-     *                                          WY
-     *                                           |
-     *                        -------------------------------------	
-     *                        |                                   |
-     *                 [TGG][TAT]                          [TGG][TAC]
-     *                        |                                   | 
-     *                       WYD                                 WYD
-     *                         |                                   |
-     *                -------------------	              -------------------
-     *                |                 |                 |                 |
-     *    [TGG][TAT][GAT]   [TGG][TAT][GAC]   [TGG][TAC][GAT]   [TGG][TAT][GAC] } -> Results
-     * 
-     * aminoAcidSeq - full amino acid sequence
-     * index - current tree depth and sequence index
-     * currentSeq - the current sequence with all codons appended so far
-     */
-    function generateSequences(aminoAcidSeq, index, currentSeq) {
-        // Check if we've reached the end of the recursive tree
-        if (index === aminoAcidSeq.length) {
-            results.push(currentSeq); // Save progress by pushing to results
-            return;
-        }
-
-        const aminoAcid = aminoAcidSeq[index]; // Current amino acid
-        const possibleCodons = codons[aminoAcid]; // Return list of possible codonds for current amino acid
-
-        // For each possible codon, append the codon to the current sequence then branch the tree with an incremented index
-        for (let codon of possibleCodons) {
-            generateSequences(aminoAcidSeq, index + 1, currentSeq + codon);
-        }
-    }
-  
-    // If the sequence is less than 10 acids, generate all possible DNA sequences
-    if (aminoAcidSequence.length < 10) {
-        generateSequences(aminoAcidSequence, 0, '');
-    } else { // Else only choose the first codon for each acid
-        let basicSeq = "";
-        for (let aminoAcid of aminoAcidSequence) {
-            const possibleCodons = codons[aminoAcid];
-            const selectedCodon = possibleCodons[0];
-            basicSeq += selectedCodon;
-          }
-        results.push(basicSeq);
-    }
-  
-    return results;
-  }
 
 /**
  * Takes in a sequence of amino acids (inputAA) as input and returns the DNA sequence with
@@ -369,6 +293,82 @@ function generateDNASequences(aminoAcidSequence) {
  * - add options to optimize the AA sequence for a specific organism
  */
 function optimizeAA(inputAA) {
+    /**
+     * Function that recursively creates every possible DNA sequence for the specificied amino acid sequence if
+     * the length is under 10 amino acids, in which case it only returns the first DNA sequence generated.
+     *  
+     * TO DO:
+     * - Make the algorithm not have an O(n!), maybe cache the melting temperatures of the codons
+     * - Add an option to optimize for a specific organism
+     * - Maybe optimize GC content?
+     */
+    function generateDNASequences(aminoAcidSequence) {
+        // Possible codons resulting in each amino acid
+        const codons = {
+        A: ['GCT', 'GCC', 'GCA', 'GCG'],
+        R: ['CGT', 'CGC', 'CGA', 'CGG', 'AGA', 'AGG'],
+        N: ['AAT', 'AAC'],
+        D: ['GAT', 'GAC'],
+        C: ['TGT', 'TGC'],
+        E: ['GAA', 'GAG'],
+        Q: ['CAA', 'CAG'],
+        G: ['GGT', 'GGC', 'GGA', 'GGG'],
+        H: ['CAT', 'CAC'],
+        I: ['ATT', 'ATC', 'ATA'],
+        L: ['TTA', 'TTG', 'CTT', 'CTC', 'CTA', 'CTG'],
+        K: ['AAA', 'AAG'],
+        M: ['ATG'],
+        F: ['TTT', 'TTC'],
+        P: ['CCT', 'CCC', 'CCA', 'CCG'],
+        S: ['TCT', 'TCC', 'TCA', 'TCG', 'AGT', 'AGC'],
+        T: ['ACT', 'ACC', 'ACA', 'ACG'],
+        W: ['TGG'],
+        Y: ['TAT', 'TAC'],
+        V: ['GTT', 'GTC', 'GTA', 'GTG'],
+        X: ['TAA', 'TAG', 'TGA']
+        };
+    
+        const results = []; // Initialize empty list for generated sequences
+    
+        /**
+         * The function looks at the amino acid in the amino acid sequence specified by the index and calls itself for each possible codon
+         * that corresponds to the current amino acid.
+         * 
+         * aminoAcidSeq - full amino acid sequence
+         * index - current tree depth and sequence index
+         * currentSeq - the current sequence with all codons appended so far
+         */
+        function generateSequences(aminoAcidSeq, index, currentSeq) {
+            // Check if we've reached the end of the recursive tree
+            if (index === aminoAcidSeq.length) {
+                results.push(currentSeq); // Save progress by pushing to results
+                return;
+            }
+
+            const aminoAcid = aminoAcidSeq[index]; // Current amino acid
+            const possibleCodons = codons[aminoAcid]; // Return list of possible codonds for current amino acid
+
+            // For each possible codon, append the codon to the current sequence then branch the tree with an incremented index
+            for (let codon of possibleCodons) {
+                generateSequences(aminoAcidSeq, index + 1, currentSeq + codon);
+            }
+        }
+    
+        // If the sequence is less than 10 acids, generate all possible DNA sequences
+        if (aminoAcidSequence.length < 10) {
+            generateSequences(aminoAcidSequence, 0, '');
+        } else { // Else only choose the first codon for each acid
+            let basicSeq = "";
+            for (let aminoAcid of aminoAcidSequence) {
+                const possibleCodons = codons[aminoAcid];
+                const selectedCodon = possibleCodons[0];
+                basicSeq += selectedCodon;
+            }
+            results.push(basicSeq);
+        }
+    
+        return results;
+    }
     // Call function to generate all possible DNA sequence that result in the input amino acid sequence
     let dnaSequences = generateDNASequences(inputAA);
 
@@ -396,25 +396,6 @@ function optimizeAA(inputAA) {
     return closestKey;
 }
 
-/**
- * Improved slice() function that allows for negative indices or indices longer than the string length by assuming
- * the string loops.
- * 
- * Example:
- *         startIndex            endIndex
- *             ▼                    ▼
- *         -3 -2 -1 0 1 2 3 4 5 6 7 8 9
- * str ->   _  _  _ A B C D E F G _ _ _
- * 
- * Result -> FGABCDEFGAB
- * 
- * str - string to be sliced
- * startIndex, endIndex - slice indices
- */
-function repeatingSlice(str, startIndex, endIndex) {
-    const repeatedStr = str.repeat(3); // Copy the string 3 times: ABC_ABC_ABC
-    return repeatedStr.slice(startIndex + str.length, endIndex + str.length); // Remap indices to new string then return
-}
 
 /**
  * Creates the replacement primers. Takes in either a DNA sequence or an amino acid sequence and creates primers
@@ -802,11 +783,25 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
     }, { once: true });
 }
 
+/**
+ * Updates the target plasmid sequence, checks if the insertion/deletion crashes with exsiting features and adjusts accordingly (shift or deletion).
+ * Lastly, adds the new feature to the feature dict and rebuilds the plasmid as well as refresh it in the viewer.
+ * 
+ * newFeatureTyp - name of operation type (insertion, deletion, subcloning)
+ * newFeatureSequence - sequence of the new feature to be inserted (or "" in the case of deletions)
+ * segmentStartPos, segmentEndPos - indices deliminating the span of the new feature (equal in the case of pure insertions)
+ * pNr - number of the target plasmid to be updated
+ * 
+ * TO DO:
+ * - 
+ */
+
 function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, segmentEndPos, featureShift, pNr) {
     // Update the sequence and features
     // Convert back from sequence indices to string indices
     segmentStartPos--;
     segmentEndPos--;
+
     // Insertion is added into the main sequence and complementary strand is remade
     if (pNr === 1) {
         sequence = sequence.substring(0, segmentStartPos) + newFeatureSequence + sequence.substring(segmentEndPos);
@@ -815,6 +810,114 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
         sequence2 = sequence2.substring(0, segmentStartPos) + newFeatureSequence + sequence2.substring(segmentEndPos);
         complementaryStrand2= getComplementaryStrand(sequence2);
     }
+
+    /**
+     * Decides if the old feature should be left alone, shifted, or deleted based on the span of the new feature.
+     * 
+     * elementKey - working key
+     * elementvalue - working value
+     * featureStart, featureEnd - indices of new feature that need to be checked against the span of the key
+     * 
+     * TO DO:
+     * - Right now a hacky way of checking overlap, cant be sure it covers all cases but passed basic testing
+    */
+
+    function checkNewFeatureOverlap(elementKey, elementValue, featureStart, featureEnd) {
+        // Adjust indices if we're dealing with a pure insertion and the start and end indices are identical
+        if (featureStart === featureEnd) {
+            featureStart++;
+            featureEnd++;
+        } else { // Adjust indices from sequence indices to feature indices
+            featureStart++;
+        }
+        if (elementValue.span && !elementKey.includes("source")) { // exclude "source" feature as it spans the entire plasmid
+            // Get span of current feature
+            const currSpan = elementValue.span.split("..").map(Number);
+            const spanStart = currSpan[0];
+            const spanEnd = currSpan[1];
+
+            // Special cases for pure insertions
+            if (featureStart === featureEnd) {
+                if (featureStart < spanStart) {
+                    //way before, just shift
+                    console.log("Case Insertion shift")
+                    return "shift";
+                } else if (spanStart === featureStart) {
+                    //Insert right before
+                    console.log("Case Insertion right before")
+                    return "shift";
+                } else if (featureStart < spanEnd) {
+                    //Inside, delete
+                    console.log("Case Insertion inside")
+                    return "delete";
+                } else if (featureStart > spanEnd) {
+                    //way after, do noghing
+                    console.log("Case Insertion right before")
+                    return null;
+                }
+            }
+            /**
+             * Scenarios for replacement features:
+             * 
+             * 0.
+             * old                [         ]
+             * new                 [      ]
+             * -> shift
+             * 
+             * 1.
+             * old                [         ]
+             * new    [        ]
+             * -> shift
+             * 
+             * 2.
+             * old         [         ]
+             * new    [        ]
+             * -> deletion
+             * 
+             * 3.
+             * old          [         ]
+             * new    [                 ] 
+             * -> deletion
+             * 
+             * 4.
+             * old          [         ]
+             * new               [                 ] 
+             * -> deletion
+
+            * 5.
+            * old          [         ]
+            * new                        [                 ] 
+            * -> do nothing
+            */
+
+            if (featureStart >= spanStart && featureEnd >= spanStart && featureStart <= spanEnd && featureEnd <= spanEnd && featureStart !== featureEnd) {
+                // 0. new feature is inside the old feature, delete
+                console.log("Feature Overlap Case 0", featureStart, featureEnd, spanStart, spanEnd)
+                return "delete";
+            } else if (featureStart < spanStart && featureEnd < spanStart && featureStart < spanEnd && featureEnd < spanEnd) {
+                // 1. Find how much t"o shift features after the insertion
+                console.log("Feature Overlap Case 1", featureStart, featureEnd, spanStart, spanEnd)
+                return "shift";
+            } else if (featureStart < spanStart && featureEnd >= spanStart && featureStart < spanEnd && featureEnd <= spanEnd) {
+                // 2.
+                console.log("Feature Overlap Case 2", featureStart, featureEnd, spanStart, spanEnd)
+                return "delete";
+            } else if (featureStart < spanStart && featureEnd > spanStart && featureStart < spanEnd && featureEnd > spanEnd) {
+                // 3.
+                console.log("Feature Overlap Case 3", featureStart, featureEnd, spanStart, spanEnd)
+                return "delete";
+            } else if (featureStart >= spanStart && featureEnd > spanStart && featureStart <= spanEnd && featureEnd > spanEnd) {
+                // 4.
+                console.log("Feature Overlap Case 4", featureStart, featureEnd, spanStart, spanEnd)
+                return "delete";
+            } else if (featureStart === featureEnd && featureStart <= spanEnd) {
+                return "shift";
+            } else {
+                console.log("Feature Overlap Case 5", featureStart, featureEnd, spanStart, spanEnd)
+                return null;
+            }
+        }
+    };
 
     // Loop over every feature and either shift it if it occurs after the replacement or delete it if it
     // overlapped with the replacemen
@@ -862,6 +965,28 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
         i++;
     }
 
+
+    /**
+     * Sort the features dict by span so that the features appear in order in the sidebar.
+     */
+    function sortBySpan(dict) {
+        // Convert the dictionary to an array of key-value pairs
+        const valueKey = "span";
+        const entries = Object.entries(dict);
+    
+        // Sort the array based on the first number in the value key
+        entries.sort((a, b) => {
+        const aValue = Number(a[1][valueKey].split('..')[0]);
+        const bValue = Number(b[1][valueKey].split('..')[0]);
+        return aValue - bValue;
+        });
+    
+        // Convert the sorted array back to a dictionary
+        const sortedDict = Object.fromEntries(entries);
+    
+        return sortedDict;
+    }
+
     // Creat the new feature
     if (newFeatureType !== "Deletion") {
         const tempDict = {} // init feature dict
@@ -882,120 +1007,4 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
     createSideBar(pNr);
     makeContentGrid(pNr);
 
-}
-
-function checkNewFeatureOverlap(elementKey, elementValue, featureStart, featureEnd) {
-    if (featureStart === featureEnd) {
-        featureStart++;
-        featureEnd++;
-    } else {
-        featureStart++;
-    }
-    if (elementValue.span && !elementKey.includes("source")) { // exclude "source" feature as it spans the entire plasmid
-        // Get span of current feature
-        const currSpan = elementValue.span.split("..").map(Number);
-        const spanStart = currSpan[0];
-        const spanEnd = currSpan[1];
-        /**
-         * Scenarios:
-         * 
-         * 0.
-         * old                [         ]
-         * new                 [      ]
-         * -> shift
-         * 
-         * 1.
-         * old                [         ]
-         * new    [        ]
-         * -> shift
-         * 
-         * 2.
-         * old         [         ]
-         * new    [        ]
-         * -> deletion
-         * 
-         * 3.
-         * old          [         ]
-         * new    [                 ] 
-         * -> deletion
-         * 
-         * 4.
-         * old          [         ]
-         * new               [                 ] 
-         * -> deletion
-         * 
-         * 5.
-         * old          [         ]
-         * new                        [                 ] 
-         * -> do nothing
-         */
-
-        if (featureStart === featureEnd) {
-            if (featureStart < spanStart) {
-                //way before, just shift
-                console.log("Case Insertion shift")
-                return "shift";
-            } else if (spanStart === featureStart) {
-                //Insert right before
-                console.log("Case Insertion right before")
-                return "shift";
-            } else if (featureStart < spanEnd) {
-                //Inside, delete
-                console.log("Case Insertion inside")
-                return "delete";
-            } else if (featureStart > spanEnd) {
-                //way after, do noghing
-                console.log("Case Insertion right before")
-                return null;
-            }
-        }
-
-        if (featureStart >= spanStart && featureEnd >= spanStart && featureStart <= spanEnd && featureEnd <= spanEnd && featureStart !== featureEnd) {
-            // 0. new feature is inside the old feature, delete
-            console.log("Feature Overlap Case 0", featureStart, featureEnd, spanStart, spanEnd)
-            return "delete";
-        } else if (featureStart < spanStart && featureEnd < spanStart && featureStart < spanEnd && featureEnd < spanEnd) {
-            // 1. Find how much t"o shift features after the insertion
-            console.log("Feature Overlap Case 1", featureStart, featureEnd, spanStart, spanEnd)
-            return "shift";
-        } else if (featureStart < spanStart && featureEnd >= spanStart && featureStart < spanEnd && featureEnd <= spanEnd) {
-            // 2.
-            console.log("Feature Overlap Case 2", featureStart, featureEnd, spanStart, spanEnd)
-            return "delete";
-        } else if (featureStart < spanStart && featureEnd > spanStart && featureStart < spanEnd && featureEnd > spanEnd) {
-            // 3.
-            console.log("Feature Overlap Case 3", featureStart, featureEnd, spanStart, spanEnd)
-            return "delete";
-        } else if (featureStart >= spanStart && featureEnd > spanStart && featureStart <= spanEnd && featureEnd > spanEnd) {
-            // 4.
-            console.log("Feature Overlap Case 4", featureStart, featureEnd, spanStart, spanEnd)
-            return "delete";
-        } else if (featureStart === featureEnd && featureStart <= spanEnd) {
-            return "shift";
-        } else {
-            console.log("Feature Overlap Case 5", featureStart, featureEnd, spanStart, spanEnd)
-            return null;
-        }
-    }
-};
-
-/**
- * Sort the features dict by span so that the features appear in order in the sidebar.
- */
-function sortBySpan(dict) {
-    // Convert the dictionary to an array of key-value pairs
-    const valueKey = "span";
-    const entries = Object.entries(dict);
-  
-    // Sort the array based on the first number in the value key
-    entries.sort((a, b) => {
-      const aValue = Number(a[1][valueKey].split('..')[0]);
-      const bValue = Number(b[1][valueKey].split('..')[0]);
-      return aValue - bValue;
-    });
-  
-    // Convert the sorted array back to a dictionary
-    const sortedDict = Object.fromEntries(entries);
-  
-    return sortedDict;
 }
