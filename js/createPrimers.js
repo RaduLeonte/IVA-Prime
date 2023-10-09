@@ -1,4 +1,3 @@
-
 /**
  * Global variables
  */
@@ -204,25 +203,6 @@ function primerExtension(startingPos, targetStrand, direction, targetTm, minLeng
         accessory = mutSeq;
     }
 
-    /**
-     * Improved slice() function that allows for negative indices or indices longer than the string length by assuming
-     * the string loops.
-     * 
-     * Example:
-     *         startIndex            endIndex
-     *             ▼                    ▼
-     *         -3 -2 -1 0 1 2 3 4 5 6 7 8 9
-     * str ->   _  _  _ A B C D E F G _ _ _
-     * 
-     * Result -> FGABCDEFGAB
-     * 
-     * str - string to be sliced
-     * startIndex, endIndex - slice indices
-     */
-    function repeatingSlice(str, startIndex, endIndex) {
-        const repeatedStr = str.repeat(3); // Copy the string 3 times: ABC_ABC_ABC
-        return repeatedStr.slice(startIndex + str.length, endIndex + str.length); // Remap indices to new string then return
-    }
 
     // Initialise previous primer based on target strand and direction and using the min length
     let prev_p = "";
@@ -1031,4 +1011,24 @@ function getComplementaryStrand(sequence) {
         .join('');
 
     return complementaryStrand;
+}
+
+/**
+ * Improved slice() function that allows for negative indices or indices longer than the string length by assuming
+ * the string loops.
+ * 
+ * Example:
+ *         startIndex            endIndex
+ *             ▼                    ▼
+ *         -3 -2 -1 0 1 2 3 4 5 6 7 8 9
+ * str ->   _  _  _ A B C D E F G _ _ _
+ * 
+ * Result -> FGABCDEFGAB
+ * 
+ * str - string to be sliced
+ * startIndex, endIndex - slice indices
+ */
+function repeatingSlice(str, startIndex, endIndex) {
+    const repeatedStr = str.repeat(3); // Copy the string 3 times: ABC_ABC_ABC
+    return repeatedStr.slice(startIndex + str.length, endIndex + str.length); // Remap indices to new string then return
 }

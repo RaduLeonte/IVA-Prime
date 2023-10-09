@@ -1,3 +1,8 @@
+/**
+ * Global variables
+ */
+
+// Grid structure, each entry is a row in the table
 const gridStructure = ["Forward Strand",
                         "Complementary Strand",
                         "Indices",
@@ -8,25 +13,32 @@ const gridStructure2 = ["Forward Strand",
                         "Indices",
                         "Amino Acids",
                         "Annotations"];
-const gridWidth = 60;
+const gridWidth = 60; // Amount of cells per row
+// Initialise empty sequence and features variables
 let sequence = "";
 let complementaryStrand = "";
 let features = null;
-
 let sequence2 = "";
 let complementaryStrand2 = "";
 let features2 = null;
 
+
 window.onload = function() {
+
+    // Select content div
     const contentDiv = document.querySelector('.content');
 
+    /**
+     * Handles file selection functionality.
+     */
     function handleFileSelect(event) {
-        const file = event.target.files[0];
-        const fileExtension =  /\.([0-9a-z]+)(?:[\?#]|$)/i.exec(file.name)[0];
+        const file = event.target.files[0]; // Get file path.
+        const fileExtension =  /\.([0-9a-z]+)(?:[\?#]|$)/i.exec(file.name)[0]; // Fish out file extension of the file
+        // If the file has an acceptable file extension start parsing
         const acceptedFileExtensions = [".gbk", ".gb", ".dna"]
         if (acceptedFileExtensions.includes(fileExtension)) {
+          // Initialise file reader
           const reader = new FileReader();
-
           reader.onload = function(e) {
               const fileContent = e.target.result;
               
@@ -34,7 +46,7 @@ window.onload = function() {
               if (fileExtension === ".dna") {
                 parseDNAFile(fileContent, 1);
               } else {
-                parsePlasmidFile(fileContent, 1);
+                parseGBFile(fileContent, 1);
               }
               
 
@@ -666,4 +678,185 @@ function fillAACells(row, col, text, pNr) {
   mainCell.style.textAlign = 'center';
 }
 
+function parseGBFile(fileContent, pNr) {
+  if (pNr === 1) {
+    features = extractFeatures(fileContent);
+    sequence = extractSequence(fileContent);
+    complementaryStrand = getComplementaryStrand(sequence);
+  } else {
+    features2 = extractFeatures(fileContent);
+    sequence2 = extractSequence(fileContent);
+    complementaryStrand2 = getComplementaryStrand(sequence2);
+  }
+  
+
+  // Adapted extract_features function
+  function extractFeatures(input) {
+
+      const inputLines = input.split('\n').map(line => line.trim()).filter(line => line);
+      // Add LOCUS feature
+      const featuresDict = {};
+      const firstLine = inputLines[0];
+      const locusNote = firstLine.trim();
+      featuresDict['LOCUS'] = { note: locusNote.replace("LOCUS ", ""), span: "", label: ""};
+      while (inputLines.length > 0 && !inputLines[0].includes("FEATURES")) {
+          inputLines.shift(); // Remove the first item
+      }
+      inputLines.shift();
+      
+      const featureList = [];
+      let currentFeature = '';
+      
+      for (const line of inputLines) {
+        if (line.includes('..')) {
+          if (currentFeature !== '') {
+            featureList.push(currentFeature);
+          }
+          currentFeature = '';
+        }
+      
+        currentFeature += line + '\n';
+      }
+      
+      if (currentFeature !== '') {
+        featureList.push(currentFeature);
+      }
+      
+      
+      for (const feature of featureList) {
+        const lines = feature.split('\n').map(line => line.trim()).filter(line => line);
+        if (!lines[0].includes("join")) {
+          let featureName = lines[0].substring(0, lines[0].indexOf(' '));
+          let i = 0;
+        
+          while (featureName in featuresDict) {
+            if (`${featureName}${i}` in featuresDict) {
+              i++;
+            } else {
+              featureName = `${featureName}${i}`;
+              break;
+            }
+          }
+        
+          const featureInfo = {
+            span: lines[0].includes('complement') ? lines[0].substring(lines[0].indexOf('complement')) : lines[0].replace(featureName, '').trim()
+          };
+        
+          for (let j = 1; j < lines.length; j++) {
+            const property = lines[j];
+            const propertyName = property.substring(0, property.indexOf('=')).replace('/', '').replace('"', '');
+            const propertyBody = property.substring(property.indexOf('=') + 1).replace(/"/g, '').trim();
+        
+            featureInfo[propertyName] = propertyBody;
+          }
+        
+          featuresDict[featureName] = featureInfo;
+        }
+      }
+      
+      return featuresDict;
+    }
+    
+  
+  function extractSequence(input) {
+      input = input.substring(input.indexOf("ORIGIN") + "ORIGIN".length);
+      let output = input.replace(/\n/g, '').replace(/\/\//g, '').split(' ').filter(x => !/\d/.test(x));
+      output = output.join('').toUpperCase().trim().replace(/[\r\n]+/g, "")
+      return output;
+  }
+}
+
+
+function findSubarrayIndex(byteArray, subarray) {
+  for (let i = 0; i <= byteArray.length - subarray.length; i++) {
+    let match = true;
+    for (let j = 0; j < subarray.length; j++) {
+      if (byteArray[i + j] !== subarray[j]) {
+        match = false;
+        break;
+      }
+    }
+    if (match) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+
+function parseDNAFile(fileContent, pNr) {
+  let fileBA = new TextEncoder().encode(fileContent);
+
+  // Sequence
+  let sequenceBA = fileBA.slice(25, findSubarrayIndex(fileBA, [2, 0, 0]));
+  currSequence = new TextDecoder().decode(sequenceBA).toUpperCase().replace(/[^TACG]/gi, '');
+  currComplementarySequence = getComplementaryStrand(currSequence);
+
+  // Features
+  let featuresString = fileContent.slice(fileContent.indexOf("<Features"), fileContent.indexOf("</Feature></Features>") + "</Feature></Features>".length);
+  console.log(featuresString)
+
+
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(featuresString, 'text/xml');
+  
+  const featuresDict = {};
+  const featuresList = xmlDoc.getElementsByTagName('Feature');
+  for (let i = 0; i < featuresList.length; i++) {
+      const feature = featuresList[i];
+
+      const featureName = feature.getAttribute('name') + i;
+
+      const featureInfo = {}
+      featureInfo["label"] = feature.getAttribute('name');
+      featureInfo["span"] = "";
+      featureInfo["note"] = "";
+      let spanStart = null;
+      let spanEnd = null;
+      const featureChildren = feature.children;
+      for (let j = 0; j < featureChildren.length; j++) {
+          const child = featureChildren[j];
+          const childName = child.nodeName;
+          if (childName === "Segment") {
+              let currSpan = child.getAttribute('range').split("-");
+
+              let currSpanStart = currSpan[0];
+              if (!spanStart || spanStart > currSpanStart) {
+                  spanStart = currSpanStart;
+              }
+
+              let currSpanEnd = currSpan[1];
+              if (!spanEnd || currSpanEnd > spanEnd) {
+                  spanEnd = currSpanEnd;
+              }
+          }
+          if (childName === "Q") {
+              const subNoteName = child.getAttribute('name');
+              let subNoteEntry = "";
+              if (child.children[0].attributes.getNamedItem("int")) {
+                  subNoteEntry = child.children[0].getAttribute("int");
+              }
+              if (child.children[0].attributes.getNamedItem("text")) {
+                  subNoteEntry = child.children[0].getAttribute("text");
+                  subNoteEntry = new DOMParser().parseFromString(subNoteEntry, 'text/html').body.textContent;
+              }
+              featureInfo["note"] += subNoteName + ": " + subNoteEntry + "; ";
+          }
+      }
+      
+      featureInfo["span"] = spanStart + ".." + spanEnd;
+      featuresDict[featureName] = featureInfo;
+
+  }
+
+  if (pNr === 1) {
+      sequence = currSequence;
+      complementaryStrand = currComplementarySequence;
+      features = featuresDict;
+  } else {
+      sequence2 = currSequence;
+      complementaryStrand2 = currComplementarySequence;
+      features2 = featuresDict;
+  }
+}
 
