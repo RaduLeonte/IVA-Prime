@@ -94,8 +94,11 @@ function get_tm(sequence, c, m) {
     // If the primer is completely symmetric, there is an entropy gain and the symmetry fraction
     // is different
     let symm_fraction = 4;
+    console.log(sequence)
     const complementary = getComplementaryStrand(sequence);
+    console.log(complementary)
     if (sequence === complementary) {
+        console.log("Symmetric")
         deltaS0 += -1.4;
         symm_fraction = 1;
     }
@@ -130,3 +133,7 @@ function get_tm(sequence, c, m) {
 
     return tm_corr;
 }
+
+
+console.log(get_tm("GGGGGGGGGGGGGGGGGGGGGGGG", primerConc, saltConc))
+console.log(get_tm("CCCCCCCCCCCCCCCCCCCCC", primerConc, saltConc))
