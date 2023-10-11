@@ -124,7 +124,7 @@ function addCellSelection(tableId, containerId, pNr) {
       let selectionEndCell = [event.target.closest('tr').rowIndex, event.target.closest('td').cellIndex]
       console.log("Start Cell: ", initialSelectionStartCell, "End Cell: ", selectionEndCell)
       // Check if the cell exists and if the current position is not the same as the selection start cell
-      if (closestCell && closestRow && basePosition !== selectionStartPos) {
+      if (closestCell && closestRow && basePosition !== selectionStartPos && closestCell.id !== "Annotations") {
 
         // Test
         // Go from whereever the cell upwards till the forward strand row
