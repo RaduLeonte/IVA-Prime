@@ -133,6 +133,10 @@ function displayPrimers(primersType, primersList, textColor, templateColor, homo
         sidebarContentDiv.appendChild(paragraph3);
         sidebarContentDiv.appendChild(paragraph4);
     }
+
+    // Reset selection
+    selectedText = "";
+    selectedText2 = "";
 }
 
 
