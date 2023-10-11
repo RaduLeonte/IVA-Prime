@@ -1,5 +1,5 @@
 /**
- * Enables a cursor hover hint displaying the cursor position.
+ * Enables the sequence cursor as a red border on the nearest side of the hovered cell.
  */
 function addCellBorderOnHover(tableId, containerId, pNr) {
   // Select the grid table of interest
@@ -33,7 +33,7 @@ function addCellBorderOnHover(tableId, containerId, pNr) {
   sequenceGridTable.addEventListener('mousemove', function(event) {
     // Get the closest cell to the cursor
     const cell = event.target.closest('td');
-    
+
     // If the cell exists and its not the same as the previous one, i.e. the cursor has moved to a new one
     if (cell && cell !== previousCell) {
       // Reset previous cell border styles
@@ -82,6 +82,6 @@ function addCellBorderOnHover(tableId, containerId, pNr) {
 }
 
 
-// Enable the cursor hover hint
+// Enable the sequence cursosr
 addCellBorderOnHover('sequence-grid', 'file-content', 1);
 addCellBorderOnHover('sequence-grid2', 'file-content2', 2);
