@@ -1,15 +1,14 @@
-let dnaSequenceInput = '';
-let aminoAcidSequenceInput = '';
-
 function showPopupWindow() {
     const popupWindow = document.querySelector('.popup-window');
     popupWindow.style.display = 'block';
 }
 
+
 function hidePopupWindow() {
     const popupWindow = document.querySelector('.popup-window');
     popupWindow.style.display = 'none';
 }
+
 
 function positionContextMenu(clientX, clientY) {
     const contextMenu = document.querySelector('.custom-context-menu');
@@ -31,15 +30,16 @@ function positionContextMenu(clientX, clientY) {
     contextMenu.style.left = left + 'px';
     contextMenu.style.top = top + 'px';
     contextMenu.style.display = 'block';
-  }
-  
-  function positionContextMenu(clientX, clientY) {
-    const contextMenu = document.querySelector('.custom-context-menu');
-  
-    contextMenu.style.left = clientX + 'px';
-    contextMenu.style.top = clientY + 'px';
-    contextMenu.style.display = 'block';
-  }
+}
+
+
+function positionContextMenu(clientX, clientY) {
+  const contextMenu = document.querySelector('.custom-context-menu');
+
+  contextMenu.style.left = clientX + 'px';
+  contextMenu.style.top = clientY + 'px';
+  contextMenu.style.display = 'block';
+}
   
 
 document.addEventListener('DOMContentLoaded', function () {

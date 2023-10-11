@@ -55,7 +55,6 @@ function addScrollingEffectToFeatureTable(tableId, containerId, pNr) {
   });
 }
 
+
 addScrollingEffectToFeatureTable('sidebar-table', 'file-content', 1);
 addScrollingEffectToFeatureTable('sidebar-table2', 'file-content2', 2);
-
-  

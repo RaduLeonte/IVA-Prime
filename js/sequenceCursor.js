@@ -68,10 +68,9 @@ function addCellBorderOnHover(tableId, containerId, pNr) {
         previousCell = null;
       }
     });
-  }
-  
-  // Call the function to add the cell border on hover effect to your sequence grid table
+}
+
+
+// Call the function to add the cell border on hover effect to your sequence grid table
 addCellBorderOnHover('sequence-grid', 'file-content', 1);
 addCellBorderOnHover('sequence-grid2', 'file-content2', 2);
-
-  

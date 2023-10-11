@@ -1,16 +1,4 @@
 /**
- * Global variables
- */
-let primerConc = 100E-9; // M, primer concentration for melting temperatures
-let saltConc = 0.5; // M, primer concentration for melting temperatures
-
-let homoRegionTm = 49.5; // C, target temperature for the homologous region
-let tempRegionTm = 60; // C, target temperature for the template region
-
-let operationNr = 1; // modification counter
-
-
-/**
  * Display the primer pair in the sidebar by appending <p>s
  * 
  * primersType - time of modification (e.g. insertion, deletion etc)
@@ -261,7 +249,6 @@ function primerExtension(startingPos, targetStrand, direction, targetTm, minLeng
 }
 
 
-
 /**
  * Takes in a sequence of amino acids (inputAA) as input and returns the DNA sequence with
  * the lowest melting temperature. This function calls generateDNASequences to create all
@@ -502,6 +489,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, repl
     updateFeatures(operationType, seqToInsert, replaceStartPos, replaceEndPos, plasmidLengthDiff, 1);
 }
 
+
 /**
  * Creates the deletion primers that will delete the segment between the two specified indices.
  * 
@@ -564,6 +552,7 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
     updateFeatures("Deletion", "", deletionStartPos, deletionEndPos, plasmidLengthDiff, 1);
 }
 
+
 /**
  * Creates the subcloning primers. Explanation here.
  * 
@@ -601,7 +590,6 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
  * TO DO:
  * - 
  */
-
 function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
     // Initialise variables
     let subcloningInsertPositionStart = null;
@@ -763,6 +751,7 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
     }, { once: true });
 }
 
+
 /**
  * Updates the target plasmid sequence, checks if the insertion/deletion crashes with exsiting features and adjusts accordingly (shift or deletion).
  * Lastly, adds the new feature to the feature dict and rebuilds the plasmid as well as refresh it in the viewer.
@@ -775,7 +764,6 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
  * TO DO:
  * - 
  */
-
 function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, segmentEndPos, featureShift, pNr) {
     // Update the sequence and features
     // Convert back from sequence indices to string indices
@@ -987,6 +975,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
     createSideBar(pNr);
     makeContentGrid(pNr);
 }
+
 
 /**
  * Create the complementary strand to a given DNA sequence.

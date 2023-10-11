@@ -1,6 +1,3 @@
-let basePosition = -1;
-let basePosition2 = -1;
-
 function addHoverPopupToTable(tableId, pNr) {
   const table = document.getElementById(tableId);
 
@@ -71,6 +68,7 @@ function addHoverPopupToTable(tableId, pNr) {
   });
 }
 
+
 function positionPopup(popup, clientX, clientY) {
   const popupWidth = popup.offsetWidth;
   const popupHeight = popup.offsetHeight;
@@ -89,6 +87,7 @@ function positionPopup(popup, clientX, clientY) {
   popup.style.zIndex = '3';
 }
 
+
 function waitForTableToExist(tableId, callback) {
   const checkTableExistence = setInterval(function() {
     const table = document.getElementById(tableId);
@@ -98,6 +97,7 @@ function waitForTableToExist(tableId, callback) {
     }
   }, 100); // Check for table existence every 100ms
 }
+
 
 waitForTableToExist('sequence-grid', function() {
   addHoverPopupToTable('sequence-grid', 1);

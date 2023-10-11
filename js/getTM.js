@@ -8,7 +8,6 @@
  * TO DO:
  * - 
  */
-
 function get_tm(sequence, c, m) {
 
     /**
@@ -133,7 +132,3 @@ function get_tm(sequence, c, m) {
 
     return tm_corr;
 }
-
-
-console.log(get_tm("GGGGGGGGGGGGGGGGGGGGGGGG", primerConc, saltConc))
-console.log(get_tm("CCCCCCCCCCCCCCCCCCCCC", primerConc, saltConc))

@@ -4,7 +4,6 @@
  * TO DO:
  * - Make it so it also searches for the complement of the search query
  */
-
 function initiateSearchFunctionality(pNr) {
     // Select the search bar element
     let customSearchInput = null;

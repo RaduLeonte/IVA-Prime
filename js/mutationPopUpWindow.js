@@ -1,14 +1,14 @@
-let mutateToSequence = '';
-
 function showMutationPopupWindow() {
   const mutationPopupWindow = document.querySelector('.mutation-popup-window');
   mutationPopupWindow.style.display = 'block';
 }
 
+
 function hideMutationPopupWindow() {
   const mutationPopupWindow = document.querySelector('.mutation-popup-window');
   mutationPopupWindow.style.display = 'none';
 }
+
 
 document.addEventListener('DOMContentLoaded', function () {
   const mutationPopupWindow = document.createElement('div');

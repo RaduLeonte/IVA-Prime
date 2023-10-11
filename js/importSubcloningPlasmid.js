@@ -1,5 +1,3 @@
-let secondPlasmidIported = false;
-
 function handleFileSelectSecond(event) {
 
     const file = event.target.files[0];
@@ -83,6 +81,7 @@ function handleFileSelectSecond(event) {
     createSecondPlasmidWindow();
     secondPlasmidIported = true;
 }
+
 
 function createSecondPlasmidWindow() {
     const secondPlasmidContainer = document.getElementById('second-plasmid-container');

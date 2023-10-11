@@ -1,30 +1,4 @@
 /**
- * Global variables
- */
-
-// Grid structure, each entry is a row in the table
-const gridStructure = ["Forward Strand",
-                        "Complementary Strand",
-                        "Indices",
-                        "Amino Acids",
-                        "Annotations"];
-const gridStructure2 = ["Forward Strand",
-                        "Complementary Strand",
-                        "Indices",
-                        "Amino Acids",
-                        "Annotations"];
-const gridWidth = 60; // Amount of cells per row
-// Initialise empty sequence and features variables
-let sequence = "";
-let complementaryStrand = "";
-let features = null;
-let sequence2 = "";
-let complementaryStrand2 = "";
-let features2 = null;
-
-
-
-/**
  * On window load.
  */
 window.onload = function() {
@@ -351,6 +325,7 @@ function parseDNAFile(fileContent, pNr) {
   }
 }
 
+
 /**
  * Populate the sidebar with the features from the specified plasmid.
  */
@@ -416,6 +391,7 @@ function createSideBar(pNr) {
   }
 }
 
+
 /**  
  * Remove everything but numbers and ".." in order to have a clean span
 */
@@ -423,6 +399,7 @@ function removeNonNumeric(inputString) {
   const cleanedString = inputString.replace(/[^\d.]/g, '');
   return cleanedString;
 }
+
 
 /**
  * Check the annotation overlap to see how many rows are needed to accomodate all the annotations.
@@ -505,6 +482,7 @@ function checkAnnotationOverlap(inputFeatures, pNr) {
   }
   return
 }
+
 
 // Creat the content table grid
 function makeContentGrid(pNr, callback) {
@@ -607,6 +585,7 @@ function makeContentGrid(pNr, callback) {
   }, 1);
 }
 
+
 /**
  * Creates the annoations from the span's start to the end, breaking the feature up into
  * multiple if it spans multiple lines.
@@ -674,13 +653,13 @@ function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
   }
 }
 
+
 /**
  * Draws the annotation by merging the specified cells, adding th text and adding the color.
  * 
  * TO DO:
  * - 
  */
-
 function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStructure) {
   console.log("Merge cells1: ", row, col, colspan, text)
   // Check which grid were doing
@@ -759,10 +738,10 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
   }
 }
 
+
 /**
  * Generates a random color that was not used recently.
  */
-let recentColor = ''; // Global variable that stores the most recent color used
 function generateRandomUniqueColor() {
   const baseColors = ["#FFB6C1", "#FFDAB9", "#FFA07A", "#FFC0CB", "#87CEFA", "#98FB98", "#FF69B4", "#90EE90"];
 
@@ -772,44 +751,6 @@ function generateRandomUniqueColor() {
 
   return randomColor;
 }
-
-// List of common promoters
-const promoters = {
-  "CMV": "CGCAAATGGGCGGTAGGCGTG",
-  "EF1α": "CCACGGGACACCATCTTTAC",
-  "RSV": "CGCGTGCTAGAACAGATGAGGACCCTGGGAGCTCTCTC",
-  "PGK": "TCCATTTGCCTAGCTGTTTGA",
-  "T7": "TAATACGACTCACTATAGGG",
-  "Lac": "TTACAGCTCATGCGGCGTTCT",
-  "Tet": "TATAAATGCTAGATGCTAGTTATCATGCTATACGAAGTTGT",
-  "Hsp70": "CCACCCACAGCTCAGACGTTGTTGCTGCTGCTGCACGCGTG",
-  "GAPDH": "CTGACCTGCCGTCTAGAAAA",
-  "CMV-IE": "CGCAGGGTTTTCCCAGTCACGAC",
-  "EF1α-HTLV": "CCACGGGACACCATCTTTAC",
-  "U6": "GACGCTCATGGAAGACGCCAAA",
-  "CAG": "AGGATCCCCACTGACCGGCCCGGGTTC",
-  "SV5": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGGTTTTCCCAGTCACGAC",
-  "CAAG": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGGAATGCCACCGCCGCCG",
-  "β-actin": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-  "PGK1": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGATATCATGACAAGAGCA",
-  "HTLV": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGACTCCGCTTTGCTGAAA",
-  "EF1": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGCTGGCTGGAGTTCA",
-  "RR": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGACTAGCCACCATGTTTT",
-  "SV": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGAGATCCGCCACCATTGG",
-  "5xGal4AD": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGAGGAGAAGACCACAGCC",
-  "Rous Sarcoma Virus": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGAGATCCGCCACCATTGG",
-  "MSCV": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGAGATCCGCCACCATTGG",
-  "Bsd": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-  "Kozak": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-  "FspI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-  "Sp6": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-  "SeAP": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-  "SphI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-  "BamHI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-  "SalI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-  "XhoI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-  "HindIII": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT"
-};
 
 /**
  * Function that translates the input codon into its corresponding amino acid.
@@ -842,10 +783,46 @@ function translateCodon(codon) {
   return codonTable[codon] || '';
 }
 
+
 /**
  * Searches the specified sequence for the common promotes and starts translation wherever it finds one.
  */
 function promoterTranslation(pNr) {
+  // List of common promoters
+  const promoters = {"CMV": "CGCAAATGGGCGGTAGGCGTG",
+                      "EF1α": "CCACGGGACACCATCTTTAC",
+                      "RSV": "CGCGTGCTAGAACAGATGAGGACCCTGGGAGCTCTCTC",
+                      "PGK": "TCCATTTGCCTAGCTGTTTGA",
+                      "T7": "TAATACGACTCACTATAGGG",
+                      "Lac": "TTACAGCTCATGCGGCGTTCT",
+                      "Tet": "TATAAATGCTAGATGCTAGTTATCATGCTATACGAAGTTGT",
+                      "Hsp70": "CCACCCACAGCTCAGACGTTGTTGCTGCTGCTGCACGCGTG",
+                      "GAPDH": "CTGACCTGCCGTCTAGAAAA",
+                      "CMV-IE": "CGCAGGGTTTTCCCAGTCACGAC",
+                      "EF1α-HTLV": "CCACGGGACACCATCTTTAC",
+                      "U6": "GACGCTCATGGAAGACGCCAAA",
+                      "CAG": "AGGATCCCCACTGACCGGCCCGGGTTC",
+                      "SV5": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGGTTTTCCCAGTCACGAC",
+                      "CAAG": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGGAATGCCACCGCCGCCG",
+                      "β-actin": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+                      "PGK1": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGATATCATGACAAGAGCA",
+                      "HTLV": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGACTCCGCTTTGCTGAAA",
+                      "EF1": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGCTGGCTGGAGTTCA",
+                      "RR": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGACTAGCCACCATGTTTT",
+                      "SV": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGAGATCCGCCACCATTGG",
+                      "5xGal4AD": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGAGGAGAAGACCACAGCC",
+                      "Rous Sarcoma Virus": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGAGATCCGCCACCATTGG",
+                      "MSCV": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGAGATCCGCCACCATTGG",
+                      "Bsd": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+                      "Kozak": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+                      "FspI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+                      "Sp6": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+                      "SeAP": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+                      "SphI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+                      "BamHI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+                      "SalI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+                      "XhoI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
+                      "HindIII": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT"};
   // Function that generates a list of all occurences of the subtring in the input string
   function findAllOccurrences(string, substring) {
     const indices = [];
@@ -881,6 +858,7 @@ function promoterTranslation(pNr) {
   }
 }
 
+
 // Star a translation at the beginning of each feature
 function featureTranslation(pNr) {
   // Select the corresponding features and sequence
@@ -906,6 +884,7 @@ function featureTranslation(pNr) {
   });
 }
 
+
 /**
  * Convert sequence indices to table coordinates
  */
@@ -914,6 +893,7 @@ function seqIndexToCoords(inputIndex, targetRow, currGridStructure) {
   const outputIndex = inputIndex - Math.floor(inputIndex / gridWidth)*gridWidth - 1;
   return [outputRow, outputIndex];
 }
+
 
 /**
  * Starts a translation at the specified position and populates the amino acid row with the translation.

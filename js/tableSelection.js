@@ -1,8 +1,3 @@
-let selectedText = '';
-let selectedText2 = '';
-let selectionStartPos = null;
-let selectionEndPos = null;
-
 function addCellSelection(tableId, containerId, pNr) {
 
   const sequenceGridTable = document.getElementById(tableId);
@@ -212,6 +207,7 @@ function addCellSelection(tableId, containerId, pNr) {
     document.body.removeChild(textarea);
   }
 }
+
 
 // Call the function to enable cell selection in your sequence grid table
 addCellSelection('sequence-grid', 'file-content', 1);

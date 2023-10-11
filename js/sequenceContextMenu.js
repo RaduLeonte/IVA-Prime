@@ -1,8 +1,3 @@
-let clickedOffset = 0;
-let targetCell = null;
-let target = null;
-insertionPosition = null;
-
 function updateMenuItems() {
   const insertionMenuItem = document.getElementById('insertion');
   const deletionMenuItem = document.getElementById('deletion');
@@ -34,7 +29,6 @@ function updateMenuItems() {
 }
 
 
-
 function positionContextMenu(clientX, clientY) {
   const contextMenu = document.querySelector('.custom-context-menu');
 
@@ -56,6 +50,7 @@ function positionContextMenu(clientX, clientY) {
   contextMenu.style.top = top + 'px';
   contextMenu.style.display = 'block';
 }
+
 
 document.addEventListener('DOMContentLoaded', function () {
   const targetElementId = 'sequence-grid';
