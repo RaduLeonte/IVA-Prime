@@ -9,10 +9,10 @@ let tempRegionTm = 60; // C, target temperature for the template region
 
 let operationNr = 1; // modification counter
 
+
 /**
  * importPlasmid
  */
-
 // Grid structure, each entry is a row in the table
 const gridStructure = ["Forward Strand",
                         "Complementary Strand",
@@ -32,33 +32,54 @@ let features = null;
 let sequence2 = "";
 let complementaryStrand2 = "";
 let features2 = null;
-let recentColor = ''; // Global variable that stores the most recent color used
+// Global variable that stores the most recent color used
+let recentColor = '';
 
 
-// importSubcloningPlasmid
+/**
+ * importSubcloningPlasmid 
+ */
+// Keep track if the second plasmid has been imported (to disable the button etc)
 let secondPlasmidIported = false;
 
 
-// insertionPopUpWindow
+/**
+ * insertionPopUpWindow 
+ */
+// User inputs int he insertion pop up window
 let dnaSequenceInput = '';
 let aminoAcidSequenceInput = '';
 
-// mutationPopUpWindow
+
+/**
+ * mutationPopUpWindow 
+ */
+// User input in the mutation pop up window
 let mutateToSequence = '';
 
-// sequenceContextMenu
+
+/**
+ * sequenceContextMenu 
+ */
+// 
 let clickedOffset = 0;
 let targetCell = null;
 let target = null;
 insertionPosition = null;
 
-// tableHover
+
+/**
+ * tableHover 
+ */
+// 
 let basePosition = -1;
 let basePosition2 = -1;
 
-// tableSelection
+
+/**
+ * tableSelection 
+ */
 let selectedText = '';
 let selectedText2 = '';
 let selectionStartPos = null;
 let selectionEndPos = null;
-

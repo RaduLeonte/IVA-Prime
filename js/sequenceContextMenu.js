@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', function () {
     target = targetCell; // Declare the target variable
   
     clickedOffset = getCharacterOffset(targetCell);
+    console.log("clickedOffset", clickedOffset)
   
     if (selectedText) {
       console.log('Selected text:', selectedText);

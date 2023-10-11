@@ -600,8 +600,10 @@ function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
   recentColor = annotationColor; // Store the colour history
 
   // Convert from sequence coords to table coords
-  let row = (Math.floor(rStart / gridWidth)) * currGridStructure.length + currGridStructure.indexOf("Annotations");
+  let row = (Math.floor(rStart / gridWidth)) * currGridStructure.length;
   let col = rStart - (row/currGridStructure.length)*gridWidth;
+  row += currGridStructure.indexOf("Annotations");
+  console.log("here", rStart, row, currGridStructure.length, gridWidth, col)
 
   // Annotaiton span length
   const annotationSpan = rEnd - rStart;
