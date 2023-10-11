@@ -77,7 +77,22 @@ function handleFileSelect(event) {
 
       if (pNr === 2) {
         // After the second file is imported, create the second plasmid window
-        createSecondPlasmidWindow();
+        const secondPlasmidContainer = document.getElementById('second-plasmid-container');
+        secondPlasmidContainer.style.display = 'flex';
+        const divider = document.getElementById('divider');
+        divider.style.display = 'block';
+
+        // Get the first container div
+        const firstPlasmidContainer = document.querySelector('.container');
+
+        // Set the height of the divs to 50vh
+        firstPlasmidContainer.style.height = '50vh';
+        secondPlasmidContainer.style.height = '50vh';
+
+        // Set overflow to auto
+        firstPlasmidContainer.style.overflow = 'auto';
+        secondPlasmidContainer.style.overflow = 'auto';
+        
         secondPlasmidIported = true;
       };
     };
@@ -1003,23 +1018,4 @@ function fillAACells(row, col, text, pNr) {
   // Add text to the center of the merged cell
   mainCell.textContent = text;
   mainCell.style.textAlign = 'center';
-}
-
-
-function createSecondPlasmidWindow() {
-  const secondPlasmidContainer = document.getElementById('second-plasmid-container');
-  secondPlasmidContainer.style.display = 'flex';
-  const divider = document.getElementById('divider');
-  divider.style.display = 'block';
-
-  // Get the first container div
-  const firstPlasmidContainer = document.querySelector('.container');
-
-  // Set the height of the divs to 50vh
-  firstPlasmidContainer.style.height = '50vh';
-  secondPlasmidContainer.style.height = '50vh';
-
-  // Set overflow to auto
-  firstPlasmidContainer.style.overflow = 'auto';
-  secondPlasmidContainer.style.overflow = 'auto';
 }
