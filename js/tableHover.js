@@ -61,7 +61,7 @@ function addHoverPopupToTable(tableId, pNr) {
           positionPopup(popup, event.clientX, event.clientY);
         } else {
           popup.textContent = basePosition2 !== -1 ? basePosition2 + " (" + event.target.parentNode.rowIndex + ", " + event.target.cellIndex + ")" : "";
-        positionPopup(popup, event.clientX, event.clientY);
+          positionPopup(popup, event.clientX, event.clientY);
         }
       }
     }

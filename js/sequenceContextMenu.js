@@ -70,10 +70,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function handleContextMenu(clientX, clientY) {
     const table = document.getElementById(targetElementId);
-    target = targetCell; // Declare the target variable
-  
-    clickedOffset = getCharacterOffset(targetCell);
-    console.log("clickedOffset", clickedOffset)
   
     if (selectedText) {
       console.log('Selected text:', selectedText);
@@ -96,7 +92,6 @@ document.addEventListener('DOMContentLoaded', function () {
     event.preventDefault();
 
     if (event.target.matches(`#${targetElementId} td`)) {
-      targetCell = event.target; // Store the target cell
       handleContextMenu(event.clientX, event.clientY);
     } else {
       hideContextMenu();

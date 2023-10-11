@@ -52,34 +52,17 @@ let aminoAcidSequenceInput = '';
 
 
 /**
- * mutationPopUpWindow 
- */
-// User input in the mutation pop up window
-let mutateToSequence = '';
-
-
-/**
- * sequenceContextMenu 
- */
-// 
-let clickedOffset = 0;
-let targetCell = null;
-let target = null;
-insertionPosition = null;
-
-
-/**
  * tableHover 
  */
 // 
-let basePosition = -1;
-let basePosition2 = -1;
+let basePosition = -1; // Cursor position in the first grid (sequence coords)
+let basePosition2 = -1; // Cursor position in the sublocning plasmid grid (sequence coords)
 
 
 /**
  * tableSelection 
  */
-let selectedText = '';
-let selectedText2 = '';
+let selectedText = ''; // Currently selected sequence in the first grid
+let selectedText2 = ''; // Currently selected sequence in the second grid
 let selectionStartPos = null;
 let selectionEndPos = null;
