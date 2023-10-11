@@ -66,3 +66,32 @@ let selectedText = ''; // Currently selected sequence in the first grid
 let selectedText2 = ''; // Currently selected sequence in the second grid
 let selectionStartPos = null;
 let selectionEndPos = null;
+
+
+/**
+ * Biology stuff.
+ */
+
+// Possible codons resulting in each amino acid
+const aaToCodon = {
+    A: ['GCT', 'GCC', 'GCA', 'GCG'],
+    R: ['CGT', 'CGC', 'CGA', 'CGG', 'AGA', 'AGG'],
+    N: ['AAT', 'AAC'],
+    D: ['GAT', 'GAC'],
+    C: ['TGT', 'TGC'],
+    E: ['GAA', 'GAG'],
+    Q: ['CAA', 'CAG'],
+    G: ['GGT', 'GGC', 'GGA', 'GGG'],
+    H: ['CAT', 'CAC'],
+    I: ['ATT', 'ATC', 'ATA'],
+    L: ['TTA', 'TTG', 'CTT', 'CTC', 'CTA', 'CTG'],
+    K: ['AAA', 'AAG'],
+    M: ['ATG'],
+    F: ['TTT', 'TTC'],
+    P: ['CCT', 'CCC', 'CCA', 'CCG'],
+    S: ['TCT', 'TCC', 'TCA', 'TCG', 'AGT', 'AGC'],
+    T: ['ACT', 'ACC', 'ACA', 'ACG'],
+    W: ['TGG'],
+    Y: ['TAT', 'TAC'],
+    V: ['GTT', 'GTC', 'GTA', 'GTG'],
+    X: ['TAA', 'TAG', 'TGA']};

@@ -29,29 +29,6 @@ function updateMenuItems() {
 }
 
 
-function positionContextMenu(clientX, clientY) {
-  const contextMenu = document.querySelector('.custom-context-menu');
-
-  const windowWidth = window.innerWidth;
-  const windowHeight = window.innerHeight;
-
-  const menuWidth = contextMenu.offsetWidth;
-  const menuHeight = contextMenu.offsetHeight;
-
-  // Calculate the maximum left and top positions to ensure the menu is entirely visible
-  const maxLeft = windowWidth - menuWidth;
-  const maxTop = windowHeight - menuHeight;
-
-  // Calculate the left and top positions for the context menu
-  const left = Math.min(clientX, maxLeft);
-  const top = Math.min(clientY, maxTop);
-
-  contextMenu.style.left = left + 'px';
-  contextMenu.style.top = top + 'px';
-  contextMenu.style.display = 'block';
-}
-
-
 document.addEventListener('DOMContentLoaded', function () {
   const targetElementId = 'sequence-grid';
 
@@ -116,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function () {
       console.log('Insertion selected');
 
       // Show the popup window for sequence insertion
-      showPopupWindow();
+      showPopupWindow("Insert here:");
     } else if (menuItemId === 'deletion') {
       console.log('Deletion selected');
       createDeletionPrimers(selectionStartPos, selectionEndPos);
@@ -124,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (menuItemId === 'mutation') {
       console.log('Mutation selected');
       //showMutationPopupWindow();
-      showPopupWindow();
+      showPopupWindow("Replace selection with:");
       // Mutation logic here
     } else if (menuItemId === 'subcloning') {
       console.log('Subcloning selected');

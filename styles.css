@@ -429,3 +429,23 @@ nav ul li a {
   right: 10px;
   z-index: 9999;
 }
+
+.stop-codon-hint{
+  margin-top: 0px;
+  color: #555;
+  font-size: 14px;
+}
+
+#amino-acid-sequence-input{
+  width: 100%;
+  width: -moz-available;          /* WebKit-based browsers will ignore this. */
+  width: -webkit-fill-available;  /* Mozilla-based browsers will ignore this. */
+  width: fill-available;
+}
+
+#dna-sequence-input{
+  width: 100%;
+  width: -moz-available;          /* WebKit-based browsers will ignore this. */
+  width: -webkit-fill-available;  /* Mozilla-based browsers will ignore this. */
+  width: fill-available;
+}

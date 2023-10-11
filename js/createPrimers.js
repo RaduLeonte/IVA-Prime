@@ -270,30 +270,6 @@ function optimizeAA(inputAA) {
      * - Maybe optimize GC content?
      */
     function generateDNASequences(aminoAcidSequence) {
-        // Possible codons resulting in each amino acid
-        const codons = {
-        A: ['GCT', 'GCC', 'GCA', 'GCG'],
-        R: ['CGT', 'CGC', 'CGA', 'CGG', 'AGA', 'AGG'],
-        N: ['AAT', 'AAC'],
-        D: ['GAT', 'GAC'],
-        C: ['TGT', 'TGC'],
-        E: ['GAA', 'GAG'],
-        Q: ['CAA', 'CAG'],
-        G: ['GGT', 'GGC', 'GGA', 'GGG'],
-        H: ['CAT', 'CAC'],
-        I: ['ATT', 'ATC', 'ATA'],
-        L: ['TTA', 'TTG', 'CTT', 'CTC', 'CTA', 'CTG'],
-        K: ['AAA', 'AAG'],
-        M: ['ATG'],
-        F: ['TTT', 'TTC'],
-        P: ['CCT', 'CCC', 'CCA', 'CCG'],
-        S: ['TCT', 'TCC', 'TCA', 'TCG', 'AGT', 'AGC'],
-        T: ['ACT', 'ACC', 'ACA', 'ACG'],
-        W: ['TGG'],
-        Y: ['TAT', 'TAC'],
-        V: ['GTT', 'GTC', 'GTA', 'GTG'],
-        X: ['TAA', 'TAG', 'TGA']
-        };
     
         const results = []; // Initialize empty list for generated sequences
     
@@ -313,7 +289,7 @@ function optimizeAA(inputAA) {
             }
 
             const aminoAcid = aminoAcidSeq[index]; // Current amino acid
-            const possibleCodons = codons[aminoAcid]; // Return list of possible codonds for current amino acid
+            const possibleCodons = aaToCodon[aminoAcid]; // Return list of possible codonds for current amino acid
 
             // For each possible codon, append the codon to the current sequence then branch the tree with an incremented index
             for (let codon of possibleCodons) {
@@ -327,7 +303,7 @@ function optimizeAA(inputAA) {
         } else { // Else only choose the first codon for each acid
             let basicSeq = "";
             for (let aminoAcid of aminoAcidSequence) {
-                const possibleCodons = codons[aminoAcid];
+                const possibleCodons = aaToCodon[aminoAcid];
                 const selectedCodon = possibleCodons[0];
                 basicSeq += selectedCodon;
             }
