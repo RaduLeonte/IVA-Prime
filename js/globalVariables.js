@@ -14,16 +14,12 @@ let operationNr = 1; // modification counter
  * importPlasmid
  */
 // Grid structure, each entry is a row in the table
-const gridStructure = ["Forward Strand",
-                        "Complementary Strand",
-                        "Indices",
-                        "Amino Acids",
-                        "Annotations"];
-const gridStructure2 = ["Forward Strand",
-                        "Complementary Strand",
-                        "Indices",
-                        "Amino Acids",
-                        "Annotations"];
+let gridStructure, gridStructure2;
+gridStructure= gridStructure2 = ["Forward Strand",
+                                "Complementary Strand",
+                                "Amino Acids",
+                                "Annotations",
+                                "Spacer"];
 const gridWidth = 60; // Amount of cells per row
 // Initialise empty sequence and features variables
 let sequence = "";

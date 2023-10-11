@@ -45,6 +45,7 @@ function addCellSelection(tableId, containerId, pNr) {
   let isSelecting = false;
   let startCell = null;
   let endCell = null;
+  let initialSelectionStartCell = null;
 
   /**
    * Selection start.
@@ -59,6 +60,8 @@ function addCellSelection(tableId, containerId, pNr) {
       } else {
         selectionStartPos = basePosition2;
       }
+
+      initialSelectionStartCell = [event.target.closest('tr').rowIndex, event.target.closest('td').cellIndex]
       
       // Signal selection start
       console.log("Starting selection at: " + selectionStartPos);
@@ -98,64 +101,78 @@ function addCellSelection(tableId, containerId, pNr) {
   /**
    * Update the selection on mouse movement.
    */
-  sequenceGridTable.addEventListener('mousemove', function (event) {
+  fileContentContainer.addEventListener('mousemove', function (event) {
     if (isSelecting) { // Make sure we're currently selecting
+      const cellRect = event.target.getBoundingClientRect();
+      const cursorOffset = event.clientX - cellRect.left; // Cursor position inside the cell
+      const cellWidth = cellRect.width;
+      let closestSide = "right";
+      if (cursorOffset < cellWidth / 2) {
+        closestSide = "left";
+      }
+
       // Find cell closest to the cursor
-      let cell = event.target.closest('td');
+      if (pNr === 1) {
+        selectionEndPos = basePosition;
+        currGridStructure = gridStructure;
+      } else {
+        selectionEndPos = basePosition2;
+        currGridStructure = gridStructure2;
+      }
+      let closestCell = event.target.closest('td')
+      let closestRow = event.target.closest('tr')
+      let selectionEndCell = [event.target.closest('tr').rowIndex, event.target.closest('td').cellIndex]
+      console.log("Start Cell: ", initialSelectionStartCell, "End Cell: ", selectionEndCell)
       // Check if the cell exists and if the current position is not the same as the selection start cell
-      if (cell && basePosition !== selectionStartPos) {
-        // Only select on the forward strand
-        if (cell.id === "Forward Strand") {
-          // Get the indices of the start and end cells
-          let startCoords = null;
-          let startRowIndex = null;
-          let startCellIndex = null;
-          let endCoords = null;
-          let endRowIndex = null;
-          let endCellIndex = null;
-          // Convert sequence coords to table coordinates
-          if (selectionStartPos < selectionEndPos) {
-            startCoords = seqIndexToCoords(selectionStartPos, 0, currGridStructure);
-            startRowIndex = startCoords[0];
-            startCellIndex = startCoords[1];
-            endCoords = seqIndexToCoords(selectionEndPos, 0, currGridStructure);
-            endRowIndex = endCoords[0];
-            endCellIndex = endCoords[1] - 1;
-          } else {
-            startCoords = seqIndexToCoords(selectionEndPos, 0, currGridStructure);
-            startRowIndex = startCoords[0];
-            startCellIndex = startCoords[1];
-            endCoords = seqIndexToCoords(selectionStartPos, 0, currGridStructure);
-            endRowIndex = endCoords[0];
-            endCellIndex = endCoords[1] - 1;
-          }
+      if (closestCell && closestRow && basePosition !== selectionStartPos) {
 
-          // Clear the previous selection
-          clearSelection(pNr);
+        // Test
+        // Go from whereever the cell upwards till the forward strand row
+        const rowAdjustment = currGridStructure.indexOf(closestCell.id)
+        console.log(closestCell.id, closestRow.rowIndex, closestCell.cellIndex, rowAdjustment)
+        selectionEndCell[0] -= rowAdjustment;
+        let selectionStartCell = initialSelectionStartCell;
+        if (closestSide === "left") {
+          selectionEndCell[1]--;
+        }
 
-          console.log("Iterating from: " + startRowIndex + ", " + startCellIndex);
-          console.log("To: " + endRowIndex + ", " + endCellIndex);
-          // Iterate over cells between start and end cells and select them
-          for (let i = startRowIndex; i <= endRowIndex; i++) {
-            // Current row
-            const row = sequenceGridTable.rows[i];
-            const start = (i === startRowIndex) ? startCellIndex : 0;
-            const end = (i === endRowIndex) ? endCellIndex : row.cells.length - 1;
-            // Iterate over all cells in the row
-            for (let j = start; j <= end; j++) {
-              const selectedCell = row.cells[j];
-              if (selectedCell.id === "Forward Strand" && selectedCell.innerText.trim() !== "") {
-                selectedCell.classList.add('selected-cell');
-              }
+        // swap if needed
+        console.log("Before swap:", selectionStartCell, selectionEndCell)
+        if (selectionStartCell[0] >= selectionEndCell[0] && selectionStartCell[1] > selectionEndCell[1]) {
+          const tempCell = selectionEndCell;
+          selectionEndCell = selectionStartCell;
+          selectionStartCell = tempCell;
+          selectionStartCell[1]++;
+        }
+        console.log("After swap:", selectionStartCell, selectionEndCell)
+
+        startRowIndex = selectionStartCell[0];
+        startCellIndex = selectionStartCell[1];
+        endRowIndex = selectionEndCell[0];
+        endCellIndex = selectionEndCell[1];
+
+        // Clear the previous selection
+        clearSelection(pNr);
+
+        console.log("Iterating from: " + startRowIndex + ", " + startCellIndex);
+        console.log("To: " + endRowIndex + ", " + endCellIndex);
+        // Iterate over cells between start and end cells and select them
+        for (let i = startRowIndex; i <= endRowIndex; i++) {
+          // Current row
+          const row = sequenceGridTable.rows[i];
+          const start = (i === startRowIndex) ? startCellIndex : 0;
+          const end = (i === endRowIndex) ? endCellIndex : row.cells.length - 1;
+          // Iterate over all cells in the row
+          for (let j = start; j <= end; j++) {
+            const selectedCell = row.cells[j];
+            if (selectedCell.id === "Forward Strand" && selectedCell.innerText.trim() !== "") {
+              selectedCell.classList.add('selected-cell');
             }
           }
-
-          // Update the end cell
-          endCell = cell;
-        } else {
-          // Clear the selection if the cell doesn't have the same ID
-          //clearSelection(pNr);
         }
+
+        // Update the end cell
+        endCell = closestCell;
       }
     }
   });
@@ -203,13 +220,13 @@ function addCellSelection(tableId, containerId, pNr) {
   /**
    * Clear startCell and endCell references when leaving the table while selecting and signal that we are not selecting.
    */
-  sequenceGridTable.addEventListener('mouseleave', function () {
+  /* sequenceGridTable.addEventListener('mouseleave', function () {
     if (isSelecting) {
       startCell = null;
       endCell = null;
       isSelecting = false;
     }
-  });
+  }); */
 
 
   /**
