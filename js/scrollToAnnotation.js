@@ -1,49 +1,55 @@
-function addScrollingEffectToFeatureTable(tableId, containerId, pNr) {
+/**
+ * Adds a scrolling effect when clicking on a feature in the side bar.
+ * 
+ * TO DO:
+ * - sometimes doesnt work
+ */
+function addScrollingEffectToFeatureTable(tableId, containerId) {
+  // Wait for the page to load
   document.addEventListener('DOMContentLoaded', function () {
+    // Select specified table and content div
     const sidebarTable = document.getElementById(tableId);
     const fileContentDiv = document.getElementById(containerId);
   
-    // Function to add event listener to each <tr> element
-    function addEventListenerToTableRow(row) {
-      row.addEventListener('click', scrollToCell);
-    }
-  
+    /**
+     * Scrolls to the annotaton specified by the sidebar row closes to where the user clicked.
+     */
     function scrollToCell(event) {
-        const clickedRow = event.target.closest('tr');
-      
-        // Get the label text from the second cell in the clicked row
-        const labelCell = clickedRow.cells[1];
-        const label = labelCell.textContent;
-      
-        // Find the corresponding cell in the "file-content" table
-        const fileContentTable = fileContentDiv.querySelector('table');
-        const cells = fileContentTable.querySelectorAll('td');
-        let desiredCell = null;
-        cells.forEach((cell) => {
-          if (cell.textContent === label) {
-            desiredCell = cell;
-          }
-        });
-      
-        // Scroll the "file-content" div to the desired cell
-        if (desiredCell) {
-          desiredCell.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest',
-          });
+      // Closes row to click event
+      const clickedRow = event.target.closest('tr');
+    
+      // Get the label text from the second column in the clicked row
+      const labelCell = clickedRow.cells[1];
+      const label = labelCell.textContent;
+    
+      // Find the corresponding cell in the "file-content" table
+      const fileContentTable = fileContentDiv.querySelector('table');
+      const cells = fileContentTable.querySelectorAll('td');
+      let desiredCell = null;
+      cells.forEach((cell) => {
+        if (cell.textContent === label) {
+          desiredCell = cell;
         }
+      });
+    
+      // Scroll the "file-content" div to the desired cell
+      if (desiredCell) {
+        desiredCell.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        });
       }
+    }
       
   
-    // Observe changes to the sidebar table
+    // Listeners are added once the sidebar is populated after plasmid import
     const observer = new MutationObserver(function (mutationsList) {
       for (const mutation of mutationsList) {
         if (mutation.type === 'childList') {
           const addedNodes = mutation.addedNodes;
           for (const node of addedNodes) {
             if (node.nodeName === 'TR') {
-              // Add event listener to the newly added table row
-              addEventListenerToTableRow(node);
+              node.addEventListener('click', scrollToCell);
             }
           }
         }
@@ -56,5 +62,6 @@ function addScrollingEffectToFeatureTable(tableId, containerId, pNr) {
 }
 
 
+// Enables the effect for both plasmids
 addScrollingEffectToFeatureTable('sidebar-table', 'file-content', 1);
 addScrollingEffectToFeatureTable('sidebar-table2', 'file-content2', 2);
