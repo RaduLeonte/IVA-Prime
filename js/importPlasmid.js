@@ -352,15 +352,13 @@ function parseDNAFile(fileContent, pNr) {
 }
 
 /**
- * Populate the sidebar-
- * 
- * TO DO:
- * - 
+ * Populate the sidebar with the features from the specified plasmid.
  */
 function createSideBar(pNr) {
   // Sidebar contents
   let currFeatures = null;
   let sidebarTable = null;
+  // Select the target sidebar table and select the appropriate features dict
   if (pNr === 1) {
     currFeatures = features;
     sidebarTable = document.getElementById('sidebar-table');
@@ -369,6 +367,7 @@ function createSideBar(pNr) {
     sidebarTable = document.getElementById('sidebar-table2');
   }
 
+  // Set table headers
   sidebarTable.innerHTML = `
       <tr>
           <th>Feature</th>
@@ -376,10 +375,11 @@ function createSideBar(pNr) {
           <th>Range</th>
           <th>Note</th>
       </tr>
-  `; // Set table headers
+  `;
 
+  // Iterate over the features and populate the table
   for (const featureName in currFeatures) {
-    if (!featureName.includes("LOCUS") && !featureName.includes("source")) {
+    if (!featureName.includes("LOCUS") && !featureName.includes("source")) { // Skip LOCUS and source
       const feature = currFeatures[featureName];
 
       // Create a new table row
@@ -409,24 +409,34 @@ function createSideBar(pNr) {
       noteCell.className = 'wrap-text';
       row.appendChild(noteCell);
   
+      // Append the row to the table
       sidebarTable.appendChild(row);
     }
     
   }
 }
 
+/**  
+ * Remove everything but numbers and ".." in order to have a clean span
+*/
+function removeNonNumeric(inputString) {
+  const cleanedString = inputString.replace(/[^\d.]/g, '');
+  return cleanedString;
+}
+
+/**
+ * Check the annotation overlap to see how many rows are needed to accomodate all the annotations.
+ * Also changes the gridstructure if more rows are needed for annotations.
+ */
 function checkAnnotationOverlap(inputFeatures, pNr) {
-  console.log("CAO: ", gridStructure)
   let maximumOverlap = 0;
+  
+  // Iterate over all features and add their spans to a list
   const spansList = [];
   Object.entries(inputFeatures).forEach(([key, value]) => {
-    if (value.span && !key.includes("source")) {
+    if (value.span && !key.includes("source")) { // Exclude source
 
-      function removeNonNumeric(inputString) {
-        const cleanedString = inputString.replace(/[^\d.]/g, '');
-        return cleanedString;
-      }
-
+      // Get the current span and push it to the spans list
       value.span = removeNonNumeric(value.span);
       const range = value.span.split("..").map(Number);
       const rangeStart = range[0];
@@ -435,13 +445,17 @@ function checkAnnotationOverlap(inputFeatures, pNr) {
     }
   });
 
+  // Check each span against the rest
   for (let i = 0; i < spansList.length; i++) {
+    // Get the i-th span
     const [startA, endA] = spansList[i];
     let currentOverlap = 0;
+    // Check against every other span to see how many it overlaps
     for (let j = 0; j < spansList.length; j++) {
-      if (i !== j) {
-        const [startB, endB] = spansList[j];
-        console.log(startA, endA, startB, endB)
+      if (i !== j) { // Excludes itself
+        const [startB, endB] = spansList[j]; // Overlap to cehck against
+        
+        // Increment the current overlap if they do overlap
         if (startA >= startB && startA <= endB) {
           console.log("++")
           currentOverlap++;
@@ -451,29 +465,32 @@ function checkAnnotationOverlap(inputFeatures, pNr) {
         }
       }
     }
-  
+
+    // IF a new maximum overlap was found, replace the previous one
     if (currentOverlap > maximumOverlap) {
       maximumOverlap = currentOverlap;
     }
   }
-  console.log(maximumOverlap)
+  // Increase once more for good measure
   maximumOverlap++;
 
+  // Adjust the grid structure according to maximumOverlap
   let count = 0;
-
-  if (pNr === 1) {
+  if (pNr === 1) { // First plasmid
+    // Count how many rows are already dedicated to annotations
     for (let i = 0; i < gridStructure.length; i++) {
       if (gridStructure[i] === "Annotations") {
         count++;
       }
     }
-      
+    
+    // If more rows are needed, append them
     if (count !== maximumOverlap) {
       for (let i = 0; i < maximumOverlap - count; i++) {
         gridStructure.push("Annotations")
       }
     }
-  } else {
+  } else { // Same as for the first plasmid
     for (let i = 0; i < gridStructure2.length; i++) {
       if (gridStructure2[i] === "Annotations") {
         count++;
@@ -486,26 +503,23 @@ function checkAnnotationOverlap(inputFeatures, pNr) {
       }
     }
   }
-  console.log("CAO2: ", gridStructure)
   return
 }
 
-function changeCursorIcon(state) {
-  if (state ==="loading") {
-    document.body.classList.add('loading');
-  }
-}
-
-
+// Creat the content table grid
 function makeContentGrid(pNr, callback) {
+  // Changes the cursor to have a loading icon
   document.body.classList.add('loading');
+
   setTimeout(function() {
+    // Init variables
     let currSequence = null;
     let currComplementarySequence = null;
     let currFeatures = null;
     let sequenceGrid = null;
     let gridHeight = 0;
     let currGridStructure = null;
+    // Assign variables from the specified plasmid
     if (pNr === 1) {
       currSequence = sequence;
       currComplementarySequence = complementaryStrand;
@@ -519,55 +533,73 @@ function makeContentGrid(pNr, callback) {
       sequenceGrid = document.getElementById('sequence-grid2');
       currGridStructure = gridStructure2;
     }
+
+    // Check the annotation overlap to see if the grid structure has enough "Annotations" rows
     checkAnnotationOverlap(currFeatures, pNr);
-    let currGridStructureLength = currGridStructure.length;
+
+    // Create the grid
+    let currGridStructureLength = currGridStructure.length; // How many rows per line 
+    // Sequence length / gridWidth rounded up to the nearest multiple to see how many lines are needed
+    // Multiply with the amount of rows per line to get the total amount of table rows
     gridHeight = Math.ceil(currSequence.length / gridWidth) * currGridStructureLength;
-    sequenceGrid.innerHTML = ''; // Clear previous grid contents
 
-
+    // Clear previous grid contents
+    sequenceGrid.innerHTML = '';
+    // Iterate over each row 
     for (let i = 0; i < gridHeight; i++) {
-      let row = sequenceGrid.rows[i]; // Get the corresponding row
+      let row = sequenceGrid.rows[i]; // Get the corresponding row$
+      // If the row doesn't exist, create a new one
       if (!row) {
-        // If the row doesn't exist, create a new one
         row = sequenceGrid.insertRow(i);
       } 
+      // Populate the sequence cells with the corresponding base
       for (let j = 0; j < gridWidth; j++) {
-        const cell = document.createElement('td');
+        const cell = document.createElement('td'); // Create the cell
         let currentChar = ""
-        let test = Math.floor(i / currGridStructureLength)
-        if ((i + 1) % currGridStructureLength === 1) {
-          currentChar = currSequence[test*gridWidth + j]
-        } else if ((i + 1) % currGridStructureLength === 2) {
-          currentChar = currComplementarySequence[test*gridWidth + j]
+        let linesCreated = Math.floor(i / currGridStructureLength) // Check how many "lines" have been created so far
+  
+        if ((i + 1) % currGridStructureLength === 1) { // If we're on the forward strand
+          currentChar = currSequence[linesCreated*gridWidth + j] // Add the corrseponding char
+        } else if ((i + 1) % currGridStructureLength === 2) {// If we're on the comlpementary strand
+          currentChar = currComplementarySequence[linesCreated*gridWidth + j]
         }
+        // If we've run out of bases to add add nothing
         if (!currentChar) {
           currentChar = ""
         }
+
+        // Insert the base to the cell's text content
         cell.textContent = currentChar;
+        // Add a cell id to distinguish the cells
         cell.id = currGridStructure[i % currGridStructureLength];
+        // Add a cell class
         cell.classList.add(currGridStructure[i % currGridStructureLength].replace(" ", ""));
+        // Append the cell to the row
         row.appendChild(cell);
       }
     }
     
+    // Iterate over the features and create the annotatations
     Object.entries(currFeatures).forEach(([key, value]) => {
-      if (value.span && !key.includes("source")) {
-        function removeNonNumeric(inputString) {
-          const cleanedString = inputString.replace(/[^\d.]/g, '');
-          return cleanedString;
-        }
+      if (value.span && !key.includes("source")) { // If the feature includes a span and is not "source"
+        // Get the current feature's span
         value.span = removeNonNumeric(value.span);
         const range = value.span.split("..").map(Number);
         const rangeStart = range[0];
         const rangeEnd = range[1];
 
         console.log(value.label, rangeStart + ".." + rangeEnd)
+        // Make the annotation at the specified indices
         makeAnnotation(rangeStart - 1, rangeEnd - 1, value.label, pNr, currGridStructure); 
       }
     });
 
+    // Check the sequence for common promotes and start the translation there
     promoterTranslation(pNr);
+    // Start the transaltion at the beginning of each feature
     featureTranslation(pNr);
+
+    // Change the cursor's icon to normal
     document.body.classList.remove('loading');
     if (typeof callback === 'function') {
       callback();
@@ -575,44 +607,79 @@ function makeContentGrid(pNr, callback) {
   }, 1);
 }
 
+/**
+ * Creates the annoations from the span's start to the end, breaking the feature up into
+ * multiple if it spans multiple lines.
+ * 
+ * TO DO:
+ * - at the moment it is very slow, maybe find a better way
+ * - use the feature's color from the file instead of giving it a random one every time
+ */
 function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
+  // Get a random annoation color
   const annotationColor = generateRandomUniqueColor();
-  recentColor = annotationColor;
-  let row = (Math.floor(rStart / gridWidth)) * currGridStructure.length;
-  let col = rStart - (row/currGridStructure.length)*gridWidth;
-  row = row + currGridStructure.indexOf("Annotations");
-  const annotationSpan = rEnd - rStart;
+  recentColor = annotationColor; // Store the colour history
 
-  let currentSpan = annotationSpan;
-  let carryOver = annotationSpan;
+  // Convert from sequence coords to table coords
+  let row = (Math.floor(rStart / gridWidth)) * currGridStructure.length + currGridStructure.indexOf("Annotations");
+  let col = rStart - (row/currGridStructure.length)*gridWidth;
+
+  // Annotaiton span length
+  const annotationSpan = rEnd - rStart;
+  let currentSpan = annotationSpan; // Current span to draw
+  let carryOver = annotationSpan; // Carry over for next line
   
-  let i = 0;
+  let i = 0; // Iteration counter
+  // Draw until there is no more carry over
   while (carryOver > 0) {
+    // If the feature spans multiple lines, add "..." to the beginning of the feature
     if (i != 0) {
         text = "..." + text.replace("...", "");
     }
+
+    // Merge the corresponding cells to draw the annoation
     if (col + currentSpan >= gridWidth) {
+      // If the currenspan would not fit on the line, draw it until we reach the end and
+      // put the rest into carry over
       console.log("MA1");
+      // Calculate carry over
       carryOver = col + currentSpan - gridWidth;
+      // Calculate length of the current annoation
       currentSpan = gridWidth - col;
+      // Merge the corresponding cells and create the annotaion
       mergeCells(row, col, 1, currentSpan, text + "...", annotationColor, pNr,currGridStructure);
+      // Adjust the current span
       currentSpan = carryOver;
+      // Increment the row
       row = row + currGridStructure.length;
+      // Reset cell index
       col = 0;
     } else if (currentSpan === gridWidth) {
+      // If the currentspan covers exactly the current line there is some weird behaviour
+      // so fill in the current line and one additional cell in the the following row
       console.log("MA2");
       mergeCells(row, col, 1, currentSpan, text, annotationColor, pNr,currGridStructure);
       mergeCells(row + currGridStructure.length, col, 1, 1, text, annotationColor, pNr,currGridStructure);
+      // Set carry over to 0 to signify that we're done
       carryOver = 0;
     } else {
+      // The annotation can be fully drawn on the current row
       console.log("MA3");
-      mergeCells(row, col, 1, currentSpan + 1
-        , text, annotationColor, pNr, currGridStructure);
+      mergeCells(row, col, 1, currentSpan + 1, text, annotationColor, pNr, currGridStructure);
+      // Set carry over to 0 to signify that we're done
       carryOver = 0;
     }
+    // Increment iteration counter
     i++;
   }
 }
+
+/**
+ * Draws the annotation by merging the specified cells, adding th text and adding the color.
+ * 
+ * TO DO:
+ * - 
+ */
 
 function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStructure) {
   console.log("Merge cells1: ", row, col, colspan, text)
@@ -692,7 +759,11 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
   }
 }
 
-function getRandomBackgroundColor() {
+/**
+ * Generates a random color that was not used recently.
+ */
+let recentColor = ''; // Global variable that stores the most recent color used
+function generateRandomUniqueColor() {
   const baseColors = ["#FFB6C1", "#FFDAB9", "#FFA07A", "#FFC0CB", "#87CEFA", "#98FB98", "#FF69B4", "#90EE90"];
 
   const remainingColors = baseColors.filter(color => color !== recentColor);
@@ -702,39 +773,7 @@ function getRandomBackgroundColor() {
   return randomColor;
 }
 
-function shiftColor(color) {
-  const colorValue = parseInt(color.slice(1), 16);
-  const shiftAmount = 30; // Adjust the shift amount as desired
-
-  const r = (colorValue >> 16) & 0xff;
-  const g = (colorValue >> 8) & 0xff;
-  const b = colorValue & 0xff;
-
-  const shiftedR = Math.max(0, Math.min(255, r + shiftAmount));
-  const shiftedG = Math.max(0, Math.min(255, g + shiftAmount));
-  const shiftedB = Math.max(0, Math.min(255, b + shiftAmount));
-
-  const shiftedHex = `#${(shiftedR << 16 | shiftedG << 8 | shiftedB).toString(16).padStart(6, '0')}`;
-
-  return shiftedHex;
-}
-
-let recentColor = '';
-
-function generateRandomUniqueColor() {
-  let randomColor = getRandomBackgroundColor();
-  
-  // Ensure the generated color is different from the recent color
-  while (randomColor === recentColor) {
-    randomColor = getRandomBackgroundColor();
-  }
-  
-  // Update the recent color to the newly generated color
-  recentColor = randomColor;
-
-  return randomColor;
-}
-
+// List of common promoters
 const promoters = {
   "CMV": "CGCAAATGGGCGGTAGGCGTG",
   "EF1α": "CCACGGGACACCATCTTTAC",
@@ -772,6 +811,9 @@ const promoters = {
   "HindIII": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT"
 };
 
+/**
+ * Function that translates the input codon into its corresponding amino acid.
+ */
 function translateCodon(codon) {
   const codonTable = {
     'GCT': 'A', 'GCC': 'A', 'GCA': 'A', 'GCG': 'A',
@@ -800,7 +842,11 @@ function translateCodon(codon) {
   return codonTable[codon] || '';
 }
 
+/**
+ * Searches the specified sequence for the common promotes and starts translation wherever it finds one.
+ */
 function promoterTranslation(pNr) {
+  // Function that generates a list of all occurences of the subtring in the input string
   function findAllOccurrences(string, substring) {
     const indices = [];
     let index = string.indexOf(substring);
@@ -813,6 +859,7 @@ function promoterTranslation(pNr) {
     return indices;
   }
 
+  // Select the correct sequence to search
   let currSequence = "";
   if (pNr === 1) {
     currSequence = sequence;
@@ -820,10 +867,12 @@ function promoterTranslation(pNr) {
     currSequence = sequence2;
   }
 
-
+  // Iterate over the promotes, finds a list of indices for all the positions where it can be found
+  // then starts the translation at the first ATG it finds from there.
   for (let promoter in promoters) {
-    let promoterSeq = promoters[promoter];
-    const occurrences = findAllOccurrences(currSequence, promoterSeq);
+    // Get all occurences of the promoter sequence in the plasmid sequence
+    const occurrences = findAllOccurrences(currSequence, promoters[promoter]);
+    // If any occurences were found, iterate over them and start looking for "ATG" and start translating there
     if (occurrences.length !== 0) {
       for (let i = 0; i < occurrences.length; i++) {
         startTranslation(currSequence.indexOf("ATG", occurrences[i] + promoter.length) + 1, pNr);
@@ -832,8 +881,9 @@ function promoterTranslation(pNr) {
   }
 }
 
+// Star a translation at the beginning of each feature
 function featureTranslation(pNr) {
-
+  // Select the corresponding features and sequence
   let currSequence = "";
   let currFreatures = [];
   if (pNr === 1) {
@@ -844,12 +894,9 @@ function featureTranslation(pNr) {
     currFreatures = features2;
   }
 
+  // Iterate over features and start the translation at the beginning of its span
   Object.entries(currFreatures).forEach(([key, value]) => {
     if (value.span && !key.includes("source")) {
-      function removeNonNumeric(inputString) {
-        const cleanedString = inputString.replace(/[^\d.]/g, '');
-        return cleanedString;
-      }
       value.span = removeNonNumeric(value.span);
       const range = value.span.split("..").map(Number);
       const rangeStart = range[0];
@@ -859,13 +906,23 @@ function featureTranslation(pNr) {
   });
 }
 
+/**
+ * Convert sequence indices to table coordinates
+ */
 function seqIndexToCoords(inputIndex, targetRow, currGridStructure) {
   const outputRow = (Math.floor(inputIndex / gridWidth))*currGridStructure.length + targetRow;
   const outputIndex = inputIndex - Math.floor(inputIndex / gridWidth)*gridWidth - 1;
   return [outputRow, outputIndex];
 }
 
+/**
+ * Starts a translation at the specified position and populates the amino acid row with the translation.
+ * 
+ * TO DO:
+ * - allow translation to loop over to the beginning of the plasmid
+ */
 function startTranslation(codonPos, pNr) {
+  // Select the corresponding features and sequence
   let currGridStructure = null;
   let currSequence = "";
   if (pNr === 1) {
@@ -875,32 +932,50 @@ function startTranslation(codonPos, pNr) {
     currSequence = sequence2;
     currGridStructure = gridStructure2;
   }
+
+  // Convert to table coordinates based on the row order in the grid structure
   const rowIndexAA = currGridStructure.indexOf("Amino Acids");
   let tableCoords = seqIndexToCoords(codonPos, rowIndexAA, currGridStructure);
 
+  // Get the row and column, increment the column by 1 because the amino acids are
+  // displayed in the middle cell of a group of 3 cells
   let row = tableCoords[0];
   let col = tableCoords[1] + 1;
-  console.log("Starting translationa at " + codonPos + "(" + row + ", " + col + ").");
 
+  // Start translating until a stop codon is encountered
+  console.log("Starting translationa at " + codonPos + "(" + row + ", " + col + ").");
   while (true) {
+    // Select current codon
     let codon = repeatingSlice(currSequence, codonPos - 1, codonPos + 2);
+    // Get the corresponding amino acid
     let aminoAcid = translateCodon(codon);
 
+    // Fill the cells
     fillAACells(row, col, aminoAcid, pNr);
+    // Jump to next position
     col += 3;
     codonPos += 3;
+    // If we've jumped off of the table go to the next row
     if (col > gridWidth) {
       col -= gridWidth;
       row += currGridStructure.length;
     }
+    // If the last displayed amino acid was a stop codon or we've reached the end of the sequence, stop
     if (aminoAcid === "-" || codonPos > currSequence.length){
       break;
     }
   }
 }
 
-function fillAACells(row, col, text, pNr) {
 
+/**
+ * Merge 3 cells in the amino acids row in order to display the amino acid.
+ * 
+ * TO DO:
+ * - 
+ */
+function fillAACells(row, col, text, pNr) {
+  // Select the corresponding features and sequence
   let table = null;
   let currGridStructure = null;
   if (pNr === 1) {
@@ -910,14 +985,17 @@ function fillAACells(row, col, text, pNr) {
     table = document.getElementById('sequence-grid2');
     currGridStructure = gridStructure2;
   }
+
+  // Select the middle cell
   let mainCell = table.rows[row].cells[col];
-  if (!mainCell) {
+  if (!mainCell) { // If the cell does not exist, try the next row over at the beginning
     row += currGridStructure.length;
     col = col - gridWidth;
 
     mainCell = table.rows[row].cells[col];
   }
 
+  // Select the left and right cells
   const leftCell = table.rows[row].cells[col-1];
   const rightCell = table.rows[row].cells[col+1];
   // Check and clear text in leftCell
