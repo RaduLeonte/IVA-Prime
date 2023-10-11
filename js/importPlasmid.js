@@ -2,73 +2,11 @@
  * On window load.
  */
 window.onload = function() {
-
-    // Select content div
-    const contentDiv = document.querySelector('.content');
-
-    /**
-     * Handles file selection functionality.
-     */
-    function handleFileSelect(event) {
-        const file = event.target.files[0]; // Get file path.
-        const fileExtension =  /\.([0-9a-z]+)(?:[\?#]|$)/i.exec(file.name)[0]; // Fish out file extension of the file
-        // If the file has an acceptable file extension start parsing
-        const acceptedFileExtensions = [".gbk", ".gb", ".dna"]
-        if (acceptedFileExtensions.includes(fileExtension)) {
-          // Initialise file reader
-          const reader = new FileReader();
-
-          // Define reader
-          reader.onload = function(e) {
-            const fileContent = e.target.result; // Read file content
-            
-            // Depending on file extension pass the file content to the appropiate parser
-            if (fileExtension === ".dna") {
-              parseDNAFile(fileContent, 1);
-            } else {
-              parseGBFile(fileContent, 1);
-            }
-            
-            // Update header with filename
-            const headerList = document.getElementById('header-list');
-            headerList.innerHTML = headerList.innerHTML + "<li><a>" + file.name + "</a></li>";
-            
-            // Create the sidebar
-            createSideBar(1);
-
-            // Create content grid
-            makeContentGrid(1, function() {
-              contentDiv.style.overflow = 'auto'; // Enable scrolling after file import
-              
-              // Show the second import button after the first file is imported
-              const importSecondButton = document.getElementById('import-second-btn');
-              importSecondButton.style.display = 'block';
-
-              // Add an event listener to the second import button
-              const fileInputSecond = document.createElement('input');
-              fileInputSecond.setAttribute('type', 'file');
-              fileInputSecond.addEventListener('change', handleFileSelectSecond);
-              // Button listener
-              importSecondButton.addEventListener('click', function(event) {
-                  event.preventDefault();
-                  fileInputSecond.click();
-              });
-            });
-            
-            // Once the file is loaded, enable search function
-            initiateSearchFunctionality(1);
-          };
-
-            // Run reader
-            reader.readAsText(file);
-          }
-        
-    };
-
     // Create file input element and run the file select on click
     const fileInput = document.createElement('input');
     fileInput.setAttribute('type', 'file');
     fileInput.addEventListener('change', handleFileSelect);
+    fileInput.pNr = 1;
     const importLink = document.querySelector('nav ul li a');
     importLink.addEventListener('click', function(event) {
         event.preventDefault();
@@ -76,6 +14,78 @@ window.onload = function() {
     });
 };
 
+
+/**
+ * Handles file selection functionality.
+ */
+function handleFileSelect(event) {
+  const pNr = event.target.pNr;
+  console.log("Importing plasmid nr: ", pNr);
+  const file = event.target.files[0]; // Get file path.
+  const fileExtension =  /\.([0-9a-z]+)(?:[\?#]|$)/i.exec(file.name)[0]; // Fish out file extension of the file
+  // If the file has an acceptable file extension start parsing
+  const acceptedFileExtensions = [".gbk", ".gb", ".dna"]
+  if (acceptedFileExtensions.includes(fileExtension)) {
+    // Initialise file reader
+    const reader = new FileReader();
+
+    // Define reader
+    reader.onload = function(e) {
+      const fileContent = e.target.result; // Read file content
+      
+      // Depending on file extension pass the file content to the appropiate parser
+      if (fileExtension === ".dna") {
+        parseDNAFile(fileContent, pNr);
+      } else {
+        parseGBFile(fileContent, pNr);
+      }
+      
+      // Update header with filename
+      const headerList = document.getElementById('header-list');
+      headerList.innerHTML = headerList.innerHTML + "<li><a>" + file.name + "</a></li>";
+      
+      // Create the sidebar
+      createSideBar(pNr);
+
+      // Create content grid
+      if (pNr === 1) {
+        makeContentGrid(1, function() {
+            const contentDiv = document.querySelector('.content')
+            contentDiv.style.overflow = 'auto'; // Enable scrolling after file import
+            
+            // Show the second import button after the first file is imported
+            const importSecondButton = document.getElementById('import-second-btn');
+            importSecondButton.style.display = 'block';
+
+            // Add an event listener to the second import button
+            const fileInputSecond = document.createElement('input');
+            fileInputSecond.setAttribute('type', 'file');
+            fileInputSecond.addEventListener('change', handleFileSelect);
+            fileInputSecond.pNr = 2;
+            // Button listener
+            importSecondButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                fileInputSecond.click();
+            });
+          });
+      } else {
+        makeContentGrid(2);
+      };
+      
+      // Once the file is loaded, enable search function
+      initiateSearchFunctionality(pNr);
+
+      if (pNr === 2) {
+        // After the second file is imported, create the second plasmid window
+        createSecondPlasmidWindow();
+        secondPlasmidIported = true;
+      };
+    };
+
+      // Run reader
+      reader.readAsText(file);
+    }
+};
 
 /**
  * Genebank file parser.
@@ -993,91 +1003,6 @@ function fillAACells(row, col, text, pNr) {
   // Add text to the center of the merged cell
   mainCell.textContent = text;
   mainCell.style.textAlign = 'center';
-}
-
-
-function handleFileSelectSecond(event) {
-
-  const file = event.target.files[0];
-      const fileExtension =  /\.([0-9a-z]+)(?:[\?#]|$)/i.exec(file.name)[0];
-      const acceptedFileExtensions = [".gbk", ".gb", ".dna"]
-      if (acceptedFileExtensions.includes(fileExtension)) {
-        const reader = new FileReader();
-
-        reader.onload = function(e) {
-            const fileContent = e.target.result;
-            
-            // Parse the file content into variables
-            if (fileExtension === ".dna") {
-              parseDNAFile(fileContent, 2);
-            } else {
-              parsePlasmidFile(fileContent, 2);
-            }
-
-            // Update header with filename
-            const headerList = document.getElementById('header-list');
-            headerList.innerHTML = headerList.innerHTML + "<li><a>" + file.name + "</a></li>";
-            
-
-            // Sidebar contents
-            const sidebarTable = document.getElementById('sidebar-table2');
-            sidebarTable.innerHTML = `
-                <tr>
-                    <th>Feature</th>
-                    <th>Label</th>
-                    <th>Range</th>
-                    <th>Note</th>
-                </tr>
-            `; // Set table headers
-
-            // SIDEBAR
-            for (const featureName in features2) {
-                if (!featureName.includes("LOCUS") && !featureName.includes("source")) {
-                  const feature = features2[featureName];
-            
-                  // Create a new table row
-                  let row = document.createElement('tr');
-              
-                  // Add feature name
-                  const nameCell = document.createElement('td');
-                  nameCell.textContent = featureName;
-                  nameCell.className = 'wrap-text';
-                  row.appendChild(nameCell);
-              
-                  // Add feature label
-                  const labelCell = document.createElement('td');
-                  labelCell.textContent = feature.label || '';
-                  labelCell.className = 'wrap-text';
-                  row.appendChild(labelCell);
-              
-                  // Add feature range
-                  const rangeCell = document.createElement('td');
-                  rangeCell.textContent = feature.span.replace("misc_feature ", "");
-                  rangeCell.className = 'wrap-text';
-                  row.appendChild(rangeCell);
-              
-                  // Add feature notes
-                  const noteCell = document.createElement('td');
-                  noteCell.textContent = feature.note || '';
-                  noteCell.className = 'wrap-text';
-                  row.appendChild(noteCell);
-              
-                  sidebarTable.appendChild(row);
-                }
-                
-            }
-
-            // Create content grid
-            makeContentGrid(2);
-            initiateSearchFunctionality(2);
-        };
-
-        reader.readAsText(file);
-        }
-
-  // After the second file is imported, create the second plasmid window
-  createSecondPlasmidWindow();
-  secondPlasmidIported = true;
 }
 
 
