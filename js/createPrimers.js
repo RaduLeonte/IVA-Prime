@@ -398,6 +398,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, repl
         replaceEndPos = replaceStartPos;
         operationType = "Insertion"
     }
+    console.log("HERE1", operationType, dnaToInsert, aaToInsert, replaceStartPos, replaceEndPos)
     // Make sure that startPos is the smaller number
     if (replaceStartPos > replaceEndPos) {
         let temp = replaceStartPos;
