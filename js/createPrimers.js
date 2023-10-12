@@ -430,7 +430,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, repl
     let tempRev = "";
     // If the sequence to be inserted has a melting temperature lower than 49 C, extende the primer backward
     if (get_tm(seqToInsert, primerConc, saltConc) < homoRegionTm) { // Mutation < 49 C, need homolog region
-
+        console.log("Mut under 49C")
         // Forward template binding region, extend forward on the forward strand from the end position
         tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
         // Forward homologous region, extend backwards on the forward strand from the start position
@@ -445,7 +445,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, repl
         // Display primers in the sidebar
         displayPrimers(operationType, [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)", seqToInsert);
     } else { //  // Mutation > 49 C
-
+        console.log("Mut over 49C")
         // Forward template bindin region
         tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
         // Forward homologous region is just the sequence to be inserted
