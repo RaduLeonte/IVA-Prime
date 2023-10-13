@@ -317,14 +317,7 @@ function optimizeAA(inputAA, targetOrganism) {
         return results;
     }
 
-    if (targetOrganism === "eColi") {
-        let outputSequence = "";
-        for (let i = 0; i < inputAA.length; i++) {
-            outputSequence += eColiCodonTable[inputAA[i]]
-        }
-        console.log("Optimizer:", inputAA, outputSequence)
-        return outputSequence;
-    } else {
+    if (targetOrganism === "prioLowTM") {
         // Call function to generate all possible DNA sequence that result in the input amino acid sequence
         let dnaSequences = generateDNASequences(inputAA);
 
@@ -351,7 +344,24 @@ function optimizeAA(inputAA, targetOrganism) {
         console.log("Optimizer - Closest value: " + closestKey + "(" + dnaTMDictionary[closestKey] + ")")
         return closestKey;
     }
-    
+
+    /**
+     * Using codon frequency tables
+     */
+    let outputSequence = "";
+    let organismCodonTable = codonTablesDict[targetOrganism];
+
+    let tripletToAdd = "";
+    for (let i = 0; i < inputAA.length; i++) {
+        frequenciesList = Object.keys(organismCodonTable[inputAA[i]])
+        console.log("Optimizer:", frequenciesList)
+        tripletToAdd = organismCodonTable[inputAA[i]][frequenciesList[0]]
+        
+        outputSequence += tripletToAdd
+        console.log("Optimizer:", tripletToAdd)
+    }
+    console.log("Optimizer:", targetOrganism, inputAA, outputSequence)
+    return outputSequence;
 }
 
 

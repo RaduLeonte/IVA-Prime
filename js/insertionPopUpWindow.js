@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', function () {
       <input type="text" id="amino-acid-sequence-input">
       <p class="stop-codon-hint">Accepted STOP letter codes: "-", "X", "*".</p>
       <p> Optimize codons for: <select name="targetOrganismSelector" id="targetOrganismSelector">
-        <option value="eColi">Escherichia coli</option>
         <option value="prioLowTM">Prioritize melting temperature</option>
       </select> </p>
     </div>
@@ -30,6 +29,19 @@ document.addEventListener('DOMContentLoaded', function () {
   `;
   popupWindow.style.display = 'none';
   document.body.appendChild(popupWindow);
+
+  // Add all supported organisms
+  let defaultOrganism = "Escherichia coli";
+  const organismsList = Object.keys(codonTablesDict);
+  const select = document.getElementById('targetOrganismSelector'); 
+  for (let i = 0; i < organismsList.length; i++) {
+    let newOption = new Option(organismsList[i],organismsList[i]);
+    if (organismsList[i] === defaultOrganism) {
+      newOption.setAttribute('selected','selected');
+    }
+    select.add(newOption,undefined);
+    console.log("Selector: ", organismsList[i])
+  }
 
   // Button listeners
   popupWindow.addEventListener('click', function (event) {
