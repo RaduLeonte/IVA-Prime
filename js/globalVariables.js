@@ -91,3 +91,31 @@ const aaToCodon = {
     Y: ['TAT', 'TAC'],
     V: ['GTT', 'GTC', 'GTA', 'GTG'],
     X: ['TAA', 'TAG', 'TGA']};
+
+/**
+ * Codon frequency tables
+ */
+
+const eColiCodonTable = {
+    A: ['GCG'],
+    R: ['CGT'],
+    N: ['AAT'],
+    D: ['GAT'],
+    C: ['TGC'],
+    E: ['GAA'],
+    Q: ['CAG'],
+    G: ['GGC'],
+    H: ['CAT'],
+    I: ['ATT'],
+    L: ['CTG'],
+    K: ['AAA'],
+    M: ['ATG'],
+    F: ['TTT'],
+    P: ['CCG'],
+    S: ['TCT'],
+    T: ['ACC'],
+    W: ['TGG'],
+    Y: ['TAT'],
+    V: ['GTG'],
+    X: ['TAA'],
+}

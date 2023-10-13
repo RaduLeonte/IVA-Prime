@@ -18,6 +18,10 @@ document.addEventListener('DOMContentLoaded', function () {
       <label for="amino-acid-sequence-input">Amino Acid Sequence:</label>
       <input type="text" id="amino-acid-sequence-input">
       <p class="stop-codon-hint">Accepted STOP letter codes: "-", "X", "*".</p>
+      <p> Optimize codons for: <select name="targetOrganismSelector" id="targetOrganismSelector">
+        <option value="eColi">Escherichia coli</option>
+        <option value="prioLowTM">Prioritize melting temperature</option>
+      </select> </p>
     </div>
     <div>
       <button id="create-primers-button">Create Primers</button>
@@ -40,12 +44,15 @@ document.addEventListener('DOMContentLoaded', function () {
       const allowedLetterCodes = Object.keys(aaToCodon);
       aminoAcidSequenceInput = aminoAcidSequenceInput.split('').filter(char => allowedLetterCodes.includes(char)).join('');
 
+      // Get target organism from select object
+      const targetOrganism = "";
+
       console.log("HERE2", dnaSequenceInput, aminoAcidSequenceInput, insertionPosition, selectionStartPos, selectionEndPos)
       // Call the function to create insertion primers or replacement primers if we have text selected
       if (!selectionEndPos || selectionEndPos === -1) {
-        createReplacementPrimers(dnaSequenceInput, aminoAcidSequenceInput, insertionPosition);
+        createReplacementPrimers(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, insertionPosition);
       } else {
-        createReplacementPrimers(dnaSequenceInput, aminoAcidSequenceInput, selectionStartPos, selectionEndPos);
+        createReplacementPrimers(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, selectionStartPos, selectionEndPos);
       }
       
       // Clear the text inputs

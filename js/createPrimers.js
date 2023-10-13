@@ -263,7 +263,7 @@ function primerExtension(startingPos, targetStrand, direction, targetTm, minLeng
  * TO DO:
  * - add options to optimize the AA sequence for a specific organism
  */
-function optimizeAA(inputAA) {
+function optimizeAA(inputAA, targetOrganism) {
     /**
      * Function that recursively creates every possible DNA sequence for the specificied amino acid sequence if
      * the length is under 10 amino acids, in which case it only returns the first DNA sequence generated.
@@ -316,31 +316,42 @@ function optimizeAA(inputAA) {
     
         return results;
     }
-    // Call function to generate all possible DNA sequence that result in the input amino acid sequence
-    let dnaSequences = generateDNASequences(inputAA);
 
-    // creates a dictionary with each DNA sequence as the key and its corresponding melting temperature as the entry.
-    const dnaTMDictionary = {};
-    for (let sequence of dnaSequences) {
-        const tm = get_tm(sequence, primerConc, saltConc);
-        dnaTMDictionary[sequence] = tm;
-    }
-
-    // Iterate over the dict and find the DNA sequence with the lowest melting temperature
-    let closestKey = null;
-    let closestDiff = Infinity;
-    for (let key in dnaTMDictionary) {
-        const tm = dnaTMDictionary[key];
-        const diff = Math.abs(tm - homoRegionTm);
-
-        if (diff < closestDiff) {
-            closestDiff = diff;
-            closestKey = key;
+    if (targetOrganism === "eColi") {
+        let outputSequence = "";
+        for (let i = 0; i < inputAA.length; i++) {
+            outputSequence += eColiCodonTable[inputAA[i]]
         }
-    }
+        console.log("Optimizer:", inputAA, outputSequence)
+        return outputSequence;
+    } else {
+        // Call function to generate all possible DNA sequence that result in the input amino acid sequence
+        let dnaSequences = generateDNASequences(inputAA);
 
-    console.log("Closest value: " + closestKey + "(" + dnaTMDictionary[closestKey] + ")")
-    return closestKey;
+        // creates a dictionary with each DNA sequence as the key and its corresponding melting temperature as the entry.
+        const dnaTMDictionary = {};
+        for (let sequence of dnaSequences) {
+            const tm = get_tm(sequence, primerConc, saltConc);
+            dnaTMDictionary[sequence] = tm;
+        }
+
+        // Iterate over the dict and find the DNA sequence with the lowest melting temperature
+        let closestKey = null;
+        let closestDiff = Infinity;
+        for (let key in dnaTMDictionary) {
+            const tm = dnaTMDictionary[key];
+            const diff = Math.abs(tm - homoRegionTm);
+
+            if (diff < closestDiff) {
+                closestDiff = diff;
+                closestKey = key;
+            }
+        }
+
+        console.log("Optimizer - Closest value: " + closestKey + "(" + dnaTMDictionary[closestKey] + ")")
+        return closestKey;
+    }
+    
 }
 
 
@@ -391,14 +402,14 @@ function optimizeAA(inputAA) {
  * - check at which point the tool should just recommend a long piece of dsDNA to order and use as a subcloning target
  * - fix the feature updater and maybe make a function of it
  */
-function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, replaceEndPos) {
+function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  replaceStartPos, replaceEndPos) {
     // Define operation type
     let operationType = "Mutation/Replacement";
     if (!replaceEndPos) { // if startPos equals endPos then its just an insertion
         replaceEndPos = replaceStartPos;
         operationType = "Insertion"
     }
-    console.log("HERE1", operationType, dnaToInsert, aaToInsert, replaceStartPos, replaceEndPos)
+    console.log("HERE1", operationType, dnaToInsert, aaToInsert, targetOrganism, replaceStartPos, replaceEndPos)
     // Make sure that startPos is the smaller number
     if (replaceStartPos > replaceEndPos) {
         let temp = replaceStartPos;
@@ -416,7 +427,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, replaceStartPos, repl
     let seqToInsert = "";
     if (aaToInsert) {
         console.log("Optimizing aa sequence to 49.5 C.");
-        seqToInsert = optimizeAA(aaToInsert);
+        seqToInsert = optimizeAA(aaToInsert, targetOrganism);
     } else {
         seqToInsert = dnaToInsert;
     }
