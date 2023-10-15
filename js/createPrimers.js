@@ -14,7 +14,7 @@
  * - use a loop to create the two primers and change structure of primersList to nested list and maybe
  * make a dict to combine with colors
  */
-function displayPrimers(primersType, primersList, textColor, templateColor, homoColor, mutSeq) {
+function displayPrimers(primersType, primersDict) {
     const sidebarContentDiv = document.querySelector('.sidebar-content'); // Select sidebar
 
     // Change sidebar headline
@@ -23,116 +23,36 @@ function displayPrimers(primersType, primersList, textColor, templateColor, homo
 
 
     // Display primer pair nr and type of mod
-    const p = document.createElement('p');
-    p.id = 'primers-type';
-    p.textContent = operationNr + '. ' + primersType;
+    const h3 = document.createElement('h3');
+    h3.id = 'primers-type';
+    h3.textContent = operationNr + '. ' + primersType;
     operationNr++;
-    sidebarContentDiv.appendChild(p);
+    sidebarContentDiv.appendChild(h3);
 
+    for (const [primer, subprimersDict] of Object.entries(primersDict)) {
+        console.log("Display primers:", primer, subprimersDict);
+        const paragraph = document.createElement('p');
+        paragraph.style.wordWrap = 'break-word'; // Add CSS style for word wrapping
+        paragraph.textContent = primer + ":\n";
+        let primerTMInfo = []
+        for (const [subprimer, subprimerProperties] of Object.entries(subprimersDict)) {
+            const span = document.createElement('span');
+            span.style.color = "white";
+            span.style.backgroundColor = subprimerProperties["color"];
+            span.style.fontWeight = 'bold';
+            span.textContent = subprimerProperties["seq"];
+            paragraph.appendChild(span)
+            primerTMInfo.push(parseFloat(get_tm(subprimerProperties["seq"], primerConc, saltConc).toFixed(2)));
+        }
 
+        const spanTM = document.createElement('span');
+        spanTM.textContent = ` (${primerTMInfo.join(', ')})`
+        paragraph.appendChild(spanTM)
 
-    // First Pair of primers
-    const paragraph1 = document.createElement('p');
-    paragraph1.style.wordWrap = 'break-word'; // Add CSS style for word wrapping
-
-    // Create individual spans for the homologous and template regions of the primers  with different colors
-    const span1a = document.createElement('span'); 
-    span1a.style.color = textColor;
-    span1a.style.backgroundColor = homoColor;
-    span1a.style.fontWeight = 'bold';
-    span1a.textContent = primersList[2];
-
-    const span1b = document.createElement('span');
-    span1b.style.color = textColor;
-    span1b.style.backgroundColor = templateColor;
-    span1b.style.fontWeight = 'bold';
-    span1b.textContent = primersList[3];
-    // Append the spans to the paragraph
-    paragraph1.appendChild(span1a);
-    paragraph1.appendChild(span1b);
-
-    // Calculate melting temperatures and add to the paragraph
-    const spanTm1 = document.createElement('span');
-    let tmTuple = [];
-    if (primersList[2] !== "") {
-        tmTuple.push(get_tm(primersList[2], primerConc, saltConc).toFixed(2))
+        sidebarContentDiv.appendChild(paragraph);
     }
-    if (primersList[3] !== "") {
-        tmTuple.push(get_tm(primersList[3], primerConc, saltConc).toFixed(2))
-    }
-    spanTm1.textContent = ` (${tmTuple.join(',')})`
-    paragraph1.appendChild(spanTm1);
 
-    // Second Pair of primers
-    const paragraph2 = document.createElement('p');
-    paragraph2.style.wordWrap = 'break-word'; // Add CSS style for word wrapping
-    // Create the first span with red text and bold
-    const span2a = document.createElement('span');
-    span2a.style.color = textColor;
-    span2a.style.backgroundColor = homoColor;
-    span2a.style.fontWeight = 'bold';
-    span2a.textContent = primersList[0];
-
-    // Create the second span with green text and bold
-    const span2b = document.createElement('span');
-    span2b.style.color = textColor;
-    span2b.style.backgroundColor = templateColor;
-    span2b.style.fontWeight = 'bold';
-    span2b.textContent = primersList[1];
-    // Append the spans to the paragraph
-    paragraph2.appendChild(span2a);
-    if (mutSeq) {
-        const spanMut = document.createElement('span');
-        spanMut.style.color = textColor;
-        spanMut.style.backgroundColor = 'rgb(199,51,116)';
-        spanMut.style.fontWeight = 'bold';
-        spanMut.textContent = mutSeq;
-        paragraph2.appendChild(spanMut);
-    }
-    paragraph2.appendChild(span2b);
-
-    const spanTm2 = document.createElement('span');
-    tmTuple = [];
-    if (primersList[0] !== "") {
-        tmTuple.push(get_tm(primersList[0], primerConc, saltConc).toFixed(2))
-    }
-    if (primersList[1] !== "") {
-        tmTuple.push(get_tm(primersList[1], primerConc, saltConc).toFixed(2))
-    }
-    spanTm2.textContent = `(${tmTuple.join(',')})`
-    //spanTm2.textContent = " (" + get_tm(primersList[0], primerConc, saltConc).toFixed(1) + ", " + get_tm(primersList[1], primerConc, saltConc).toFixed(1) + ")";
-    paragraph2.appendChild(spanTm2);
-
-
-    // Insert the new paragraphs after the <p> with id "primers-type"
-    sidebarContentDiv.appendChild(paragraph2);
-    sidebarContentDiv.appendChild(paragraph1);
     
-    // Special case for subcloning which requires 4 primers
-    if (primersType === "Subcloning") {
-        const paragraph3 = document.createElement('p');
-        const paragraph4 = document.createElement('p');
-        paragraph3.style.wordWrap = 'break-word';
-        paragraph4.style.wordWrap = 'break-word'; // Add CSS style for word wrapping
-        
-        // Create the first span with red text and bold
-        const span3 = document.createElement('span');
-        span3.style.color = textColor;
-        span3.style.backgroundColor = homoColor;
-        span3.style.fontWeight = 'bold';
-        span3.textContent = primersList[4];
-        paragraph3.appendChild(span3);
-
-        const span4 = document.createElement('span');
-        span4.style.color = textColor;
-        span4.style.backgroundColor = homoColor;
-        span4.style.fontWeight = 'bold';
-        span4.textContent = primersList[5];
-        paragraph4.appendChild(span4);
-
-        sidebarContentDiv.appendChild(paragraph3);
-        sidebarContentDiv.appendChild(paragraph4);
-    }
 
     // Reset selection
     selectedText = "";
@@ -469,7 +389,14 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
         tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, 7, 1);
 
         // Display primers in the sidebar
-        displayPrimers(operationType, [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)", seqToInsert);
+        let primersDict = {}
+        primersDict["Forward Primer"] = {1: {"seq": homoFwd, "color": primerColorOrange},
+                                         2: {"seq": seqToInsert, "color": primerColorRed},
+                                         3: {"seq": tempFwd, "color": primerColorGreen}};
+        primersDict["Reverse Primer"] = {1: {"seq": tempRev, "color": primerColorGreen}};
+        
+        console.log("Primers Dict:", primersDict)
+        displayPrimers("Short Insertion", primersDict);
     } else { //  // Mutation > 49 C
         console.log("Mut over 49C")
         // Forward template bindin region
@@ -488,7 +415,14 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
         tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, 7, 1);
 
         // Display primers in the sidebar
-        displayPrimers(operationType, [homoFwd, tempFwd, homoRev, tempRev], "white", "rgb(68, 143, 71)", "rgb(200, 52, 120)");
+        let primersDict = {}
+        primersDict["Forward Primer"] = {1: {"seq": homoFwd, "color": primerColorRed},
+                                         2: {"seq": tempFwd, "color": primerColorGreen}};
+        primersDict["Reverse Primer"] = {1: {"seq": homoRev, "color": primerColorRed},
+                                         2: {"seq": tempRev, "color": primerColorGreen}};
+        
+        console.log("Primers Dict:", primersDict)
+        displayPrimers("Medium Insertion", primersDict);
     }
 
     // Update the sequence and features
@@ -552,7 +486,21 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
     // Flip primer for display
     homoFwd = homoFwd.split("").reverse().join("");
 
-    displayPrimers("Deletion", [homoFwd, tempFwd, tempRev, ""], "white", "rgb(68, 143, 71)", "rgb(217, 130, 58)");
+    /**
+     * const primerColorRed = "rgb(200, 52, 120)"
+     * const primerColorGreen = "rgb(68, 143, 71)"
+     * const primerColorOrange = "rgb(217, 130, 58)"
+     * const primerColorPurple = "rgb(107, 96, 157)"
+     * const primerColorCyan = "rgb(140, 202, 242)"
+     */
+    let primersDict = {}
+    primersDict["Forward Primer"] = {1: {"seq": homoFwd, "color": primerColorOrange},
+                                     2: {"seq": tempFwd, "color": primerColorGreen}};
+    primersDict["Reverse Primer"] = {1: {"seq": tempRev, "color": primerColorGreen}};
+    
+    console.log("Primers Dict:", primersDict)
+
+    displayPrimers("Deletion", primersDict);
 
     // Update the sequence and features
     const plasmidLengthDiff = 0 - (deletionEndPos - deletionStartPos);
@@ -742,7 +690,17 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
         insertHomoRev = insertHomoRev.split("").reverse().join("");
 
 
-        displayPrimers("Subcloning", [insertHomoFwd, insertTempFwd, insertHomoRev, insertTempRev, vecFwd, vecRev], "white", "rgb(107, 96, 157)", "rgb(140, 202, 242)");
+        // Display primers in the sidebar
+        let primersDict = {}
+        primersDict["Forward Primer"] = {1: {"seq": insertHomoFwd, "color": primerColorCyan},
+                                         2: {"seq": insertTempFwd, "color": primerColorPurple}};
+        primersDict["Reverse Primer"] = {1: {"seq": insertHomoRev, "color": primerColorCyan},
+                                         2: {"seq": insertTempRev, "color": primerColorPurple}};
+        primersDict["Vector Forward Primer"] = {1: {"seq": vecFwd, "color": primerColorCyan}};
+        primersDict["Vector Reverse Primer"] = {1: {"seq": vecRev, "color": primerColorCyan}};
+        
+        console.log("Primers Dict:", primersDict)
+        displayPrimers("Subcloning", primersDict);
 
         // Update stuff
         const plasmidLengthDiff = (subcloningEndPos - subcloningStartPos) - (subcloningInsertPositionEnd - subcloningInsertPositionStart);

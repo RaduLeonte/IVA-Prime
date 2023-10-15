@@ -65,6 +65,12 @@ let tempRegionTm = 60; // C, target temperature for the template region
 
 let operationNr = 1; // modification counter
 
+const primerColorRed = "rgb(200, 52, 120)"
+const primerColorGreen = "rgb(68, 143, 71)"
+const primerColorOrange = "rgb(217, 130, 58)"
+const primerColorPurple = "rgb(107, 96, 157)"
+const primerColorCyan = "rgb(140, 202, 242)"
+
 
 /**
  * getTm
