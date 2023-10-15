@@ -1,4 +1,60 @@
 /**
+ * Cookie handlers
+ */
+
+function setCookie(name, value, daysToExpire) {
+    let cookieValue = `${name}=${value}; path=/`;
+
+    if (daysToExpire) {
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + daysToExpire);
+        cookieValue += `; expires=${expirationDate.toUTCString()}`;
+    }
+
+    document.cookie = cookieValue;
+}
+
+function getCookieValue(name) {
+    const cookieName = `${name}=`;
+    const cookies = document.cookie.split(';');
+
+    for (let i = 0; i < cookies.length; i++) {
+        let cookie = cookies[i].trim();
+        if (cookie.indexOf(cookieName) === 0) {
+            return cookie.substring(cookieName.length, cookie.length);
+        }
+    }
+
+    return null;
+}
+
+function saveUserPreference(preferenceName, preferenceValue, daysToExpire) {
+    // Retrieve the current user preferences from the cookie
+    const userPreferences = JSON.parse(getCookieValue('userPreferences') || '{}');
+    
+    // Update or set the preference
+    userPreferences[preferenceName] = preferenceValue;
+
+    // Save the updated user preferences to the cookie
+    setCookie('userPreferences', JSON.stringify(userPreferences), daysToExpire);
+}
+
+function getUserPreference(preferenceName) {
+    // Retrieve the current user preferences from the cookie
+    const userPreferences = JSON.parse(getCookieValue('userPreferences') || '{}');
+
+    // Check if the preference exists, and return its value; otherwise, return a default value or null
+    if (userPreferences.hasOwnProperty(preferenceName)) {
+        return userPreferences[preferenceName];
+    } else {
+        return null; // or return a default value
+    }
+}
+
+console.log(document.cookie)
+
+
+/**
  * createPrimers
  */
 let primerConc = 100E-9; // M, primer concentration for melting temperatures
@@ -43,6 +99,7 @@ let secondPlasmidIported = false;
  * insertionPopUpWindow 
  */
 // User inputs int he insertion pop up window
+let preferredOrganism = (getUserPreference("preferredOrganism")) ? getUserPreference("preferredOrganism") : "Escherichia coli";
 let dnaSequenceInput = '';
 let aminoAcidSequenceInput = '';
 

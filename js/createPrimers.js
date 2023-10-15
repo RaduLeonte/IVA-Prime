@@ -317,6 +317,11 @@ function optimizeAA(inputAA, targetOrganism) {
         return results;
     }
 
+    // Update last selected organism
+    preferredOrganism = targetOrganism;
+    saveUserPreference("preferredOrganism", targetOrganism);
+    updateOrganismSelectorDefault();
+
     if (targetOrganism === "prioLowTM") {
         // Call function to generate all possible DNA sequence that result in the input amino acid sequence
         let dnaSequences = generateDNASequences(inputAA);

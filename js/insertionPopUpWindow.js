@@ -31,12 +31,11 @@ document.addEventListener('DOMContentLoaded', function () {
   document.body.appendChild(popupWindow);
 
   // Add all supported organisms
-  let defaultOrganism = "Escherichia coli";
   const organismsList = Object.keys(codonTablesDict);
   const select = document.getElementById('targetOrganismSelector'); 
   for (let i = 0; i < organismsList.length; i++) {
     let newOption = new Option(organismsList[i],organismsList[i]);
-    if (organismsList[i] === defaultOrganism) {
+    if (organismsList[i] === preferredOrganism) {
       newOption.setAttribute('selected','selected');
     }
     select.add(newOption,undefined);
@@ -117,4 +116,25 @@ function positionContextMenu(clientX, clientY) {
   contextMenu.style.left = clientX + 'px';
   contextMenu.style.top = clientY + 'px';
   contextMenu.style.display = 'block';
+}
+
+
+/**
+ * Update the default selection in the organism selector
+ */
+function updateOrganismSelectorDefault() {
+  const selectElement = document.getElementById("targetOrganismSelector");
+
+  for (let i = 0; i < selectElement.options.length; i++) {
+    const option = selectElement.options[i];
+
+    // Check if the option value matches the new value
+    if (option.value === preferredOrganism) {
+      // Set the selected attribute to true for the matching option
+      option.selected = true;
+    } else {
+      // Deselect any other options
+      option.selected = false;
+    }
+  }
 }
