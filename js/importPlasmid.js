@@ -58,8 +58,9 @@ function handleFileSelect(event) {
       }
       
       // Update header with filename
-      const headerList = document.getElementById('header-list');
-      headerList.innerHTML = headerList.innerHTML + "<li><a>" + file.name + "</a></li>";
+      let targetHeadersListElement = (pNr === 1) ? "plasmid-file-name1" : "plasmid-file-name2";
+      targetHeadersListElement = document.getElementById(targetHeadersListElement);
+      targetHeadersListElement.innerHTML = file.name;
       
       // Create the sidebar
       createSideBar(pNr);
@@ -90,14 +91,12 @@ function handleFileSelect(event) {
       initiateSearchFunctionality(pNr);
 
       if (pNr === 2) {
+        // Get the first container div
+        const firstPlasmidContainer = document.getElementById('first-plasmid-container');
+
         // After the second file is imported, create the second plasmid window
         const secondPlasmidContainer = document.getElementById('second-plasmid-container');
         secondPlasmidContainer.style.display = 'flex';
-        const divider = document.getElementById('divider');
-        divider.style.display = 'block';
-
-        // Get the first container div
-        const firstPlasmidContainer = document.querySelector('.container');
 
         // Set the height of the divs to 50vh
         firstPlasmidContainer.style.height = '50vh';
@@ -107,7 +106,7 @@ function handleFileSelect(event) {
         firstPlasmidContainer.style.overflow = 'auto';
         secondPlasmidContainer.style.overflow = 'auto';
         
-        secondPlasmidIported = true;
+        secondPlasmidImported = true;
       };
     };
 
@@ -128,8 +127,9 @@ function importDemoFile(pNr) {
   parseGBFile(pet28aPlus, pNr);
     
   // Update header with filename
-  const headerList = document.getElementById('header-list');
-  headerList.innerHTML = headerList.innerHTML + "<li><a>" + fileName + "</a></li>";
+  let targetHeadersListElement = (pNr === 1) ? "plasmid-file-name1" : "plasmid-file-name2";
+  targetHeadersListElement = document.getElementById(targetHeadersListElement);
+  targetHeadersListElement.innerHTML = fileName;
   
   // Create the sidebar
   createSideBar(pNr);
@@ -458,10 +458,10 @@ function createSideBar(pNr) {
   // Set table headers
   sidebarTable.innerHTML = `
       <tr>
-          <th>Feature</th>
-          <th>Label</th>
-          <th>Range</th>
-          <th>Note</th>
+          <th class = 'wrap-text'>Feature</th>
+          <th class = 'wrap-text'>Label</th>
+          <th class = 'wrap-text'>Range</th>
+          <th class = 'wrap-text'>Note</th>
       </tr>
   `;
 

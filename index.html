@@ -21,6 +21,7 @@
     <script src="js/scrollToAnnotation.js"></script>
     <script src="js/customSearch.js"></script>
     <script src="js/getTM.js"></script>
+    <script src="js/resizeContents.js"></script>
 </head>
     <header>
         <nav>
@@ -29,56 +30,62 @@
                 <li id="import-demo-btn"><a href="#">Try Demo File</a></li>
                 <li id="import-second-btn" style="display: none;"><a href="#">Import Second Plasmid for Subcloning</a></li>
                 <li id="import-second-demo-btn" style="display: none;"><a href="#" id="import-second-btn-a">Import Second Demo Plasmid for Subcloning</a></li>
+                <li style="display: flex;align-items: center;text-align: center;
+                "><a id="plasmid-file-name1"></a></li>
+                <li style="display: flex;align-items: center;text-align: center;
+                "><a id="plasmid-file-name2"></a></li>
                 <!-- Add more menu options here if needed -->
             </ul>
         </nav>
     </header>
 
-    <div class="container">
-        <div class="sidebar">
-            <div class="sidebar-content">
-                <p id="primers-type">Primers will appear here.</p>
+    <div class="parent-container" id="parent-container">
+        <div class="first-plasmid-container" id="first-plasmid-container">
+            <div id="sidebar" class="sidebar" style="width: 25%;">
+                <div class="sidebar-content">
+                    <p id="primers-type">Primers will appear here.</p>
+                </div>
+                <table id="sidebar-table" class="sidebar-table">
+                  <!-- Add more rows for additional information if needed -->
+                </table>
+              </div>
+              
+              
+            <div class="content" id="content">  
+                <input type="text" id="custom-search-input" class="search-bar" placeholder="Search">  
+                <!-- Plasmid -->
+                <div id="file-content" class="strands">
+                    <table id="sequence-grid" class="sequence-grid">
+                        <tbody>
+                        </tbody>
+                      </table>
+                </div>
             </div>
-            <table id="sidebar-table" class="sidebar-table">
-              <!-- Add more rows for additional information if needed -->
-            </table>
-          </div>
-          
-          
-        <div class="content" id="content">  
-            <input type="text" id="custom-search-input" class="search-bar" placeholder="Search">  
-            <!-- Plasmid -->
-            <div id="file-content" class="strands">
-                <table id="sequence-grid" class="sequence-grid">
-                    <tbody>
-                    </tbody>
-                  </table>
+        </div>
+        <div class="second-plasmid-container" id="second-plasmid-container" style="display: none;">
+            <div class="sidebar" id="sidebar2" style="width: 25%;">
+                <div class="sidebar-content" id ="sidebar-content2" style="display: none;">
+                    <!-- Add more paragraph elements here if needed -->
+                </div>
+                <table class="sidebar-table" id="sidebar-table2">
+                  <!-- Add more rows for additional information if needed -->
+                </table>
+              </div>
+              
+              
+            <div class="content" id="content2">
+                <input type="text" id="custom-search-input2" class="search-bar" placeholder="Search">  
+                <!-- Plasmid -->
+                <div id="file-content2" class="strands">
+                    <table id="sequence-grid2" class="sequence-grid">
+                        <tbody>
+                        </tbody>
+                      </table>
+                </div>
             </div>
         </div>
     </div>
-    <div class="divider" id="divider" style="display: none;"></div>
-    <div class="container" id="second-plasmid-container" style="display: none;">
-        <div class="sidebar" id="siderbar2">
-            <div class="sidebar-content" id ="sidebar-content2" style="display: none;">
-                <!-- Add more paragraph elements here if needed -->
-            </div>
-            <table class="sidebar-table" id="sidebar-table2">
-              <!-- Add more rows for additional information if needed -->
-            </table>
-          </div>
-          
-          
-        <div class="content" id="content2">
-            <input type="text" id="custom-search-input2" class="search-bar" placeholder="Search">  
-            <!-- Plasmid -->
-            <div id="file-content2" class="strands">
-                <table id="sequence-grid2" class="sequence-grid">
-                    <tbody>
-                    </tbody>
-                  </table>
-            </div>
-        </div>
-    </div>
+
 <body>
 </body>
 </html>

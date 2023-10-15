@@ -92,7 +92,7 @@ let recentColor = '';
  * importSubcloningPlasmid 
  */
 // Keep track if the second plasmid has been imported (to disable the button etc)
-let secondPlasmidIported = false;
+let secondPlasmidImported = false;
 
 
 /**
@@ -120,6 +120,14 @@ let selectedText2 = ''; // Currently selected sequence in the second grid
 let selectionStartPos = null;
 let selectionEndPos = null;
 
+
+/**
+ * insertionPopUpWindow 
+ */
+const sidebarHitbox = 5;
+const containerHitbox = 5; // px
+let hoveringOverSidebarEdge = false;
+let hoveringOverContainerEdge = false;
 
 /**
  * Biology stuff.

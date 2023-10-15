@@ -3,17 +3,22 @@ body {
     padding: 0;
     font-family: Arial, sans-serif;
     overflow: hidden; /* Prevents the whole page from scrolling */
+    display:flex;
+    align-items: stretch;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
 }
 
 header {
     background-color: #333;
     color: #fff;
     padding: 10px;
-    position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 9999;; /* Ensures menu bar stays on top */
+    width: 100%;
 }
 
 nav ul {
@@ -30,22 +35,6 @@ nav ul li {
 nav ul li a {
     color: #fff;
     text-decoration: none;
-}
-
-.container {
-    display: flex;
-    height: 100vh;
-    overflow: hidden; /* Prevents the container from scrolling */
-}
-
-
-.content {
-    flex: 3;
-    padding: 20px;
-    position: relative;
-    overflow-y: scroll; /* Enables content scrolling */
-    margin-top: 50px; /* Adjusts the top margin to exclude the menu bar */
-    font-family: "Anonymous Pro", sans-serif;
 }
 
 .strands {
@@ -137,6 +126,8 @@ nav ul li a {
     background-color: #4CAF50;
     color: white;
     border-radius: 5px;
+    display: block;
+    text-align: center;
   }
   
   #header-list #import-btn a:hover {
@@ -147,6 +138,8 @@ nav ul li a {
     background-color:  #FF9900;
     color: white;
     border-radius: 5px;
+    display: block;
+    text-align: center;
   }
 
   #header-list #import-demo-btn a:hover {
@@ -157,6 +150,8 @@ nav ul li a {
     background-color:  #FF9900;
     color: white;
     border-radius: 5px;
+    display: block;
+    text-align: center;
   }
 
   #header-list #import-second-demo-btn a:hover {
@@ -167,6 +162,8 @@ nav ul li a {
     background-color: #9932CC; /* This is a nice purple color */
     color: white;
     border-radius: 5px;
+    display: block;
+    text-align: center;
   }
 
   #header-list #import-second-btn a:hover {
@@ -175,10 +172,11 @@ nav ul li a {
 
 
   .sidebar {
-    flex: 1;
     background-color: #f2f2f2;
-    overflow-y: auto; /* Enables sidebar scrolling */
-    resize: horizontal;
+    overflow-y: scroll; /* Enables sidebar scrolling */
+    border-right: #b8b8b8;
+    border-right-style: solid;
+    display: block;
 }
 
 .sidebar-table {
@@ -219,7 +217,6 @@ nav ul li a {
     background-color: #f2f2f2;
     padding: 20px;
     overflow-y: auto;
-    margin-top: 50px;
 }
 
 .sidebar-content p {
@@ -425,16 +422,6 @@ nav ul li a {
   background-color: #999;
 }
 
-#content2 {
-  margin-top: 0px;
-}
-
-.divider {
-  background-color: #c6c6c6;
-  height: 5px;
-  width:'50vw';
-}
-
 .loading * {
   cursor: wait !important;
 }
@@ -468,4 +455,38 @@ nav ul li a {
   width: -moz-available;          /* WebKit-based browsers will ignore this. */
   width: -webkit-fill-available;  /* Mozilla-based browsers will ignore this. */
   width: fill-available;
+}
+
+
+.parent-container {
+  flex:1;
+  display: flex;
+  align-items: stretch;
+  overflow: auto;
+  flex-direction: column;
+}
+
+.first-plasmid-container {
+  display: flex;
+  height: 100%;
+  overflow: hidden; /* Prevents the container from scrolling */
+  align-items: stretch;
+}
+
+.second-plasmid-container {
+  border-top: #c6c6c6;
+  border-top-style: solid;
+  display: flex;
+  overflow: hidden; /* Prevents the container from scrolling */
+  align-items: stretch;
+  flex: 1;
+}
+
+
+.content {
+  flex: 3;
+  padding: 20px;
+  position: relative;
+  overflow-y: scroll; /* Enables content scrolling */
+  font-family: "Anonymous Pro", sans-serif;
 }
