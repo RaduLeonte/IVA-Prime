@@ -73,6 +73,13 @@ const primerColorCyan = "rgb(140, 202, 242)"
 
 
 /**
+ * customSearch
+ */
+let customSearchEnabledFirstPlasmid = false;
+let customSearchEnabledSecondPlasmid = false;
+
+
+/**
  * getTm
  */
 let isTmCalcWindowVisible = false;

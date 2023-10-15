@@ -16,17 +16,40 @@ function initiateSearchFunctionality(pNr) {
     // Event listener for ctrl F or cmd F
     document.addEventListener('keydown', function(event) {
         if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
-            event.preventDefault(); // Prevent default search functionality
-
-            // Make search bar visible
-            customSearchInput.style.display = "block";
-            customSearchInput.value = ""; // Reset text inside search bar
-            customSearchInput.focus(); // Set focus to the custom search input field
-            // Event listener for typing
-            customSearchInput.addEventListener('input', function() {
-                // Send search query
-                searchOccurrences(pNr);
-            });
+            let searchEnabled = null;
+            if (pNr === 1) {
+                searchEnabled = customSearchEnabledFirstPlasmid;
+            } else {
+                searchEnabled = customSearchEnabledSecondPlasmid;
+            }
+            
+            if (!searchEnabled) {
+                event.preventDefault(); // Prevent default search functionality
+                // Make search bar visible
+                customSearchInput.style.display = "block";
+                customSearchInput.value = "";
+                //if (customSearchInput.value !== "") {searchOccurrences(pNr)}
+                customSearchInput.focus(); // Set focus to the custom search input field
+                // Event listener for typing
+                customSearchInput.addEventListener('input', function() {
+                    // Send search query
+                    searchOccurrences(pNr);
+                });
+                if (pNr === 1) {
+                    customSearchEnabledFirstPlasmid = true;
+                } else {
+                    customSearchEnabledSecondPlasmid = true;
+                }
+            } else { // Disable
+                event.preventDefault();
+                resetTableCells(pNr);
+                customSearchInput.style.display = "none";
+                if (pNr === 1) {
+                    customSearchEnabledFirstPlasmid = false;
+                } else {
+                    customSearchEnabledSecondPlasmid = false;
+                }
+            }
         }
     });
 
@@ -96,7 +119,7 @@ function initiateSearchFunctionality(pNr) {
         // Get search query from the search bar
         const searchQuery = customSearchInput.value;
         const searchQueryComplement = searchQuery.split('').reverse().join('');;
-        console.log("Search:", searchQuery, searchQueryComplement)
+        //console.log("Search:", searchQuery, searchQueryComplement)
 
         // Select the sequence and grid structure of the plasmid of interest
         let currSequence = null;
