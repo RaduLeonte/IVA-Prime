@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // If there is a selection and a second plasmid has been imported, enable the subcloning option
-    if (selectedText && secondPlasmidIported) {
+    if (selectedText && secondPlasmidImported) {
       subcloningMenuItem.classList.remove('disabled');
     } else {
       subcloningMenuItem.classList.add('disabled');
