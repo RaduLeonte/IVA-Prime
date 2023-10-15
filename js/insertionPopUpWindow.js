@@ -12,11 +12,11 @@ document.addEventListener('DOMContentLoaded', function () {
     <h2 id="popUpWindowHeader">Insertion</h2>
     <div>
       <label for="dna-sequence-input">DNA Sequence:</label>
-      <input type="text" id="dna-sequence-input">
+      <input type="text" id="dna-sequence-input" class="popup-window-input">
     </div>
     <div>
       <label for="amino-acid-sequence-input">Amino Acid Sequence:</label>
-      <input type="text" id="amino-acid-sequence-input">
+      <input type="text" id="amino-acid-sequence-input" class="popup-window-input">
       <p class="stop-codon-hint">Accepted STOP letter codes: "-", "X", "*".</p>
       <p> Optimize codons for: <select name="targetOrganismSelector" id="targetOrganismSelector">
         <option value="prioLowTM">Prioritize melting temperature</option>

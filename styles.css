@@ -18,7 +18,13 @@ header {
     left: 0;
     right: 0;
     z-index: 9999;; /* Ensures menu bar stays on top */
-    width: 100%;
+    width: auto;
+}
+
+nav {
+  display: flex;
+  justify-content: space-between; /* Pushes ul elements to the left and right edges of the nav */
+  align-items: center; /* Vertically centers the ul elements */
 }
 
 nav ul {
@@ -110,6 +116,47 @@ nav ul li a {
   
   .horizontal-list li {
     margin-right: 10px;
+  }
+
+  #header-list-right {
+    align-items: center;
+  }
+
+  #header-list-right li {
+    display: inline-block;
+    margin: 5px;
+  }
+  
+  #header-list-right li a {
+    padding: 10px 20px;
+    text-decoration: none;
+  }
+
+  #header-list-right #info-btn a {
+    font-size: 28px;
+    font-weight: bold;
+    background-color: #333;
+    color: white;
+    border-radius: 5px;
+    display: inline-block;
+    text-align: center;
+    padding: 0px 10px;
+    height: auto;
+  }
+
+  #header-list-right #tm-calc-btn a {
+    background-color: #333;
+    color: white;
+    border-radius: 5px;
+    text-align: center;
+  }
+
+  #header-list-right #tm-calc-btn a:hover {
+    background-color: #5c5c5c;
+  }
+
+  #header-list-right #info-btn a:hover {
+    background-color: #5c5c5c;
   }
 
   #header-list li {
@@ -334,12 +381,6 @@ nav ul li a {
   margin-bottom: 5px;
 }
 
-.popup-window input[type="text"] {
-  width: 200px;
-  padding: 5px;
-  margin-bottom: 10px;
-}
-
 .popup-window button {
   padding: 8px 16px;
   margin-right: 10px;
@@ -365,63 +406,6 @@ nav ul li a {
   background-color: #999;
 }
 
-/* Popup window */
-
-.mutation-popup-window {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: #f2f2f2;
-  border: 1px solid #ccc;
-  padding: 20px;
-  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.mutation-popup-window h2 {
-  margin: 0 0 10px;
-}
-
-.mutation-popup-window label {
-  display: block;
-  margin-bottom: 5px;
-}
-
-.mutation-popup-window input[type="text"] {
-  width: 200px;
-  padding: 5px;
-  margin-bottom: 10px;
-}
-
-.mutation-popup-window button {
-  padding: 8px 16px;
-  margin-right: 10px;
-}
-
-.mutation-popup-window #create-primers-button {
-  background-color: #4CAF50;
-  color: white;
-  border-radius: 5px;
-}
-
-.mutation-popup-window #create-primers-button:hover {
-  background-color: #45a049;
-}
-
-.mutation-popup-window #cancel-button {
-  background-color: #ccc;
-  color: white;
-  border-radius: 5px;
-}
-
-.mutation-popup-window #cancel-button:hover {
-  background-color: #999;
-}
-
 .loading * {
   cursor: wait !important;
 }
@@ -443,18 +427,14 @@ nav ul li a {
   font-size: 14px;
 }
 
-#amino-acid-sequence-input{
-  width: 100%;
-  width: -moz-available;          /* WebKit-based browsers will ignore this. */
-  width: -webkit-fill-available;  /* Mozilla-based browsers will ignore this. */
-  width: fill-available;
-}
 
-#dna-sequence-input{
+.popup-window-input {
   width: 100%;
   width: -moz-available;          /* WebKit-based browsers will ignore this. */
   width: -webkit-fill-available;  /* Mozilla-based browsers will ignore this. */
   width: fill-available;
+  padding: 5px;
+  margin-bottom: 10px;
 }
 
 
@@ -489,4 +469,28 @@ nav ul li a {
   position: relative;
   overflow-y: scroll; /* Enables content scrolling */
   font-family: "Anonymous Pro", sans-serif;
+}
+
+#header-list-right {
+  margin-left: auto; /* Pushes this ul to the right */
+}
+
+.tm-calc-window {
+  position: fixed;
+  background-color: #f2f2f2;
+  border: 1px solid #ccc;
+  padding: 20px;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tm-calc-window h2 {
+  margin: 0 0 10px;
+}
+
+.tm-calc-window label {
+  display: block;
+  margin-bottom: 5px;
 }

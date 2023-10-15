@@ -67,6 +67,12 @@ let operationNr = 1; // modification counter
 
 
 /**
+ * getTm
+ */
+let isTmCalcWindowVisible = false;
+
+
+/**
  * importPlasmid
  */
 // Grid structure, each entry is a row in the table
