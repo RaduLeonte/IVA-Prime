@@ -17,11 +17,14 @@ document.addEventListener('DOMContentLoaded', function () {
     </ul>
   `;
   document.body.appendChild(contextMenu);
+  contextMenu.style.display = "none";
 
   // Right click context menu logic while clicking on the content grid
   document.getElementById("content").addEventListener('contextmenu', function (event) {
     event.preventDefault(); // Prevent default right click menu
     if (sequence !== "") {
+      const contextMenu = document.querySelector('.custom-context-menu');
+      contextMenu.style.display = "block";
       insertionPosition = basePosition;
       console.log("HERE1", insertionPosition, basePosition)
       handleContextMenu(event.clientX, event.clientY);

@@ -124,12 +124,14 @@ nav ul li a {
 
   #header-list-right li {
     display: inline-block;
+    vertical-align: middle;
     margin: 5px;
   }
   
   #header-list-right li a {
     padding: 10px 20px;
     text-decoration: none;
+    vertical-align: middle;
   }
 
   #header-list-right #info-btn a {
@@ -493,4 +495,29 @@ nav ul li a {
 .tm-calc-window label {
   display: block;
   margin-bottom: 5px;
+}
+
+
+#header-list-right #settings-btn a {
+  font-size: 28px;
+  font-weight: bold;
+  background-color: #333;
+  color: white;
+  border-radius: 5px;
+  display: inline-block;
+  text-align: center;
+  height: 35px;
+  width: 35px;
+  padding: 0px 10px;
+
+  /* Add the background image properties */
+  background-image: url('settings_icon.svg'); /* Replace with your SVG file */
+  background-size: 27px 27px; /* Adjust to the desired size */
+  background-repeat: no-repeat;
+  background-position: center center; /* Center the background image */
+  fill: white;
+}
+
+#header-list-right #settings-btn a:hover {
+  background-color: #5c5c5c;
 }
