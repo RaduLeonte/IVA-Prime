@@ -62,9 +62,23 @@ function addCellSelection(tableId, containerId, pNr) {
       }
 
       initialSelectionStartCell = [event.target.closest('tr').rowIndex, event.target.closest('td').cellIndex]
+      isSelecting = true;
       
       // Signal selection start
-      console.log("Starting selection at: " + selectionStartPos);
+      //console.log("Starting selection at: " + selectionStartPos);
+      //console.log(features)
+      const targetAnnotation = event.target.closest('td');
+      const targetString = targetAnnotation.getAttribute('feature-id');
+      let targetSpan = null;
+      let found = false;
+      for (const entryKey in features) {
+          if (entryKey === targetString) {
+              found = true;
+              targetSpan = features[entryKey]["span"];
+              break;
+          }
+      }
+      
       isSelecting = true;
 
       // Reset cell selection
@@ -78,6 +92,10 @@ function addCellSelection(tableId, containerId, pNr) {
       fileContentContainer.style.msUserSelect = 'none';
       // Prevent the default left mouse click behavior (e.g., text selection)
       event.preventDefault();
+
+      if (targetSpan) {
+        selectFeatureSpan(targetSpan, pNr);
+      }
     }
   });
 
@@ -272,6 +290,47 @@ function addCellSelection(tableId, containerId, pNr) {
     textarea.select();
     document.execCommand('copy');
     document.body.removeChild(textarea);
+  }
+};
+
+
+/**
+ * Select text from feature span.
+ */
+function selectFeatureSpan(inputSpan, pNr) {
+  // Clear the previous selection
+  let currGridStructure = (pNr === 1) ? gridStructure: gridStructure2;
+  const sequenceGridTable = (pNr === 1) ? document.getElementById('sequence-grid'): document.getElementById('sequence-grid2');
+
+  const spanList = removeNonNumeric(inputSpan);
+  const range = spanList.split("..").map(Number);
+
+  selectionStartPos = range[0];
+  selectionEndPos = range[1] + 1;
+
+  const starCellCoords = seqIndexToCoords(range[0], 0, currGridStructure);
+  const endCellCoords = seqIndexToCoords(range[1], 0, currGridStructure);
+
+  const startRowIndex = starCellCoords[0];
+  const startCellIndex = starCellCoords[1];
+  const endRowIndex = endCellCoords[0];
+  const endCellIndex = endCellCoords[1];
+
+  console.log("Iterating from: " + startRowIndex + ", " + startCellIndex);
+  console.log("To: " + endRowIndex + ", " + endCellIndex);
+  // Iterate over cells between start and end cells and select them
+  for (let i = startRowIndex; i <= endRowIndex; i++) {
+    // Current row
+    const row = sequenceGridTable.rows[i];
+    const start = (i === startRowIndex) ? startCellIndex : 0;
+    const end = (i === endRowIndex) ? endCellIndex : row.cells.length - 1;
+    // Iterate over all cells in the row
+    for (let j = start; j <= end; j++) {
+      const selectedCell = row.cells[j];
+      if (selectedCell.id === "Forward Strand" && selectedCell.innerText.trim() !== "") {
+        selectedCell.classList.add('selected-cell');
+      }
+    }
   }
 };
 

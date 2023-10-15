@@ -677,7 +677,7 @@ function makeContentGrid(pNr, callback) {
 
         console.log(value.label, rangeStart + ".." + rangeEnd)
         // Make the annotation at the specified indices
-        makeAnnotation(rangeStart - 1, rangeEnd - 1, value.label, pNr, currGridStructure); 
+        makeAnnotation(rangeStart - 1, rangeEnd - 1, value.label, key, pNr, currGridStructure); 
       }
     });
 
@@ -703,7 +703,7 @@ function makeContentGrid(pNr, callback) {
  * - at the moment it is very slow, maybe find a better way
  * - use the feature's color from the file instead of giving it a random one every time
  */
-function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
+function makeAnnotation(rStart, rEnd, text, featureId, pNr, currGridStructure) {
   // Get a random annoation color
   const annotationColor = generateRandomUniqueColor();
   recentColor = annotationColor; // Store the colour history
@@ -737,7 +737,7 @@ function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
       // Calculate length of the current annoation
       currentSpan = gridWidth - col;
       // Merge the corresponding cells and create the annotaion
-      mergeCells(row, col, 1, currentSpan, text + "...", annotationColor, pNr,currGridStructure);
+      mergeCells(row, col, 1, currentSpan, text + "...", featureId, annotationColor, pNr,currGridStructure);
       // Adjust the current span
       currentSpan = carryOver;
       // Increment the row
@@ -748,14 +748,14 @@ function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
       // If the currentspan covers exactly the current line there is some weird behaviour
       // so fill in the current line and one additional cell in the the following row
       console.log("MA2");
-      mergeCells(row, col, 1, currentSpan, text, annotationColor, pNr,currGridStructure);
-      mergeCells(row + currGridStructure.length, col, 1, 1, text, annotationColor, pNr,currGridStructure);
+      mergeCells(row, col, 1, currentSpan, text, featureId, annotationColor, pNr,currGridStructure);
+      mergeCells(row + currGridStructure.length, col, 1, 1, text, featureId, annotationColor, pNr,currGridStructure);
       // Set carry over to 0 to signify that we're done
       carryOver = 0;
     } else {
       // The annotation can be fully drawn on the current row
       console.log("MA3");
-      mergeCells(row, col, 1, currentSpan + 1, text, annotationColor, pNr, currGridStructure);
+      mergeCells(row, col, 1, currentSpan + 1, text, featureId, annotationColor, pNr, currGridStructure);
       // Set carry over to 0 to signify that we're done
       carryOver = 0;
     }
@@ -771,7 +771,7 @@ function makeAnnotation(rStart, rEnd, text, pNr, currGridStructure) {
  * TO DO:
  * - 
  */
-function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStructure) {
+function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, currGridStructure) {
   console.log("Merge cells1: ", row, col, colspan, text)
   // Check which grid were doing
   let table = null;
@@ -816,6 +816,48 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
   let nrOccupiedCells = occupiedCellsList.slice(0, col).filter(value => value === true).length;
   console.log("nrOccupiedCells ", nrOccupiedCells, occupiedCellsList.slice(0, col))
   console.log("Merge cells1.5 : ", row, col, colspan, text)
+  console.log("Zamboni", nrOccupiedCells, occupiedCellsList.length)
+  if (nrOccupiedCells === occupiedCellsList.length-1){
+    row++;
+  }
+
+  // Adjust row and col
+  occupiedCellsList = [];
+  occupiedCellsCounter = 0;
+  for (let i = 0; i < currGridStructure.length; i++) {
+    if (currGridStructure[i] === "Annotations") {
+      // Find already occupied cells
+      occupiedCellsList = [];
+      occupiedCellsCounter = 0;
+      for (let i = 0; i < table.rows[row].cells.length; i++) {
+        if (table.rows[row].cells[i].attributes.hasOwnProperty('colspan')) {
+          let currColSpan = parseInt(table.rows[row].cells[i].attributes["colspan"].value);
+          console.log("Colspan ", currColSpan);
+          occupiedCellsCounter++;
+          for (let i = 0; i <  currColSpan; i++) {
+            occupiedCellsList.push(true);
+          }
+        } else {
+          occupiedCellsList.push(false);
+        }
+      }
+      
+      console.log(col, col+colspan-1, row, occupiedCellsList);
+      if (occupiedCellsList.slice(col, col + colspan - 1).every(value => value !== true)) {
+        console.log("Go right ahead sir.")
+        break;
+      } else {
+        console.log("Try next row.")
+        row++;
+      }
+    }
+  }
+
+  nrOccupiedCells = occupiedCellsList.slice(0, col).filter(value => value === true).length;
+  console.log("nrOccupiedCells2 ", nrOccupiedCells, occupiedCellsList.slice(0, col))
+  console.log("Merge cells1.5.2 : ", row, col, colspan, text)
+
+
   if (nrOccupiedCells !== 0) {
     col -= nrOccupiedCells;
     col += occupiedCellsCounter;
@@ -839,6 +881,7 @@ function mergeCells(row, col, rowspan, colspan, text, color, pNr, currGridStruct
   const textNode = document.createTextNode(text);
   mainCell.appendChild(textNode);
   mainCell.style.textAlign = 'center';
+  mainCell.setAttribute("feature-id", featureId)
 
   // Remove extra cells
   let k = 0;
