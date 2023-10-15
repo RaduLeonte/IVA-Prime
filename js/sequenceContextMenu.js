@@ -21,9 +21,11 @@ document.addEventListener('DOMContentLoaded', function () {
   // Right click context menu logic while clicking on the content grid
   document.getElementById("content").addEventListener('contextmenu', function (event) {
     event.preventDefault(); // Prevent default right click menu
-    insertionPosition = basePosition;
-    console.log("HERE1", insertionPosition, basePosition)
-    handleContextMenu(event.clientX, event.clientY);
+    if (sequence !== "") {
+      insertionPosition = basePosition;
+      console.log("HERE1", insertionPosition, basePosition)
+      handleContextMenu(event.clientX, event.clientY);
+    }
   });
 
   // Hite the context menu when clicking outside it
