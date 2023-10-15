@@ -143,6 +143,26 @@ nav ul li a {
     background-color: #45a049;
   }
 
+  #header-list #import-demo-btn a {
+    background-color:  #FF9900;
+    color: white;
+    border-radius: 5px;
+  }
+
+  #header-list #import-demo-btn a:hover {
+    background-color: #FF8000;
+  }
+
+  #header-list #import-second-demo-btn a {
+    background-color:  #FF9900;
+    color: white;
+    border-radius: 5px;
+  }
+
+  #header-list #import-second-demo-btn a:hover {
+    background-color: #FF8000;
+  }
+
   #header-list #import-second-btn a {
     background-color: #9932CC; /* This is a nice purple color */
     color: white;

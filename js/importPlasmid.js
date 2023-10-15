@@ -3,16 +3,33 @@
  */
 window.onload = function() {
     // Create file input element and run the file select on click
-    const fileInput = document.createElement('input');
-    fileInput.setAttribute('type', 'file');
-    fileInput.addEventListener('change', handleFileSelect);
-    fileInput.pNr = 1;
-    const importLink = document.querySelector('nav ul li a');
-    importLink.addEventListener('click', function(event) {
-        event.preventDefault();
-        fileInput.click();
+    addImportButtonListener(1);
+
+    // Demo buttoon functionality
+    const demoButton = document.getElementById("import-demo-btn");
+    demoButton.addEventListener('click', function() {
+      importDemoFile(1);
     });
 };
+
+
+/**
+ * Add event listener to the first import button.
+ */
+function addImportButtonListener(pNr) {
+  const targetButton = (pNr === 1) ? '#import-btn a': '#import-second-btn a';
+  console.log(targetButton);
+  document.querySelector(targetButton).addEventListener('click', function (event) {
+    event.preventDefault();
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+    fileInput.addEventListener('change', handleFileSelect);
+    fileInput.pNr = pNr;
+    fileInput.click();
+  });
+}
 
 
 /**
@@ -52,21 +69,18 @@ function handleFileSelect(event) {
         makeContentGrid(1, function() {
             const contentDiv = document.querySelector('.content')
             contentDiv.style.overflow = 'auto'; // Enable scrolling after file import
+
+            // Hide the import demo file button
+            const demoButton = document.getElementById("import-demo-btn");
+            demoButton.style.display = 'none';
             
             // Show the second import button after the first file is imported
             const importSecondButton = document.getElementById('import-second-btn');
             importSecondButton.style.display = 'block';
 
             // Add an event listener to the second import button
-            const fileInputSecond = document.createElement('input');
-            fileInputSecond.setAttribute('type', 'file');
-            fileInputSecond.addEventListener('change', handleFileSelect);
-            fileInputSecond.pNr = 2;
-            // Button listener
-            importSecondButton.addEventListener('click', function(event) {
-                event.preventDefault();
-                fileInputSecond.click();
-            });
+            addImportButtonListener(2);
+            addImportButtonListener(1);
           });
       } else {
         makeContentGrid(2);
@@ -101,6 +115,80 @@ function handleFileSelect(event) {
       reader.readAsText(file);
     }
 };
+
+
+/**
+ * Import demo file.
+ */
+function importDemoFile(pNr) {
+  console.log("Importing demo")
+  // Initialise file reader
+  const fileName = "pET-28 a (+).gb"
+  
+  parseGBFile(pet28aPlus, pNr);
+    
+  // Update header with filename
+  const headerList = document.getElementById('header-list');
+  headerList.innerHTML = headerList.innerHTML + "<li><a>" + fileName + "</a></li>";
+  
+  // Create the sidebar
+  createSideBar(pNr);
+
+  // Create content grid
+  if (pNr === 1) {
+    makeContentGrid(pNr, function() {
+      const contentDiv = document.querySelector('.content')
+      contentDiv.style.overflow = 'auto'; // Enable scrolling after file import
+
+      // Hide the import demo file button
+      const demoButton = document.getElementById("import-demo-btn");
+      demoButton.style.display = 'none';
+
+      // Show the second import button after the first file is imported
+      const importSecondButton = document.getElementById('import-second-demo-btn');
+      importSecondButton.style.display = 'block';
+
+
+      // Add an event listener to the second import button
+      const secondDemoButton = document.getElementById("import-second-demo-btn");
+      secondDemoButton.addEventListener('click', function() {
+        importDemoFile(2);
+      });
+      addImportButtonListener(1);
+    });
+  } else {
+    makeContentGrid(pNr);
+    addImportButtonListener(1);
+    // Hide  the second import button after the first file is imported
+    const importSecondButton = document.getElementById('import-second-demo-btn');
+    importSecondButton.style.display = 'none';
+  }
+
+  if (pNr === 2) {
+    // After the second file is imported, create the second plasmid window
+    const secondPlasmidContainer = document.getElementById('second-plasmid-container');
+    secondPlasmidContainer.style.display = 'flex';
+    const divider = document.getElementById('divider');
+    divider.style.display = 'block';
+
+    // Get the first container div
+    const firstPlasmidContainer = document.querySelector('.container');
+
+    // Set the height of the divs to 50vh
+    firstPlasmidContainer.style.height = '50vh';
+    secondPlasmidContainer.style.height = '50vh';
+
+    // Set overflow to auto
+    firstPlasmidContainer.style.overflow = 'auto';
+    secondPlasmidContainer.style.overflow = 'auto';
+    
+    secondPlasmidIported = true;
+  };
+    
+  // Once the file is loaded, enable search function
+  initiateSearchFunctionality(pNr);
+};
+
 
 /**
  * Genebank file parser.
