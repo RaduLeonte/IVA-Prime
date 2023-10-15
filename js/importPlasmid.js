@@ -99,8 +99,7 @@ function handleFileSelect(event) {
         secondPlasmidContainer.style.display = 'flex';
 
         // Set the height of the divs to 50vh
-        firstPlasmidContainer.style.height = '50vh';
-        secondPlasmidContainer.style.height = '50vh';
+        firstPlasmidContainer.style.height = '50%';
 
         // Set overflow to auto
         firstPlasmidContainer.style.overflow = 'auto';
@@ -165,24 +164,21 @@ function importDemoFile(pNr) {
   }
 
   if (pNr === 2) {
+    // Get the first container div
+    const firstPlasmidContainer = document.getElementById('first-plasmid-container');
+
     // After the second file is imported, create the second plasmid window
     const secondPlasmidContainer = document.getElementById('second-plasmid-container');
     secondPlasmidContainer.style.display = 'flex';
-    const divider = document.getElementById('divider');
-    divider.style.display = 'block';
-
-    // Get the first container div
-    const firstPlasmidContainer = document.querySelector('.container');
 
     // Set the height of the divs to 50vh
-    firstPlasmidContainer.style.height = '50vh';
-    secondPlasmidContainer.style.height = '50vh';
+    firstPlasmidContainer.style.height = '50%';
 
     // Set overflow to auto
     firstPlasmidContainer.style.overflow = 'auto';
     secondPlasmidContainer.style.overflow = 'auto';
     
-    secondPlasmidIported = true;
+    secondPlasmidImported = true;
   };
     
   // Once the file is loaded, enable search function
