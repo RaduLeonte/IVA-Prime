@@ -114,6 +114,11 @@ function addCellSelection(tableId, containerId, pNr) {
     } else {
       selectedText2 = "";
     }
+    // Reset cell selection
+    startCell = null;
+    endCell = null;
+    selectionStartPos = null;
+    selectionEndPos = null;
   }
 
   /**
@@ -140,14 +145,14 @@ function addCellSelection(tableId, containerId, pNr) {
       let closestCell = event.target.closest('td')
       let closestRow = event.target.closest('tr')
       let selectionEndCell = [event.target.closest('tr').rowIndex, event.target.closest('td').cellIndex]
-      console.log("Start Cell: ", initialSelectionStartCell, "End Cell: ", selectionEndCell)
+      //console.log("Start Cell: ", initialSelectionStartCell, "End Cell: ", selectionEndCell)
       // Check if the cell exists and if the current position is not the same as the selection start cell
       if (closestCell && closestRow && basePosition !== selectionStartPos && closestCell.id !== "Annotations") {
 
         // Test
         // Go from whereever the cell upwards till the forward strand row
         const rowAdjustment = currGridStructure.indexOf(closestCell.id)
-        console.log(closestCell.id, closestRow.rowIndex, closestCell.cellIndex, rowAdjustment)
+        //console.log(closestCell.id, closestRow.rowIndex, closestCell.cellIndex, rowAdjustment)
         selectionEndCell[0] -= rowAdjustment;
         let selectionStartCell = initialSelectionStartCell;
         if (closestSide === "left") {
@@ -155,14 +160,14 @@ function addCellSelection(tableId, containerId, pNr) {
         }
 
         // swap if needed
-        console.log("Before swap:", selectionStartCell, selectionEndCell)
+        //console.log("Before swap:", selectionStartCell, selectionEndCell)
         if (selectionStartCell[0] >= selectionEndCell[0] && selectionStartCell[1] > selectionEndCell[1]) {
           const tempCell = selectionEndCell;
           selectionEndCell = selectionStartCell;
           selectionStartCell = tempCell;
           selectionStartCell[1]++;
         }
-        console.log("After swap:", selectionStartCell, selectionEndCell)
+        //console.log("After swap:", selectionStartCell, selectionEndCell)
 
         startRowIndex = selectionStartCell[0];
         startCellIndex = selectionStartCell[1];
@@ -172,8 +177,8 @@ function addCellSelection(tableId, containerId, pNr) {
         // Clear the previous selection
         clearSelection(pNr);
 
-        console.log("Iterating from: " + startRowIndex + ", " + startCellIndex);
-        console.log("To: " + endRowIndex + ", " + endCellIndex);
+        //console.log("Iterating from: " + startRowIndex + ", " + startCellIndex);
+        //console.log("To: " + endRowIndex + ", " + endCellIndex);
         // Iterate over cells between start and end cells and select them
         for (let i = startRowIndex; i <= endRowIndex; i++) {
           // Current row
@@ -316,8 +321,8 @@ function selectFeatureSpan(inputSpan, pNr) {
   const endRowIndex = endCellCoords[0];
   const endCellIndex = endCellCoords[1];
 
-  console.log("Iterating from: " + startRowIndex + ", " + startCellIndex);
-  console.log("To: " + endRowIndex + ", " + endCellIndex);
+  //console.log("Iterating from: " + startRowIndex + ", " + startCellIndex);
+  //console.log("To: " + endRowIndex + ", " + endCellIndex);
   // Iterate over cells between start and end cells and select them
   for (let i = startRowIndex; i <= endRowIndex; i++) {
     // Current row

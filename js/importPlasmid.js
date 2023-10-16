@@ -1077,7 +1077,7 @@ function startTranslation(codonPos, pNr) {
   let col = tableCoords[1] + 1;
 
   // Start translating until a stop codon is encountered
-  console.log("Starting translationa at " + codonPos + "(" + row + ", " + col + ").");
+  //console.log("Starting translationa at " + codonPos + "(" + row + ", " + col + ").");
   while (true) {
     // Select current codon
     let codon = repeatingSlice(currSequence, codonPos - 1, codonPos + 2);

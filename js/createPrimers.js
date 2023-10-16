@@ -23,17 +23,21 @@ function displayPrimers(primersType, primersDict) {
 
 
     // Display primer pair nr and type of mod
+    const modDiv = document.createElement("div");
     const h3 = document.createElement('h3');
     h3.id = 'primers-type';
     h3.textContent = operationNr + '. ' + primersType;
     operationNr++;
-    sidebarContentDiv.appendChild(h3);
+    modDiv.appendChild(h3);
 
     for (const [primer, subprimersDict] of Object.entries(primersDict)) {
         console.log("Display primers:", primer, subprimersDict);
-        const paragraph = document.createElement('p');
-        paragraph.style.wordWrap = 'break-word'; // Add CSS style for word wrapping
-        paragraph.textContent = primer + ":\n";
+        const primerName = document.createElement('p');
+        primerName.style.wordWrap = 'break-word'; // Add CSS style for word wrapping
+        primerName.textContent = primer + ":";
+        modDiv.appendChild(primerName);
+
+        const primerSequence = document.createElement('p');
         let primerTMInfo = []
         for (const [subprimer, subprimerProperties] of Object.entries(subprimersDict)) {
             const span = document.createElement('span');
@@ -41,19 +45,19 @@ function displayPrimers(primersType, primersDict) {
             span.style.backgroundColor = subprimerProperties["color"];
             span.style.fontWeight = 'bold';
             span.textContent = subprimerProperties["seq"];
-            paragraph.appendChild(span)
+            primerSequence.appendChild(span)
             primerTMInfo.push(parseFloat(get_tm(subprimerProperties["seq"], primerConc, saltConc).toFixed(2)));
         }
 
         const spanTM = document.createElement('span');
         spanTM.textContent = ` (${primerTMInfo.join(', ')})`
-        paragraph.appendChild(spanTM)
+        primerSequence.appendChild(spanTM)
 
-        sidebarContentDiv.appendChild(paragraph);
+        modDiv.appendChild(primerSequence);
     }
 
     
-
+    sidebarContentDiv.appendChild(modDiv);
     // Reset selection
     selectedText = "";
     selectedText2 = "";
