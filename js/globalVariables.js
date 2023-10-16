@@ -96,6 +96,9 @@ gridStructure= gridStructure2 = ["Forward Strand",
                                 "Annotations",
                                 "Spacer"];
 const gridWidth = 60; // Amount of cells per row
+// Store content of imported file
+let importedFileHeader = null;
+let importedFileContent = null;
 // Initialise empty sequence and features variables
 let sequence = "";
 let complementaryStrand = "";

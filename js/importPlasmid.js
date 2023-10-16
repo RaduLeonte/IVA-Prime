@@ -33,6 +33,34 @@ function addImportButtonListener(pNr) {
 
 
 /**
+ * Add event listener to the export buttons
+ */
+function addExportButtonsListeners(pNr) {
+  console.log("Enabling Export Buttons", pNr)
+  let targetButton1 = (pNr === 1) ? '#export-btn-dna': '#export-second-btn-dna';
+  targetButton1 = document.querySelector(targetButton1);
+  let targetButton2 = (pNr === 1) ? '#export-btn-gb': '#export-second-btn-gb';
+  targetButton2 = document.querySelector(targetButton2);
+
+
+  let targetButtonLink1 = (pNr === 1) ? '#export-btn-dna a': '#export-second-btn-dna a';
+  targetButtonLink1 = document.querySelector(targetButtonLink1);
+  let targetButtonLink2 = (pNr === 1) ? '#export-btn-gb a': '#export-second-btn-gb a';
+  targetButtonLink2 = document.querySelector(targetButtonLink2);
+
+  targetButton1.style.display = "block";
+  targetButton2.style.display = "block";
+
+  targetButtonLink1.addEventListener('click', function() {
+    exportDNAFile(pNr);
+  });
+  targetButtonLink2.addEventListener('click', function() {
+    exportGBFile(pNr);
+  });
+}
+
+
+/**
  * Handles file selection functionality.
  */
 function handleFileSelect(event) {
@@ -48,13 +76,13 @@ function handleFileSelect(event) {
 
     // Define reader
     reader.onload = function(e) {
-      const fileContent = e.target.result; // Read file content
+      importedFileContent = e.target.result; // Read file content
       
       // Depending on file extension pass the file content to the appropiate parser
       if (fileExtension === ".dna") {
-        parseDNAFile(fileContent, pNr);
+        parseDNAFile(importedFileContent, pNr);
       } else {
-        parseGBFile(fileContent, pNr);
+        parseGBFile(importedFileContent, pNr);
       }
       
       // Update header with filename
@@ -111,6 +139,9 @@ function handleFileSelect(event) {
 
       // Run reader
       reader.readAsText(file);
+
+      // Enable export buttons
+      addExportButtonsListeners(pNr);
     }
 };
 
@@ -183,6 +214,8 @@ function importDemoFile(pNr) {
     
   // Once the file is loaded, enable search function
   initiateSearchFunctionality(pNr);
+  // Enable export buttons
+  addExportButtonsListeners(pNr);
 };
 
 
@@ -195,6 +228,8 @@ function importDemoFile(pNr) {
  * - retain all information about the features (colour, complementary strand features)
  */
 function parseGBFile(fileContent, pNr) {
+  // Extract header
+  importedFileHeader = fileContent.substring(0, fileContent.indexOf("FEATURES"));
 
   /**
    * Extracts the sequence from the end of the file.
@@ -433,6 +468,96 @@ function parseDNAFile(fileContent, pNr) {
       features2 = featuresDict;
   }
 }
+
+
+/**
+ * GB file exporter.
+ * 
+ * TO DO:
+ * - fileHeader right now is not made dynamically, will lead to problems
+ * when converting from dna to gb
+ */
+function exportGBFile(pNr) {
+  console.log("Export GB File")
+  // Init variables
+  let outputFileContent = "";
+  let currLine = "";
+  // Select target sequence and features
+  const currSequence = (pNr === 1) ? sequence: sequence2;
+  const currFeatures = (pNr === 1) ? features: features2;
+
+  // Append header
+  outputFileContent += importedFileHeader;
+
+
+  // Append features
+  outputFileContent += "FEATURES             Location/Qualifiers\n";
+  const entries = Object.entries(currFeatures);
+  for (const [key, value] of entries) {
+    if (key !== "LOCUS") {
+      console.log(`Key: ${key}, Value: ${value}`);
+      outputFileContent += " ".repeat(5) + key + " ".repeat(16 - key.length) + value["span"] + "\n";
+      const featureInfo = Object.entries(value);
+      for (const [propertyName, propertyValue] of featureInfo) {
+        if (propertyName !== "span") {
+          outputFileContent += " ".repeat(16 + 5) + propertyName + " " + propertyValue + "\n";
+        };
+      };
+    };
+  };
+
+
+  // Append sequence
+  outputFileContent += "ORIGIN\n";
+  let seqIndex = 1;
+  let lastIndex = Math.floor(currSequence.length / 60) * 60 + 1;
+  while (currSequence.slice(seqIndex)) {
+    currLine = "";
+    currLine +=  " ".repeat(lastIndex.toString().length + 1 - seqIndex.toString().length) + seqIndex
+
+    for (let i = 0; i < 6; i++) {
+      currLine += " " + currSequence.slice(seqIndex - 1 + i*10, seqIndex - 1 + i*10 + 10).toLowerCase();
+    }
+
+    outputFileContent += currLine + "\n";
+    seqIndex += 60;
+  };
+  outputFileContent += "\\\\";
+
+
+  downloadFile("test", outputFileContent, "txt")
+}
+
+/**
+ * Snapgene file exporter.
+ */
+function exportDNAFile(pNr) {
+  console.log("Export DNA File")
+  downloadFile("test", "Hi.", "txt")
+}
+
+
+/**
+ * Download file.
+ */
+function downloadFile(downloadFileName, downloadFileContent, downloadFileType) {
+  // Create a Blob
+  const blob = new Blob([downloadFileContent], { type: "text/plain" });
+  const blobURL = URL.createObjectURL(blob);
+
+  // Create a download link
+  const downloadLink = document.createElement("a");
+  downloadLink.href = blobURL;
+  downloadLink.download = downloadFileName + "." + downloadFileType; // File name
+  document.body.appendChild(downloadLink);
+  downloadLink.style.display = "none";
+
+  // Start the download
+  downloadLink.click();
+
+  // Clean up by revoking the Blob URL once the download is complete
+  URL.revokeObjectURL(blobURL);
+};
 
 
 /**
