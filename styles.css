@@ -521,3 +521,7 @@ nav ul li a {
 #header-list-right #settings-btn a:hover {
   background-color: #5c5c5c;
 }
+
+.export-btn-list {
+  margin: 0;
+}

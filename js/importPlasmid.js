@@ -76,13 +76,19 @@ function handleFileSelect(event) {
 
     // Define reader
     reader.onload = function(e) {
-      importedFileContent = e.target.result; // Read file content
+      let currentFileContent = e.target.result;
+      if (pNr === 1) {
+        importedFileContent1 = currentFileContent; // Read file content
+      } else {
+        importedFileContent2 = currentFileContent; // Read file content
+      }
+      
       
       // Depending on file extension pass the file content to the appropiate parser
       if (fileExtension === ".dna") {
-        parseDNAFile(importedFileContent, pNr);
+        parseDNAFile(currentFileContent, pNr);
       } else {
-        parseGBFile(importedFileContent, pNr);
+        parseGBFile(currentFileContent, pNr);
       }
       
       // Update header with filename
@@ -229,7 +235,39 @@ function importDemoFile(pNr) {
  */
 function parseGBFile(fileContent, pNr) {
   // Extract header
-  importedFileHeader = fileContent.substring(0, fileContent.indexOf("FEATURES"));
+  let currFileHeader = fileContent.substring(0, fileContent.indexOf("FEATURES")).split('\n');
+  let headerDict = {}
+  const headerNrSpaces = 12;
+  let lastAddedProperty = "";
+  let propertyCounter = 0;
+  for (l in currFileHeader) {
+    console.log("FileHeader", currFileHeader[l])
+    if (currFileHeader[l]) {
+      let propertyName = currFileHeader[l].substring(0, headerNrSpaces).trim();
+      if (propertyName !== "") {
+        const leadingSpaces = currFileHeader[l].match(/^\s*/);
+        const leadingSpacesNr = (leadingSpaces) ? leadingSpaces[0].length : 0;
+        propertyName = " ".repeat(leadingSpacesNr) + propertyName;
+        headerDict[propertyCounter] = {}
+        headerDict[propertyCounter]["name"] = propertyName;
+        headerDict[propertyCounter]["value"] = currFileHeader[l].substring(headerNrSpaces).replace("\r", "");
+        lastAddedProperty = propertyCounter;
+        propertyCounter++;
+      } else {
+        console.log("FileHeader2", lastAddedProperty, currFileHeader[l].substring(headerNrSpaces))
+        headerDict[lastAddedProperty]["value"] = "" + headerDict[lastAddedProperty]["value"] + " " + currFileHeader[l].substring(headerNrSpaces);
+        console.log("FileHeader2", headerDict[lastAddedProperty]["value"])
+      };
+    };
+  };
+
+  console.log("FileHeader", headerDict, fileContent)
+
+  if (pNr === 1) {
+    importedFileHeader1 = headerDict;
+  } else {
+    importedFileHeader2 = headerDict;
+  }
 
   /**
    * Extracts the sequence from the end of the file.
@@ -292,6 +330,9 @@ function parseGBFile(fileContent, pNr) {
         }
         currentFeature = ''; // Reset
       }
+      if (line === "ORIGIN") {
+        break;
+      }
       // Add the current line to the current feature
       currentFeature += line + '\n';
     }
@@ -301,16 +342,27 @@ function parseGBFile(fileContent, pNr) {
       featureList.push(currentFeature);
     }
     
-    
     // Iterate over the list of features and parse them into a dict
     for (const feature of featureList) {
       // Split current feature into a list of lines
-      const lines = feature.split('\n').map(line => line.trim()).filter(line => line);
+      const oldLines = feature.split('\n').map(line => line.trim()).filter(line => line);
+      let lines = [];
+      let lineToAppend = "";
+      for (l in oldLines) {
+        if(l !== 0 && oldLines[l].includes("/")) {
+          lines.push(lineToAppend);
+          lineToAppend = oldLines[l];
+        } else {
+          lineToAppend += oldLines[l];
+        }
+      }
+      lines.push(lineToAppend);
 
       // Ignore joined features for now
       if (!lines[0].includes("join")) {
         // Get feature name
         let featureName = lines[0].substring(0, lines[0].indexOf(' '));
+        const oldFeatureName = featureName;
         // If theres an identical feature in the dict, give it a different name
         let i = 0;
         while (featureName in featuresDict) {
@@ -323,9 +375,9 @@ function parseGBFile(fileContent, pNr) {
         }
         
         // Start collecting info about the feature, starting with the span
-        // Span is always on the first line, for now ignore complement spans
+        // Span is always on the first line
         const featureInfo = {
-          span: lines[0].includes('complement') ? lines[0].substring(lines[0].indexOf('complement')) : lines[0].replace(featureName, '').trim()
+          span: lines[0].includes('complement') ? lines[0].substring(lines[0].indexOf('complement')) : lines[0].replace(oldFeatureName, '').trim()
         };
       
         // Iterate over the rest of the lines and save the properties to the feature info dict
@@ -471,6 +523,35 @@ function parseDNAFile(fileContent, pNr) {
 
 
 /**
+ * 
+ */
+function splitStringByMaxLength(inputString, maxLength) {
+  const words = inputString.split(' ');
+  const result = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    if (currentLine.length + word.length + 1 <= maxLength) {
+      if (currentLine) {
+        currentLine += ' ' + word;
+      } else {
+        currentLine = word;
+      }
+    } else {
+      result.push(currentLine);
+      currentLine = word;
+    }
+  }
+
+  if (currentLine) {
+    result.push(currentLine);
+  }
+
+  return result;
+}
+
+
+/**
  * GB file exporter.
  * 
  * TO DO:
@@ -485,10 +566,38 @@ function exportGBFile(pNr) {
   // Select target sequence and features
   const currSequence = (pNr === 1) ? sequence: sequence2;
   const currFeatures = (pNr === 1) ? features: features2;
+  const currFileHeaderDict = (pNr === 1) ? importedFileHeader1: importedFileHeader2;
 
   // Append header
-  outputFileContent += importedFileHeader;
+  //outputFileContent += importedFileHeader;
+  const headerNrSpaces = 12;
+  const headerValueSpaces = 68;
+  // Locus
+  // other properties
+  const fileHeaderEntries = Object.entries(currFileHeaderDict);
+  for (const [pName, pData] of fileHeaderEntries) {
+    if (pData["name"] === "LOCUS") {
+      pData["value"] = pData["value"].replace(/\d+\s*bp/, currSequence.length + " bp");
+    }
+    console.log(`Key: [${pData["name"]}], Value: [${pData["value"]}]`);
+    let test = pData["name"] + " ".repeat(headerNrSpaces - pData["name"].length)
+    console.log("me when2:", test)
 
+    let propertyLineToAppend = splitStringByMaxLength(pData["value"].replace("\r", ""), headerValueSpaces);
+    console.log("Prop", propertyLineToAppend)
+    for (l in propertyLineToAppend) {
+      console.log("line", l, propertyLineToAppend[l])
+      let anyLiners = "";
+      if (l === "0") {
+        anyLiners = test + propertyLineToAppend[l].trim() + "\n";
+        console.log("Any liners", anyLiners)
+        outputFileContent +=  anyLiners;
+      } else {
+        outputFileContent += " ".repeat(headerNrSpaces) + propertyLineToAppend[l].trim() + "\n";
+      };
+    };
+  };
+  console.log("After header", outputFileContent)
 
   // Append features
   outputFileContent += "FEATURES             Location/Qualifiers\n";
@@ -500,7 +609,10 @@ function exportGBFile(pNr) {
       const featureInfo = Object.entries(value);
       for (const [propertyName, propertyValue] of featureInfo) {
         if (propertyName !== "span") {
-          outputFileContent += " ".repeat(16 + 5) + propertyName + " " + propertyValue + "\n";
+          let featureToAppend = "/" + propertyName + "=\"" + propertyValue + "\"";
+          for (let i = 0; i < featureToAppend.length; i += 58) {
+            outputFileContent += " ".repeat(16 + 5) + featureToAppend.slice(i, i + 58) + "\n";
+          }
         };
       };
     };
@@ -522,10 +634,12 @@ function exportGBFile(pNr) {
     outputFileContent += currLine + "\n";
     seqIndex += 60;
   };
-  outputFileContent += "\\\\";
+  outputFileContent += "//";
 
-
-  downloadFile("test", outputFileContent, "txt")
+  // Output file name
+  const outputFileExtension = "gb"
+  const outputFileName = document.getElementById("plasmid-file-name" + pNr).innerHTML.replace(/\.[^.]*$/, '');
+  downloadFile(outputFileName, outputFileContent, outputFileExtension);
 }
 
 /**
@@ -648,8 +762,8 @@ function checkAnnotationOverlap(inputFeatures, pNr) {
     if (value.span && !key.includes("source")) { // Exclude source
 
       // Get the current span and push it to the spans list
-      value.span = removeNonNumeric(value.span);
-      const range = value.span.split("..").map(Number);
+      const spanList = removeNonNumeric(value.span);
+      const range = spanList.split("..").map(Number);
       const rangeStart = range[0];
       const rangeEnd = range[1];
       spansList.push([rangeStart, rangeEnd])
@@ -792,17 +906,18 @@ function makeContentGrid(pNr, callback) {
     }
     
     // Iterate over the features and create the annotatations
+    console.log("Here6", currFeatures)
     Object.entries(currFeatures).forEach(([key, value]) => {
       if (value.span && !key.includes("source")) { // If the feature includes a span and is not "source"
         // Get the current feature's span
-        value.span = removeNonNumeric(value.span);
-        const range = value.span.split("..").map(Number);
+        const spanList = removeNonNumeric(value.span);
+        const range = spanList.split("..").map(Number);
         const rangeStart = range[0];
         const rangeEnd = range[1];
-
-        console.log(value.label, rangeStart + ".." + rangeEnd)
+        const annotText = (value.label) ? value.label: key;
+        console.log(annotText, rangeStart + ".." + rangeEnd)
         // Make the annotation at the specified indices
-        makeAnnotation(rangeStart - 1, rangeEnd - 1, value.label, key, pNr, currGridStructure); 
+        makeAnnotation(rangeStart - 1, rangeEnd - 1, annotText, key, pNr, currGridStructure); 
       }
     });
 
@@ -837,7 +952,7 @@ function makeAnnotation(rStart, rEnd, text, featureId, pNr, currGridStructure) {
   let row = (Math.floor(rStart / gridWidth)) * currGridStructure.length;
   let col = rStart - (row/currGridStructure.length)*gridWidth;
   row += currGridStructure.indexOf("Annotations");
-  console.log("here", rStart, row, currGridStructure.length, gridWidth, col)
+  console.log("here", text, rStart, row, currGridStructure.length, gridWidth, col)
 
   // Annotaiton span length
   const annotationSpan = rEnd - rStart;
@@ -1154,8 +1269,8 @@ function featureTranslation(pNr) {
   // Iterate over features and start the translation at the beginning of its span
   Object.entries(currFreatures).forEach(([key, value]) => {
     if (value.span && !key.includes("source")) {
-      value.span = removeNonNumeric(value.span);
-      const range = value.span.split("..").map(Number);
+      const spanList = removeNonNumeric(value.span);
+      const range = spanList.split("..").map(Number);
       const rangeStart = range[0];
       const rangeEnd = range[1];
       startTranslation(rangeStart, pNr);
