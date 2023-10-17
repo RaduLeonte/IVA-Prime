@@ -53,7 +53,7 @@ function addCellSelection(tableId, containerId, pNr) {
   sequenceGridTable.addEventListener('mousedown', function (event) {
     if (event.button === 0) { // Check for left click
       // Clear the previous selection
-      clearSelection(pNr);
+      clearSelection(pNr, True);
       // Record where the selection started
       if (pNr === 1) {
         selectionStartPos = basePosition;
@@ -102,7 +102,7 @@ function addCellSelection(tableId, containerId, pNr) {
   /**
    * Removes the selected appearance from all the currently selected cells.
    */
-  function clearSelection(pNr) {
+  function clearSelection(pNr, clearingGlobalVars) {
     // Find all selected cells and iterate over them to remove the selected class
     const selectedCells = document.querySelectorAll('.selected-cell');
     selectedCells.forEach((cell) => {
@@ -117,8 +117,10 @@ function addCellSelection(tableId, containerId, pNr) {
     // Reset cell selection
     startCell = null;
     endCell = null;
-    selectionStartPos = null;
-    selectionEndPos = null;
+    if (clearingGlobalVars) {
+      selectionStartPos = null;
+      selectionEndPos = null;
+    }
   }
 
   /**
@@ -175,7 +177,7 @@ function addCellSelection(tableId, containerId, pNr) {
         endCellIndex = selectionEndCell[1];
 
         // Clear the previous selection
-        clearSelection(pNr);
+        clearSelection(pNr, False);
 
         //console.log("Iterating from: " + startRowIndex + ", " + startCellIndex);
         //console.log("To: " + endRowIndex + ", " + endCellIndex);
@@ -257,7 +259,7 @@ function addCellSelection(tableId, containerId, pNr) {
    */
   document.addEventListener('click', function (event) {
     if (!event.target.closest('#sequence-grid') && !event.target.closest('#sequence-grid2')) {
-      clearSelection(pNr);
+      clearSelection(pNr, true);
       startCell = null;
       endCell = null;
       isSelecting = false;
