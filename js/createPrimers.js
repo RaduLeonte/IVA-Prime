@@ -903,27 +903,6 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
     }
 
 
-    /**
-     * Sort the features dict by span so that the features appear in order in the sidebar.
-     */
-    function sortBySpan(dict) {
-        // Convert the dictionary to an array of key-value pairs
-        const valueKey = "span";
-        const entries = Object.entries(dict);
-    
-        // Sort the array based on the first number in the value key
-        entries.sort((a, b) => {
-        const aValue = Number(a[1][valueKey].split('..')[0]);
-        const bValue = Number(b[1][valueKey].split('..')[0]);
-        return aValue - bValue;
-        });
-    
-        // Convert the sorted array back to a dictionary
-        const sortedDict = Object.fromEntries(entries);
-    
-        return sortedDict;
-    }
-
     // Creat the new feature
     if (newFeatureType !== "Deletion") {
         const tempDict = {} // init feature dict
@@ -943,6 +922,36 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
     // Remake the sidebar and content grid 
     createSideBar(pNr);
     makeContentGrid(pNr);
+};
+
+
+/**
+* Sort the features dict by span so that the features appear in order in the sidebar.
+*/
+function sortBySpan(dict) {
+    // Convert the dictionary to an array of key-value pairs
+    const valueKey = "span";
+    const entries = Object.entries(dict);
+
+    // Sort the array based on the first number in the value key
+    entries.sort((a, b) => {
+        const spanListA = removeNonNumeric(a[1][valueKey]);
+        const rangeA = spanListA.split("..").map(Number);
+        const rangeStartA = rangeA[0];
+
+        const spanListB = removeNonNumeric(b[1][valueKey]);
+        const rangeB = spanListB.split("..").map(Number);
+        const rangeStartB = rangeB[0];
+
+        //const aValue = Number(a[1][valueKey].split('..')[0]);
+        //const bValue = Number(b[1][valueKey].split('..')[0]);
+        return rangeStartA - rangeStartB;
+    });
+
+    // Convert the sorted array back to a dictionary
+    const sortedDict = Object.fromEntries(entries);
+
+    return sortedDict;
 }
 
 

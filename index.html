@@ -32,10 +32,8 @@
                 <li id="import-second-demo-btn" style="display: none;"><a href="#" id="import-second-btn-a">Import Second Demo Plasmid for Subcloning</a></li>
                 <li style="display: flex;align-items: center;text-align: center;"><a id="plasmid-file-name1"></a></li>
                 <li style="display: flex;align-items: center;text-align: center;"><a id="plasmid-file-name2"></a></li>
-                <!-- Add more menu options here if needed -->
             </ul>
             <ul id="header-list-right" class="horizontal-list">
-                <!-- Add menu options for the right side here -->
                 <li id="tm-calc-btn"><a href="#">TM Calculator</a></li>
                 <li id="settings-btn"><a href="#" class="settings-link"></a></li>
                 <li id="info-btn"><a href="#">ⓘ</a></li>
@@ -46,6 +44,23 @@
     <div class="parent-container" id="parent-container">
         <div class="first-plasmid-container" id="first-plasmid-container">
             <div id="sidebar" class="sidebar" style="width: 25%;">
+
+                <div style="display: flex;">
+                    <div id="export-dropdown" class="dropdown" style="display: none;">
+                        <button class="save-button">Save File</button>
+                        <div class="dropdown-content">
+                          <a id="export-btn-gb" href="#">GB File</a>
+                        </div>
+                    </div>
+    
+                    <div id="export-dropdown-second" class="dropdown" style="display: none;">
+                        <button class="save-button">Save Second File</button>
+                        <div class="dropdown-content">
+                          <a id="export-second-btn-gb" href="#">GB File</a>
+                        </div>
+                    </div>
+                </div>
+                  
                 <div class="sidebar-content">
                     <h2 id="primers-type">Primers will appear here.</h2>
                 </div>
