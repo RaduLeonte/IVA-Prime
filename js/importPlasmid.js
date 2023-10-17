@@ -37,24 +37,21 @@ function addImportButtonListener(pNr) {
  */
 function addExportButtonsListeners(pNr) {
   console.log("Enabling Export Buttons", pNr)
-  let targetButton1 = (pNr === 1) ? '#export-btn-dna': '#export-second-btn-dna';
-  targetButton1 = document.querySelector(targetButton1);
-  let targetButton2 = (pNr === 1) ? '#export-btn-gb': '#export-second-btn-gb';
-  targetButton2 = document.querySelector(targetButton2);
+  let targetDropdown = (pNr === 1) ? '#export-dropdown': '#export-dropdown-second';
+  targetDropdown = document.querySelector(targetDropdown);
 
 
-  let targetButtonLink1 = (pNr === 1) ? '#export-btn-dna a': '#export-second-btn-dna a';
+  let targetButtonLink1 = (pNr === 1) ? '#export-btn-gb': '#export-second-btn-gb';
   targetButtonLink1 = document.querySelector(targetButtonLink1);
-  let targetButtonLink2 = (pNr === 1) ? '#export-btn-gb a': '#export-second-btn-gb a';
+  let targetButtonLink2 = (pNr === 1) ? '#export-btn-dna': '#export-second-btn-dna';
   targetButtonLink2 = document.querySelector(targetButtonLink2);
 
-  targetButton1.style.display = "block";
-  targetButton2.style.display = "block";
+  targetDropdown.style.display = "block";
 
-  targetButtonLink1.addEventListener('click', function() {
+  targetButtonLink2.addEventListener('click', function() {
     exportDNAFile(pNr);
   });
-  targetButtonLink2.addEventListener('click', function() {
+  targetButtonLink1.addEventListener('click', function() {
     exportGBFile(pNr);
   });
 }
@@ -458,15 +455,26 @@ function parseDNAFile(fileContent, pNr) {
   const xmlDoc = parser.parseFromString(featuresString, 'text/xml');
   
   // Initialize dict and iterate over all feature elements in the object
-  const featuresDict = {};
+  let featuresDict = {};
   const featuresList = xmlDoc.getElementsByTagName('Feature');
   for (let i = 0; i < featuresList.length; i++) {
       const feature = featuresList[i]; // Current feature
-      const featureName = feature.getAttribute('name') + i; // Feature id
+      let featureName = feature.getAttribute('type'); // Feature id
+
+      let k = 0;
+      while (featureName in featuresDict) {
+        if (`${featureName}${k}` in featuresDict) {
+          k++;
+        } else {
+          featureName = `${featureName}${k}`;
+          break;
+        }
+      }
 
       // All the feature properties
       const featureInfo = {}
       featureInfo["label"] = feature.getAttribute('name'); // Display name
+      const spanDirectionality = feature.getAttribute('directionality');
       featureInfo["span"] = "";
       featureInfo["note"] = "";
       let spanStart = null;
@@ -484,6 +492,12 @@ function parseDNAFile(fileContent, pNr) {
               let currSpan = child.getAttribute('range').split("-"); // Get span and split into list
               // Add span to feature info
               featureInfo["span"] = currSpan[0] + ".." + currSpan[1];
+              if (spanDirectionality !== 1) {
+                featureInfo["span"] = "complement(" + featureInfo["span"] + ")";
+              }
+              // Extract color
+              featureInfo["ApEinfo_fwdcolor"] = child.getAttribute('color');
+              featureInfo["ApEinfo_revcolor"] = child.getAttribute('color');
           }
           // Nodes with the name "Q" contain:
           // feature name, "V" nodes (contains the note text or a number)
@@ -500,14 +514,15 @@ function parseDNAFile(fileContent, pNr) {
                   subNoteEntry = new DOMParser().parseFromString(subNoteEntry, 'text/html').body.textContent; // Sometimes the text contains html
               }
               // Save note to the dict
-              featureInfo["note"] += subNoteName + ": " + subNoteEntry + "; ";
+              featureInfo["note"] += subNoteName + ": " + subNoteEntry + " ";
           }
       }
+      featureInfo["note"] = featureInfo["note"].trim();
 
       // Append feature info the corresponding feature in the dict
       featuresDict[featureName] = featureInfo;
-
-  }
+  };
+  featuresDict = sortBySpan(featuresDict);
 
   // Extract the sequence and features and save it to the specified plasmid variables
   if (pNr === 1) {
@@ -560,20 +575,44 @@ function splitStringByMaxLength(inputString, maxLength) {
  */
 function exportGBFile(pNr) {
   console.log("Export GB File")
+  // Output file name
+  const outputFileExtension = "gb"
+  const originalFileExtension = document.getElementById("plasmid-file-name" + pNr).innerHTML.match(/\.([0-9a-z]+)(?=[?#])|(\.)(?:[\w]+)$/i)[0].slice(1);
+  const outputFileName = document.getElementById("plasmid-file-name" + pNr).innerHTML.replace(/\.[^.]*$/, '');
+  
   // Init variables
   let outputFileContent = "";
   let currLine = "";
+
   // Select target sequence and features
   const currSequence = (pNr === 1) ? sequence: sequence2;
-  const currFeatures = (pNr === 1) ? features: features2;
-  const currFileHeaderDict = (pNr === 1) ? importedFileHeader1: importedFileHeader2;
+  const currFeatures = (pNr === 1) ? sortBySpan(features): sortBySpan(features2);
 
-  // Append header
-  //outputFileContent += importedFileHeader;
-  const headerNrSpaces = 12;
-  const headerValueSpaces = 68;
-  // Locus
-  // other properties
+  /**
+   * Fil header
+   */
+  let currFileHeaderDict = null;
+  // GB -> GB
+  console.log(originalFileExtension, outputFileExtension);
+  if (originalFileExtension === outputFileExtension) {
+    currFileHeaderDict = (pNr === 1) ? importedFileHeader1: importedFileHeader2;
+  // DNA -> GB, make new header
+  } else {
+    /**
+     * dict = {"0": {"name":"LOCUS","value":"[name]\t[seq length] bp"},
+     *         "1": {"name":"DEFINITION","value":"."},
+     *         }
+     */
+    currFileHeaderDict = {"0": {"name": "LOCUS", "value": outputFileName + "\t" + currSequence.length + " bp"},
+                          "1": {"name":"DEFINITION","value":"."}};
+  };
+  console.log(JSON.stringify(currFileHeaderDict));
+
+  // Apend the header
+  const headerNrSpaces = 12; // Descriptor width
+  const headerValueSpaces = 68; // Descriptor value width
+  
+  // Iterate over entries
   const fileHeaderEntries = Object.entries(currFileHeaderDict);
   for (const [pName, pData] of fileHeaderEntries) {
     if (pData["name"] === "LOCUS") {
@@ -597,21 +636,27 @@ function exportGBFile(pNr) {
       };
     };
   };
-  console.log("After header", outputFileContent)
 
-  // Append features
+
+  /**
+   * File features
+   */
+  const featureTitleShift = 5;
+  const featureTitleWidth = 16;
+  const featureValueWidth = 58;
   outputFileContent += "FEATURES             Location/Qualifiers\n";
   const entries = Object.entries(currFeatures);
   for (const [key, value] of entries) {
     if (key !== "LOCUS") {
       console.log(`Key: ${key}, Value: ${value}`);
-      outputFileContent += " ".repeat(5) + key + " ".repeat(16 - key.length) + value["span"] + "\n";
+      const featureName = key.replace(/\d+$/, '');
+      outputFileContent += " ".repeat(featureTitleShift) + featureName + " ".repeat(featureTitleWidth - featureName.length) + value["span"] + "\n";
       const featureInfo = Object.entries(value);
       for (const [propertyName, propertyValue] of featureInfo) {
         if (propertyName !== "span") {
           let featureToAppend = "/" + propertyName + "=\"" + propertyValue + "\"";
-          for (let i = 0; i < featureToAppend.length; i += 58) {
-            outputFileContent += " ".repeat(16 + 5) + featureToAppend.slice(i, i + 58) + "\n";
+          for (let i = 0; i < featureToAppend.length; i += featureValueWidth) {
+            outputFileContent += " ".repeat(featureTitleWidth + featureTitleShift) + featureToAppend.slice(i, i + featureValueWidth) + "\n";
           }
         };
       };
@@ -619,7 +664,9 @@ function exportGBFile(pNr) {
   };
 
 
-  // Append sequence
+  /**
+   * File sequence
+   */
   outputFileContent += "ORIGIN\n";
   let seqIndex = 1;
   let lastIndex = Math.floor(currSequence.length / 60) * 60 + 1;
@@ -636,9 +683,7 @@ function exportGBFile(pNr) {
   };
   outputFileContent += "//";
 
-  // Output file name
-  const outputFileExtension = "gb"
-  const outputFileName = document.getElementById("plasmid-file-name" + pNr).innerHTML.replace(/\.[^.]*$/, '');
+  // Send for download
   downloadFile(outputFileName, outputFileContent, outputFileExtension);
 }
 
@@ -647,7 +692,130 @@ function exportGBFile(pNr) {
  */
 function exportDNAFile(pNr) {
   console.log("Export DNA File")
-  downloadFile("test", "Hi.", "txt")
+
+  // Output file name
+  const outputFileExtension = "dna"
+  const originalFileExtension = document.getElementById("plasmid-file-name" + pNr).innerHTML.match(/\.([0-9a-z]+)(?=[?#])|(\.)(?:[\w]+)$/i)[0].slice(1);
+  const outputFileName = document.getElementById("plasmid-file-name" + pNr).innerHTML.replace(/\.[^.]*$/, '');
+  
+  // Init variables
+  const textDecoder = new TextDecoder();
+  let outputFileContent = "";
+  let currLine = "";
+
+  // Select target sequence and features
+  const currSequence = (pNr === 1) ? sequence: sequence2;
+  const currFeatures = (pNr === 1) ? sortBySpan(features): sortBySpan(features2);
+
+
+  /**
+   * File header
+   */
+  const fileHeaderBytes = new Uint8Array([9, 32, 32, 32, 14, 83, 110, 97, 112, 71, 101, 110, 101, 32, 1, 32, 15, 32, 17, 32, 32, 32, 22, 45, 3]);
+  outputFileContent += textDecoder.decode(fileHeaderBytes);
+
+  /**
+   * Sequence
+   */
+  outputFileContent += currSequence;
+
+  /** Filler */
+  const bytesSpacer1 = new Uint8Array([2, 32, 32, 6, 11, 1, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 1, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 1, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 3, 32, 32, 29, 195, 146, 1, 32, 32, 18]);
+  outputFileContent += textDecoder.decode(bytesSpacer1);
+
+  const crypticSequences = "›GACNNNNNNGTC,CCAGGCCTGG,GATCCGGATC,CCWGGTACCWGG,CCANNNNNTGG,CCAGGNNNTGG,CCANNNCCTGG,CCAGGNCCTGG,GCACNNNAACGTTNNNGTGC,CACNNNGTG,CCNNNNNNNGG,AACNAACRYGTGCGTGC,GCACGCACRYGTTNGTT,GCACNAACRYGTTNGTGC,AACGCACRYGTGCGTT,GCACNNNNNNGTTSAACNNNNNNGTGC,GACNNNNNGTC,GAANNNNNNNTTGG,CCAANNNNNNNTTC,CACNNNNGTG,AACACNNNNGTGC,GCACNNNNGTGTT,GCANNNNNNTGC,GAACNNNNNNTCC,GGANNNNNNGTTC,CAGNNNCTG,CCAGGNNCTG,CAGNNCCTGG,CCWGGGCCC,GGGCCCWGG,CCWGGGCCCWGG,AACNNNNNNGTGCACNNNNNNGTT,GACNNNNNNTTYG,CRAANNNNNNGTC,GACNNNGTC,GAANNNNTTC,CCWGGTACC,GGTACCWGG,CCWGGWCCWGG,ACNNNNGTAYC,GRTACNNNNGT,CCWGGYRCCWGG,GAAGNNNNNNTAC,GTANNNNNNCTTC,AACGGCNNNGTGC,GCACNNNGCCGTT,GCACGGCNNNGTT,AACNNNGCCGTGC,CGANNNNNNTGC,GCANNNNNNTCG,CGATCNNNNTGC,GCANNNNGATCG,TGANNNNNNTCA,TGATCNNNNTCA,TGANNNNGATCA,TGATCNNGATCA,AACCTGCNNGTGC,GCACNNGCAGGTT,GCACCTGCNNGTT,AACNNGCAGGTGC,GCCNNNNNGGC,AACNNNNNNGTGCMC,GKGCACNNNNNNGTT,CCWGGNCCWGG,AACTGGGNNGTGC,GCACNNCCCAGTT,GCACTGGGNNGTT,AACNNCCCAGTGC,GACNNNNGTC,GAGNNNNNCTC,CCWGGTCTC,GAGACCWGG,GATNNNNATC,GATCNNNATC,GATNNNGATC,GATCNNGATC,CCWGGCGCCWGG,ACNNNNNCTCC,GGAGNNNNNGT,AACNNNNNNGTGCAG,CTGCACNNNNNNGTT,GATCATGATC,CCWGGNNCCWGG,AACTGGNNNGTGC,GCACNNNCCAGTT,GCACTGGNNNGTT,AACNNNCCAGTGC,AACNAACCGGTGCGTGC,GCACGCACCGGTTNGTT,GCACNAACCGGTTNGTGC,AACGCACCGGTGCGTT,GCANNNNNTGC,GCACNNNNNNGTTCGAACNNNNNNGTGC,CCTNNNNNAGG,GCNNNNNNNGC,CCANNNNNNTGG,CCAGGNNCCTGG,CCTGGCCAGG,CAANNNNNGTGG,CCACNNNNNTTG,TTTAAACNNNNNNGTGC,GCACNNNNNNGTTTAAA,GCACNNNNNNGTTTAAACNNNNNNGTGC,CCAGGNCCY,RGGNCCTGG,CCWGGGNCCTGG,CCAGGNCCCWGG,AAGNNNNNCTT,GAYNNNNNVTC,GABNNNNNRTC,GAYNNNNNRTC,GATCNNNNVTC,GABNNNNGATC,GAYNNNNGATC,GATCNNNNRTC,GATCNNNGATC,GTYAACNNNNNNGTGC,GCACNNNNNNGTTRAC,GCACNNNNNNGTTAACNNNNNNGTGC,GATCNGATC,TAACTATAACGGTCCTAAGGTAGCGA,TCGCTACCTTAGGACCGTTATAGTTA,CTCTCTTAAGGTAGC,GCTACCTTAAGAGAG,TAGGGATAACAGGGTAAT,ATTACCCTGTTATCCCTA,GTTAACNNNNNNGTGC,GCACNNNNNNGTTAAC,AACNAACGCGTGCGTGC,GCACGCACGCGTTNGTT,GCACNAACGCGTTNGTGC,AACGCACGCGTGCGTT,TCCAACNNNNNNGTGC,GCACNNNNNNGTTGGA,CAYNNNNRTG,AACAYNNNNGTGC,GCACNNNNRTGTT,GTTTAAACNNNNNNGTGC,GCACNNNNNNGTTTAAAC,CCWGGCGCC,GGCGCCWGG,CCWGGNNCC,GGNNCCWGG,GATCGCGATC,AACNAACATGTGCGTGC,GCACGCACATGTTNGTT,GCACNAACATGTTNGTGC,AACGCACATGTGCGTT,TGGCAAACAGCTATTATGGGTATTATGGGT,ACCCATAATACCCATAATAGCTGTTTGCCA,ATCTATGTCGGGTGCGGAGAAAGAGGTAATGAAATGG,CCATTTCATTACCTCTTTCTCCGCACCCGACATAGAT,AACNNGCACGTGCNNGTT,GAACNNNNNCTC,GAGNNNNNGTTC,CCAGGWCCY,RGGWCCTGG,CCWGGGWCCTGG,CCAGGWCCCWGG,CCAGGWCCTGG,TTATAACNNNNNNGTGC,GCACNNNNNNGTTATAA,GCACNNNNNNGTTATAACNNNNNNGTGC,GAACNNNNNNTAC,GTANNNNNNGTTC,GGCCNNNNNGGCC,AACNNACTAGTGC,GCACTAGTNNGTT,AACTAGTNNGTGC,GCACNNACTAGTT,AACNAACTAGTGCGTGC,GCACGCACTAGTTNGTT,GCACNAACTAGTTNGTGC,AACGCACTAGTGCGTT,AACNNNAACGTGCNNGTGC,GCACNNGCACGTTNNNGTT,TTAACNNNNNNGTGC,GCACNNNNNNGTTAA,CACNNNNNNTCC,GGANNNNNNGTG,CACNNNNGATCC,GGATCNNNNGTG,GATCTAGATC,CCANNNNNNNNNTGG,CCAGGCCT,AGGCCTGG,CCTCGAGG,GATCCGGA,TCCGGATC,GGCGCGCC,GCGATCGC,CCWGGWCC,GGWCCWGG,GATCGATC,GATCATGA,TCATGATC,GCGGCCGC,CCTGGCCR,YGGCCAGG,CCWGGNCC,GGNCCWGG,GGCCGGCC,RTGCGCAY,GATCNNGA,TCNNGATC,CGCGCGCG,CCTGGCCA,TGGCCAGG,CGCCGGCG,GTTTAAAC,GATCGCGA,TCGCGATC,TTAATTAA,VCTCGAGB,CCTGCAGG,CRCCGGYG,CGTCGACG,ATTTAAAT,GCCCGGGC,GATCTAGA,TCTAGATC,CACCTGC,GCAGGTG,CCTNAGG,GATCGAT,ATCGATC,CCTCAGC,GCTGAGG,GCTNAGC,CCTNAGC,GCTNAGG,GCTCTTC,GAAGAGC,GGTNACC,CGGWCCG,ACCWGGT,RGGNCCY,CCTGGAG,CTCCAGG,GGTGATC,GATCACC,GATCNGA,TCNGATC,GGGWCCC,GAAGATC,GATCTTC,CCCWGGG,TCCNGGA,TCCWGGA,RGGWCCY,TTATAA,AGGCCT,GACGTC,GTMKAC,TCCGGA,TGCGCA,ACCTGC,GCAGGT,GGTACC,AGTACT,GGYRCC,CCGCTC,GAGCGG,AACGTT,YGGCCR,RAATTY,CTGAAG,CTTCAG,CACGTG,GRCGYC,AGCGCT,CTTAAG,ACRYGT,ACCGGT,ACTAGT,CACGTC,GACGTG,GWGCWC,GTGCAC,CYCGRG,GGGCCC,ATTAAT,CCTAGG,TTCGAA,GCTAGC,GKGCMC,TGGCCA,GGATCC,GRGCYC,ATCGAT,CACGAG,CTCGTG,GGCGCC,GAAGAC,GTCTTC,GCATGC,GTATCC,GGATAC,TGATCA,ACTGGG,CCCAGT,CTRYAG,RGCGCY,AGATCT,GGNNCC,CTGGAG,CTCCAG,CTTGAG,CTCAAG,CGATCG,GGTCTC,GAGACC,YACGTR,CCNNGG,GAATGC,GCATTC,WCCGGW,GCAATG,CATTGC,RCCGGY,GCGCGC,GAGGAG,CTCCTC,CGGCCG,CCCAGC,GCTGGG,GTGCAG,CTGCAC,CGRYCG,CGTACG,CGTCTC,GAGACG,CCATGG,TCGCGA,GDGCHC,TGTACA,TCATGA,ACATGT,GTATAC,CCWWGG,CTCTTC,GAAGAG,GCNNGC,CCRYGG,GTTAAC,RCATGY,TACGTA,RGATCY,GCGATG,CATCGC,GCAGTG,CACTGC,CCCGGG,CCGCGG,TTTAAA,GGCGGA,TCCGCC,GAGCTC,GATATC,CTGRAG,CTYCAG,CAGCAG,CTGCTG,GAATTC,ATGCAT,CATATG,GTYRAC,AAGCTT,GTNNAC,TCNNGA,CAATTG,ACGCGT,TCCRAC,GTYGGA,GCCGGC,CMGCKG,GCCGAG,CTCGGC,CTCGAG,CTGCAG,CAGCTG,GTCGAC,CTYRAG,AATATT,GATCGA,TCGATC,GACCGA,TCGGTC,WGTACW,TARCCA,TGGYTA,TCTAGA,GGATC,GATCC,TTSAA,CCWGG,GTCTC,GAGAC,GCWGC,GGNCC,CCSGG,GGTGA,TCACC,GGWCC,GCAGC,GCTGC,CCATC,GATGG,ACGGC,GCCGT,GCNGC,CCNGG,GCATC,GATGC,ACTGG,CCAGT,GGATG,CATCC,CTCAG,CTGAG,GGGAC,GTCCC,ACNGT,CTNAG,CAGTG,CACTG,GACGC,GCGTC,CCCGC,GCGGG,GANTC,CGWCG,TCNGA,CCTTC,GAAGG,GCTCC,GGAGC,GTNAC,GAAGA,TCTTC,GAGTC,GACTC,GTSAC,GAWTC,GCSGC,CASTG,ATGAA,TTCAT,ACGGA,TCCGT,CGCG,CCGC,GCGG,GTAC,AGCT,GCGC,CTAG,GATC,GGCC,CCGG,CATG,RGCY,YATR,ACGT,TGCA,CCDG,CHGG,AATT,CCTC,GAGG,TTAA,ASST,TCGA";
+  outputFileContent += crypticSequences;
+
+  const bytesSpacer2 = new Uint8Array([32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 36, 4, 32, 32, 36, 4, 32, 32, 36, 4, 32, 32, 36, 4, 32, 32, 36, 4, 32, 32, 36, 4, 32, 32, 36, 4, 17, 32, 32, 32, 45]);
+  outputFileContent += textDecoder.decode(bytesSpacer2);
+
+  /** Alignable sequences */
+  const alignableSequences = "<AlignableSequences trimStringency=\"Medium\"/>";
+  outputFileContent += alignableSequences;
+
+
+  /** Additional Sequence Properties */
+  const bytesSpacer3 = new Uint8Array([8, 32, 32, 1, 33]);
+  outputFileContent += textDecoder.decode(bytesSpacer3);
+
+  const additionalSequenceProperties = "<AdditionalSequenceProperties><UpstreamStickiness>0</UpstreamStickiness><DownstreamStickiness>0</DownstreamStickiness><UpstreamModification>FivePrimePhosphorylated</UpstreamModification><DownstreamModification>FivePrimePhosphorylated</DownstreamModification></AdditionalSequenceProperties>";
+  outputFileContent += additionalSequenceProperties;
+
+
+  /**
+   * FEATURES
+   */
+  const preFeaturesBytes = new Uint8Array([8, 32, 32, 1, 33]);
+  outputFileContent += textDecoder.decode(preFeaturesBytes);
+
+  let featuresXML = "<?xml version=\"1.0\"?><Features nextValidID=\"1\"><Feature recentID=\"0\" name=\"Feature 1\" type=\"misc_feature\" allowSegmentOverlaps=\"0\" consecutiveTranslationNumbering=\"1\"><Segment range=\"2-3\" color=\"#a6acb3\" type=\"standard\"/></Feature></Features>"
+
+
+  /** Primers */
+  const prePrimersBytes = new Uint8Array([5, 32, 32, 32, 195, 153]);
+  outputFileContent += textDecoder.decode(prePrimersBytes);
+
+  const primersXML = "<?xml version=\"1.0\"?><Primers nextValidID=\"0\"><HybridizationParams minContinuousMatchLen=\"10\" allowMismatch=\"1\" minMeltingTemperature=\"40\" showAdditionalFivePrimeMatches=\"1\" minimumFivePrimeAnnealing=\"15\"/></Primers>";
+  outputFileContent += primersXML;
+
+  /**
+   * Notes
+   */
+  const preNotesBytes = new Uint8Array([5, 32, 32, 32, 195, 153]);
+  outputFileContent += textDecoder.decode(preNotesBytes);
+
+  // Make XML
+  const doc = document.implementation.createDocument(null, 'Notes', null);
+
+  // Create elements and text nodes
+  const root = doc.documentElement;
+  const uuid = doc.createElement('UUID');
+  const type = doc.createElement('Type');
+  const confirmed = doc.createElement('ConfirmedExperimentally');
+  const created = doc.createElement('Created');
+  const lastModified = doc.createElement('LastModified');
+  const sequenceClass = doc.createElement('SequenceClass');
+  const transformedInto = doc.createElement('TransformedInto');
+
+  const uuidText = doc.createTextNode('e89dc98b-9298-45b8-8ff6-8ac8f94935f8');
+  const typeText = doc.createTextNode('Synthetic');
+  const confirmedText = doc.createTextNode('0');
+  const createdText = doc.createTextNode('2023.10.5');
+  const lastModifiedText = doc.createTextNode('2023.10.5');
+  const sequenceClassText = doc.createTextNode('UNA');
+  const transformedIntoText = doc.createTextNode('unspecified');
+
+  // Append elements and text nodes to the document
+  uuid.appendChild(uuidText);
+  type.appendChild(typeText);
+  confirmed.appendChild(confirmedText);
+  created.setAttribute('UTC', '10:40:25');
+  created.appendChild(createdText);
+  lastModified.setAttribute('UTC', '10:44:1');
+  lastModified.appendChild(lastModifiedText);
+  sequenceClass.appendChild(sequenceClassText);
+  transformedInto.appendChild(transformedIntoText);
+
+  root.appendChild(uuid);
+  root.appendChild(type);
+  root.appendChild(confirmed);
+  root.appendChild(created);
+  root.appendChild(lastModified);
+  root.appendChild(sequenceClass);
+  root.appendChild(transformedInto);
+
+  // Serialize the XML document to a string
+  const serializer = new XMLSerializer();
+
+  outputFileContent += serializer.serializeToString(doc);
+
+  /** Footer bytes */
+  const footerBytes = new Uint8Array([32, 32, 32, 32, 1, 89, 32, 32, 32, 32, 1, 32, 32, 75, 32, 32, 32, 32, 32, 32, 32, 32, 32, 3, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 25, 195, 191, 32, 100, 32, 32, 32, 32, 32, 84, 72, 79, 32, 195, 191, 195, 190, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 1, 1, 1, 1, 32, 1, 32, 69, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 1, 32, 32, 1, 195, 191, 195, 191, 195, 191, 195, 191, 1, 89, 1, 195, 180, 1, 1, 63, 32, 68, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 28, 32, 32, 32, 51, 60, 63, 120, 109, 108, 32, 118, 101, 114, 115, 105, 111, 110, 61, 34, 49, 46, 48, 34, 63, 62, 60, 69, 110, 122, 121, 109, 101, 86, 105, 115, 105, 98, 105, 108, 105, 116, 105, 101, 115, 32, 118, 97, 108, 115, 61, 34, 34, 47, 62, 32, 14, 32, 32, 32, 98, 60, 63, 120, 109, 108, 32, 118, 101, 114, 115, 105, 111, 110, 61, 34, 49, 46, 48, 34, 63, 62, 60, 67, 117, 115, 116, 111, 109, 69, 110, 122, 121, 109, 101, 83, 101, 116, 115, 62, 60, 67, 117, 115, 116, 111, 109, 69, 110, 122, 121, 109, 101, 83, 101, 116, 32, 116, 121, 112, 101, 61, 34, 50, 34, 32, 110, 97, 109, 101, 61, 34, 78, 111, 110, 101, 34, 47, 62, 60, 47, 67, 117, 115, 116, 111, 109, 69, 110, 122, 121, 109, 101, 83, 101, 116, 115, 62]);
+  outputFileContent += textDecoder.decode(footerBytes);
+
+
+  // Send for download
+  downloadFile(outputFileName, outputFileContent, outputFileExtension);
 }
 
 

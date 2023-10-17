@@ -151,6 +151,7 @@ nav ul li a {
     color: white;
     border-radius: 5px;
     text-align: center;
+    display: block;
   }
 
   #header-list-right #tm-calc-btn a:hover {
@@ -524,4 +525,50 @@ nav ul li a {
 
 .export-btn-list {
   margin: 0;
+}
+
+.save-button {
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 5px;
+  display: block;
+  text-align: center;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.save-button:hover {
+  background-color: #45a049;
+}
+
+/* Style for the dropdown content */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  border-radius: 5px;
+}
+
+.dropdown-content a {
+  color: black;
+  padding: 10px 20px;
+  text-decoration: none;
+  display: block;
+}
+
+/* Change color on hover */
+.dropdown-content a:hover {
+  background-color: #ddd;
+}
+
+.dropdown {
+  padding: 10px;
+}
+
+/* Show the dropdown when the button is hovered over */
+.dropdown:hover .dropdown-content {
+  display: block;
 }

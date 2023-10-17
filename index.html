@@ -44,12 +44,25 @@
     <div class="parent-container" id="parent-container">
         <div class="first-plasmid-container" id="first-plasmid-container">
             <div id="sidebar" class="sidebar" style="width: 25%;">
-                <ul class="export-btn-list">
-                    <li id="export-btn-dna" style="display: none;"><a href="#">Export as .dna</a></li>
-                    <li id="export-btn-gb" style="display: none;"><a href="#">Export as .gb</a></li>
-                    <li id="export-second-btn-dna" style="display: none;"><a href="#">Export Second as .dna</a></li>
-                    <li id="export-second-btn-gb" style="display: none;"><a href="#">Export Second as .gb</a></li>
-                </ul>
+
+                <div id="export-dropdown" class="dropdown" style="display: none;">
+                    <button class="save-button">Save File</button>
+                    <div class="dropdown-content">
+                      <a id="export-btn-gb" href="#">GB File</a>
+                      <a id="export-btn-dna" href="#">DNA File</a>
+                      <!-- Add more options as needed -->
+                    </div>
+                </div>
+
+                <div id="export-dropdown-second" class="dropdown" style="display: none;">
+                    <button class="save-button">Save 2nd File</button>
+                    <div class="dropdown-content">
+                      <a id="export-second-btn-gb" href="#">GB File</a>
+                      <a id="export-second-btn-dna" href="#">DNA File</a>
+                      <!-- Add more options as needed -->
+                    </div>
+                </div>
+                  
                 <div class="sidebar-content">
                     <h2 id="primers-type">Primers will appear here.</h2>
                 </div>
