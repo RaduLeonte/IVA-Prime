@@ -572,3 +572,7 @@ nav ul li a {
 .dropdown:hover .dropdown-content {
   display: block;
 }
+
+#primers-type{
+  margin-top: 0px;
+}

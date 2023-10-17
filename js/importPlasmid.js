@@ -40,17 +40,11 @@ function addExportButtonsListeners(pNr) {
   let targetDropdown = (pNr === 1) ? '#export-dropdown': '#export-dropdown-second';
   targetDropdown = document.querySelector(targetDropdown);
 
-
   let targetButtonLink1 = (pNr === 1) ? '#export-btn-gb': '#export-second-btn-gb';
   targetButtonLink1 = document.querySelector(targetButtonLink1);
-  let targetButtonLink2 = (pNr === 1) ? '#export-btn-dna': '#export-second-btn-dna';
-  targetButtonLink2 = document.querySelector(targetButtonLink2);
 
   targetDropdown.style.display = "block";
 
-  targetButtonLink2.addEventListener('click', function() {
-    exportDNAFile(pNr);
-  });
   targetButtonLink1.addEventListener('click', function() {
     exportGBFile(pNr);
   });
