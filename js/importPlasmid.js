@@ -33,6 +33,25 @@ function addImportButtonListener(pNr) {
 
 
 /**
+ * Add event listener to the export buttons
+ */
+function addExportButtonsListeners(pNr) {
+  console.log("Enabling Export Buttons", pNr)
+  let targetDropdown = (pNr === 1) ? '#export-dropdown': '#export-dropdown-second';
+  targetDropdown = document.querySelector(targetDropdown);
+
+  let targetButtonLink1 = (pNr === 1) ? '#export-btn-gb': '#export-second-btn-gb';
+  targetButtonLink1 = document.querySelector(targetButtonLink1);
+
+  targetDropdown.style.display = "block";
+
+  targetButtonLink1.addEventListener('click', function() {
+    exportGBFile(pNr);
+  });
+}
+
+
+/**
  * Handles file selection functionality.
  */
 function handleFileSelect(event) {
@@ -48,13 +67,19 @@ function handleFileSelect(event) {
 
     // Define reader
     reader.onload = function(e) {
-      const fileContent = e.target.result; // Read file content
+      let currentFileContent = e.target.result;
+      if (pNr === 1) {
+        importedFileContent1 = currentFileContent; // Read file content
+      } else {
+        importedFileContent2 = currentFileContent; // Read file content
+      }
+      
       
       // Depending on file extension pass the file content to the appropiate parser
       if (fileExtension === ".dna") {
-        parseDNAFile(fileContent, pNr);
+        parseDNAFile(currentFileContent, pNr);
       } else {
-        parseGBFile(fileContent, pNr);
+        parseGBFile(currentFileContent, pNr);
       }
       
       // Update header with filename
@@ -111,6 +136,9 @@ function handleFileSelect(event) {
 
       // Run reader
       reader.readAsText(file);
+
+      // Enable export buttons
+      addExportButtonsListeners(pNr);
     }
 };
 
@@ -183,6 +211,8 @@ function importDemoFile(pNr) {
     
   // Once the file is loaded, enable search function
   initiateSearchFunctionality(pNr);
+  // Enable export buttons
+  addExportButtonsListeners(pNr);
 };
 
 
@@ -195,6 +225,40 @@ function importDemoFile(pNr) {
  * - retain all information about the features (colour, complementary strand features)
  */
 function parseGBFile(fileContent, pNr) {
+  // Extract header
+  let currFileHeader = fileContent.substring(0, fileContent.indexOf("FEATURES")).split('\n');
+  let headerDict = {}
+  const headerNrSpaces = 12;
+  let lastAddedProperty = "";
+  let propertyCounter = 0;
+  for (l in currFileHeader) {
+    console.log("FileHeader", currFileHeader[l])
+    if (currFileHeader[l]) {
+      let propertyName = currFileHeader[l].substring(0, headerNrSpaces).trim();
+      if (propertyName !== "") {
+        const leadingSpaces = currFileHeader[l].match(/^\s*/);
+        const leadingSpacesNr = (leadingSpaces) ? leadingSpaces[0].length : 0;
+        propertyName = " ".repeat(leadingSpacesNr) + propertyName;
+        headerDict[propertyCounter] = {}
+        headerDict[propertyCounter]["name"] = propertyName;
+        headerDict[propertyCounter]["value"] = currFileHeader[l].substring(headerNrSpaces).replace("\r", "");
+        lastAddedProperty = propertyCounter;
+        propertyCounter++;
+      } else {
+        console.log("FileHeader2", lastAddedProperty, currFileHeader[l].substring(headerNrSpaces))
+        headerDict[lastAddedProperty]["value"] = "" + headerDict[lastAddedProperty]["value"] + " " + currFileHeader[l].substring(headerNrSpaces);
+        console.log("FileHeader2", headerDict[lastAddedProperty]["value"])
+      };
+    };
+  };
+
+  console.log("FileHeader", headerDict, fileContent)
+
+  if (pNr === 1) {
+    importedFileHeader1 = headerDict;
+  } else {
+    importedFileHeader2 = headerDict;
+  }
 
   /**
    * Extracts the sequence from the end of the file.
@@ -257,6 +321,9 @@ function parseGBFile(fileContent, pNr) {
         }
         currentFeature = ''; // Reset
       }
+      if (line === "ORIGIN") {
+        break;
+      }
       // Add the current line to the current feature
       currentFeature += line + '\n';
     }
@@ -266,16 +333,27 @@ function parseGBFile(fileContent, pNr) {
       featureList.push(currentFeature);
     }
     
-    
     // Iterate over the list of features and parse them into a dict
     for (const feature of featureList) {
       // Split current feature into a list of lines
-      const lines = feature.split('\n').map(line => line.trim()).filter(line => line);
+      const oldLines = feature.split('\n').map(line => line.trim()).filter(line => line);
+      let lines = [];
+      let lineToAppend = "";
+      for (l in oldLines) {
+        if(l !== 0 && oldLines[l].includes("/")) {
+          lines.push(lineToAppend);
+          lineToAppend = oldLines[l];
+        } else {
+          lineToAppend += oldLines[l];
+        }
+      }
+      lines.push(lineToAppend);
 
       // Ignore joined features for now
       if (!lines[0].includes("join")) {
         // Get feature name
         let featureName = lines[0].substring(0, lines[0].indexOf(' '));
+        const oldFeatureName = featureName;
         // If theres an identical feature in the dict, give it a different name
         let i = 0;
         while (featureName in featuresDict) {
@@ -288,9 +366,9 @@ function parseGBFile(fileContent, pNr) {
         }
         
         // Start collecting info about the feature, starting with the span
-        // Span is always on the first line, for now ignore complement spans
+        // Span is always on the first line
         const featureInfo = {
-          span: lines[0].includes('complement') ? lines[0].substring(lines[0].indexOf('complement')) : lines[0].replace(featureName, '').trim()
+          span: lines[0].includes('complement') ? lines[0].substring(lines[0].indexOf('complement')) : lines[0].replace(oldFeatureName, '').trim()
         };
       
         // Iterate over the rest of the lines and save the properties to the feature info dict
@@ -371,15 +449,26 @@ function parseDNAFile(fileContent, pNr) {
   const xmlDoc = parser.parseFromString(featuresString, 'text/xml');
   
   // Initialize dict and iterate over all feature elements in the object
-  const featuresDict = {};
+  let featuresDict = {};
   const featuresList = xmlDoc.getElementsByTagName('Feature');
   for (let i = 0; i < featuresList.length; i++) {
       const feature = featuresList[i]; // Current feature
-      const featureName = feature.getAttribute('name') + i; // Feature id
+      let featureName = feature.getAttribute('type'); // Feature id
+
+      let k = 0;
+      while (featureName in featuresDict) {
+        if (`${featureName}${k}` in featuresDict) {
+          k++;
+        } else {
+          featureName = `${featureName}${k}`;
+          break;
+        }
+      }
 
       // All the feature properties
       const featureInfo = {}
       featureInfo["label"] = feature.getAttribute('name'); // Display name
+      const spanDirectionality = feature.getAttribute('directionality');
       featureInfo["span"] = "";
       featureInfo["note"] = "";
       let spanStart = null;
@@ -397,6 +486,12 @@ function parseDNAFile(fileContent, pNr) {
               let currSpan = child.getAttribute('range').split("-"); // Get span and split into list
               // Add span to feature info
               featureInfo["span"] = currSpan[0] + ".." + currSpan[1];
+              if (spanDirectionality !== 1) {
+                featureInfo["span"] = "complement(" + featureInfo["span"] + ")";
+              }
+              // Extract color
+              featureInfo["ApEinfo_fwdcolor"] = child.getAttribute('color');
+              featureInfo["ApEinfo_revcolor"] = child.getAttribute('color');
           }
           // Nodes with the name "Q" contain:
           // feature name, "V" nodes (contains the note text or a number)
@@ -413,14 +508,15 @@ function parseDNAFile(fileContent, pNr) {
                   subNoteEntry = new DOMParser().parseFromString(subNoteEntry, 'text/html').body.textContent; // Sometimes the text contains html
               }
               // Save note to the dict
-              featureInfo["note"] += subNoteName + ": " + subNoteEntry + "; ";
+              featureInfo["note"] += subNoteName + ": " + subNoteEntry + " ";
           }
       }
+      featureInfo["note"] = featureInfo["note"].trim();
 
       // Append feature info the corresponding feature in the dict
       featuresDict[featureName] = featureInfo;
-
-  }
+  };
+  featuresDict = sortBySpan(featuresDict);
 
   // Extract the sequence and features and save it to the specified plasmid variables
   if (pNr === 1) {
@@ -433,6 +529,180 @@ function parseDNAFile(fileContent, pNr) {
       features2 = featuresDict;
   }
 }
+
+
+/**
+ * 
+ */
+function splitStringByMaxLength(inputString, maxLength) {
+  const words = inputString.split(' ');
+  const result = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    if (currentLine.length + word.length + 1 <= maxLength) {
+      if (currentLine) {
+        currentLine += ' ' + word;
+      } else {
+        currentLine = word;
+      }
+    } else {
+      result.push(currentLine);
+      currentLine = word;
+    }
+  }
+
+  if (currentLine) {
+    result.push(currentLine);
+  }
+
+  return result;
+}
+
+
+/**
+ * GB file exporter.
+ * 
+ * TO DO:
+ * - fileHeader right now is not made dynamically, will lead to problems
+ * when converting from dna to gb
+ */
+function exportGBFile(pNr) {
+  console.log("Export GB File")
+  // Output file name
+  const outputFileExtension = "gb"
+  const originalFileExtension = document.getElementById("plasmid-file-name" + pNr).innerHTML.match(/\.([0-9a-z]+)(?=[?#])|(\.)(?:[\w]+)$/i)[0].slice(1);
+  const outputFileName = document.getElementById("plasmid-file-name" + pNr).innerHTML.replace(/\.[^.]*$/, '');
+  
+  // Init variables
+  let outputFileContent = "";
+  let currLine = "";
+
+  // Select target sequence and features
+  const currSequence = (pNr === 1) ? sequence: sequence2;
+  const currFeatures = (pNr === 1) ? sortBySpan(features): sortBySpan(features2);
+
+  /**
+   * Fil header
+   */
+  let currFileHeaderDict = null;
+  // GB -> GB
+  console.log(originalFileExtension, outputFileExtension);
+  if (originalFileExtension === outputFileExtension) {
+    currFileHeaderDict = (pNr === 1) ? importedFileHeader1: importedFileHeader2;
+  // DNA -> GB, make new header
+  } else {
+    /**
+     * dict = {"0": {"name":"LOCUS","value":"[name]\t[seq length] bp"},
+     *         "1": {"name":"DEFINITION","value":"."},
+     *         }
+     */
+    currFileHeaderDict = {"0": {"name": "LOCUS", "value": outputFileName + "\t" + currSequence.length + " bp"},
+                          "1": {"name":"DEFINITION","value":"."}};
+  };
+  console.log(JSON.stringify(currFileHeaderDict));
+
+  // Apend the header
+  const headerNrSpaces = 12; // Descriptor width
+  const headerValueSpaces = 68; // Descriptor value width
+  
+  // Iterate over entries
+  const fileHeaderEntries = Object.entries(currFileHeaderDict);
+  for (const [pName, pData] of fileHeaderEntries) {
+    if (pData["name"] === "LOCUS") {
+      pData["value"] = pData["value"].replace(/\d+\s*bp/, currSequence.length + " bp");
+    }
+    console.log(`Key: [${pData["name"]}], Value: [${pData["value"]}]`);
+    let test = pData["name"] + " ".repeat(headerNrSpaces - pData["name"].length)
+    console.log("me when2:", test)
+
+    let propertyLineToAppend = splitStringByMaxLength(pData["value"].replace("\r", ""), headerValueSpaces);
+    console.log("Prop", propertyLineToAppend)
+    for (l in propertyLineToAppend) {
+      console.log("line", l, propertyLineToAppend[l])
+      let anyLiners = "";
+      if (l === "0") {
+        anyLiners = test + propertyLineToAppend[l].trim() + "\n";
+        console.log("Any liners", anyLiners)
+        outputFileContent +=  anyLiners;
+      } else {
+        outputFileContent += " ".repeat(headerNrSpaces) + propertyLineToAppend[l].trim() + "\n";
+      };
+    };
+  };
+
+
+  /**
+   * File features
+   */
+  const featureTitleShift = 5;
+  const featureTitleWidth = 16;
+  const featureValueWidth = 58;
+  outputFileContent += "FEATURES             Location/Qualifiers\n";
+  const entries = Object.entries(currFeatures);
+  for (const [key, value] of entries) {
+    if (key !== "LOCUS") {
+      console.log(`Key: ${key}, Value: ${value}`);
+      const featureName = key.replace(/\d+$/, '');
+      outputFileContent += " ".repeat(featureTitleShift) + featureName + " ".repeat(featureTitleWidth - featureName.length) + value["span"] + "\n";
+      const featureInfo = Object.entries(value);
+      for (const [propertyName, propertyValue] of featureInfo) {
+        if (propertyName !== "span") {
+          let featureToAppend = "/" + propertyName + "=\"" + propertyValue + "\"";
+          for (let i = 0; i < featureToAppend.length; i += featureValueWidth) {
+            outputFileContent += " ".repeat(featureTitleWidth + featureTitleShift) + featureToAppend.slice(i, i + featureValueWidth) + "\n";
+          }
+        };
+      };
+    };
+  };
+
+
+  /**
+   * File sequence
+   */
+  outputFileContent += "ORIGIN\n";
+  let seqIndex = 1;
+  let lastIndex = Math.floor(currSequence.length / 60) * 60 + 1;
+  while (currSequence.slice(seqIndex)) {
+    currLine = "";
+    currLine +=  " ".repeat(lastIndex.toString().length + 1 - seqIndex.toString().length) + seqIndex
+
+    for (let i = 0; i < 6; i++) {
+      currLine += " " + currSequence.slice(seqIndex - 1 + i*10, seqIndex - 1 + i*10 + 10).toLowerCase();
+    }
+
+    outputFileContent += currLine + "\n";
+    seqIndex += 60;
+  };
+  outputFileContent += "//";
+
+  // Send for download
+  downloadFile(outputFileName, outputFileContent, outputFileExtension);
+}
+
+
+/**
+ * Download file.
+ */
+function downloadFile(downloadFileName, downloadFileContent, downloadFileType) {
+  // Create a Blob
+  const blob = new Blob([downloadFileContent], { type: "text/plain" });
+  const blobURL = URL.createObjectURL(blob);
+
+  // Create a download link
+  const downloadLink = document.createElement("a");
+  downloadLink.href = blobURL;
+  downloadLink.download = downloadFileName + "." + downloadFileType; // File name
+  document.body.appendChild(downloadLink);
+  downloadLink.style.display = "none";
+
+  // Start the download
+  downloadLink.click();
+
+  // Clean up by revoking the Blob URL once the download is complete
+  URL.revokeObjectURL(blobURL);
+};
 
 
 /**
@@ -523,8 +793,8 @@ function checkAnnotationOverlap(inputFeatures, pNr) {
     if (value.span && !key.includes("source")) { // Exclude source
 
       // Get the current span and push it to the spans list
-      value.span = removeNonNumeric(value.span);
-      const range = value.span.split("..").map(Number);
+      const spanList = removeNonNumeric(value.span);
+      const range = spanList.split("..").map(Number);
       const rangeStart = range[0];
       const rangeEnd = range[1];
       spansList.push([rangeStart, rangeEnd])
@@ -667,17 +937,18 @@ function makeContentGrid(pNr, callback) {
     }
     
     // Iterate over the features and create the annotatations
+    console.log("Here6", currFeatures)
     Object.entries(currFeatures).forEach(([key, value]) => {
       if (value.span && !key.includes("source")) { // If the feature includes a span and is not "source"
         // Get the current feature's span
-        value.span = removeNonNumeric(value.span);
-        const range = value.span.split("..").map(Number);
+        const spanList = removeNonNumeric(value.span);
+        const range = spanList.split("..").map(Number);
         const rangeStart = range[0];
         const rangeEnd = range[1];
-
-        console.log(value.label, rangeStart + ".." + rangeEnd)
+        const annotText = (value.label) ? value.label: key;
+        console.log(annotText, rangeStart + ".." + rangeEnd)
         // Make the annotation at the specified indices
-        makeAnnotation(rangeStart - 1, rangeEnd - 1, value.label, key, pNr, currGridStructure); 
+        makeAnnotation(rangeStart - 1, rangeEnd - 1, annotText, key, pNr, currGridStructure); 
       }
     });
 
@@ -712,7 +983,7 @@ function makeAnnotation(rStart, rEnd, text, featureId, pNr, currGridStructure) {
   let row = (Math.floor(rStart / gridWidth)) * currGridStructure.length;
   let col = rStart - (row/currGridStructure.length)*gridWidth;
   row += currGridStructure.indexOf("Annotations");
-  console.log("here", rStart, row, currGridStructure.length, gridWidth, col)
+  console.log("here", text, rStart, row, currGridStructure.length, gridWidth, col)
 
   // Annotaiton span length
   const annotationSpan = rEnd - rStart;
@@ -1029,8 +1300,8 @@ function featureTranslation(pNr) {
   // Iterate over features and start the translation at the beginning of its span
   Object.entries(currFreatures).forEach(([key, value]) => {
     if (value.span && !key.includes("source")) {
-      value.span = removeNonNumeric(value.span);
-      const range = value.span.split("..").map(Number);
+      const spanList = removeNonNumeric(value.span);
+      const range = spanList.split("..").map(Number);
       const rangeStart = range[0];
       const rangeEnd = range[1];
       startTranslation(rangeStart, pNr);
