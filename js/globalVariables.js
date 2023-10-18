@@ -129,6 +129,12 @@ let aminoAcidSequenceInput = '';
 
 
 /**
+ * getTm
+ */
+let isSettingsWindowVisible = false;
+
+
+/**
  * tableHover 
  */
 // 
