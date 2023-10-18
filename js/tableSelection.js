@@ -53,7 +53,7 @@ function addCellSelection(tableId, containerId, pNr) {
   sequenceGridTable.addEventListener('mousedown', function (event) {
     if (event.button === 0) { // Check for left click
       // Clear the previous selection
-      clearSelection(pNr, True);
+      clearSelection(pNr, true);
       // Record where the selection started
       if (pNr === 1) {
         selectionStartPos = basePosition;
@@ -177,7 +177,7 @@ function addCellSelection(tableId, containerId, pNr) {
         endCellIndex = selectionEndCell[1];
 
         // Clear the previous selection
-        clearSelection(pNr, False);
+        clearSelection(pNr, false);
 
         //console.log("Iterating from: " + startRowIndex + ", " + startCellIndex);
         //console.log("To: " + endRowIndex + ", " + endCellIndex);
@@ -278,11 +278,26 @@ function addCellSelection(tableId, containerId, pNr) {
     } else {
       currSelectedText = selectedText2;
     }
-
     // Check if we've actually clicked ctrl+c and we have text selected
-    if (event.ctrlKey && event.key === 'c' && currSelectedText !== '') {
-      event.preventDefault(); // Prevent default copy behaviour
-      copyToClipboard(currSelectedText);
+    if ((event.ctrlKey || event.metaKey) && event.key === 'c' && currSelectedText !== '') {
+      event.preventDefault(); // Prevent default copy behavior
+
+      // Create a temporary textarea element to copy text to clipboard
+      const tempTextArea = document.createElement('textarea');
+      tempTextArea.value = currSelectedText;
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+
+      try {
+        // Execute the copy command
+        document.execCommand('copy');
+        console.log('Copied to clipboard:', currSelectedText);
+      } catch (err) {
+        console.error('Unable to copy to clipboard:', err);
+      } finally {
+        // Remove the temporary textarea element
+        document.body.removeChild(tempTextArea);
+      }
     }
   });
 
