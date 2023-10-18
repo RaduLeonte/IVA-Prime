@@ -95,7 +95,7 @@ gridStructure= gridStructure2 = ["Forward Strand",
                                 "Amino Acids",
                                 "Annotations",
                                 "Spacer"];
-const gridWidth = 60; // Amount of cells per row
+let gridWidth = 60; // Amount of cells per row
 // Store content of imported file
 let importedFileHeader1 = null;
 let importedFileHeader2 = null;
@@ -126,12 +126,6 @@ let secondPlasmidImported = false;
 let preferredOrganism = (getUserPreference("preferredOrganism")) ? getUserPreference("preferredOrganism") : "Escherichia coli";
 let dnaSequenceInput = '';
 let aminoAcidSequenceInput = '';
-
-
-/**
- * getTm
- */
-let isSettingsWindowVisible = false;
 
 
 /**
