@@ -4,9 +4,6 @@
  * sequence - primer of interest
  * c - primer concentration in M
  * m - salt concentration in M
- * 
- * TO DO:
- * - 
  */
 function get_tm(sequence, c, m) {
 

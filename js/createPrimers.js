@@ -7,12 +7,6 @@
  * templateColor - background color of template part
  * homoColor - background color of homologous part
  * mutSeq - additional sequence for mutations
- * 
- * TO DO:
- * - group <p>s into div
- * - save to dict so they can be used later to generate a protocol?
- * - use a loop to create the two primers and change structure of primersList to nested list and maybe
- * make a dict to combine with colors
  */
 function displayPrimers(primersType, primersDict) {
     const sidebarContentDiv = document.querySelector('.sidebar-content'); // Select sidebar
@@ -185,7 +179,6 @@ function primerExtension(startingPos, targetStrand, direction, targetTm, minLeng
  * inputAA - amino acid sequence to optimize
  * 
  * TO DO:
- * - add options to optimize the AA sequence for a specific organism
  */
 function optimizeAA(inputAA, targetOrganism) {
     /**
@@ -339,7 +332,6 @@ function optimizeAA(inputAA, targetOrganism) {
  * 
  * TO DO:
  * - check at which point the tool should just recommend a long piece of dsDNA to order and use as a subcloning target
- * - fix the feature updater and maybe make a function of it
  */
 function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  replaceStartPos, replaceEndPos) {
     // Define operation type
@@ -455,9 +447,6 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
 
  * 
  * deletionStartPos, deletionEndPos - indices of the segment to be deleted
- * 
- * TO DO:
- * - 
  */
 function createDeletionPrimers(deletionStartPos, deletionEndPos) {
     // Swap indices so start is always the smaller index
@@ -545,9 +534,6 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
  *             reverse vector template binding region
  * 
  * subcloningStartPos, subcloningEndPos - indices of the segment to be subcloned into the second plasmid
- * 
- * TO DO:
- * - 
  */
 function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
     // Initialise variables
@@ -729,9 +715,6 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
  * newFeatureSequence - sequence of the new feature to be inserted (or "" in the case of deletions)
  * segmentStartPos, segmentEndPos - indices deliminating the span of the new feature (equal in the case of pure insertions)
  * pNr - number of the target plasmid to be updated
- * 
- * TO DO:
- * - 
  */
 function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, segmentEndPos, featureShift, pNr) {
     // Update the sequence and features

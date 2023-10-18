@@ -222,7 +222,6 @@ function importDemoFile(pNr) {
  * 
  * TO DO:
  * - fix joined features
- * - retain all information about the features (colour, complementary strand features)
  */
 function parseGBFile(fileContent, pNr) {
   // Extract header
@@ -405,10 +404,6 @@ function parseGBFile(fileContent, pNr) {
 
 /**
  * Snapgene file parser.
- * 
- * 
- * TO DO:
- * - try more dna files to make sure parses works
  */
 function parseDNAFile(fileContent, pNr) {
   // File needs to be read as byte stream
@@ -562,10 +557,6 @@ function splitStringByMaxLength(inputString, maxLength) {
 
 /**
  * GB file exporter.
- * 
- * TO DO:
- * - fileHeader right now is not made dynamically, will lead to problems
- * when converting from dna to gb
  */
 function exportGBFile(pNr) {
   console.log("Export GB File")
