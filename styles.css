@@ -616,3 +616,17 @@ nav ul li a {
 .standard-btn-a:hover {
   background-color: #45a049;
 }
+
+#Forward\ Strand {
+  border-bottom: 3px solid gray;
+}
+
+
+:root {
+  --triangle-height: 16px;
+  --triangle-width: 8px;
+}
+
+.triangle-cell {
+  padding: 0px !important;
+}
