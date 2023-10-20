@@ -29,7 +29,7 @@ function addScrollingEffectToFeatureTable(tableId, containerId) {
       cells.forEach((cell) => {
         if (cell.textContent === label) {
           desiredCell = cell;
-        }
+        };
       });
     
       // Scroll the "file-content" div to the desired cell
@@ -38,8 +38,8 @@ function addScrollingEffectToFeatureTable(tableId, containerId) {
           behavior: 'smooth',
           block: 'nearest',
         });
-      }
-    }
+      };
+    };
       
   
     // Listeners are added once the sidebar is populated after plasmid import
@@ -50,16 +50,16 @@ function addScrollingEffectToFeatureTable(tableId, containerId) {
           for (const node of addedNodes) {
             if (node.nodeName === 'TR') {
               node.addEventListener('click', scrollToCell);
-            }
-          }
-        }
-      }
+            };
+          };
+        };
+      };
     });
   
     // Start observing the sidebar table for changes
     observer.observe(sidebarTable, { childList: true, subtree: true });
   });
-}
+};
 
 
 // Enables the effect for both plasmids
