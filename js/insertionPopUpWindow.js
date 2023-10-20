@@ -96,7 +96,7 @@ function showPopupWindow(headerText) {
 
   const popupWindowHeader = document.getElementById('popUpWindowHeader');
   popupWindowHeader.innerText = headerText;
-}
+};
 
 
 /**
@@ -105,7 +105,7 @@ function showPopupWindow(headerText) {
 function hidePopupWindow() {
   const popupWindow = document.querySelector('.popup-window');
   popupWindow.style.display = 'none';
-}
+};
 
 
 /**
@@ -115,8 +115,8 @@ function positionContextMenu(clientX, clientY) {
   const contextMenu = document.querySelector('.custom-context-menu');
   contextMenu.style.left = clientX + 'px';
   contextMenu.style.top = clientY + 'px';
-  contextMenu.style.display = 'block';
-}
+  //contextMenu.style.display = 'block';
+};
 
 
 /**
@@ -135,6 +135,6 @@ function updateOrganismSelectorDefault() {
     } else {
       // Deselect any other options
       option.selected = false;
-    }
-  }
-}
+    };
+  };
+};
