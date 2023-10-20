@@ -710,7 +710,7 @@ function createSideBar(pNr) {
   } else {
     currFeatures = features2;
     sidebarTable = document.getElementById('sidebar-table2');
-  }
+  };
 
   // Set table headers
   sidebarTable.innerHTML = `
@@ -756,10 +756,9 @@ function createSideBar(pNr) {
   
       // Append the row to the table
       sidebarTable.appendChild(row);
-    }
-    
-  }
-}
+    };
+  };
+};
 
 
 /**  
@@ -768,7 +767,7 @@ function createSideBar(pNr) {
 function removeNonNumeric(inputString) {
   const cleanedString = inputString.replace(/[^\d.]/g, '');
   return cleanedString;
-}
+};
 
 
 /**
@@ -776,6 +775,7 @@ function removeNonNumeric(inputString) {
  * Also changes the gridstructure if more rows are needed for annotations.
  */
 function checkAnnotationOverlap(inputFeatures, pNr) {
+  console.log("Grid structures before:", gridStructure);
   let maximumOverlap = 0;
   
   // Iterate over all features and add their spans to a list
@@ -789,7 +789,7 @@ function checkAnnotationOverlap(inputFeatures, pNr) {
       const rangeStart = range[0];
       const rangeEnd = range[1];
       spansList.push([rangeStart, rangeEnd])
-    }
+    };
   });
 
   // Check each span against the rest
@@ -809,49 +809,54 @@ function checkAnnotationOverlap(inputFeatures, pNr) {
         } else if (endA >= startB && endA <= endB) {
           console.log("++")
           currentOverlap++;
-        }
-      }
-    }
+        };
+      };
+    };
 
     // IF a new maximum overlap was found, replace the previous one
     if (currentOverlap > maximumOverlap) {
       maximumOverlap = currentOverlap;
-    }
-  }
+    };
+  };
   // Increase once more for good measure
   maximumOverlap++;
 
   // Adjust the grid structure according to maximumOverlap
   let count = 0;
+  let listInsertPos = 0;
   if (pNr === 1) { // First plasmid
     // Count how many rows are already dedicated to annotations
     for (let i = 0; i < gridStructure.length; i++) {
       if (gridStructure[i] === "Annotations") {
         count++;
-      }
-    }
+      };
+    };
     
+    listInsertPos = gridStructure.indexOf("Annotations");
     // If more rows are needed, append them
     if (count !== maximumOverlap) {
       for (let i = 0; i < maximumOverlap - count; i++) {
-        gridStructure.push("Annotations")
-      }
-    }
+        gridStructure.splice(listInsertPos, 0 , "Annotations")
+        console.log("Grid structures:", i, gridStructure);
+      };
+    };
   } else { // Same as for the first plasmid
     for (let i = 0; i < gridStructure2.length; i++) {
       if (gridStructure2[i] === "Annotations") {
         count++;
-      }
-    }
-      
+      };
+    };
+    
+    listInsertPos = gridStructure.indexOf("Annotations");
     if (count !== maximumOverlap) {
       for (let i = 0; i < maximumOverlap - count; i++) {
-        gridStructure2.push("Annotations")
-      }
-    }
-  }
-  return
-}
+        gridStructure2.splice(listInsertPos, 0 , "Annotations")
+      };
+    };
+  };
+  console.log("Grid structures after:", gridStructure, listInsertPos, maximumOverlap);
+  return;
+};
 
 
 // Creat the content table grid
@@ -880,7 +885,7 @@ function makeContentGrid(pNr, callback) {
       currFeatures = features2;
       sequenceGrid = document.getElementById('sequence-grid2');
       currGridStructure = gridStructure2;
-    }
+    };
 
     // Check the annotation overlap to see if the grid structure has enough "Annotations" rows
     checkAnnotationOverlap(currFeatures, pNr);
@@ -899,7 +904,7 @@ function makeContentGrid(pNr, callback) {
       // If the row doesn't exist, create a new one
       if (!row) {
         row = sequenceGrid.insertRow(i);
-      } 
+      } ;
       // Populate the sequence cells with the corresponding base
       for (let j = 0; j < gridWidth; j++) {
         const cell = document.createElement('td'); // Create the cell
@@ -910,11 +915,11 @@ function makeContentGrid(pNr, callback) {
           currentChar = currSequence[linesCreated*gridWidth + j] // Add the corrseponding char
         } else if ((i + 1) % currGridStructureLength === 2) {// If we're on the comlpementary strand
           currentChar = currComplementarySequence[linesCreated*gridWidth + j]
-        }
+        };
         // If we've run out of bases to add add nothing
         if (!currentChar) {
           currentChar = ""
-        }
+        };
 
         // Insert the base to the cell's text content
         cell.textContent = currentChar;
@@ -924,8 +929,8 @@ function makeContentGrid(pNr, callback) {
         cell.classList.add(currGridStructure[i % currGridStructureLength].replace(" ", ""));
         // Append the cell to the row
         row.appendChild(cell);
-      }
-    }
+      };
+    };
     
     // Iterate over the features and create the annotatations
     //console.log("Here6", currFeatures)
@@ -1039,7 +1044,7 @@ function makeContentGrid(pNr, callback) {
       callback();
     };
   }, 1);
-}
+};
 
 
 /**
@@ -1070,7 +1075,7 @@ function makeAnnotation(rStart, rEnd, text, featureId, annotationColor, pNr, cur
     // If the feature spans multiple lines, add "..." to the beginning of the feature
     if (i != 0) {
         text = "..." + text.replace("...", "");
-    }
+    };
 
     // Merge the corresponding cells to draw the annoation
     if (col + currentSpan >= gridWidth) {
@@ -1103,11 +1108,11 @@ function makeAnnotation(rStart, rEnd, text, featureId, annotationColor, pNr, cur
       mergeCells(row, col, 1, currentSpan + 1, text, featureId, annotationColor, pNr, currGridStructure);
       // Set carry over to 0 to signify that we're done
       carryOver = 0;
-    }
+    };
     // Increment iteration counter
     i++;
-  }
-}
+  };
+};
 
 
 /**
@@ -1124,7 +1129,7 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
     table = document.getElementById('sequence-grid');
   } else {
     table = document.getElementById('sequence-grid2');
-  }
+  };
 
   // Adjust row and col
   let occupiedCellsList = [];
@@ -1141,11 +1146,11 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
           occupiedCellsCounter++;
           for (let i = 0; i <  currColSpan; i++) {
             occupiedCellsList.push(true);
-          }
+          };
         } else {
           occupiedCellsList.push(false);
-        }
-      }
+        };
+      };
       
       console.log(col, col+colspan-1, row, occupiedCellsList);
       if (occupiedCellsList.slice(col, col + colspan - 1).every(value => value !== true)) {
@@ -1154,9 +1159,9 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
       } else {
         console.log("Try next row.")
         row++;
-      }
-    }
-  }
+      };
+    };
+  };
   
   let nrOccupiedCells = occupiedCellsList.slice(0, col).filter(value => value === true).length;
   console.log("nrOccupiedCells ", nrOccupiedCells, occupiedCellsList.slice(0, col))
@@ -1164,7 +1169,7 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
   console.log("Zamboni", nrOccupiedCells, occupiedCellsList.length)
   if (nrOccupiedCells === occupiedCellsList.length-1){
     row++;
-  }
+  };
 
   // Adjust row and col
   occupiedCellsList = [];
@@ -1181,11 +1186,11 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
           occupiedCellsCounter++;
           for (let i = 0; i <  currColSpan; i++) {
             occupiedCellsList.push(true);
-          }
+          };
         } else {
           occupiedCellsList.push(false);
-        }
-      }
+        };
+      };
       
       console.log(col, col+colspan-1, row, occupiedCellsList);
       if (occupiedCellsList.slice(col, col + colspan - 1).every(value => value !== true)) {
@@ -1194,9 +1199,9 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
       } else {
         console.log("Try next row.")
         row++;
-      }
-    }
-  }
+      };
+    };
+  };
 
   nrOccupiedCells = occupiedCellsList.slice(0, col).filter(value => value === true).length;
   console.log("nrOccupiedCells2 ", nrOccupiedCells, occupiedCellsList.slice(0, col))
@@ -1206,7 +1211,7 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
   if (nrOccupiedCells !== 0) {
     col -= nrOccupiedCells;
     col += occupiedCellsCounter;
-  }
+  };
   console.log("Merge cells2: ", row, col, colspan, text)
   let mainCell = table.rows[row].cells[col];
   mainCell.rowSpan = rowspan;
@@ -1218,11 +1223,11 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
       text = "";
       for (let l = 0; l < colspan; l++) {
         text += ".";
-      }
+      };
     } else {
       text = text.slice(0, colspan - 3).replace(/\./g, "") + "...";
-    }
-  }
+    };
+  };
   const textNode = document.createTextNode(text);
   mainCell.appendChild(textNode);
   mainCell.style.textAlign = 'center';
@@ -1234,8 +1239,8 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
     const cell = table.rows[row].cells[j - k];
     cell.parentNode.removeChild(cell);
     k++;
-  }
-}
+  };
+};
 
 
 /**
@@ -1249,7 +1254,8 @@ function generateRandomUniqueColor() {
   const randomColor = remainingColors[randomIndex];
 
   return randomColor;
-}
+};
+
 
 /**
  * Function that translates the input codon into its corresponding amino acid.
@@ -1280,7 +1286,7 @@ function translateCodon(codon) {
   };
 
   return codonTable[codon] || '';
-}
+};
 
 
 /**
@@ -1330,10 +1336,10 @@ function promoterTranslation(pNr) {
     while (index !== -1) {
       indices.push(index);
       index = string.indexOf(substring, index + 1);
-    }
+    };
   
     return indices;
-  }
+  };
 
   // Select the correct sequence to search
   let currSequence = "";
@@ -1341,7 +1347,7 @@ function promoterTranslation(pNr) {
     currSequence = sequence;
   } else {
     currSequence = sequence2;
-  }
+  };
 
   // Iterate over the promotes, finds a list of indices for all the positions where it can be found
   // then starts the translation at the first ATG it finds from there.
@@ -1369,7 +1375,7 @@ function featureTranslation(pNr) {
   } else {
     currSequence = sequence2;
     currFreatures = features2;
-  }
+  };
 
   // Iterate over features and start the translation at the beginning of its span
   Object.entries(currFreatures).forEach(([key, value]) => {
