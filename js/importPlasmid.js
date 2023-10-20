@@ -1062,7 +1062,7 @@ function makeContentGrid(pNr, callback) {
  * 
  * TO DO:
  * - at the moment it is very slow, maybe find a better way
- * - use the feature's color from the file instead of giving it a random one every time
+ * - !!find a way to make this rescale on window resize
  */
 function makeAnnotation(rStart, rEnd, text, featureId, annotationColor, pNr, currGridStructure) {
 
@@ -1413,7 +1413,7 @@ function seqIndexToCoords(inputIndex, targetRow, currGridStructure) {
  * Starts a translation at the specified position and populates the amino acid row with the translation.
  * 
  * TO DO:
- * - allow translation to loop over to the beginning of the plasmid
+ * - add an option to start translating immediately or inside selected text
  */
 function startTranslation(codonPos, pNr) {
   // Select the corresponding features and sequence

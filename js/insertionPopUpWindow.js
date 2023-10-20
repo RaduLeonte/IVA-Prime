@@ -37,10 +37,10 @@ document.addEventListener('DOMContentLoaded', function () {
     let newOption = new Option(organismsList[i],organismsList[i]);
     if (organismsList[i] === preferredOrganism) {
       newOption.setAttribute('selected','selected');
-    }
+    };
     select.add(newOption,undefined);
     console.log("Selector: ", organismsList[i])
-  }
+  };
 
   // Button listeners
   popupWindow.addEventListener('click', function (event) {
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function () {
         createReplacementPrimers(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, insertionPosition);
       } else {
         createReplacementPrimers(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, selectionStartPos, selectionEndPos);
-      }
+      };
       
       // Clear the text inputs
       document.getElementById('dna-sequence-input').value = '';
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (event.target.id === 'cancel-button') {
       // Hide the popup window
       hidePopupWindow();
-    }
+    };
   });
 
   // On window resize, reposition the window
