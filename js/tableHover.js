@@ -26,12 +26,12 @@ function addHoverPopupToTable(tableId, pNr) {
         popup.textContent = basePosition !== -1 ? basePosition + " (" + rowIndex + ", " + cellIndex + ")" : "";
       } else {
         popup.textContent = basePosition2 !== -1 ? basePosition2 + " (" + rowIndex + ", " + cellIndex + ")" : "";
-      }
+      };
       
       // Append the popup and position it accordingly
       document.body.appendChild(popup);
       positionPopup(popup, event.clientX, event.clientY);
-    }
+    };
   });
 
 
@@ -51,14 +51,14 @@ function addHoverPopupToTable(tableId, pNr) {
           basePosition = ((event.target.parentNode.rowIndex - event.target.parentNode.rowIndex % gridStructure.length) / gridStructure.length) * gridWidth + event.target.cellIndex + 1;
         } else {
           basePosition2 = ((event.target.parentNode.rowIndex - event.target.parentNode.rowIndex % gridStructure2.length) / gridStructure2.length) * gridWidth + event.target.cellIndex + 1;
-        }
+        };
       } else { // Right side
         if (pNr === 1) {
           basePosition = ((event.target.parentNode.rowIndex - event.target.parentNode.rowIndex % gridStructure.length) / gridStructure.length) * gridWidth + event.target.cellIndex + 2;
         } else {
           basePosition2 = ((event.target.parentNode.rowIndex - event.target.parentNode.rowIndex % gridStructure2.length) / gridStructure2.length) * gridWidth + event.target.cellIndex + 2;
-        }
-      }
+        };
+      };
 
       // Update the text content and mvoe the popup into position
       const popup = document.querySelector('.hover-popup');
@@ -69,9 +69,9 @@ function addHoverPopupToTable(tableId, pNr) {
         } else {
           popup.textContent = basePosition2 !== -1 ? basePosition2 + " (" + event.target.parentNode.rowIndex + ", " + event.target.cellIndex + ")" : "";
           positionPopup(popup, event.clientX, event.clientY);
-        }
-      }
-    }
+        };
+      };
+    };
   });
 
 
@@ -81,16 +81,15 @@ function addHoverPopupToTable(tableId, pNr) {
     
     if (popup) {
       document.body.removeChild(popup);
-    }
+    };
 
     if (pNr === 1) {
       basePosition = -1;
     } else {
       basePosition2 = -1;
-    }
+    };
   });
-
-}
+};
 
 
 /**
@@ -112,7 +111,7 @@ function positionPopup(popup, clientX, clientY) {
   popup.style.left = left + 'px';
   popup.style.top = top + 'px';
   popup.style.zIndex = '3';
-}
+};
 
 
 /**
@@ -124,9 +123,9 @@ function waitForTableToExist(tableId, callback) {
     if (table) {
       clearInterval(checkTableExistence);
       callback();
-    }
+    };
   }, 100); // Check for table existence every 100ms
-}
+};
 
 
 // Listeners waiting for the tables to exist before enabling the cursor hover hint
