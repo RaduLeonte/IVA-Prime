@@ -306,7 +306,6 @@ nav ul li a {
   }
   
   .sequence-grid td {
-    border: 0px solid #ccc;
     padding: 5px;
     text-align: center;
     font-family: monospace;
@@ -617,10 +616,9 @@ nav ul li a {
   background-color: #45a049;
 }
 
-#Forward\ Strand {
-  border-bottom: 3px solid gray;
+.forward-strand-base {
+  border-bottom: 3px solid gray !important;
 }
-
 
 :root {
   --triangle-height: 16px;
