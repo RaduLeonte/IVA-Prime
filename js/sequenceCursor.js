@@ -26,7 +26,7 @@ function addCellBorderOnHover(tableId, containerId, pNr) {
     // Run observer
     observer.observe(document.documentElement, { childList: true, subtree: true });
     return;
-  }
+  };
 
   let previousCell = null; // Previously hovered cell
   // Event listener for mouse movements
@@ -40,10 +40,10 @@ function addCellBorderOnHover(tableId, containerId, pNr) {
       if (previousCell) {
         previousCell.style.borderLeft = '';
         previousCell.style.borderRight = '';
-      }
+      };
       // Update the cell tracker
       previousCell = cell;
-    }
+    };
 
     // If the cursor has changed cells
     if (previousCell) {
@@ -66,8 +66,8 @@ function addCellBorderOnHover(tableId, containerId, pNr) {
       } else {
         previousCell.style.borderRight = '2px solid red';
         previousCell.style.borderLeft = '';
-      }
-    }
+      };
+    };
   });
 
   // If the mouse leaves the table, deselect
@@ -77,9 +77,9 @@ function addCellBorderOnHover(tableId, containerId, pNr) {
       previousCell.style.borderLeft = '';
       previousCell.style.borderRight = '';
       previousCell = null;
-    }
+    };
   });
-}
+};
 
 
 // Enable the sequence cursosr

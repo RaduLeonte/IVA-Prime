@@ -1,5 +1,8 @@
 /**
  * Add search functionality for the sequence grid.
+ * 
+ * TO DO:
+ * - 
  */
 function initiateSearchFunctionality(pNr) {
     // Select the search bar element
@@ -8,7 +11,7 @@ function initiateSearchFunctionality(pNr) {
         customSearchInput = document.getElementById('custom-search-input');
     } else {
         customSearchInput = document.getElementById('custom-search-input2');
-    }   
+    };  
 
     // Event listener for ctrl F or cmd F
     document.addEventListener('keydown', function(event) {
@@ -18,7 +21,7 @@ function initiateSearchFunctionality(pNr) {
                 searchEnabled = customSearchEnabledFirstPlasmid;
             } else {
                 searchEnabled = customSearchEnabledSecondPlasmid;
-            }
+            };
             
             if (!searchEnabled) {
                 event.preventDefault(); // Prevent default search functionality
@@ -36,7 +39,7 @@ function initiateSearchFunctionality(pNr) {
                     customSearchEnabledFirstPlasmid = true;
                 } else {
                     customSearchEnabledSecondPlasmid = true;
-                }
+                };
             } else { // Disable
                 event.preventDefault();
                 resetTableCells(pNr);
@@ -45,9 +48,9 @@ function initiateSearchFunctionality(pNr) {
                     customSearchEnabledFirstPlasmid = false;
                 } else {
                     customSearchEnabledSecondPlasmid = false;
-                }
-            }
-        }
+                };
+            };
+        };
     });
 
     /**
@@ -60,14 +63,14 @@ function initiateSearchFunctionality(pNr) {
             table = document.getElementById("sequence-grid");
         } else {
             table = document.getElementById("sequence-grid2");
-        }
+        };
         
         // Find all cells with the "selected-cell-search" class and remove it
         const cells = table.getElementsByClassName("selected-cell-search");
         while (cells.length > 0) {
             cells[0].classList.remove("selected-cell-search");
-        }
-    }
+        };
+    };
 
     /**
      * Scroll to the next selected cell
@@ -79,7 +82,7 @@ function initiateSearchFunctionality(pNr) {
             table = document.getElementById("sequence-grid");
         } else {
             table = document.getElementById("sequence-grid2");
-        }
+        };
 
         // Make a list of all selected cells
         const selectedCells = Array.from(table.getElementsByClassName("selected-cell-search"));
@@ -100,10 +103,10 @@ function initiateSearchFunctionality(pNr) {
                 
                 if (nextCell) {
                     nextCell.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
-                }
-            }
-        }
-    }
+                };
+            };
+        };
+    };
       
 
     /**
@@ -130,7 +133,7 @@ function initiateSearchFunctionality(pNr) {
             currSequence = sequence2;
             currSequenceComp = complementaryStrand2;
             currGridStructure = gridStructure2;
-        }
+        };
 
         // If the query is not empty
         if (searchQuery) {
@@ -145,7 +148,7 @@ function initiateSearchFunctionality(pNr) {
                     workingQuery = searchQueryComplement;
                 };
                 // Get a list of indices for all occurences of the search query
-                highlightOccurences(pNr, i, workingSequence, workingQuery, currGridStructure, "selected-cell-search", null)
+                highlightOccurences(pNr, i, workingSequence, workingQuery, currGridStructure, "selected-cell-search", null);
             };
 
             // Scroll to the nearest occurence of the search query

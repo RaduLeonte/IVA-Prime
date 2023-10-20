@@ -39,16 +39,20 @@ function addExportButtonsListeners(pNr) {
   console.log("Enabling Export Buttons", pNr)
   let targetDropdown = (pNr === 1) ? '#export-dropdown': '#export-dropdown-second';
   targetDropdown = document.querySelector(targetDropdown);
+  targetDropdown.style.display = "block";
 
   let targetButtonLink1 = (pNr === 1) ? '#export-btn-gb': '#export-second-btn-gb';
   targetButtonLink1 = document.querySelector(targetButtonLink1);
-
-  targetDropdown.style.display = "block";
+  let targetButtonLink2 = (pNr === 1) ? '#export-btn-dna': '#export-second-btn-dna';
+  targetButtonLink2 = document.querySelector(targetButtonLink2);
 
   targetButtonLink1.addEventListener('click', function() {
     exportGBFile(pNr);
   });
-}
+  targetButtonLink2.addEventListener('click', function() {
+    exportDNAFile(pNr);
+  });
+};
 
 
 /**
@@ -485,9 +489,8 @@ function parseDNAFile(fileContent, pNr) {
                 featureInfo["span"] = "complement(" + featureInfo["span"] + ")";
               };
               // Extract color
-              featureInfo["ApEinfo_fwdcolor"] = child.getAttribute('color');
-              featureInfo["ApEinfo_revcolor"] = child.getAttribute('color');
-          }
+              featureInfo["color"] = child.getAttribute('color');
+          };
           // Nodes with the name "Q" contain:
           // feature name, "V" nodes (contains the note text or a number)
           if (childName === "Q") {
@@ -503,7 +506,7 @@ function parseDNAFile(fileContent, pNr) {
                   subNoteEntry = new DOMParser().parseFromString(subNoteEntry, 'text/html').body.textContent; // Sometimes the text contains html
               }
               // Save note to the dict
-              featureInfo["note"] += subNoteName + ": " + subNoteEntry + " ";
+              featureInfo[subNoteName] = subNoteEntry;
           }
       }
       featureInfo["note"] = featureInfo["note"].trim();
@@ -670,7 +673,326 @@ function exportGBFile(pNr) {
 
   // Send for download
   downloadFile(outputFileName, outputFileContent, outputFileExtension);
-}
+};
+
+
+/**
+ * DNA file exporter.
+ */
+function exportDNAFile(pNr) {
+  console.log("Export DNA File")
+  // Output file name
+  const outputFileExtension = "dna"
+  const originalFileExtension = document.getElementById("plasmid-file-name" + pNr).innerHTML.match(/\.([0-9a-z]+)(?=[?#])|(\.)(?:[\w]+)$/i)[0].slice(1);
+  const outputFileName = document.getElementById("plasmid-file-name" + pNr).innerHTML.replace(/\.[^.]*$/, '');
+
+  // Select target sequence and features
+  const currSequence = (pNr === 1) ? sequence: sequence2;
+  const currFeatures = (pNr === 1) ? sortBySpan(features): sortBySpan(features2);
+
+
+  /**
+   * Converts a string of hex bytes to string
+   */
+  function hexToString(inputBytes) {
+    inputBytes = inputBytes.split(" ")
+    let outputString = "";
+    inputBytes.forEach(inputByte => {
+      // Parse the hexadecimal string to an integer and convert it to a character
+      const char = String.fromCharCode(parseInt(inputByte, 16));
+      
+      // Append the character to the result string
+      outputString += char;
+    });
+    return outputString;
+  };
+
+
+  /**
+   * Integer to 4 bytes hex
+   */
+  function inToHexBytes(number) {
+    const buffer = new ArrayBuffer(4); // 4 bytes
+    const view = new DataView(buffer);
+    view.setUint32(0, number, false); // true means little-endian (least significant byte first)
+
+    // Convert the DataView to a string
+    const byteArray = new Uint8Array(buffer);
+    const byteString = Array.from(byteArray).map(byte => byte.toString(16).padStart(2, '0')).join(' ');
+
+    return byteString;
+  };
+
+
+  function addBytes(byteString) {
+    const bytesToAdd = byteString.split(' ').map(hex => parseInt(hex, 16));
+    outputBytes.push(...bytesToAdd);
+  };
+
+
+  function stringToBytes(inputString) {
+    const byteArray = [];
+    for (let i = 0; i < inputString.length; i++) {
+      const byteHex = inputString.charCodeAt(i).toString(16).padStart(2, '0');
+      byteArray.push(byteHex);
+    };
+    return byteArray.join(' ');
+  };
+
+
+  /**
+   * Fil header
+   */
+  const outputBytes = []
+  // File magic bytes (19)
+  addBytes("09 00 00 00 0e 53 6e 61 70 47 65 6e 65 00 01 00 0f 00 13");
+  // File type designation byte (unknown 00, dna 01, rna 20, prot 15)
+  addBytes("01");
+
+  // sequence length +1 (4 bytes)
+  addBytes(inToHexBytes(currSequence.length + 1));
+
+  // plasmid type byte (ss+lin = 00, ss+circ=01, ds+lin=02, ds+circ=03)
+  addBytes("03");
+
+  /**
+   * Sequence bytes
+   */
+  addBytes(stringToBytes(currSequence.toLowerCase()));
+  // Stop byte sequence
+  addBytes("02");
+
+  /**
+   * Alignable sequences
+   */
+  // length
+  addBytes("00 00 00 2d"); //(default xml length)
+  // content
+  const defaultAlignableSequencesXML = "<AlignableSequences trimStringency=\"Medium\"/>";
+  addBytes(stringToBytes(defaultAlignableSequencesXML));
+  // stop byte
+  addBytes("08");
+
+
+  /**
+   * Additional sequence properties
+   */
+  // length
+  addBytes("00 00 01 07"); //(default xml length)
+  // content
+  const defaultAdditionalSequenceProperties = "<AdditionalSequenceProperties><UpstreamStickiness>0</UpstreamStickiness><DownstreamStickiness>0</DownstreamStickiness><UpstreamModification>Unmodified</UpstreamModification><DownstreamModification>Unmodified</DownstreamModification></AdditionalSequenceProperties>";
+  addBytes(stringToBytes(defaultAdditionalSequenceProperties));
+  // stop byte
+  addBytes("0a");
+
+
+  /**
+   * FEATURES
+   */
+  // Create an XML document
+  const parser = new DOMParser();
+  const nrOfFeatures = Object.keys(currFeatures).filter(item => item !== "LOCUS").length;
+
+  // Create the XML document with the correct root structure
+  const xmlDoc = parser.parseFromString(
+    '<?xml version="1.0" ?><Features nextValidID="' + nrOfFeatures + '"></Features>',
+    'application/xml'
+  );
+
+  // Ensure the "Features" element is correctly added as the root element
+  const root = xmlDoc.documentElement;
+  let i = 0;
+  for (const key in currFeatures) {
+    if (key !== "LOCUS") {
+      const value = currFeatures[key];
+      console.log(`Key: ${key}, Value: ${value}`);
+      console.log(value);
+
+      if (key === "source") {
+        // Feature
+        const xmlFeatureElement = xmlDoc.createElement('Feature');
+        xmlFeatureElement.setAttribute('recentID', i + "");
+        i++;
+        xmlFeatureElement.setAttribute('name', "source");
+        xmlFeatureElement.setAttribute('type', "source");
+        xmlFeatureElement.setAttribute('allowSegmentOverlaps', "0");
+        xmlFeatureElement.setAttribute('consecutiveTranslationNumbering', "1");
+        xmlFeatureElement.setAttribute('visible', "0");
+
+        // Segment
+        const xmlSegmentElement = xmlDoc.createElement('Segment');
+        xmlSegmentElement.selfClosing = true;
+        xmlSegmentElement.setAttribute('range', removeNonNumeric(value["span"]).replace("..", "-"));
+        if (value["color"]) {
+          xmlSegmentElement.setAttribute('color', value["color"]);
+        } else {
+          xmlSegmentElement.setAttribute('color', "#ffffff");
+        };
+        xmlSegmentElement.setAttribute('type', "standard");
+        xmlFeatureElement.appendChild(xmlSegmentElement) // Append
+
+        // Q mol_type
+        if (value["mol_type"]) {
+          const xmlQmoltype = xmlDoc.createElement('Q');
+          xmlQmoltype.setAttribute('name', "mol_type");
+
+          const xmlVmoltype = xmlDoc.createElement('V');
+          xmlVmoltype.selfClosing = true;
+          xmlVmoltype.setAttribute('predef', value["mol_type"]);
+
+          xmlQmoltype.appendChild(xmlVmoltype) // Apend
+          xmlFeatureElement.appendChild(xmlQmoltype) // Apend
+        };
+
+        // Q organism
+        if (value["organism"]) {
+          const xmlQOrganism = xmlDoc.createElement('Q');
+          xmlQOrganism.setAttribute('name', "organism");
+
+          const xmlVOrganism = xmlDoc.createElement('V');
+          xmlVOrganism.selfClosing = true;
+          xmlVOrganism.setAttribute('text', value["organism"]);
+
+          xmlQOrganism.appendChild(xmlVOrganism) // Apend
+          xmlFeatureElement.appendChild(xmlQOrganism) // Apend
+        };
+        
+        root.appendChild(xmlFeatureElement);
+      } else {
+        // Feature
+        const xmlFeatureElement = xmlDoc.createElement('Feature');
+        xmlFeatureElement.setAttribute('recentID', i + "");
+        i++;
+        xmlFeatureElement.setAttribute('name', value["label"].replace(/\d+$/, '').trim());
+        xmlFeatureElement.setAttribute('directionality', (!value["span"].includes("complement")) ? "1": "2");
+        xmlFeatureElement.setAttribute('type', key.replace(/\d+$/, '').trim());
+        xmlFeatureElement.setAttribute('allowSegmentOverlaps', "0");
+        xmlFeatureElement.setAttribute('consecutiveTranslationNumbering', "1");
+
+        // Segment
+        const xmlSegmentElement = xmlDoc.createElement('Segment');
+        xmlSegmentElement.selfClosing = true;
+        xmlSegmentElement.setAttribute('range', removeNonNumeric(value["span"]).replace("..", "-"));
+        if (value["color"]) {
+          xmlSegmentElement.setAttribute('color', value["color"]);
+        } else {
+          xmlSegmentElement.setAttribute('color', "#ffffff");
+        };
+        xmlSegmentElement.setAttribute('type', "standard");
+        xmlFeatureElement.appendChild(xmlSegmentElement) // Append
+
+        // Q Label
+        if (value["label"]) {
+          const xmlQLabel = xmlDoc.createElement('Q');
+          xmlQLabel.setAttribute('name', "label");
+
+          const xmlVLabel = xmlDoc.createElement('V');
+          xmlVLabel.selfClosing = true;
+          xmlVLabel.setAttribute('text', value["label"]);
+
+          xmlQLabel.appendChild(xmlVLabel) // Apend
+          xmlFeatureElement.appendChild(xmlQLabel) // Apend
+        };
+
+        // Q Note
+        if (value["note"]) {
+          const xmlQNote = xmlDoc.createElement('Q');
+          xmlQNote.setAttribute('name', "note");
+
+          const xmlVNote = xmlDoc.createElement('V');
+          xmlVNote.selfClosing = true;
+          xmlVNote.setAttribute('text', value["note"]);
+
+          xmlQNote.appendChild(xmlVNote) // Apend
+          xmlFeatureElement.appendChild(xmlQNote) // Apend
+        };
+
+        // Q Translation
+        if (value["translation"]) {
+          const xmlQCodonStart = xmlDoc.createElement('Q');
+          xmlQCodonStart.setAttribute('name', "codon_start");
+
+          const xmlVCodonStart = xmlDoc.createElement('V');
+          xmlVCodonStart.selfClosing = true;
+          xmlVCodonStart.setAttribute('int', "1");
+
+          xmlQCodonStart.appendChild(xmlVCodonStart) // Apend
+          xmlFeatureElement.appendChild(xmlQCodonStart) // Apend
+
+          const xmlQTranslatable = xmlDoc.createElement('Q');
+          xmlQTranslatable.setAttribute('name', "transl_table");
+
+          const xmlVTranslatable = xmlDoc.createElement('V');
+          xmlVTranslatable.selfClosing = true;
+          xmlVTranslatable.setAttribute('int', "1");
+
+          xmlQTranslatable.appendChild(xmlVTranslatable) // Apend
+          xmlFeatureElement.appendChild(xmlQTranslatable) // Apend
+
+          const xmlQTranslation = xmlDoc.createElement('Q');
+          xmlQTranslation.setAttribute('name', "translation");
+
+          const xmlVTranslation = xmlDoc.createElement('V');
+          xmlVTranslation.selfClosing = true;
+          xmlVTranslation.setAttribute('text', value["translation"]);
+
+          xmlQTranslation.appendChild(xmlVTranslation) // Apend
+          xmlFeatureElement.appendChild(xmlQTranslation) // Apend
+        };
+
+        root.appendChild(xmlFeatureElement);
+      };
+    };
+  };
+
+  // Serialize the XML tree to a string
+  const serializer = new XMLSerializer();
+  const xmlString = serializer.serializeToString(xmlDoc).replace(/[\n\r]/g, '');;
+
+  // Now, xmlString contains the XML structure as a string
+  downloadFile('featuresXMLTree', xmlString, 'xml');
+
+  const emptyFeaturesXML = "<?xml version=\"1.0\"?><Features nextValidID=\"1\"><Feature recentID=\"0\" name=\"Feature 1\" type=\"misc_feature\" allowSegmentOverlaps=\"0\" consecutiveTranslationNumbering=\"1\"><Segment range=\"2-3\" color=\"#a6acb3\" type=\"standard\"/></Feature></Features>";
+  // length
+  addBytes(inToHexBytes(xmlString.length));
+  // content
+  addBytes(stringToBytes(xmlString));
+  // stop byte
+  addBytes("0a 05");
+
+
+  /**
+   * Primers
+   */
+  // length
+  addBytes("00 00 00 d9"); //(default xml length)
+  // content
+  const defaultPrimersXML = "<AdditionalSequenceProperties><UpstreamStickiness>0</UpstreamStickiness><DownstreamStickiness>0</DownstreamStickiness><UpstreamModification>Unmodified</UpstreamModification><DownstreamModification>Unmodified</DownstreamModification></AdditionalSequenceProperties>";
+  addBytes(stringToBytes(defaultPrimersXML));
+  // stop byte
+  addBytes("0a 06");
+
+  /**
+   * NOTES
+   */
+  const notesXML = "<Notes><UUID>17fd1982-6b89-48df-b1f8-fcd952b74b3f</UUID><Type>Natural</Type><Created UTC=\"21:39:38\">2023.10.19</Created><LastModified UTC=\"21:39:38\">2023.10.19</LastModified><SequenceClass>UNA</SequenceClass><TransformedInto>unspecified</TransformedInto></Notes>";
+  // length
+  addBytes(inToHexBytes(notesXML.length));
+  // content
+  addBytes(stringToBytes(notesXML));
+  // stop byte
+  addBytes("0a 0d");
+
+  /**
+   * Closing bytes
+   */
+  const closingBytes = "00 00 01 59 01 00 00 00 01 00 00 4b 00 00 00 00 00 00 00 00 00 03 55 6e 69 71 75 65 20 36 2b 20 43 75 74 74 65 72 73 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 19 ff 00 64 00 00 00 00 00 54 48 4f 00 ff fe 00 00 00 00 00 00 00 00 00 00 00 00 01 01 01 01 00 01 00 45 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 01 ff ff ff ff 01 59 01 f4 01 01 3f 00 50 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 1c 00 00 00 33 3c 3f 78 6d 6c 20 76 65 72 73 69 6f 6e 3d 22 31 2e 30 22 3f 3e 3c 45 6e 7a 79 6d 65 56 69 73 69 62 69 6c 69 74 69 65 73 20 76 61 6c 73 3d 22 22 2f 3e 0a 0e 00 00 00 29 3c 3f 78 6d 6c 20 76 65 72 73 69 6f 6e 3d 22 31 2e 30 22 3f 3e 3c 43 75 73 74 6f 6d 45 6e 7a 79 6d 65 53 65 74 73 2f 3e 0a";
+  addBytes(closingBytes);
+
+  // Send for download
+  console.log(outputBytes)
+  downloadFile(outputFileName, outputBytes, outputFileExtension);
+};
 
 
 /**
@@ -678,7 +1000,13 @@ function exportGBFile(pNr) {
  */
 function downloadFile(downloadFileName, downloadFileContent, downloadFileType) {
   // Create a Blob
-  const blob = new Blob([downloadFileContent], { type: "text/plain" });
+  let blob = null;
+  if (downloadFileType === "dna") {
+    const byteArray = new Uint8Array(downloadFileContent);
+    blob = new Blob([byteArray]);
+  } else {
+    blob = new Blob([downloadFileContent], { type: "text/plain" });
+  };
   const blobURL = URL.createObjectURL(blob);
 
   // Create a download link
@@ -710,7 +1038,7 @@ function createSideBar(pNr) {
   } else {
     currFeatures = features2;
     sidebarTable = document.getElementById('sidebar-table2');
-  }
+  };
 
   // Set table headers
   sidebarTable.innerHTML = `
@@ -750,16 +1078,31 @@ function createSideBar(pNr) {
   
       // Add feature note
       const noteCell = document.createElement('td');
-      noteCell.textContent = feature.note || '';
+      if (feature.note && feature.note.includes("note: ")) {
+        console.log("Note col:", feature.note)
+        const keyValuePairs = feature.note.split(/\s*(?::| )\s*/);
+        console.log("Note col:", keyValuePairs)
+        const noteDict = {};
+        for (let i = 0; i < keyValuePairs.length; i += 2) {
+          const key = keyValuePairs[i];
+          const value = keyValuePairs[i + 1];
+          if (key && value) {
+            noteDict[key] = value;
+          };
+        };
+        console.log("Note col:", noteDict)
+        noteCell.textContent = noteDict["note"];
+      } else {
+        noteCell.textContent = feature.note || '';
+      };
       noteCell.className = 'wrap-text';
       row.appendChild(noteCell);
   
       // Append the row to the table
       sidebarTable.appendChild(row);
-    }
-    
-  }
-}
+    };
+  };
+};
 
 
 /**  
@@ -768,7 +1111,7 @@ function createSideBar(pNr) {
 function removeNonNumeric(inputString) {
   const cleanedString = inputString.replace(/[^\d.]/g, '');
   return cleanedString;
-}
+};
 
 
 /**
@@ -776,6 +1119,7 @@ function removeNonNumeric(inputString) {
  * Also changes the gridstructure if more rows are needed for annotations.
  */
 function checkAnnotationOverlap(inputFeatures, pNr) {
+  console.log("Grid structures before:", gridStructure);
   let maximumOverlap = 0;
   
   // Iterate over all features and add their spans to a list
@@ -789,7 +1133,7 @@ function checkAnnotationOverlap(inputFeatures, pNr) {
       const rangeStart = range[0];
       const rangeEnd = range[1];
       spansList.push([rangeStart, rangeEnd])
-    }
+    };
   });
 
   // Check each span against the rest
@@ -809,49 +1153,54 @@ function checkAnnotationOverlap(inputFeatures, pNr) {
         } else if (endA >= startB && endA <= endB) {
           console.log("++")
           currentOverlap++;
-        }
-      }
-    }
+        };
+      };
+    };
 
     // IF a new maximum overlap was found, replace the previous one
     if (currentOverlap > maximumOverlap) {
       maximumOverlap = currentOverlap;
-    }
-  }
+    };
+  };
   // Increase once more for good measure
   maximumOverlap++;
 
   // Adjust the grid structure according to maximumOverlap
   let count = 0;
+  let listInsertPos = 0;
   if (pNr === 1) { // First plasmid
     // Count how many rows are already dedicated to annotations
     for (let i = 0; i < gridStructure.length; i++) {
       if (gridStructure[i] === "Annotations") {
         count++;
-      }
-    }
+      };
+    };
     
+    listInsertPos = gridStructure.indexOf("Annotations");
     // If more rows are needed, append them
     if (count !== maximumOverlap) {
       for (let i = 0; i < maximumOverlap - count; i++) {
-        gridStructure.push("Annotations")
-      }
-    }
+        gridStructure.splice(listInsertPos, 0 , "Annotations")
+        console.log("Grid structures:", i, gridStructure);
+      };
+    };
   } else { // Same as for the first plasmid
     for (let i = 0; i < gridStructure2.length; i++) {
       if (gridStructure2[i] === "Annotations") {
         count++;
-      }
-    }
-      
+      };
+    };
+    
+    listInsertPos = gridStructure.indexOf("Annotations");
     if (count !== maximumOverlap) {
       for (let i = 0; i < maximumOverlap - count; i++) {
-        gridStructure2.push("Annotations")
-      }
-    }
-  }
-  return
-}
+        gridStructure2.splice(listInsertPos, 0 , "Annotations")
+      };
+    };
+  };
+  console.log("Grid structures after:", gridStructure, listInsertPos, maximumOverlap);
+  return;
+};
 
 
 // Creat the content table grid
@@ -880,7 +1229,7 @@ function makeContentGrid(pNr, callback) {
       currFeatures = features2;
       sequenceGrid = document.getElementById('sequence-grid2');
       currGridStructure = gridStructure2;
-    }
+    };
 
     // Check the annotation overlap to see if the grid structure has enough "Annotations" rows
     checkAnnotationOverlap(currFeatures, pNr);
@@ -899,7 +1248,7 @@ function makeContentGrid(pNr, callback) {
       // If the row doesn't exist, create a new one
       if (!row) {
         row = sequenceGrid.insertRow(i);
-      } 
+      } ;
       // Populate the sequence cells with the corresponding base
       for (let j = 0; j < gridWidth; j++) {
         const cell = document.createElement('td'); // Create the cell
@@ -910,11 +1259,11 @@ function makeContentGrid(pNr, callback) {
           currentChar = currSequence[linesCreated*gridWidth + j] // Add the corrseponding char
         } else if ((i + 1) % currGridStructureLength === 2) {// If we're on the comlpementary strand
           currentChar = currComplementarySequence[linesCreated*gridWidth + j]
-        }
+        };
         // If we've run out of bases to add add nothing
         if (!currentChar) {
           currentChar = ""
-        }
+        };
 
         // Insert the base to the cell's text content
         cell.textContent = currentChar;
@@ -922,24 +1271,112 @@ function makeContentGrid(pNr, callback) {
         cell.id = currGridStructure[i % currGridStructureLength];
         // Add a cell class
         cell.classList.add(currGridStructure[i % currGridStructureLength].replace(" ", ""));
+        if (cell.id === "Forward Strand" && currentChar !== "") {
+          cell.classList.add("forward-strand-base");
+        };
+
         // Append the cell to the row
         row.appendChild(cell);
-      }
-    }
+      };
+
+    };
+
+    // Get cell width in current window for annotation triangles
+    window.addEventListener('resize', updateAnnotationTrianglesWidth);
+    updateAnnotationTrianglesWidth();
     
     // Iterate over the features and create the annotatations
     //console.log("Here6", currFeatures)
     Object.entries(currFeatures).forEach(([key, value]) => {
       if (value.span && !key.includes("source")) { // If the feature includes a span and is not "source"
         // Get the current feature's span
+        const direction = (value.span.includes("complement")) ? "left": "right";
         const spanList = removeNonNumeric(value.span);
         const range = spanList.split("..").map(Number);
         const rangeStart = range[0];
         const rangeEnd = range[1];
         const annotText = (value.label) ? value.label: key;
+        const annotationColor = generateRandomUniqueColor();
+        if (!value["color"]) {
+          value["color"] = annotationColor;
+        };
+        recentColor = annotationColor; // Store the colour history
         console.log(annotText, rangeStart + ".." + rangeEnd)
         // Make the annotation at the specified indices
-        makeAnnotation(rangeStart - 1, rangeEnd - 1, annotText, key, pNr, currGridStructure); 
+        makeAnnotation(rangeStart - 1, rangeEnd - 1, annotText, key, annotationColor, pNr, currGridStructure);
+
+  
+        const triangleID = key;
+        const table = (pNr === 1) ? document.getElementById("sequence-grid"): document.getElementById("sequence-grid2");
+        const featureCells = [];
+        for (let rowIdx = 0; rowIdx < table.rows.length; rowIdx++) {
+          for (let colIdx = 0; colIdx < table.rows[rowIdx].cells.length; colIdx++) {
+              const cell = table.rows[rowIdx].cells[colIdx];
+              const featureId = cell.getAttribute("feature-id");
+      
+              // Check if the cell has the attribute "feature-id" with the value "terminator"
+              if (featureId === triangleID) {
+                featureCells.push({ row: rowIdx, col: colIdx });
+              };
+          };
+        } ;
+        console.log("Triangles, found cells:", featureCells)
+
+        if (featureCells.length > 0) {
+          let lowestCell = featureCells[0];
+          let highestCell = featureCells[0];
+      
+          for (const cell of featureCells) {
+              if (cell.row < lowestCell.row || (cell.row === lowestCell.row && cell.col < lowestCell.col)) {
+                  lowestCell = cell;
+              };
+              if (cell.row > highestCell.row || (cell.row === highestCell.row && cell.col > highestCell.col)) {
+                  highestCell = cell;
+              };
+          };
+      
+          console.log("Triangles, Top-left cell:", lowestCell);
+          console.log("Triangles, Bottom-right cell:", highestCell);
+          console.log("Triangles:", direction)
+
+          if (direction === "left") {
+            const targetRow = table.rows[lowestCell.row];
+            const targetCell = targetRow.cells[lowestCell.col];
+            console.log("Triangles, target cell:", targetRow, targetCell)
+            const newCell = document.createElement("td");
+            // Copy attributes from targetCell to newCell
+            newCell.id = targetCell.id;
+            newCell.class = targetCell.class;
+            newCell["feature-id"] = targetCell["feature-id"];
+            // Append the new cell right before the target cell
+            targetRow.insertBefore(newCell, targetCell);
+
+            if (targetCell.colSpan > 1) {
+              targetCell.colSpan--;
+            } else {
+              targetRow.removeChild(targetCell);
+            };
+            createFilledTriangle(key, annotationColor, "left", lowestCell.row, lowestCell.col);
+          } else {
+            const targetRow = table.rows[highestCell.row];
+            const targetCell = targetRow.cells[highestCell.col];
+            console.log("Triangles, target cell:", targetRow, targetCell)
+            const newCell = document.createElement("td");
+            // Copy attributes from targetCell to newCell
+            newCell.id = targetCell.id;
+            newCell.class = targetCell.class;
+            newCell["feature-id"] = targetCell["feature-id"];
+            // Append the new cell right before the target cell
+            targetRow.parentNode.insertBefore(newCell, targetRow.nextSibling);
+
+            if (targetCell.colSpan > 1) {
+              targetCell.colSpan--;
+            } else {
+              targetRow.removeChild(targetCell);
+            };
+            createFilledTriangle(key, annotationColor, "right", highestCell.row, highestCell.col + 1);
+          };
+        };
 
         // Check if feature needs to be translated
         //console.log(currFeatures[key]);
@@ -950,6 +1387,7 @@ function makeContentGrid(pNr, callback) {
         };
       };
     });
+
 
     // Check the sequence for common promotes and start the translation there
     //promoterTranslation(pNr);
@@ -962,7 +1400,7 @@ function makeContentGrid(pNr, callback) {
       callback();
     };
   }, 1);
-}
+};
 
 
 /**
@@ -971,18 +1409,16 @@ function makeContentGrid(pNr, callback) {
  * 
  * TO DO:
  * - at the moment it is very slow, maybe find a better way
- * - use the feature's color from the file instead of giving it a random one every time
+ * - !!find a way to make this rescale on window resize
  */
-function makeAnnotation(rStart, rEnd, text, featureId, pNr, currGridStructure) {
-  // Get a random annoation color
-  const annotationColor = generateRandomUniqueColor();
-  recentColor = annotationColor; // Store the colour history
+function makeAnnotation(rStart, rEnd, text, featureId, annotationColor, pNr, currGridStructure) {
 
   // Convert from sequence coords to table coords
   let row = (Math.floor(rStart / gridWidth)) * currGridStructure.length;
   let col = rStart - (row/currGridStructure.length)*gridWidth;
   row += currGridStructure.indexOf("Annotations");
   console.log("here", text, rStart, row, currGridStructure.length, gridWidth, col)
+
 
   // Annotaiton span length
   const annotationSpan = rEnd - rStart;
@@ -995,7 +1431,7 @@ function makeAnnotation(rStart, rEnd, text, featureId, pNr, currGridStructure) {
     // If the feature spans multiple lines, add "..." to the beginning of the feature
     if (i != 0) {
         text = "..." + text.replace("...", "");
-    }
+    };
 
     // Merge the corresponding cells to draw the annoation
     if (col + currentSpan >= gridWidth) {
@@ -1028,11 +1464,11 @@ function makeAnnotation(rStart, rEnd, text, featureId, pNr, currGridStructure) {
       mergeCells(row, col, 1, currentSpan + 1, text, featureId, annotationColor, pNr, currGridStructure);
       // Set carry over to 0 to signify that we're done
       carryOver = 0;
-    }
+    };
     // Increment iteration counter
     i++;
-  }
-}
+  };
+};
 
 
 /**
@@ -1049,7 +1485,7 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
     table = document.getElementById('sequence-grid');
   } else {
     table = document.getElementById('sequence-grid2');
-  }
+  };
 
   // Adjust row and col
   let occupiedCellsList = [];
@@ -1066,11 +1502,11 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
           occupiedCellsCounter++;
           for (let i = 0; i <  currColSpan; i++) {
             occupiedCellsList.push(true);
-          }
+          };
         } else {
           occupiedCellsList.push(false);
-        }
-      }
+        };
+      };
       
       console.log(col, col+colspan-1, row, occupiedCellsList);
       if (occupiedCellsList.slice(col, col + colspan - 1).every(value => value !== true)) {
@@ -1079,9 +1515,9 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
       } else {
         console.log("Try next row.")
         row++;
-      }
-    }
-  }
+      };
+    };
+  };
   
   let nrOccupiedCells = occupiedCellsList.slice(0, col).filter(value => value === true).length;
   console.log("nrOccupiedCells ", nrOccupiedCells, occupiedCellsList.slice(0, col))
@@ -1089,7 +1525,7 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
   console.log("Zamboni", nrOccupiedCells, occupiedCellsList.length)
   if (nrOccupiedCells === occupiedCellsList.length-1){
     row++;
-  }
+  };
 
   // Adjust row and col
   occupiedCellsList = [];
@@ -1106,11 +1542,11 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
           occupiedCellsCounter++;
           for (let i = 0; i <  currColSpan; i++) {
             occupiedCellsList.push(true);
-          }
+          };
         } else {
           occupiedCellsList.push(false);
-        }
-      }
+        };
+      };
       
       console.log(col, col+colspan-1, row, occupiedCellsList);
       if (occupiedCellsList.slice(col, col + colspan - 1).every(value => value !== true)) {
@@ -1119,9 +1555,9 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
       } else {
         console.log("Try next row.")
         row++;
-      }
-    }
-  }
+      };
+    };
+  };
 
   nrOccupiedCells = occupiedCellsList.slice(0, col).filter(value => value === true).length;
   console.log("nrOccupiedCells2 ", nrOccupiedCells, occupiedCellsList.slice(0, col))
@@ -1131,7 +1567,7 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
   if (nrOccupiedCells !== 0) {
     col -= nrOccupiedCells;
     col += occupiedCellsCounter;
-  }
+  };
   console.log("Merge cells2: ", row, col, colspan, text)
   let mainCell = table.rows[row].cells[col];
   mainCell.rowSpan = rowspan;
@@ -1143,11 +1579,11 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
       text = "";
       for (let l = 0; l < colspan; l++) {
         text += ".";
-      }
+      };
     } else {
       text = text.slice(0, colspan - 3).replace(/\./g, "") + "...";
-    }
-  }
+    };
+  };
   const textNode = document.createTextNode(text);
   mainCell.appendChild(textNode);
   mainCell.style.textAlign = 'center';
@@ -1157,10 +1593,12 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
   let k = 0;
   for (let j = col + 1; j < col + colspan; j++) {
     const cell = table.rows[row].cells[j - k];
-    cell.parentNode.removeChild(cell);
+    if (cell) {
+      cell.parentNode.removeChild(cell);
+    };
     k++;
-  }
-}
+  };
+};
 
 
 /**
@@ -1174,7 +1612,8 @@ function generateRandomUniqueColor() {
   const randomColor = remainingColors[randomIndex];
 
   return randomColor;
-}
+};
+
 
 /**
  * Function that translates the input codon into its corresponding amino acid.
@@ -1205,7 +1644,7 @@ function translateCodon(codon) {
   };
 
   return codonTable[codon] || '';
-}
+};
 
 
 /**
@@ -1255,10 +1694,10 @@ function promoterTranslation(pNr) {
     while (index !== -1) {
       indices.push(index);
       index = string.indexOf(substring, index + 1);
-    }
+    };
   
     return indices;
-  }
+  };
 
   // Select the correct sequence to search
   let currSequence = "";
@@ -1266,7 +1705,7 @@ function promoterTranslation(pNr) {
     currSequence = sequence;
   } else {
     currSequence = sequence2;
-  }
+  };
 
   // Iterate over the promotes, finds a list of indices for all the positions where it can be found
   // then starts the translation at the first ATG it finds from there.
@@ -1294,7 +1733,7 @@ function featureTranslation(pNr) {
   } else {
     currSequence = sequence2;
     currFreatures = features2;
-  }
+  };
 
   // Iterate over features and start the translation at the beginning of its span
   Object.entries(currFreatures).forEach(([key, value]) => {
@@ -1323,7 +1762,7 @@ function seqIndexToCoords(inputIndex, targetRow, currGridStructure) {
  * Starts a translation at the specified position and populates the amino acid row with the translation.
  * 
  * TO DO:
- * - allow translation to loop over to the beginning of the plasmid
+ * - add an option to start translating immediately or inside selected text
  */
 function startTranslation(codonPos, pNr) {
   // Select the corresponding features and sequence
@@ -1421,7 +1860,7 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, pNr) {
     };
     // If the last displayed amino acid was a stop codon or we've reached the end of the sequence, stop
     const breakCondition = (codonEndPos - codonPos)*dir <= 0;
-    console.log("Translating, checking if we've reached the end:", codonPos, codonEndPos, aminoAcid, breakCondition, dir)
+    //console.log("Translating, checking if we've reached the end:", codonPos, codonEndPos, aminoAcid, breakCondition, dir)
     //if (codonPos > currSequence.length || codonPos*dir >= codonEndPos) {
     if (codonPos > currSequence.length || breakCondition) {
       break;
@@ -1474,4 +1913,67 @@ function fillAACells(row, col, text, pNr) {
   // Add text to the center of the merged cell
   mainCell.textContent = text;
   mainCell.style.textAlign = 'center';
+};
+
+
+/**
+ * 
+ */
+function createFilledTriangle(featureID, triangleColor, orientation, row, col) {
+  console.log("Triangles:", featureID, triangleColor, orientation, row, col)
+  // Select the table cell using the row and col indices
+  const table = document.getElementById("sequence-grid");
+  const cell = table.rows[row].cells[col];
+  cell.classList.add("triangle-cell");
+  cell.setAttribute("feature-id", featureID)
+
+  // Create a div element for the triangle
+  const triangle = document.createElement("div");
+  triangle.id = featureID + "-triangle"
+  /**
+   * .triangle-right {
+  width: 0px;
+  height: 0px;
+  border-top: var(--triangle-size) solid transparent;
+  border-bottom: var(--triangle-size) solid transparent;
+  border-left: var(--triangle-size) solid green;
+}
+   */
+  const triangleColorVariable = triangle.id + "-color";
+  document.documentElement.style.setProperty(`--${triangleColorVariable}`, triangleColor);
+  triangle.style.width = 0 + "px";
+  triangle.style.height = 0 + "px";
+  triangle.style.borderTop = "var(--triangle-height) solid transparent";
+  triangle.style.borderBottom = "var(--triangle-height) solid transparent";
+  if (orientation === "right") {
+    triangle.style.borderLeft = `var(--triangle-width) var(--${triangleColorVariable}) solid`;
+  } else {
+    triangle.style.borderRight = `var(--triangle-width) var(--${triangleColorVariable}) solid`;
+    triangle.style.position = "absolute";
+    triangle.style.right = "0px";
+    triangle.style.top = "0px";
+  };
+
+  const styleElement = document.createElement('style');
+  const dynamicCSS = `
+    .${featureID + "-cell-right"} {
+      border-right: 3px solid var(--${triangleColorVariable});
+      border-left: 3px solid var(--${triangleColorVariable});
+    }
+  `;
+  styleElement.textContent = dynamicCSS;
+  document.head.appendChild(styleElement);
+  cell.classList.add(featureID + "-cell-right");
+
+  // Add the triangle div to the table cell
+  cell.appendChild(triangle);
+};
+
+
+/**
+ * Update the global variables controlling the width of annotation triangles
+ */
+function updateAnnotationTrianglesWidth() {
+  const randomCell = document.getElementById("Forward Strand");
+  document.documentElement.style.setProperty('--triangle-width', randomCell.offsetWidth + 'px');
 };

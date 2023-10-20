@@ -28,14 +28,14 @@ document.addEventListener('DOMContentLoaded', function () {
       insertionPosition = basePosition;
       console.log("HERE1", insertionPosition, basePosition)
       handleContextMenu(event.clientX, event.clientY);
-    }
+    };
   });
 
   // Hite the context menu when clicking outside it
   document.addEventListener('click', function (event) {
     if (!event.target.closest('.custom-context-menu')) {
       hideContextMenu();
-    }
+    };
   });
 
   /**
@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const menuItem = document.getElementById(menuItemId);
     if (menuItem.disabled) {
       return;
-    }
+    };
 
     // Item logic
     if (menuItemId === 'insertion') {
@@ -71,8 +71,8 @@ document.addEventListener('DOMContentLoaded', function () {
         startTranslation(insertionPosition, 1);
       } else { // Else search for the first ATG then start there
         startTranslation(sequence.indexOf("ATG", insertionPosition) + 1, 1);
-      }
-    }
+      };
+    };
 
     // Hide the menu once done
     hideContextMenu();
@@ -108,18 +108,18 @@ document.addEventListener('DOMContentLoaded', function () {
       // Disable deletions and mutations
       deletionMenuItem.classList.add('disabled');
       mutationMenuItem.classList.add('disabled');
-    }
+    };
 
     // If there is a selection and a second plasmid has been imported, enable the subcloning option
     if (selectedText && secondPlasmidImported) {
       subcloningMenuItem.classList.remove('disabled');
     } else {
       subcloningMenuItem.classList.add('disabled');
-    }
+    };
     
     // Reposition the context menu
     positionContextMenu(clientX, clientY);
-  }
+  };
   
 
   /**

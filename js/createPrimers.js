@@ -7,6 +7,9 @@
  * templateColor - background color of template part
  * homoColor - background color of homologous part
  * mutSeq - additional sequence for mutations
+ * 
+ * TO DO:
+ * - 
  */
 function displayPrimers(primersType, primersDict) {
     const sidebarContentDiv = document.querySelector('.sidebar-content'); // Select sidebar
@@ -145,7 +148,6 @@ function removePrimerRegionHighlight() {
  *  
  * TO DO:
  * - Clean up, some lines are way too long
- * - Maybe change to always favour the primer with the higher temperature?
  */
 function primerExtension(startingPos, targetStrand, direction, targetTm, minLength, pNr, mutSeq) {
     console.log("PE", startingPos, targetStrand, direction, targetTm, minLength, pNr, mutSeq)
@@ -158,13 +160,13 @@ function primerExtension(startingPos, targetStrand, direction, targetTm, minLeng
     // If we're working on the second plasmid, change working strand to that
     if (pNr === 2) {
         currStrand = targetStrand === 'fwdStrand' ? sequence2 : complementaryStrand2;
-    }
+    };
 
     // Check if we have a sequence to start with
     let accessory = ""
     if (mutSeq) {
         accessory = mutSeq;
-    }
+    };
 
 
     // Initialise previous primer based on target strand and direction and using the min length
@@ -173,7 +175,7 @@ function primerExtension(startingPos, targetStrand, direction, targetTm, minLeng
         prev_p = targetStrand === 'fwdStrand' ? repeatingSlice(currStrand, p_start_index, p_start_index + length - 1) + accessory: repeatingSlice(currStrand, p_start_index - length, p_start_index);
     } else {
         prev_p = targetStrand === 'fwdStrand' ? repeatingSlice(currStrand, p_start_index - length + 1, p_start_index) + accessory: repeatingSlice(currStrand, p_start_index, p_start_index - length);
-    }
+    };
     console.log("prev_p", targetStrand, direction, p_start_index, prev_p)
     let prev_tm = get_tm(prev_p, primerConc, saltConc); // Get melting temperature of initial primer
     
@@ -187,7 +189,7 @@ function primerExtension(startingPos, targetStrand, direction, targetTm, minLeng
             curr_p = targetStrand === 'fwdStrand' ? repeatingSlice(currStrand, p_start_index, p_start_index + length) + accessory: repeatingSlice(currStrand, p_start_index - length - 1, p_start_index);
         } else {
             curr_p = targetStrand === 'fwdStrand' ? repeatingSlice(currStrand, p_start_index - length, p_start_index) + accessory: repeatingSlice(currStrand, p_start_index, p_start_index - length - 1);
-        }
+        };
         let curr_tm = get_tm(curr_p, primerConc, saltConc);
 
         /** If the melting temperature of the current primer exceeds the target temperature, break the loop 
@@ -199,29 +201,29 @@ function primerExtension(startingPos, targetStrand, direction, targetTm, minLeng
             } else {
                 primer_fwd_tm = prev_tm;
                 primer_fwd = prev_p;
-            }
+            };
             break;
-        }
+        };
 
         // Adjusting loop variables
         prev_tm = curr_tm;
         prev_p = curr_p;
         length += 1;
         i++;
-    }
+    };
 
     // Primer needs to be flipped if it was not fromt he fwdStrand
     if (targetStrand !== "fwdStrand") {
         primer_fwd = primer_fwd.split('').reverse().join('');
-    }
+    };
 
     // Move the accessory (mutSeq) from the front to the back for compStrand
     if (direction !== "forward") {
         primer_fwd = primer_fwd.replace(accessory, "") + accessory;
-    }
+    };
 
     return primer_fwd;
-}
+};
 
 
 /**
@@ -232,6 +234,7 @@ function primerExtension(startingPos, targetStrand, direction, targetTm, minLeng
  * inputAA - amino acid sequence to optimize
  * 
  * TO DO:
+ * - add more organisms
  */
 function optimizeAA(inputAA, targetOrganism) {
     /**
@@ -240,7 +243,6 @@ function optimizeAA(inputAA, targetOrganism) {
      *  
      * TO DO:
      * - Make the algorithm not have an O(n!), maybe cache the melting temperatures of the codons
-     * - Add an option to optimize for a specific organism
      * - Maybe optimize GC content?
      */
     function generateDNASequences(aminoAcidSequence) {
@@ -260,7 +262,7 @@ function optimizeAA(inputAA, targetOrganism) {
             if (index === aminoAcidSeq.length) {
                 results.push(currentSeq); // Save progress by pushing to results
                 return;
-            }
+            };
 
             const aminoAcid = aminoAcidSeq[index]; // Current amino acid
             const possibleCodons = aaToCodon[aminoAcid]; // Return list of possible codonds for current amino acid
@@ -268,8 +270,8 @@ function optimizeAA(inputAA, targetOrganism) {
             // For each possible codon, append the codon to the current sequence then branch the tree with an incremented index
             for (let codon of possibleCodons) {
                 generateSequences(aminoAcidSeq, index + 1, currentSeq + codon);
-            }
-        }
+            };
+        };
     
         // If the sequence is less than 10 acids, generate all possible DNA sequences
         if (aminoAcidSequence.length < 10) {
@@ -280,12 +282,12 @@ function optimizeAA(inputAA, targetOrganism) {
                 const possibleCodons = aaToCodon[aminoAcid];
                 const selectedCodon = possibleCodons[0];
                 basicSeq += selectedCodon;
-            }
+            };
             results.push(basicSeq);
-        }
+        };
     
         return results;
-    }
+    };
 
     // Update last selected organism
     preferredOrganism = targetOrganism;
@@ -301,7 +303,7 @@ function optimizeAA(inputAA, targetOrganism) {
         for (let sequence of dnaSequences) {
             const tm = get_tm(sequence, primerConc, saltConc);
             dnaTMDictionary[sequence] = tm;
-        }
+        };
 
         // Iterate over the dict and find the DNA sequence with the lowest melting temperature
         let closestKey = null;
@@ -313,12 +315,12 @@ function optimizeAA(inputAA, targetOrganism) {
             if (diff < closestDiff) {
                 closestDiff = diff;
                 closestKey = key;
-            }
-        }
+            };
+        };
 
         console.log("Optimizer - Closest value: " + closestKey + "(" + dnaTMDictionary[closestKey] + ")")
         return closestKey;
-    }
+    };
 
     /**
      * Using codon frequency tables
@@ -334,10 +336,10 @@ function optimizeAA(inputAA, targetOrganism) {
         
         outputSequence += tripletToAdd
         console.log("Optimizer:", tripletToAdd)
-    }
+    };
     console.log("Optimizer:", targetOrganism, inputAA, outputSequence)
     return outputSequence;
-}
+};
 
 
 /**
@@ -384,7 +386,7 @@ function optimizeAA(inputAA, targetOrganism) {
  * replaceStartPos, replaceEndPos - indices of the segment to be deleted, then filled with the new DNA sequence
  * 
  * TO DO:
- * - check at which point the tool should just recommend a long piece of dsDNA to order and use as a subcloning target
+ * - 
  */
 function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  replaceStartPos, replaceEndPos) {
     // Define operation type
@@ -392,19 +394,19 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
     if (!replaceEndPos) { // if startPos equals endPos then its just an insertion
         replaceEndPos = replaceStartPos;
         operationType = "Insertion"
-    }
+    };
     console.log("HERE1", operationType, dnaToInsert, aaToInsert, targetOrganism, replaceStartPos, replaceEndPos)
     // Make sure that startPos is the smaller number
     if (replaceStartPos > replaceEndPos) {
         let temp = replaceStartPos;
         replaceStartPos = replaceEndPos;
         replaceEndPos = temp;
-    }
+    };
 
     // If theres no input, use the default sequence for testing
     if (!aaToInsert && !dnaToInsert) {
         aaToInsert = "GGGGS";
-    }
+    };
 
     // If an animo acid sequence is given, send it for optimization (lowest melting temperature)
     // otherwise use the DNA sequence given.
@@ -414,7 +416,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
         seqToInsert = optimizeAA(aaToInsert, targetOrganism);
     } else {
         seqToInsert = dnaToInsert;
-    }
+    };
     
 
 
@@ -478,7 +480,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
     // Update the sequence and features
     const plasmidLengthDiff = seqToInsert.length - (replaceEndPos - replaceStartPos)
     updateFeatures(operationType, seqToInsert, replaceStartPos, replaceEndPos, plasmidLengthDiff, 1);
-}
+};
 
 
 /**
@@ -552,7 +554,7 @@ function createDeletionPrimers(deletionStartPos, deletionEndPos) {
     // Update the sequence and features
     const plasmidLengthDiff = 0 - (deletionEndPos - deletionStartPos);
     updateFeatures("Deletion", "", deletionStartPos, deletionEndPos, plasmidLengthDiff, 1);
-}
+};
 
 
 /**
@@ -601,7 +603,7 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
         let temp = subcloningStartPos;
         subcloningStartPos = subcloningEndPos;
         subcloningEndPos = temp;
-    }
+    };
 
     console.log('Creating subcloning primers...', subcloningInsertionSequence, subcloningStartPos, subcloningEndPos);
 
@@ -652,7 +654,7 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
                 endCoords = seqIndexToCoords(subcloningInsertPositionStart, 0, gridStructure2);
                 endRowIndex = endCoords[0];
                 endCellIndex = endCoords[1] - 1;
-            }
+            };
 
             // Clears the previous selection in the second sequence grid
             function clearSelection() {
@@ -661,7 +663,7 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
                 cell.classList.remove('selected-cell-subcloning-target');
                 });
                 selectedText2 = "";
-            }
+            };
             clearSelection();
 
             // Iterate over cells between start and end cells and mark them as selected by adding a css class
@@ -676,10 +678,10 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
                     // Check if the selected cell is in the forward strand row and selected cell is not empty
                     if (selectedCell.id === "Forward Strand" && selectedCell.innerText.trim() !== "") {
                         selectedCell.classList.add('selected-cell-subcloning-target');
-                    }
-                }
-            }
-        }
+                    };
+                };
+            };
+        };
     });
 
     // Look for mouse up to end the selection
@@ -696,7 +698,7 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
             let temp = subcloningInsertPositionStart;
             subcloningInsertPositionStart = subcloningInsertPositionEnd;
             subcloningInsertPositionEnd = temp;
-        }
+        };
         
         /**
          * Make the primers
@@ -719,7 +721,7 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
         let newTm = get_tm(insertHomoFwd.slice(0, -1), primerConc, saltConc);
         if (Math.abs(oldTm - homoRegionTm) >= Math.abs(newTm - homoRegionTm)) { // Check which is closer to target tm
             insertHomoFwd = insertHomoFwd.slice(0, -1);
-        }
+        };
         insertHomoFwd = insertHomoFwd.split("").reverse().join("");
 
         let insertHomoRev = getComplementaryStrand(vecFwd);
@@ -730,7 +732,7 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
         newTm = get_tm(insertHomoRev.slice(0, -1), primerConc, saltConc);
         if (Math.abs(oldTm - homoRegionTm) >= Math.abs(newTm - homoRegionTm)) {
             insertHomoRev = insertHomoRev.slice(0, -1);
-        }
+        };
         insertHomoRev = insertHomoRev.split("").reverse().join("");
 
 
@@ -758,7 +760,7 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
         element.style.cursor = 'default';
         return;
     }, { once: true });
-}
+};
 
 
 /**
@@ -783,7 +785,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
     } else {
         sequence2 = sequence2.substring(0, segmentStartPos) + newFeatureSequence + sequence2.substring(segmentEndPos);
         complementaryStrand2= getComplementaryStrand(sequence2);
-    }
+    };
 
     /**
      * Decides if the old feature should be left alone, shifted, or deleted based on the span of the new feature.
@@ -803,7 +805,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
             featureEnd++;
         } else { // Adjust indices from sequence indices to feature indices
             featureStart++;
-        }
+        };
         if (elementValue.span && !elementKey.includes("source")) { // exclude "source" feature as it spans the entire plasmid
             // Get span of current feature
             const currSpan = removeNonNumeric(elementValue.span).split("..").map(Number);
@@ -912,7 +914,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
                 }
             } else if (decision === "delete") {
                 delete features[key];
-            }
+            };
         });
     } else {
         Object.entries(features2).forEach(([key, value]) => {
@@ -929,27 +931,27 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
                 }
             } else if (decision === "delete") {
                 delete features2[key];
-            }
+            };
         });
-    }
+    };
 
     // Name of the new feature
     let newFeatureName = newFeatureType; // Long name
     if (newFeatureSequence.length < 7) { // If theres no space, abbreviate to first 3 letters
         newFeatureName = newFeatureName.slice(0, 3)
-    }
+    };
 
     // Check if there is a previous insertion and if there is, increment the nr at the end
     let i = 2;
     let targetFeaturesDict = features;
     if (pNr === 2) {
         targetFeaturesDict = features2;
-    }
+    };
     while (newFeatureName in targetFeaturesDict) {
         newFeatureName =  newFeatureName.replace("" + i-1, "")
         newFeatureName += i;
         i++;
-    }
+    };
 
 
     // Creat the new feature
@@ -966,8 +968,8 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
         } else {
             features2[newFeatureName] = tempDict // add feature to features dict
             features2 = sortBySpan(features2) // resort feature dict by their order of appearance in the sequence
-        }
-    }
+        };
+    };
     // Remake the sidebar and content grid 
     createSideBar(pNr);
     makeContentGrid(pNr);
@@ -1001,7 +1003,7 @@ function sortBySpan(dict) {
     const sortedDict = Object.fromEntries(entries);
 
     return sortedDict;
-}
+};
 
 
 /**
@@ -1027,7 +1029,7 @@ function getComplementaryStrand(sequence) {
         .join('');
 
     return complementaryStrand;
-}
+};
 
 /**
  * Improved slice() function that allows for negative indices or indices longer than the string length by assuming
@@ -1047,4 +1049,4 @@ function getComplementaryStrand(sequence) {
 function repeatingSlice(str, startIndex, endIndex) {
     const repeatedStr = str.repeat(3); // Copy the string 3 times: ABC_ABC_ABC
     return repeatedStr.slice(startIndex + str.length, endIndex + str.length); // Remap indices to new string then return
-}
+};
