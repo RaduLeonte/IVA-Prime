@@ -1377,11 +1377,12 @@ function makeContentGrid(pNr, callback) {
             createFilledTriangle(key, annotationColor, "right", highestCell.row, highestCell.col + 1);
           };
         };
+        makeAnnotation(rangeStart - 1, rangeEnd - 1, annotText, key, pNr, currGridStructure); 
 
         // Check if feature needs to be translated
         //console.log(currFeatures[key]);
         if ((currFeatures[key]["translation"]) || (currFeatures[key]["note"] && (currFeatures[key]["note"].includes(" translation: ")))) {
-          //console.log("Translating: ", value.label, rangeStart, rangeEnd, pNr)
+          console.log("Translating: ", value.label, rangeStart, rangeEnd, pNr)
           const targetStrand = (!value.span.includes("complement")) ? "fwd": "comp";
           translateSpan(targetStrand, rangeStart, rangeEnd, pNr);
         };
@@ -1839,7 +1840,7 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, pNr) {
   let row = tableCoords[0];
   let col = tableCoords[1] + 1*dir;
 
-  //console.log("Translating:", targetStrand, col, row, codonPos, codonEndPos)
+  console.log("Translating:", targetStrand, col, row, codonPos, codonEndPos)
   // Start translating until a stop codon is encountered
   //console.log("Starting translationa at " + codonPos + "(" + row + ", " + col + ").");
   while (true) {

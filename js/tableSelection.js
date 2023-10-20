@@ -52,9 +52,10 @@ function addCellSelection(tableId, containerId, pNr) {
    * Selection start.
    */
   sequenceGridTable.addEventListener('mousedown', function (event) {
+    console.log("Table selection mouse down")
     if (event.button === 0) { // Check for left click
       // Clear the previous selection
-      clearSelection(pNr);
+      clearSelection(pNr, true);
       // Record where the selection started
       if (pNr === 1) {
         selectionStartPos = basePosition;
@@ -68,16 +69,26 @@ function addCellSelection(tableId, containerId, pNr) {
       // Signal selection start
       //console.log("Starting selection at: " + selectionStartPos);
       //console.log(features)
-      const targetAnnotation = event.target.closest('td');
-      const targetString = targetAnnotation.getAttribute('feature-id');
+      const targetCell = event.target.closest('td');
+      const targetRow = targetCell.parentElement
       let targetSpan = null;
-      let found = false;
-      for (const entryKey in features) {
-          if (entryKey === targetString) {
-              found = true;
-              targetSpan = features[entryKey]["span"];
-              break;
-          };
+      console.log("TC:", targetCell, selectionStartPos)
+      console.log("TR:", targetRow, selectionStartPos)
+      if (targetCell.id === "Annotations") {
+        const targetString = targetCell.getAttribute('feature-id');
+        let found = false;
+        for (const entryKey in features) {
+            if (entryKey === targetString) {
+                found = true;
+                targetSpan = features[entryKey]["span"];
+                break;
+            };
+        };
+      } else if (targetCell.id === "Amino Acids" && targetCell.innerText !== "") {
+        const currGridStructure = (pNr === 1) ? gridStructure: gridStructure2;
+        const seqIndex = (gridWidth * Math.floor(targetRow.rowIndex/currGridStructure.length)) + targetCell.cellIndex + 1;
+        console.log(seqIndex, targetCell.cellIndex, targetRow.rowIndex)
+        targetSpan = (seqIndex - 1)+ ".." + (seqIndex + 1);
       };
       
       isSelecting = true;
@@ -95,7 +106,7 @@ function addCellSelection(tableId, containerId, pNr) {
       event.preventDefault();
 
       if (targetSpan) {
-        selectFeatureSpan(targetSpan, pNr);
+        selectBySpan(targetSpan, pNr);
       };
     };
   });
@@ -103,7 +114,8 @@ function addCellSelection(tableId, containerId, pNr) {
   /**
    * Removes the selected appearance from all the currently selected cells.
    */
-  function clearSelection(pNr) {
+  function clearSelection(pNr, clearingGlobalVars) {
+    console.log("CLEARING SELECTION")
     // Find all selected cells and iterate over them to remove the selected class
     const selectedCells = document.querySelectorAll('.selected-cell');
     selectedCells.forEach((cell) => {
@@ -118,8 +130,10 @@ function addCellSelection(tableId, containerId, pNr) {
     // Reset cell selection
     startCell = null;
     endCell = null;
-    selectionStartPos = null;
-    selectionEndPos = null;
+    if (clearingGlobalVars) {
+      selectionStartPos = null;
+      selectionEndPos = null;
+    };
   };
 
   /**
@@ -176,7 +190,7 @@ function addCellSelection(tableId, containerId, pNr) {
         endCellIndex = selectionEndCell[1];
 
         // Clear the previous selection
-        clearSelection(pNr);
+        clearSelection(pNr, false);
 
         //console.log("Iterating from: " + startRowIndex + ", " + startCellIndex);
         //console.log("To: " + endRowIndex + ", " + endCellIndex);
@@ -206,6 +220,7 @@ function addCellSelection(tableId, containerId, pNr) {
    * Once left click is lifted, end the selection.
    */
   sequenceGridTable.addEventListener('mouseup', function (event) {
+    console.log("Table selection mouse up")
     if (event.button === 0 && isSelecting) { // Check if it was left click that was lifted and we are currently selecting
       // Signat that we have stopped selecting
       isSelecting = false;
@@ -257,8 +272,9 @@ function addCellSelection(tableId, containerId, pNr) {
    * Check for clicks outside the tables to clear the selection.
    */
   document.addEventListener('click', function (event) {
-    if (!event.target.closest('#sequence-grid') && !event.target.closest('#sequence-grid2')) {
-      clearSelection(pNr);
+    console.log("Table selection mouse click")
+    if (!event.target.closest('#sequence-grid') && !event.target.closest('#sequence-grid2') && !event.target.closest('.popup-window')) {
+      clearSelection(pNr, true);
       startCell = null;
       endCell = null;
       isSelecting = false;
@@ -277,11 +293,26 @@ function addCellSelection(tableId, containerId, pNr) {
     } else {
       currSelectedText = selectedText2;
     };
-
     // Check if we've actually clicked ctrl+c and we have text selected
-    if (event.ctrlKey && event.key === 'c' && currSelectedText !== '') {
-      event.preventDefault(); // Prevent default copy behaviour
-      copyToClipboard(currSelectedText);
+    if ((event.ctrlKey || event.metaKey) && event.key === 'c' && currSelectedText !== '') {
+      event.preventDefault(); // Prevent default copy behavior
+
+      // Create a temporary textarea element to copy text to clipboard
+      const tempTextArea = document.createElement('textarea');
+      tempTextArea.value = currSelectedText;
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+
+      try {
+        // Execute the copy command
+        document.execCommand('copy');
+        console.log('Copied to clipboard:', currSelectedText);
+      } catch (err) {
+        console.error('Unable to copy to clipboard:', err);
+      } finally {
+        // Remove the temporary textarea element
+        document.body.removeChild(tempTextArea);
+      };
     };
   });
 
@@ -303,7 +334,7 @@ function addCellSelection(tableId, containerId, pNr) {
 /**
  * Select text from feature span.
  */
-function selectFeatureSpan(inputSpan, pNr) {
+function selectBySpan(inputSpan, pNr) {
   // Clear the previous selection
   let currGridStructure = (pNr === 1) ? gridStructure: gridStructure2;
   const sequenceGridTable = (pNr === 1) ? document.getElementById('sequence-grid'): document.getElementById('sequence-grid2');

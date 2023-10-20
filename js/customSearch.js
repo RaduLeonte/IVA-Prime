@@ -118,7 +118,7 @@ function initiateSearchFunctionality(pNr) {
 
         // Get search query from the search bar
         const searchQuery = customSearchInput.value;
-        const searchQueryComplement = searchQuery.split('').reverse().join('');;
+        const searchQueryComplement = searchQuery.split('').reverse().join('');
         //console.log("Search:", searchQuery, searchQueryComplement)
 
         // Select the sequence and grid structure of the plasmid of interest
@@ -148,35 +148,52 @@ function initiateSearchFunctionality(pNr) {
                     workingQuery = searchQueryComplement;
                 };
                 // Get a list of indices for all occurences of the search query
-                const indices = [];
-                let currentIndex = workingSequence.indexOf(workingQuery);
-                while (currentIndex !== -1) {
-                    indices.push(currentIndex);
-                    currentIndex = workingSequence.indexOf(workingQuery, currentIndex + 1);
-                };
-
-                // Select table element
-                let table = null;
-                if (pNr === 1) {
-                    table = document.getElementById("sequence-grid");
-                } else {
-                    table = document.getElementById("sequence-grid2");
-                };
-                
-                // Iterate over all cells that contain the search query and highlight them
-                for (const index of indices) {
-                    for (let j = 0; j < workingQuery.length; j++) {
-                        // Convert sequence index to table coordinates
-                        const [row, column] = seqIndexToCoords(index + j, 0, currGridStructure);
-                        // Select and highlight the cell
-                        const cell = table.rows[row + i].cells[column + 1];
-                        cell.classList.add("selected-cell-search");
-                    };
-                };
+                highlightOccurences(pNr, i, workingSequence, workingQuery, currGridStructure, "selected-cell-search", null);
             };
 
             // Scroll to the nearest occurence of the search query
             scrollToNextSelectedCell(pNr);
+        };
+    };
+};
+
+
+/**
+ * Search for query occurences in sequence then add a class or highlight 
+ */
+function highlightOccurences(pNr, targetStrandIndex, workingSequence, workingQuery, workingGridStructure, highlightClass, highlightColor) {
+    // Get a list of indices for all occurences of the search query
+    const indices = [];
+    let currentIndex = workingSequence.indexOf(workingQuery);
+    while (currentIndex !== -1) {
+        indices.push(currentIndex);
+        currentIndex = workingSequence.indexOf(workingQuery, currentIndex + 1);
+    };
+    if (indices.length !== 0) {
+        console.log("Highlight Occurences:", pNr, targetStrandIndex, workingQuery, highlightClass, highlightColor);
+    };
+
+    // Select table element
+    let table = null;
+    if (pNr === 1) {
+        table = document.getElementById("sequence-grid");
+    } else {
+        table = document.getElementById("sequence-grid2");
+    };
+    
+    // Iterate over all cells that contain the search query and highlight them
+    for (const index of indices) {
+        for (let j = 0; j < workingQuery.length; j++) {
+            // Convert sequence index to table coordinates
+            const [row, column] = seqIndexToCoords(index + j, 0, workingGridStructure);
+            // Select and highlight the cell
+            const cell = table.rows[row + targetStrandIndex].cells[column + 1];
+            if (highlightClass) {
+                cell.classList.add(highlightClass);
+            } else if (highlightColor) {
+                cell.style.backgroundColor = highlightColor;
+                cell.style.color = "white";
+            };
         };
     };
 };

@@ -93,8 +93,7 @@ let gridStructure, gridStructure2;
 gridStructure= gridStructure2 = ["Forward Strand",
                                 "Complementary Strand",
                                 "Amino Acids",
-                                "Annotations",
-                                "Spacer"];
+                                "Annotations"];
 let gridWidth = 60; // Amount of cells per row
 // Store content of imported file
 let importedFileHeader1 = null;
