@@ -1597,33 +1597,24 @@ function createFilledTriangle(featureID, triangleColor, orientation, row, col) {
   triangle.style.borderTop = "var(--triangle-height) solid transparent";
   triangle.style.borderBottom = "var(--triangle-height) solid transparent";
   if (orientation === "right") {
-    const styleElement = document.createElement('style');
-    const dynamicCSS = `
-      .${featureID + "-cell-right"} {
-        border-right: 2px solid var(--${triangleColorVariable});
-      }
-    `;
-    styleElement.textContent = dynamicCSS;
-    document.head.appendChild(styleElement);
-    cell.classList.add(featureID + "-cell-right");
-
     triangle.style.borderLeft = `var(--triangle-width) var(--${triangleColorVariable}) solid`;
   } else {
-    const styleElement = document.createElement('style');
-    const dynamicCSS = `
-      .${featureID + "-cell-left"} {
-        border-left: 2px solid var(--${triangleColorVariable});
-      }
-    `;
-    styleElement.textContent = dynamicCSS;
-    document.head.appendChild(styleElement);
-    cell.classList.add(featureID + "-cell-left");
-
     triangle.style.borderRight = `var(--triangle-width) var(--${triangleColorVariable}) solid`;
     triangle.style.position = "absolute";
     triangle.style.right = "0px";
     triangle.style.top = "0px";
   };
+
+  const styleElement = document.createElement('style');
+  const dynamicCSS = `
+    .${featureID + "-cell-right"} {
+      border-right: 3px solid var(--${triangleColorVariable});
+      border-left: 3px solid var(--${triangleColorVariable});
+    }
+  `;
+  styleElement.textContent = dynamicCSS;
+  document.head.appendChild(styleElement);
+  cell.classList.add(featureID + "-cell-right");
 
   // Add the triangle div to the table cell
   cell.appendChild(triangle);
