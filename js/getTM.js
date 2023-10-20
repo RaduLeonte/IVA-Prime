@@ -22,35 +22,35 @@ function get_tm(sequence, c, m) {
         if (dictKey.slice(0, 2) === pair) {
           key = dictKey;
           return dictionary[key];
-        }
-      }
+        };
+      };
     
       // Check for reverse of pair in the first 2 characters of dict keys
       for (const dictKey of Object.keys(dictionary)) {
         if (dictKey.slice(0, 2) === pair.split('').reverse().join('')) {
           key = dictKey;
           return dictionary[key];
-        }
-      }
+        };
+      };
     
       // Check for pair in the last 2 characters of dict keys
       for (const dictKey of Object.keys(dictionary)) {
         if (dictKey.slice(-2) === pair) {
           key = dictKey;
           return dictionary[key];
-        }
-      }
+        };
+      };
     
       // Check for reverse of pair in the last 2 characters of dict keys
       for (const dictKey of Object.keys(dictionary)) {
         if (dictKey.slice(-2) === pair.split('').reverse().join('')) {
           key = dictKey;
           return dictionary[key];
-        }
-      }
+        };
+      };
     
       return null;
-    }
+    };
 
     // Constants or params
     const R = 1.987; // cal mol-1 K-1 universal gas constant
@@ -98,7 +98,7 @@ function get_tm(sequence, c, m) {
         console.log("Symmetric")
         deltaS0 += -1.4;
         symm_fraction = 1;
-    }
+    };
 
     // Nucleation term
     // The first pair to anneal is the nucleation point, but since G-C bonds are so strong it basically
@@ -110,7 +110,7 @@ function get_tm(sequence, c, m) {
     } else {
         deltaH0 += 2.3E3;
         deltaS0 += 4.1;
-    }
+    };
 
     // Loop over the sequence and add the contributions of each pair of nucleotides.
     for (let i = 0; i < sequence.length - 1; i++) {
@@ -121,7 +121,7 @@ function get_tm(sequence, c, m) {
 
         const to_addS = find_in_dict(deltaS_dict, pair);
         deltaS0 += to_addS
-    }
+    };
     
     // Calculate the melting temperature and convert from K to C
     const tm = (deltaH0 / (deltaS0 + R * Math.log(c / symm_fraction))) - 273.15; 
