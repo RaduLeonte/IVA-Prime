@@ -1377,7 +1377,6 @@ function makeContentGrid(pNr, callback) {
             createFilledTriangle(key, annotationColor, "right", highestCell.row, highestCell.col + 1);
           };
         };
-        makeAnnotation(rangeStart - 1, rangeEnd - 1, annotText, key, pNr, currGridStructure); 
 
         // Check if feature needs to be translated
         //console.log(currFeatures[key]);
