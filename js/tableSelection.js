@@ -68,17 +68,28 @@ function addCellSelection(tableId, containerId, pNr) {
       // Signal selection start
       //console.log("Starting selection at: " + selectionStartPos);
       //console.log(features)
-      const targetAnnotation = event.target.closest('td');
-      const targetString = targetAnnotation.getAttribute('feature-id');
+      const targetCell = event.target.closest('td');
+      const targetRow = targetCell.parentElement
       let targetSpan = null;
-      let found = false;
-      for (const entryKey in features) {
-          if (entryKey === targetString) {
-              found = true;
-              targetSpan = features[entryKey]["span"];
-              break;
-          }
-      }
+      console.log("TC:", targetCell, selectionStartPos)
+      console.log("TR:", targetRow, selectionStartPos)
+      if (targetCell.id === "Annotations") {
+        const targetString = targetCell.getAttribute('feature-id');
+        let found = false;
+        for (const entryKey in features) {
+            if (entryKey === targetString) {
+                found = true;
+                targetSpan = features[entryKey]["span"];
+                break;
+            };
+        };
+      } else if (targetCell.id === "Amino Acids" && targetCell.innerText !== "") {
+        const currGridStructure = (pNr === 1) ? gridStructure: gridStructure2;
+        const seqIndex = (gridWidth * Math.floor(targetRow.rowIndex/currGridStructure.length)) + targetCell.cellIndex + 1;
+        console.log(seqIndex, targetCell.cellIndex, targetRow.rowIndex)
+        targetSpan = (seqIndex - 1)+ ".." + (seqIndex + 1);
+      };
+      
       
       isSelecting = true;
 
@@ -95,9 +106,9 @@ function addCellSelection(tableId, containerId, pNr) {
       event.preventDefault();
 
       if (targetSpan) {
-        selectFeatureSpan(targetSpan, pNr);
-      }
-    }
+        selectBySpan(targetSpan, pNr);
+      };
+    };
   });
 
   /**
@@ -323,7 +334,7 @@ function addCellSelection(tableId, containerId, pNr) {
 /**
  * Select text from feature span.
  */
-function selectFeatureSpan(inputSpan, pNr) {
+function selectBySpan(inputSpan, pNr) {
   // Clear the previous selection
   let currGridStructure = (pNr === 1) ? gridStructure: gridStructure2;
   const sequenceGridTable = (pNr === 1) ? document.getElementById('sequence-grid'): document.getElementById('sequence-grid2');

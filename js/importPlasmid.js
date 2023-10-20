@@ -1308,7 +1308,7 @@ function seqIndexToCoords(inputIndex, targetRow, currGridStructure) {
   const outputRow = (Math.floor(inputIndex / gridWidth))*currGridStructure.length + targetRow;
   const outputIndex = inputIndex - Math.floor(inputIndex / gridWidth)*gridWidth - 1;
   return [outputRow, outputIndex];
-}
+};
 
 
 /**
@@ -1327,7 +1327,7 @@ function startTranslation(codonPos, pNr) {
   } else {
     currSequence = sequence2;
     currGridStructure = gridStructure2;
-  }
+  };
 
   // Convert to table coordinates based on the row order in the grid structure
   const rowIndexAA = currGridStructure.indexOf("Amino Acids");
