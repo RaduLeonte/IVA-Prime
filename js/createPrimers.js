@@ -377,6 +377,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
         tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
         // Forward homologous region, extend backwards on the forward strand from the start position
         homoFwd = primerExtension(replaceStartPos, "fwdStrand", "backward", homoRegionTm, 7, 1);
+        console.log("Short ins:", replaceStartPos, replaceEndPos)
         
         // There is no need for a homologous region in the reverse primer, the homologous region of the forward primer
         // will bind to the template binding region of the reverse primer instead.

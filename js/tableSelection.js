@@ -51,6 +51,7 @@ function addCellSelection(tableId, containerId, pNr) {
    * Selection start.
    */
   sequenceGridTable.addEventListener('mousedown', function (event) {
+    console.log("Table selection mouse down")
     if (event.button === 0) { // Check for left click
       // Clear the previous selection
       clearSelection(pNr, true);
@@ -103,6 +104,7 @@ function addCellSelection(tableId, containerId, pNr) {
    * Removes the selected appearance from all the currently selected cells.
    */
   function clearSelection(pNr, clearingGlobalVars) {
+    console.log("CLEARING SELECTION")
     // Find all selected cells and iterate over them to remove the selected class
     const selectedCells = document.querySelectorAll('.selected-cell');
     selectedCells.forEach((cell) => {
@@ -207,6 +209,7 @@ function addCellSelection(tableId, containerId, pNr) {
    * Once left click is lifted, end the selection.
    */
   sequenceGridTable.addEventListener('mouseup', function (event) {
+    console.log("Table selection mouse up")
     if (event.button === 0 && isSelecting) { // Check if it was left click that was lifted and we are currently selecting
       // Signat that we have stopped selecting
       isSelecting = false;
@@ -258,7 +261,8 @@ function addCellSelection(tableId, containerId, pNr) {
    * Check for clicks outside the tables to clear the selection.
    */
   document.addEventListener('click', function (event) {
-    if (!event.target.closest('#sequence-grid') && !event.target.closest('#sequence-grid2')) {
+    console.log("Table selection mouse click")
+    if (!event.target.closest('#sequence-grid') && !event.target.closest('#sequence-grid2') && !event.target.closest('.popup-window')) {
       clearSelection(pNr, true);
       startCell = null;
       endCell = null;
