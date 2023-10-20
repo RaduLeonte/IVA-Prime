@@ -35,27 +35,80 @@ function displayPrimers(primersType, primersDict) {
         let primerTMInfo = []
         for (const [subprimer, subprimerProperties] of Object.entries(subprimersDict)) {
             const span = document.createElement('span');
+            span.id = "primer-region-span" + "-" + primer;
             span.style.color = "white";
             span.style.backgroundColor = subprimerProperties["color"];
             span.style.fontWeight = 'bold';
             span.textContent = subprimerProperties["seq"];
             primerSequence.appendChild(span)
+            primerSequence.appendChild(span)
+            span.addEventListener('mouseover', primerRegionHover);
+            span.addEventListener('mouseout', removePrimerRegionHighlight);
             primerTMInfo.push(parseFloat(get_tm(subprimerProperties["seq"], primerConc, saltConc).toFixed(2)));
-        }
+        };
 
         const spanTM = document.createElement('span');
         spanTM.textContent = ` (${primerTMInfo.join(', ')})`
         primerSequence.appendChild(spanTM)
 
         modDiv.appendChild(primerSequence);
-    }
+    };
 
     
     sidebarContentDiv.appendChild(modDiv);
     // Reset selection
     selectedText = "";
     selectedText2 = "";
-}
+};
+
+
+/**
+ * Highlights where the primer sequence is in the plasmid sequence.
+ */
+function primerRegionHover(event) {
+    // Get the inner text of the span
+    const targetSpan = event.target
+    const spanSequence = targetSpan.innerText;
+    const spanDirection = (targetSpan.id.includes("Forward")) ? "fwd": "rev";
+    console.log(spanDirection)
+    const spanColor = window.getComputedStyle(targetSpan).backgroundColor;
+    
+    console.log('Span Text:', spanSequence, spanColor);
+    
+    // Highlight hovered sequence in plasmid files
+    for (targetPlasmid = 1; targetPlasmid < 3; targetPlasmid++) {
+        const currGridstructure = (targetPlasmid === 1) ? gridStructure: gridStructure2;
+        let currSequence = null;
+        if (targetPlasmid === 1) { 
+            currSequence = (spanDirection === "fwd") ? sequence: complementaryStrand;
+        } else {
+            currSequence = (spanDirection === "fwd") ? sequence2: complementaryStrand2;
+        };
+        const searchQuery = (spanDirection === "fwd") ? spanSequence: spanSequence.split('').reverse().join('');
+        const targetStrand = (spanDirection === "fwd") ? 0: 1;
+        console.log("Search query:", targetPlasmid, targetStrand, searchQuery, null, spanColor);
+        highlightOccurences(targetPlasmid, targetStrand, currSequence, searchQuery, currGridstructure, null, spanColor);
+    };
+};
+
+
+/**
+ * Function to remove highlighting
+ */
+function removePrimerRegionHighlight() {
+    for (pNr = 1; pNr < 3; pNr++) {
+        const targetTable = (pNr === 1) ? document.getElementById("sequence-grid"): document.getElementById("sequence-grid2");
+        // Iterate over all cells in the table and remove element styles
+        for (let i = 0; i < targetTable.rows.length; i++) {
+            for (let j = 0; j < targetTable.rows[i].cells.length; j++) {
+                const cell = targetTable.rows[i].cells[j];
+                if (cell.id === "Forward Strand" || cell.id === "Complementary Strand") {
+                    cell.removeAttribute("style");
+                };
+            };
+        };
+    };
+};
 
 
 /**
