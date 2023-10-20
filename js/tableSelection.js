@@ -3,6 +3,7 @@
  * 
  * TO DO:
  * - check if copying is disabled in unintended places
+ * - enable selection on the second plasmid at some point
  */
 function addCellSelection(tableId, containerId, pNr) {
   // Select target table and container
@@ -17,7 +18,7 @@ function addCellSelection(tableId, containerId, pNr) {
   } else {
     selectionEndPos = basePosition2;
     currGridStructure = gridStructure2;
-  }
+  };
 
    // Table doesn't exist yet, observe the DOM for changes
   if (!sequenceGridTable) {
@@ -32,14 +33,14 @@ function addCellSelection(tableId, containerId, pNr) {
             observer.disconnect(); // Stop observing DOM changes
             addCellSelection(tableId, containerId, pNr); // Call the function again now that the table exists
             break;
-          }
-        }
-      }
+          };
+        };
+      };
     });
 
     observer.observe(document.documentElement, { childList: true, subtree: true });
     return;
-  }
+  };
 
   // Initialize selection variables
   let isSelecting = false;
@@ -59,7 +60,7 @@ function addCellSelection(tableId, containerId, pNr) {
         selectionStartPos = basePosition;
       } else {
         selectionStartPos = basePosition2;
-      }
+      };
 
       initialSelectionStartCell = [event.target.closest('tr').rowIndex, event.target.closest('td').cellIndex]
       isSelecting = true;
@@ -76,8 +77,8 @@ function addCellSelection(tableId, containerId, pNr) {
               found = true;
               targetSpan = features[entryKey]["span"];
               break;
-          }
-      }
+          };
+      };
       
       isSelecting = true;
 
@@ -95,8 +96,8 @@ function addCellSelection(tableId, containerId, pNr) {
 
       if (targetSpan) {
         selectFeatureSpan(targetSpan, pNr);
-      }
-    }
+      };
+    };
   });
 
   /**
@@ -113,13 +114,13 @@ function addCellSelection(tableId, containerId, pNr) {
       selectedText = "";
     } else {
       selectedText2 = "";
-    }
+    };
     // Reset cell selection
     startCell = null;
     endCell = null;
     selectionStartPos = null;
     selectionEndPos = null;
-  }
+  };
 
   /**
    * Update the selection on mouse movement.
@@ -132,7 +133,7 @@ function addCellSelection(tableId, containerId, pNr) {
       let closestSide = "right";
       if (cursorOffset < cellWidth / 2) {
         closestSide = "left";
-      }
+      };
 
       // Find cell closest to the cursor
       if (pNr === 1) {
@@ -141,7 +142,7 @@ function addCellSelection(tableId, containerId, pNr) {
       } else {
         selectionEndPos = basePosition2;
         currGridStructure = gridStructure2;
-      }
+      };
       let closestCell = event.target.closest('td')
       let closestRow = event.target.closest('tr')
       let selectionEndCell = [event.target.closest('tr').rowIndex, event.target.closest('td').cellIndex]
@@ -157,7 +158,7 @@ function addCellSelection(tableId, containerId, pNr) {
         let selectionStartCell = initialSelectionStartCell;
         if (closestSide === "left") {
           selectionEndCell[1]--;
-        }
+        };
 
         // swap if needed
         //console.log("Before swap:", selectionStartCell, selectionEndCell)
@@ -166,7 +167,7 @@ function addCellSelection(tableId, containerId, pNr) {
           selectionEndCell = selectionStartCell;
           selectionStartCell = tempCell;
           selectionStartCell[1]++;
-        }
+        };
         //console.log("After swap:", selectionStartCell, selectionEndCell)
 
         startRowIndex = selectionStartCell[0];
@@ -190,14 +191,14 @@ function addCellSelection(tableId, containerId, pNr) {
             const selectedCell = row.cells[j];
             if (selectedCell.id === "Forward Strand" && selectedCell.innerText.trim() !== "") {
               selectedCell.classList.add('selected-cell');
-            }
-          }
-        }
+            };
+          };
+        };
 
         // Update the end cell
         endCell = closestCell;
-      }
-    }
+      };
+    };
   });
 
 
@@ -222,8 +223,8 @@ function addCellSelection(tableId, containerId, pNr) {
       } else {
         selectedText2 = getSelectedText();
         console.log("Selected text: ", selectedText2, selectionStartPos, selectionEndPos);
-      }
-    }
+      };
+    };
   });
 
 
@@ -237,7 +238,7 @@ function addCellSelection(tableId, containerId, pNr) {
       text += cell.textContent.trim();
     });
     return text;
-  }
+  };
 
 
   /**
@@ -261,7 +262,7 @@ function addCellSelection(tableId, containerId, pNr) {
       startCell = null;
       endCell = null;
       isSelecting = false;
-    }
+    };
   });
 
 
@@ -275,13 +276,13 @@ function addCellSelection(tableId, containerId, pNr) {
       currSelectedText = selectedText;
     } else {
       currSelectedText = selectedText2;
-    }
+    };
 
     // Check if we've actually clicked ctrl+c and we have text selected
     if (event.ctrlKey && event.key === 'c' && currSelectedText !== '') {
       event.preventDefault(); // Prevent default copy behaviour
       copyToClipboard(currSelectedText);
-    }
+    };
   });
 
 
@@ -295,7 +296,7 @@ function addCellSelection(tableId, containerId, pNr) {
     textarea.select();
     document.execCommand('copy');
     document.body.removeChild(textarea);
-  }
+  };
 };
 
 
@@ -334,9 +335,9 @@ function selectFeatureSpan(inputSpan, pNr) {
       const selectedCell = row.cells[j];
       if (selectedCell.id === "Forward Strand" && selectedCell.innerText.trim() !== "") {
         selectedCell.classList.add('selected-cell');
-      }
-    }
-  }
+      };
+    };
+  };
 };
 
 
