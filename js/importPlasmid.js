@@ -928,7 +928,7 @@ function makeContentGrid(pNr, callback) {
     }
     
     // Iterate over the features and create the annotatations
-    console.log("Here6", currFeatures)
+    //console.log("Here6", currFeatures)
     Object.entries(currFeatures).forEach(([key, value]) => {
       if (value.span && !key.includes("source")) { // If the feature includes a span and is not "source"
         // Get the current feature's span
@@ -940,7 +940,15 @@ function makeContentGrid(pNr, callback) {
         console.log(annotText, rangeStart + ".." + rangeEnd)
         // Make the annotation at the specified indices
         makeAnnotation(rangeStart - 1, rangeEnd - 1, annotText, key, pNr, currGridStructure); 
-      }
+
+        // Check if feature needs to be translated
+        //console.log(currFeatures[key]);
+        if ((currFeatures[key]["translation"]) || (currFeatures[key]["note"] && (currFeatures[key]["note"].includes(" translation: ")))) {
+          console.log("Translating: ", value.label, rangeStart, rangeEnd, pNr)
+          const targetStrand = (!value.span.includes("complement")) ? "fwd": "comp";
+          translateSpan(targetStrand, rangeStart, rangeEnd, pNr);
+        };
+      };
     });
 
     // Check the sequence for common promotes and start the translation there
@@ -1355,13 +1363,71 @@ function startTranslation(codonPos, pNr) {
     if (col > gridWidth) {
       col -= gridWidth;
       row += currGridStructure.length;
-    }
+    };
     // If the last displayed amino acid was a stop codon or we've reached the end of the sequence, stop
     if (aminoAcid === "-" || codonPos > currSequence.length){
       break;
-    }
-  }
-}
+    };
+  };
+};
+
+
+/**
+ * Translate specific span
+ */
+function translateSpan(targetStrand, rangeStart, rangeEnd, pNr) {
+  // Select the corresponding features and sequence
+  let currGridStructure = null;
+  let currSequence = "";
+  if (pNr === 1) {
+    currSequence = sequence;
+    currGridStructure = gridStructure;
+  } else {
+    currSequence = sequence2;
+    currGridStructure = gridStructure2;
+  };
+
+  const codonStartPos = (targetStrand === "fwd") ? rangeStart: rangeEnd;
+  const codonEndPos = (targetStrand === "fwd") ? rangeEnd + 1: rangeStart - 1;
+  let codonPos = codonStartPos;
+  const dir = (targetStrand === "fwd") ? 1: -1;
+
+  // Convert to table coordinates based on the row order in the grid structure
+  let tableCoords = seqIndexToCoords(codonStartPos, currGridStructure.indexOf("Amino Acids"), currGridStructure);
+
+  // Get the row and column, increment the column by 1 because the amino acids are
+  // displayed in the middle cell of a group of 3 cells
+  let row = tableCoords[0];
+  let col = tableCoords[1] + 1*dir;
+
+  console.log("Translating:", targetStrand, col, row, codonPos, codonEndPos)
+  // Start translating until a stop codon is encountered
+  //console.log("Starting translationa at " + codonPos + "(" + row + ", " + col + ").");
+  while (true) {
+    // Select current codon
+    let codon = repeatingSlice(currSequence, codonPos - 1, codonPos + 2);
+    // Get the corresponding amino acid
+    let aminoAcid = translateCodon(codon);
+
+    // Fill the cells
+    fillAACells(row, col, aminoAcid, pNr);
+    // Jump to next position
+    col += 3*dir;
+    codonPos += 3*dir;
+    // If we've jumped off of the table go to the next row
+    if (col > gridWidth || col < 0) {
+      col -= gridWidth*dir;
+      row += currGridStructure.length*dir;
+    };
+    // If the last displayed amino acid was a stop codon or we've reached the end of the sequence, stop
+    const breakCondition = (codonEndPos - codonPos)*dir <= 0;
+    console.log("Translating, checking if we've reached the end:", codonPos, codonEndPos, aminoAcid, breakCondition, dir)
+    //if (codonPos > currSequence.length || codonPos*dir >= codonEndPos) {
+    if (codonPos > currSequence.length || breakCondition) {
+      break;
+    };
+  };
+};
 
 
 /**
@@ -1380,7 +1446,7 @@ function fillAACells(row, col, text, pNr) {
   } else {
     table = document.getElementById('sequence-grid2');
     currGridStructure = gridStructure2;
-  }
+  };
 
   // Select the middle cell
   let mainCell = table.rows[row].cells[col];
@@ -1389,7 +1455,8 @@ function fillAACells(row, col, text, pNr) {
     col = col - gridWidth;
 
     mainCell = table.rows[row].cells[col];
-  }
+  };
+  //console.log("Translating, filling cells:", row, col, text, pNr)
 
   // Select the left and right cells
   const leftCell = table.rows[row].cells[col-1];
@@ -1397,14 +1464,14 @@ function fillAACells(row, col, text, pNr) {
   // Check and clear text in leftCell
   if (leftCell && leftCell.textContent) {
     leftCell.textContent = '';
-  }
+  };
 
   // Check and clear text in rightCell
   if (rightCell && rightCell.textContent) {
     rightCell.textContent = '';
-  }
+  };
 
   // Add text to the center of the merged cell
   mainCell.textContent = text;
   mainCell.style.textAlign = 'center';
-}
+};
