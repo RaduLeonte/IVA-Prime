@@ -39,16 +39,20 @@ function addExportButtonsListeners(pNr) {
   console.log("Enabling Export Buttons", pNr)
   let targetDropdown = (pNr === 1) ? '#export-dropdown': '#export-dropdown-second';
   targetDropdown = document.querySelector(targetDropdown);
+  targetDropdown.style.display = "block";
 
   let targetButtonLink1 = (pNr === 1) ? '#export-btn-gb': '#export-second-btn-gb';
   targetButtonLink1 = document.querySelector(targetButtonLink1);
-
-  targetDropdown.style.display = "block";
+  let targetButtonLink2 = (pNr === 1) ? '#export-btn-dna': '#export-second-btn-dna';
+  targetButtonLink2 = document.querySelector(targetButtonLink2);
 
   targetButtonLink1.addEventListener('click', function() {
     exportGBFile(pNr);
   });
-}
+  targetButtonLink2.addEventListener('click', function() {
+    exportDNAFile(pNr);
+  });
+};
 
 
 /**
@@ -670,7 +674,370 @@ function exportGBFile(pNr) {
 
   // Send for download
   downloadFile(outputFileName, outputFileContent, outputFileExtension);
-}
+};
+
+
+/**
+ * DNA file exporter.
+ */
+function exportDNAFile(pNr) {
+  console.log("Export DNA File")
+  // Output file name
+  const outputFileExtension = "dna"
+  const originalFileExtension = document.getElementById("plasmid-file-name" + pNr).innerHTML.match(/\.([0-9a-z]+)(?=[?#])|(\.)(?:[\w]+)$/i)[0].slice(1);
+  const outputFileName = document.getElementById("plasmid-file-name" + pNr).innerHTML.replace(/\.[^.]*$/, '');
+
+  // Select target sequence and features
+  const currSequence = (pNr === 1) ? sequence: sequence2;
+  const currFeatures = (pNr === 1) ? sortBySpan(features): sortBySpan(features2);
+
+
+  /**
+   * Converts a string of hex bytes to string
+   */
+  function hexToString(inputBytes) {
+    inputBytes = inputBytes.split(" ")
+    let outputString = "";
+    inputBytes.forEach(inputByte => {
+      // Parse the hexadecimal string to an integer and convert it to a character
+      const char = String.fromCharCode(parseInt(inputByte, 16));
+      
+      // Append the character to the result string
+      outputString += char;
+    });
+    return outputString;
+  };
+
+
+  /**
+   * Integer to 4 bytes hex
+   */
+  function inToHexBytes(number) {
+    const buffer = new ArrayBuffer(4); // 4 bytes
+    const view = new DataView(buffer);
+    view.setUint32(0, number, false); // true means little-endian (least significant byte first)
+
+    // Convert the DataView to a string
+    const byteArray = new Uint8Array(buffer);
+    const byteString = Array.from(byteArray).map(byte => byte.toString(16).padStart(2, '0')).join(' ');
+
+    return byteString;
+  };
+
+
+  function addBytes(byteString) {
+    const bytesToAdd = byteString.split(' ').map(hex => parseInt(hex, 16));
+    outputBytes.push(...bytesToAdd);
+  };
+
+
+  function stringToBytes(inputString) {
+    const byteArray = [];
+    for (let i = 0; i < inputString.length; i++) {
+      const byteHex = inputString.charCodeAt(i).toString(16).padStart(2, '0');
+      byteArray.push(byteHex);
+    };
+    return byteArray.join(' ');
+  };
+
+
+  /**
+   * Fil header
+   */
+  const outputBytes = []
+  // File magic bytes (19)
+  addBytes("09 00 00 00 0e 53 6e 61 70 47 65 6e 65 00 01 00 0f 00 13");
+  // File type designation byte (unknown 00, dna 01, rna 20, prot 15)
+  addBytes("01");
+
+  // sequence length +1 (4 bytes)
+  addBytes(inToHexBytes(currSequence.length + 1));
+
+  // plasmid type byte (ss+lin = 00, ss+circ=01, ds+lin=02, ds+circ=03)
+  addBytes("03");
+
+  /**
+   * Sequence bytes
+   */
+  addBytes(stringToBytes(currSequence.toLowerCase()));
+  // Stop byte sequence
+  addBytes("02");
+
+
+  /**
+   * Thrash bytes #1
+   */
+  // Stop byte thrash bytes 1
+  //const emptyBytesArray1 = new Array(2840).fill('00').join(' ');
+  // length
+  //addBytes(inToHexBytes(2840));
+  // content
+  //ddBytes(emptyBytesArray1);
+  // stop
+
+
+  /** IDK */
+  //addBytes("03");
+
+  // 4 bytes that encompass length of both restriction enzyme block as well as thrash nr 2 until xml trees
+
+  //addBytes("01"); // needed so snapgene doesnt crash
+
+  /**
+   * Restriction enzyme sequences
+   */
+  //const restrictionEnzymeSequences = "GACNNNNNNGTC,CCAGGCCTGG,GATCCGGATC,CCWGGTACCWGG,CCANNNNNTGG,CCAGGNNNTGG,CCANNNCCTGG,CCAGGNCCTGG,GCACNNNAACGTTNNNGTGC,CACNNNGTG,CCNNNNNNNGG,AACNAACRYGTGCGTGC,GCACGCACRYGTTNGTT,GCACNAACRYGTTNGTGC,AACGCACRYGTGCGTT,GCACNNNNNNGTTSAACNNNNNNGTGC,GACNNNNNGTC,GAANNNNNNNTTGG,CCAANNNNNNNTTC,CACNNNNGTG,AACACNNNNGTGC,GCACNNNNGTGTT,GCANNNNNNTGC,GAACNNNNNNTCC,GGANNNNNNGTTC,CAGNNNCTG,CCAGGNNCTG,CAGNNCCTGG,CCWGGGCCC,GGGCCCWGG,CCWGGGCCCWGG,AACNNNNNNGTGCACNNNNNNGTT,GACNNNNNNTTYG,CRAANNNNNNGTC,GACNNNGTC,GAANNNNTTC,CCWGGTACC,GGTACCWGG,CCWGGWCCWGG,ACNNNNGTAYC,GRTACNNNNGT,CCWGGYRCCWGG,GAAGNNNNNNTAC,GTANNNNNNCTTC,AACGGCNNNGTGC,GCACNNNGCCGTT,GCACGGCNNNGTT,AACNNNGCCGTGC,CGANNNNNNTGC,GCANNNNNNTCG,CGATCNNNNTGC,GCANNNNGATCG,TGANNNNNNTCA,TGATCNNNNTCA,TGANNNNGATCA,TGATCNNGATCA,AACCTGCNNGTGC,GCACNNGCAGGTT,GCACCTGCNNGTT,AACNNGCAGGTGC,GCCNNNNNGGC,AACNNNNNNGTGCMC,GKGCACNNNNNNGTT,CCWGGNCCWGG,AACTGGGNNGTGC,GCACNNCCCAGTT,GCACTGGGNNGTT,AACNNCCCAGTGC,GACNNNNGTC,GAGNNNNNCTC,CCWGGTCTC,GAGACCWGG,GATNNNNATC,GATCNNNATC,GATNNNGATC,GATCNNGATC,CCWGGCGCCWGG,ACNNNNNCTCC,GGAGNNNNNGT,AACNNNNNNGTGCAG,CTGCACNNNNNNGTT,GATCATGATC,CCWGGNNCCWGG,AACTGGNNNGTGC,GCACNNNCCAGTT,GCACTGGNNNGTT,AACNNNCCAGTGC,AACNAACCGGTGCGTGC,GCACGCACCGGTTNGTT,GCACNAACCGGTTNGTGC,AACGCACCGGTGCGTT,GCANNNNNTGC,GCACNNNNNNGTTCGAACNNNNNNGTGC,CCTNNNNNAGG,GCNNNNNNNGC,CCANNNNNNTGG,CCAGGNNCCTGG,CCTGGCCAGG,CAANNNNNGTGG,CCACNNNNNTTG,TTTAAACNNNNNNGTGC,GCACNNNNNNGTTTAAA,GCACNNNNNNGTTTAAACNNNNNNGTGC,CCAGGNCCY,RGGNCCTGG,CCWGGGNCCTGG,CCAGGNCCCWGG,AAGNNNNNCTT,GAYNNNNNVTC,GABNNNNNRTC,GAYNNNNNRTC,GATCNNNNVTC,GABNNNNGATC,GAYNNNNGATC,GATCNNNNRTC,GATCNNNGATC,GTYAACNNNNNNGTGC,GCACNNNNNNGTTRAC,GCACNNNNNNGTTAACNNNNNNGTGC,GATCNGATC,TAACTATAACGGTCCTAAGGTAGCGA,TCGCTACCTTAGGACCGTTATAGTTA,CTCTCTTAAGGTAGC,GCTACCTTAAGAGAG,TAGGGATAACAGGGTAAT,ATTACCCTGTTATCCCTA,GTTAACNNNNNNGTGC,GCACNNNNNNGTTAAC,AACNAACGCGTGCGTGC,GCACGCACGCGTTNGTT,GCACNAACGCGTTNGTGC,AACGCACGCGTGCGTT,TCCAACNNNNNNGTGC,GCACNNNNNNGTTGGA,CAYNNNNRTG,AACAYNNNNGTGC,GCACNNNNRTGTT,GTTTAAACNNNNNNGTGC,GCACNNNNNNGTTTAAAC,CCWGGCGCC,GGCGCCWGG,CCWGGNNCC,GGNNCCWGG,GATCGCGATC,AACNAACATGTGCGTGC,GCACGCACATGTTNGTT,GCACNAACATGTTNGTGC,AACGCACATGTGCGTT,TGGCAAACAGCTATTATGGGTATTATGGGT,ACCCATAATACCCATAATAGCTGTTTGCCA,ATCTATGTCGGGTGCGGAGAAAGAGGTAATGAAATGG,CCATTTCATTACCTCTTTCTCCGCACCCGACATAGAT,AACNNGCACGTGCNNGTT,GAACNNNNNCTC,GAGNNNNNGTTC,CCAGGWCCY,RGGWCCTGG,CCWGGGWCCTGG,CCAGGWCCCWGG,CCAGGWCCTGG,TTATAACNNNNNNGTGC,GCACNNNNNNGTTATAA,GCACNNNNNNGTTATAACNNNNNNGTGC,GAACNNNNNNTAC,GTANNNNNNGTTC,GGCCNNNNNGGCC,AACNNACTAGTGC,GCACTAGTNNGTT,AACTAGTNNGTGC,GCACNNACTAGTT,AACNAACTAGTGCGTGC,GCACGCACTAGTTNGTT,GCACNAACTAGTTNGTGC,AACGCACTAGTGCGTT,AACNNNAACGTGCNNGTGC,GCACNNGCACGTTNNNGTT,TTAACNNNNNNGTGC,GCACNNNNNNGTTAA,CACNNNNNNTCC,GGANNNNNNGTG,CACNNNNGATCC,GGATCNNNNGTG,GATCTAGATC,CCANNNNNNNNNTGG,CCAGGCCT,AGGCCTGG,CCTCGAGG,GATCCGGA,TCCGGATC,GGCGCGCC,GCGATCGC,CCWGGWCC,GGWCCWGG,GATCGATC,GATCATGA,TCATGATC,GCGGCCGC,CCTGGCCR,YGGCCAGG,CCWGGNCC,GGNCCWGG,GGCCGGCC,RTGCGCAY,GATCNNGA,TCNNGATC,CGCGCGCG,CCTGGCCA,TGGCCAGG,CGCCGGCG,GTTTAAAC,GATCGCGA,TCGCGATC,TTAATTAA,VCTCGAGB,CCTGCAGG,CRCCGGYG,CGTCGACG,ATTTAAAT,GCCCGGGC,GATCTAGA,TCTAGATC,CACCTGC,GCAGGTG,CCTNAGG,GATCGAT,ATCGATC,CCTCAGC,GCTGAGG,GCTNAGC,CCTNAGC,GCTNAGG,GCTCTTC,GAAGAGC,GGTNACC,CGGWCCG,ACCWGGT,RGGNCCY,CCTGGAG,CTCCAGG,GGTGATC,GATCACC,GATCNGA,TCNGATC,GGGWCCC,GAAGATC,GATCTTC,CCCWGGG,TCCNGGA,TCCWGGA,RGGWCCY,TTATAA,AGGCCT,GACGTC,GTMKAC,TCCGGA,TGCGCA,ACCTGC,GCAGGT,GGTACC,AGTACT,GGYRCC,CCGCTC,GAGCGG,AACGTT,YGGCCR,RAATTY,CTGAAG,CTTCAG,CACGTG,GRCGYC,AGCGCT,CTTAAG,ACRYGT,ACCGGT,ACTAGT,CACGTC,GACGTG,GWGCWC,GTGCAC,CYCGRG,GGGCCC,ATTAAT,CCTAGG,TTCGAA,GCTAGC,GKGCMC,TGGCCA,GGATCC,GRGCYC,ATCGAT,CACGAG,CTCGTG,GGCGCC,GAAGAC,GTCTTC,GCATGC,GTATCC,GGATAC,TGATCA,ACTGGG,CCCAGT,CTRYAG,RGCGCY,AGATCT,GGNNCC,CTGGAG,CTCCAG,CTTGAG,CTCAAG,CGATCG,GGTCTC,GAGACC,YACGTR,CCNNGG,GAATGC,GCATTC,WCCGGW,GCAATG,CATTGC,RCCGGY,GCGCGC,GAGGAG,CTCCTC,CGGCCG,CCCAGC,GCTGGG,GTGCAG,CTGCAC,CGRYCG,CGTACG,CGTCTC,GAGACG,CCATGG,TCGCGA,GDGCHC,TGTACA,TCATGA,ACATGT,GTATAC,CCWWGG,CTCTTC,GAAGAG,GCNNGC,CCRYGG,GTTAAC,RCATGY,TACGTA,RGATCY,GCGATG,CATCGC,GCAGTG,CACTGC,CCCGGG,CCGCGG,TTTAAA,GGCGGA,TCCGCC,GAGCTC,GATATC,CTGRAG,CTYCAG,CAGCAG,CTGCTG,GAATTC,ATGCAT,CATATG,GTYRAC,AAGCTT,GTNNAC,TCNNGA,CAATTG,ACGCGT,TCCRAC,GTYGGA,GCCGGC,CMGCKG,GCCGAG,CTCGGC,CTCGAG,CTGCAG,CAGCTG,GTCGAC,CTYRAG,AATATT,GATCGA,TCGATC,GACCGA,TCGGTC,WGTACW,TARCCA,TGGYTA,TCTAGA,GGATC,GATCC,TTSAA,CCWGG,GTCTC,GAGAC,GCWGC,GGNCC,CCSGG,GGTGA,TCACC,GGWCC,GCAGC,GCTGC,CCATC,GATGG,ACGGC,GCCGT,GCNGC,CCNGG,GCATC,GATGC,ACTGG,CCAGT,GGATG,CATCC,CTCAG,CTGAG,GGGAC,GTCCC,ACNGT,CTNAG,CAGTG,CACTG,GACGC,GCGTC,CCCGC,GCGGG,GANTC,CGWCG,TCNGA,CCTTC,GAAGG,GCTCC,GGAGC,GTNAC,GAAGA,TCTTC,GAGTC,GACTC,GTSAC,GAWTC,GCSGC,CASTG,ATGAA,TTCAT,ACGGA,TCCGT,CGCG,CCGC,GCGG,GTAC,AGCT,GCGC,CTAG,GATC,GGCC,CCGG,CATG,RGCY,YATR,ACGT,TGCA,CCDG,CHGG,AATT,CCTC,GAGG,TTAA,ASST,TCGA";
+  //addBytes(inToHexBytes(restrictionEnzymeSequences.length));
+  //addBytes(stringToBytes(restrictionEnzymeSequences));
+
+
+  /**
+   * Thrash bytes #2 (2840 0s)
+   */
+  //const emptyBytesArray2 = new Array(2840).fill('00').join(' ');
+  // length
+  //addBytes(inToHexBytes(2840));
+  // content
+  //addBytes(emptyBytesArray2);
+  // stop byte trash
+
+
+  //addBytes("11");
+
+
+
+
+  /**
+   * Alignable sequences
+   */
+  // length
+  addBytes("00 00 00 2d"); //(default xml length)
+  // content
+  const defaultAlignableSequencesXML = "<AlignableSequences trimStringency=\"Medium\"/>";
+  addBytes(stringToBytes(defaultAlignableSequencesXML));
+  // stop byte
+  addBytes("08");
+
+
+  /**
+   * Additional sequence properties
+   */
+  // length
+  addBytes("00 00 01 07"); //(default xml length)
+  // content
+  const defaultAdditionalSequenceProperties = "<AdditionalSequenceProperties><UpstreamStickiness>0</UpstreamStickiness><DownstreamStickiness>0</DownstreamStickiness><UpstreamModification>Unmodified</UpstreamModification><DownstreamModification>Unmodified</DownstreamModification></AdditionalSequenceProperties>";
+  addBytes(stringToBytes(defaultAdditionalSequenceProperties));
+  // stop byte
+  addBytes("0a");
+
+
+  /**
+   * FEATURES
+   */
+  // Create an XML document
+  const parser = new DOMParser();
+  const nrOfFeatures = Object.keys(currFeatures).filter(item => item !== "LOCUS").length;
+
+  // Create the XML document with the correct root structure
+  const xmlDoc = parser.parseFromString(
+    '<?xml version="1.0" ?><Features nextValidID="' + nrOfFeatures + '"></Features>',
+    'application/xml'
+  );
+
+  // Ensure the "Features" element is correctly added as the root element
+  const root = xmlDoc.documentElement;
+  let i = 0;
+  for (const key in currFeatures) {
+    if (key !== "LOCUS") {
+      const value = currFeatures[key];
+      console.log(`Key: ${key}, Value: ${value}`);
+      console.log(value);
+
+      if (key === "source") {
+        // Feature
+        const xmlFeatureElement = xmlDoc.createElement('Feature');
+        xmlFeatureElement.setAttribute('recentID', i + "");
+        i++;
+        xmlFeatureElement.setAttribute('name', "source");
+        xmlFeatureElement.setAttribute('type', "source");
+        xmlFeatureElement.setAttribute('allowSegmentOverlaps', "0");
+        xmlFeatureElement.setAttribute('consecutiveTranslationNumbering', "1");
+        xmlFeatureElement.setAttribute('visible', "0");
+
+        // Segment
+        const xmlSegmentElement = xmlDoc.createElement('Segment');
+        xmlSegmentElement.selfClosing = true;
+        xmlSegmentElement.setAttribute('range', removeNonNumeric(value["span"]).replace("..", "-"));
+        if (value["color"]) {
+          xmlSegmentElement.setAttribute('color', value["color"]);
+        } else {
+          xmlSegmentElement.setAttribute('color', "#ffffff");
+        };
+        xmlSegmentElement.setAttribute('type', "standard");
+        xmlFeatureElement.appendChild(xmlSegmentElement) // Append
+
+        // Q mol_type
+        if (value["mol_type"]) {
+          const xmlQmoltype = xmlDoc.createElement('Q');
+          xmlQmoltype.setAttribute('name', "mol_type");
+
+          const xmlVmoltype = xmlDoc.createElement('V');
+          xmlVmoltype.selfClosing = true;
+          xmlVmoltype.setAttribute('predef', value["mol_type"]);
+
+          xmlQmoltype.appendChild(xmlVmoltype) // Apend
+          xmlFeatureElement.appendChild(xmlQmoltype) // Apend
+        };
+
+        // Q organism
+        if (value["organism"]) {
+          const xmlQOrganism = xmlDoc.createElement('Q');
+          xmlQOrganism.setAttribute('name', "organism");
+
+          const xmlVOrganism = xmlDoc.createElement('V');
+          xmlVOrganism.selfClosing = true;
+          xmlVOrganism.setAttribute('text', value["organism"]);
+
+          xmlQOrganism.appendChild(xmlVOrganism) // Apend
+          xmlFeatureElement.appendChild(xmlQOrganism) // Apend
+        };
+        
+        root.appendChild(xmlFeatureElement);
+      } else {
+        // Feature
+        const xmlFeatureElement = xmlDoc.createElement('Feature');
+        xmlFeatureElement.setAttribute('recentID', i + "");
+        i++;
+        xmlFeatureElement.setAttribute('name', value["label"].replace(/\d+$/, '').trim());
+        xmlFeatureElement.setAttribute('directionality', (!value["span"].includes("complement")) ? "1": "2");
+        xmlFeatureElement.setAttribute('type', key.replace(/\d+$/, '').trim());
+        xmlFeatureElement.setAttribute('allowSegmentOverlaps', "0");
+        xmlFeatureElement.setAttribute('consecutiveTranslationNumbering', "1");
+
+        // Segment
+        const xmlSegmentElement = xmlDoc.createElement('Segment');
+        xmlSegmentElement.selfClosing = true;
+        xmlSegmentElement.setAttribute('range', removeNonNumeric(value["span"]).replace("..", "-"));
+        if (value["color"]) {
+          xmlSegmentElement.setAttribute('color', value["color"]);
+        } else {
+          xmlSegmentElement.setAttribute('color', "#ffffff");
+        };
+        xmlSegmentElement.setAttribute('type', "standard");
+        xmlFeatureElement.appendChild(xmlSegmentElement) // Append
+
+        // Q Label
+        if (value["label"]) {
+          const xmlQLabel = xmlDoc.createElement('Q');
+          xmlQLabel.setAttribute('name', "label");
+
+          const xmlVLabel = xmlDoc.createElement('V');
+          xmlVLabel.selfClosing = true;
+          xmlVLabel.setAttribute('text', value["label"]);
+
+          xmlQLabel.appendChild(xmlVLabel) // Apend
+          xmlFeatureElement.appendChild(xmlQLabel) // Apend
+        };
+
+        // Q Note
+        if (value["note"]) {
+          const xmlQNote = xmlDoc.createElement('Q');
+          xmlQNote.setAttribute('name', "note");
+
+          const xmlVNote = xmlDoc.createElement('V');
+          xmlVNote.selfClosing = true;
+          xmlVNote.setAttribute('text', value["note"]);
+
+          xmlQNote.appendChild(xmlVNote) // Apend
+          xmlFeatureElement.appendChild(xmlQNote) // Apend
+        };
+
+        // Q Translation
+        if (value["translation"]) {
+          const xmlQCodonStart = xmlDoc.createElement('Q');
+          xmlQCodonStart.setAttribute('name', "codon_start");
+
+          const xmlVCodonStart = xmlDoc.createElement('V');
+          xmlVCodonStart.selfClosing = true;
+          xmlVCodonStart.setAttribute('int', "1");
+
+          xmlQCodonStart.appendChild(xmlVCodonStart) // Apend
+          xmlFeatureElement.appendChild(xmlQCodonStart) // Apend
+
+          const xmlQTranslatable = xmlDoc.createElement('Q');
+          xmlQTranslatable.setAttribute('name', "transl_table");
+
+          const xmlVTranslatable = xmlDoc.createElement('V');
+          xmlVTranslatable.selfClosing = true;
+          xmlVTranslatable.setAttribute('int', "1");
+
+          xmlQTranslatable.appendChild(xmlVTranslatable) // Apend
+          xmlFeatureElement.appendChild(xmlQTranslatable) // Apend
+
+          const xmlQTranslation = xmlDoc.createElement('Q');
+          xmlQTranslation.setAttribute('name', "translation");
+
+          const xmlVTranslation = xmlDoc.createElement('V');
+          xmlVTranslation.selfClosing = true;
+          xmlVTranslation.setAttribute('text', value["translation"]);
+
+          xmlQTranslation.appendChild(xmlVTranslation) // Apend
+          xmlFeatureElement.appendChild(xmlQTranslation) // Apend
+        };
+
+        root.appendChild(xmlFeatureElement);
+      };
+    };
+  };
+
+  // Serialize the XML tree to a string
+  const serializer = new XMLSerializer();
+  const xmlString = serializer.serializeToString(xmlDoc).replace(/[\n\r]/g, '');;
+
+  // Now, xmlString contains the XML structure as a string
+  downloadFile('featuresXMLTree', xmlString, 'xml');
+
+  const emptyFeaturesXML = "<?xml version=\"1.0\"?><Features nextValidID=\"1\"><Feature recentID=\"0\" name=\"Feature 1\" type=\"misc_feature\" allowSegmentOverlaps=\"0\" consecutiveTranslationNumbering=\"1\"><Segment range=\"2-3\" color=\"#a6acb3\" type=\"standard\"/></Feature></Features>";
+  // length
+  addBytes(inToHexBytes(xmlString.length));
+  // content
+  addBytes(stringToBytes(xmlString));
+  // stop byte
+  addBytes("0a 05");
+
+
+  /**
+   * Primers
+   */
+  // length
+  addBytes("00 00 00 d9"); //(default xml length)
+  // content
+  const defaultPrimersXML = "<AdditionalSequenceProperties><UpstreamStickiness>0</UpstreamStickiness><DownstreamStickiness>0</DownstreamStickiness><UpstreamModification>Unmodified</UpstreamModification><DownstreamModification>Unmodified</DownstreamModification></AdditionalSequenceProperties>";
+  addBytes(stringToBytes(defaultPrimersXML));
+  // stop byte
+  addBytes("0a 06");
+
+  /**
+   * NOTES
+   */
+  const notesXML = "<Notes><UUID>17fd1982-6b89-48df-b1f8-fcd952b74b3f</UUID><Type>Natural</Type><Created UTC=\"21:39:38\">2023.10.19</Created><LastModified UTC=\"21:39:38\">2023.10.19</LastModified><SequenceClass>UNA</SequenceClass><TransformedInto>unspecified</TransformedInto></Notes>";
+  // length
+  addBytes(inToHexBytes(notesXML.length));
+  // content
+  addBytes(stringToBytes(notesXML));
+  // stop byte
+  addBytes("0a 0d");
+
+  /**
+   * Closing bytes
+   */
+  const closingBytes = "00 00 01 59 01 00 00 00 01 00 00 4b 00 00 00 00 00 00 00 00 00 03 55 6e 69 71 75 65 20 36 2b 20 43 75 74 74 65 72 73 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 19 ff 00 64 00 00 00 00 00 54 48 4f 00 ff fe 00 00 00 00 00 00 00 00 00 00 00 00 01 01 01 01 00 01 00 45 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 01 ff ff ff ff 01 59 01 f4 01 01 3f 00 50 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 1c 00 00 00 33 3c 3f 78 6d 6c 20 76 65 72 73 69 6f 6e 3d 22 31 2e 30 22 3f 3e 3c 45 6e 7a 79 6d 65 56 69 73 69 62 69 6c 69 74 69 65 73 20 76 61 6c 73 3d 22 22 2f 3e 0a 0e 00 00 00 29 3c 3f 78 6d 6c 20 76 65 72 73 69 6f 6e 3d 22 31 2e 30 22 3f 3e 3c 43 75 73 74 6f 6d 45 6e 7a 79 6d 65 53 65 74 73 2f 3e 0a";
+  addBytes(closingBytes);
+
+  // Send for download
+  console.log(outputBytes)
+  downloadFile(outputFileName, outputBytes, outputFileExtension);
+};
 
 
 /**
@@ -678,7 +1045,13 @@ function exportGBFile(pNr) {
  */
 function downloadFile(downloadFileName, downloadFileContent, downloadFileType) {
   // Create a Blob
-  const blob = new Blob([downloadFileContent], { type: "text/plain" });
+  let blob = null;
+  if (downloadFileType === "dna") {
+    const byteArray = new Uint8Array(downloadFileContent);
+    blob = new Blob([byteArray]);
+  } else {
+    blob = new Blob([downloadFileContent], { type: "text/plain" });
+  };
   const blobURL = URL.createObjectURL(blob);
 
   // Create a download link
