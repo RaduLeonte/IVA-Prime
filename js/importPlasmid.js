@@ -506,7 +506,7 @@ function parseDNAFile(fileContent, pNr) {
                   subNoteEntry = new DOMParser().parseFromString(subNoteEntry, 'text/html').body.textContent; // Sometimes the text contains html
               }
               // Save note to the dict
-              featureInfo["note"] += subNoteName + ": " + subNoteEntry + " ";
+              featureInfo[subNoteName] = subNoteEntry;
           }
       }
       featureInfo["note"] = featureInfo["note"].trim();
@@ -1078,7 +1078,23 @@ function createSideBar(pNr) {
   
       // Add feature note
       const noteCell = document.createElement('td');
-      noteCell.textContent = feature.note || '';
+      if (feature.note && feature.note.includes("note: ")) {
+        console.log("Note col:", feature.note)
+        const keyValuePairs = feature.note.split(/\s*(?::| )\s*/);
+        console.log("Note col:", keyValuePairs)
+        const noteDict = {};
+        for (let i = 0; i < keyValuePairs.length; i += 2) {
+          const key = keyValuePairs[i];
+          const value = keyValuePairs[i + 1];
+          if (key && value) {
+            noteDict[key] = value;
+          };
+        };
+        console.log("Note col:", noteDict)
+        noteCell.textContent = noteDict["note"];
+      } else {
+        noteCell.textContent = feature.note || '';
+      };
       noteCell.className = 'wrap-text';
       row.appendChild(noteCell);
   
