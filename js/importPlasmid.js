@@ -1577,7 +1577,9 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
   let k = 0;
   for (let j = col + 1; j < col + colspan; j++) {
     const cell = table.rows[row].cells[j - k];
-    cell.parentNode.removeChild(cell);
+    if (cell) {
+      cell.parentNode.removeChild(cell);
+    };
     k++;
   };
 };
