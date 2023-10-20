@@ -481,9 +481,9 @@ function parseDNAFile(fileContent, pNr) {
               let currSpan = child.getAttribute('range').split("-"); // Get span and split into list
               // Add span to feature info
               featureInfo["span"] = currSpan[0] + ".." + currSpan[1];
-              if (spanDirectionality !== 1) {
+              if (spanDirectionality !== "1") {
                 featureInfo["span"] = "complement(" + featureInfo["span"] + ")";
-              }
+              };
               // Extract color
               featureInfo["ApEinfo_fwdcolor"] = child.getAttribute('color');
               featureInfo["ApEinfo_revcolor"] = child.getAttribute('color');
@@ -944,9 +944,9 @@ function makeContentGrid(pNr, callback) {
     });
 
     // Check the sequence for common promotes and start the translation there
-    promoterTranslation(pNr);
+    //promoterTranslation(pNr);
     // Start the transaltion at the beginning of each feature
-    featureTranslation(pNr);
+    //featureTranslation(pNr);
 
     // Change the cursor's icon to normal
     document.body.classList.remove('loading');
@@ -1269,10 +1269,10 @@ function promoterTranslation(pNr) {
     if (occurrences.length !== 0) {
       for (let i = 0; i < occurrences.length; i++) {
         startTranslation(currSequence.indexOf("ATG", occurrences[i] + promoter.length) + 1, pNr);
-      }
-    }
-  }
-}
+      };
+    };
+  };
+};
 
 
 // Star a translation at the beginning of each feature
@@ -1296,9 +1296,9 @@ function featureTranslation(pNr) {
       const rangeStart = range[0];
       const rangeEnd = range[1];
       startTranslation(rangeStart, pNr);
-    }
+    };
   });
-}
+};
 
 
 /**
