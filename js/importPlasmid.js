@@ -1585,9 +1585,12 @@ function createFilledTriangle(featureID, triangleColor, orientation, row, col) {
     triangle.style.borderLeft = `var(--triangle-width) var(--${triangleColorVariable}) solid`;
   } else {
     triangle.style.borderRight = `var(--triangle-width) var(--${triangleColorVariable}) solid`;
+    triangle.style.position = "absolute";
+    triangle.style.right = "-1px";
+    triangle.style.top = "0px";
   };
 
 
   // Add the triangle div to the table cell
   cell.appendChild(triangle);
-}
+};

@@ -628,5 +628,6 @@ nav ul li a {
 }
 
 .triangle-cell {
+  position: relative;
   padding: 0px !important;
 }
