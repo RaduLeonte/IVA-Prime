@@ -102,7 +102,7 @@ function removePrimerRegionHighlight() {
         for (let i = 0; i < targetTable.rows.length; i++) {
             for (let j = 0; j < targetTable.rows[i].cells.length; j++) {
                 const cell = targetTable.rows[i].cells[j];
-                if (cell.id === "Forward Strand" || cell.id === "Complementary Strand") {
+                if (cell.id !== "Annotations") {
                     cell.removeAttribute("style");
                 };
             };
@@ -806,7 +806,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
         }
         if (elementValue.span && !elementKey.includes("source")) { // exclude "source" feature as it spans the entire plasmid
             // Get span of current feature
-            const currSpan = elementValue.span.split("..").map(Number);
+            const currSpan = removeNonNumeric(elementValue.span).split("..").map(Number);
             const spanStart = currSpan[0];
             const spanEnd = currSpan[1];
 
@@ -814,83 +814,85 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
             if (featureStart === featureEnd) {
                 if (featureStart < spanStart) {
                     //way before, just shift
-                    console.log("Case Insertion shift")
+                    console.log("Case Insertion shift", featureStart, featureEnd, spanStart, spanEnd)
                     return "shift";
                 } else if (spanStart === featureStart) {
                     //Insert right before
-                    console.log("Case Insertion right before")
+                    console.log("Case Insertion right before", featureStart, featureEnd, spanStart, spanEnd)
                     return "shift";
                 } else if (featureStart < spanEnd) {
                     //Inside, delete
-                    console.log("Case Insertion inside")
+                    console.log("Case Insertion inside", featureStart, featureEnd, spanStart, spanEnd)
                     return "delete";
                 } else if (featureStart > spanEnd) {
                     //way after, do noghing
-                    console.log("Case Insertion right before")
+                    console.log("Case Insertion way after", featureStart, featureEnd, spanStart, spanEnd)
                     return null;
-                }
-            }
-            /**
-             * Scenarios for replacement features:
-             * 
-             * 0.
-             * old                [         ]
-             * new                 [      ]
-             * -> shift
-             * 
-             * 1.
-             * old                [         ]
-             * new    [        ]
-             * -> shift
-             * 
-             * 2.
-             * old         [         ]
-             * new    [        ]
-             * -> deletion
-             * 
-             * 3.
-             * old          [         ]
-             * new    [                 ] 
-             * -> deletion
-             * 
-             * 4.
-             * old          [         ]
-             * new               [                 ] 
-             * -> deletion
-
-            * 5.
-            * old          [         ]
-            * new                        [                 ] 
-            * -> do nothing
-            */
-
-            if (featureStart >= spanStart && featureEnd >= spanStart && featureStart <= spanEnd && featureEnd <= spanEnd && featureStart !== featureEnd) {
-                // 0. new feature is inside the old feature, delete
-                console.log("Feature Overlap Case 0", featureStart, featureEnd, spanStart, spanEnd)
-                return "delete";
-            } else if (featureStart < spanStart && featureEnd < spanStart && featureStart < spanEnd && featureEnd < spanEnd) {
-                // 1. Find how much t"o shift features after the insertion
-                console.log("Feature Overlap Case 1", featureStart, featureEnd, spanStart, spanEnd)
-                return "shift";
-            } else if (featureStart < spanStart && featureEnd >= spanStart && featureStart < spanEnd && featureEnd <= spanEnd) {
-                // 2.
-                console.log("Feature Overlap Case 2", featureStart, featureEnd, spanStart, spanEnd)
-                return "delete";
-            } else if (featureStart < spanStart && featureEnd > spanStart && featureStart < spanEnd && featureEnd > spanEnd) {
-                // 3.
-                console.log("Feature Overlap Case 3", featureStart, featureEnd, spanStart, spanEnd)
-                return "delete";
-            } else if (featureStart >= spanStart && featureEnd > spanStart && featureStart <= spanEnd && featureEnd > spanEnd) {
-                // 4.
-                console.log("Feature Overlap Case 4", featureStart, featureEnd, spanStart, spanEnd)
-                return "delete";
-            } else if (featureStart === featureEnd && featureStart <= spanEnd) {
-                return "shift";
+                };
             } else {
-                console.log("Feature Overlap Case 5", featureStart, featureEnd, spanStart, spanEnd)
-                return null;
-            }
-        }
+                /**
+                 * Scenarios for replacement features:
+                 * 
+                 * 0.
+                 * old                [         ]
+                 * new                 [      ]
+                 * -> shift
+                 * 
+                 * 1.
+                 * old                [         ]
+                 * new    [        ]
+                 * -> shift
+                 * 
+                 * 2.
+                 * old         [         ]
+                 * new    [        ]
+                 * -> deletion
+                 * 
+                 * 3.
+                 * old          [         ]
+                 * new    [                 ] 
+                 * -> deletion
+                 * 
+                 * 4.
+                 * old          [         ]
+                 * new               [                 ] 
+                 * -> deletion
+
+                * 5.
+                * old          [         ]
+                * new                        [                 ] 
+                * -> do nothing
+                */
+
+                if (featureStart >= spanStart && featureEnd >= spanStart && featureStart <= spanEnd && featureEnd <= spanEnd && featureStart !== featureEnd) {
+                    // 0. new feature is inside the old feature, delete
+                    console.log("Case Replacement Case 0", featureStart, featureEnd, spanStart, spanEnd)
+                    return "delete";
+                } else if (featureStart < spanStart && featureEnd < spanStart && featureStart < spanEnd && featureEnd < spanEnd) {
+                    // 1. Find how much t"o shift features after the insertion
+                    console.log("Case Replacement Case 1", featureStart, featureEnd, spanStart, spanEnd)
+                    return "shift";
+                } else if (featureStart < spanStart && featureEnd >= spanStart && featureStart < spanEnd && featureEnd <= spanEnd) {
+                    // 2.
+                    console.log("Case Replacement Case 2", featureStart, featureEnd, spanStart, spanEnd)
+                    return "delete";
+                } else if (featureStart < spanStart && featureEnd > spanStart && featureStart < spanEnd && featureEnd > spanEnd) {
+                    // 3.
+                    console.log("Case Replacement Case 3", featureStart, featureEnd, spanStart, spanEnd)
+                    return "delete";
+                } else if (featureStart >= spanStart && featureEnd > spanStart && featureStart <= spanEnd && featureEnd > spanEnd) {
+                    // 4.
+                    console.log("Case Replacement Case 4", featureStart, featureEnd, spanStart, spanEnd)
+                    return "delete";
+                } else if (featureStart === featureEnd && featureStart <= spanEnd) {
+                    return "shift";
+                } else {
+                    console.log("Case Replacement Case 5", featureStart, featureEnd, spanStart, spanEnd)
+                    return null;
+                };
+            };
+            return null;
+        };
     };
 
     // Loop over every feature and either shift it if it occurs after the replacement or delete it if it
@@ -899,10 +901,15 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
         Object.entries(features).forEach(([key, value]) => {
             const decision = checkNewFeatureOverlap(key, value, segmentStartPos, segmentEndPos, featureShift);
             if (decision === "shift") {
-                const currSpan = value.span.split("..").map(Number);
+                const spanDirection = (!value.span.includes("complement")) ? "fwd": "rev";
+                const currSpan = removeNonNumeric(value.span).split("..").map(Number);
                 const newSpanStart = currSpan[0] + featureShift;
                 const newSpanEnd = currSpan[1] + featureShift;
-                features[key].span = newSpanStart + ".." + newSpanEnd; // Update span of the feature
+                if (spanDirection === "fwd") {
+                    features[key].span = newSpanStart + ".." + newSpanEnd; // Update span of the feature
+                } else {
+                    features[key].span = "complement(" + newSpanStart + ".." + newSpanEnd + ")";
+                }
             } else if (decision === "delete") {
                 delete features[key];
             }
@@ -911,10 +918,15 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
         Object.entries(features2).forEach(([key, value]) => {
             const decision = checkNewFeatureOverlap(key, value, segmentStartPos, segmentEndPos,);
             if (decision === "shift") {
-                const currSpan = value.span.split("..").map(Number);
+                const spanDirection = (!value.span.includes("complement")) ? "fwd": "rev";
+                const currSpan = removeNonNumeric(value.span).split("..").map(Number);
                 const newSpanStart = currSpan[0] + featureShift;
                 const newSpanEnd = currSpan[1] + featureShift;
-                features2[key].span = newSpanStart + ".." + newSpanEnd; // Update span of the feature
+                if (spanDirection === "fwd") {
+                    features2[key].span = newSpanStart + ".." + newSpanEnd; // Update span of the feature
+                } else {
+                    features2[key].span = "complement(" + newSpanStart + ".." + newSpanEnd + ")";
+                }
             } else if (decision === "delete") {
                 delete features2[key];
             }
