@@ -8,8 +8,6 @@
  * homoColor - background color of homologous part
  * mutSeq - additional sequence for mutations
  * 
- * TO DO:
- * - 
  */
 function displayPrimers(primersType, primersDict) {
     const sidebarContentDiv = document.querySelector('.sidebar-content'); // Select sidebar
@@ -148,8 +146,6 @@ function removePrimerRegionHighlight() {
  * pNr - plasmid number, important when the second plasmid is imported for subcloning, 1 or 2
  * mutSeq - sequence that will be inserted and will be the starting sequence for the homologous region of the forward primer
  *  
- * TO DO:
- * - Clean up, some lines are way too long
  */
 function primerExtension(startingPos, targetStrand, direction, targetTm, minLength, pNr, mutSeq) {
     console.log("PE", startingPos, targetStrand, direction, targetTm, minLength, pNr, mutSeq)
@@ -322,8 +318,6 @@ function optimizeAA(inputAA, targetOrganism) {
  * aaToInsert - amino acid sequence to be inserted, it will be converted to the DNA sequence with the lowest possible melting temperature
  * replaceStartPos, replaceEndPos - indices of the segment to be deleted, then filled with the new DNA sequence
  * 
- * TO DO:
- * - 
  */
 function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  replaceStartPos, replaceEndPos) {
     // Define operation type
@@ -731,8 +725,6 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
      * elementvalue - working value
      * featureStart, featureEnd - indices of new feature that need to be checked against the span of the key
      * 
-     * TO DO:
-     * - Right now a hacky way of checking overlap, cant be sure it covers all cases but passed basic testing
     */
 
     function checkNewFeatureOverlap(elementKey, elementValue, featureStart, featureEnd) {
@@ -945,11 +937,8 @@ function sortBySpan(dict) {
 
 /**
  * Create the complementary strand to a given DNA sequence.
- * 
- * TO DO:
- * - sanitize input?
  */
-function getComplementaryStrand(sequence) {
+function getComplementaryStrand(inputSequence) {
     // Map
     const nucleotideComplements = {
         'A': 'T',
@@ -959,14 +948,15 @@ function getComplementaryStrand(sequence) {
     };
 
     // Convert to uppercase, make into list, map to complementary base, then turn back into string
-    const complementaryStrand = sequence
-        .toUpperCase()
+    const complementaryStrand = inputSequence.toUpperCase()
+        .replace(/[^ACTG]+/g, '')
         .split('')
         .map(nucleotide => nucleotideComplements[nucleotide])
         .join('');
 
     return complementaryStrand;
 };
+
 
 /**
  * Improved slice() function that allows for negative indices or indices longer than the string length by assuming

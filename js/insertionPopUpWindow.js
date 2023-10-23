@@ -1,8 +1,6 @@
 /**
  * Listener for when the page is loaded.
  * 
- * TO DO:
- * - 
  */
 document.addEventListener('DOMContentLoaded', function () {
   // Creat the popup window and immediately hide it.

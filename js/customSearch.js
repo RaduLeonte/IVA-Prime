@@ -1,8 +1,5 @@
 /**
  * Add search functionality for the sequence grid.
- * 
- * TO DO:
- * - 
  */
 function initiateSearchFunctionality(pNr) {
     // Select the search bar element

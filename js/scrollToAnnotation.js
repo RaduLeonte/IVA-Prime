@@ -1,8 +1,5 @@
 /**
  * Adds a scrolling effect when clicking on a feature in the side bar.
- * 
- * TO DO:
- * - sometimes doesnt work
  */
 function addScrollingEffectToFeatureTable(pNr) {
   // Wait for the page to load

@@ -1487,8 +1487,6 @@ function makeAnnotation(rStart, rEnd, text, featureId, annotationColor, pNr, cur
 /**
  * Draws the annotation by merging the specified cells, adding th text and adding the color.
  * 
- * TO DO:
- * - 
  */
 function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, currGridStructure) {
   console.log("Merge cells1: ", row, col, colspan, text)
@@ -1904,8 +1902,6 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, pNr) {
 /**
  * Merge 3 cells in the amino acids row in order to display the amino acid.
  * 
- * TO DO:
- * - 
  */
 function fillAACells(row, col, text, pNr, dir) {
   //console.log("Translating, filling cells:", row, col, text, pNr)
