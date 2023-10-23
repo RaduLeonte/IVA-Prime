@@ -1070,6 +1070,8 @@ function createSideBar(pNr) {
       const labelCell = document.createElement('td');
       labelCell.textContent = feature.label || '';
       labelCell.className = 'wrap-text';
+      labelCell.id = "sidebar-label";
+      labelCell.classList.add("editable");
       row.appendChild(labelCell);
   
       // Add feature range
@@ -1098,6 +1100,8 @@ function createSideBar(pNr) {
         noteCell.textContent = feature.note || '';
       };
       noteCell.className = 'wrap-text';
+      noteCell.id = "sidebar-note";
+      noteCell.classList.add("editable");
       row.appendChild(noteCell);
   
       // Append the row to the table
@@ -1399,6 +1403,9 @@ function makeContentGrid(pNr, callback) {
     // Clean up cells that are not longer in a tr
     cleanLostCells();
 
+    // Enable feature cell editing
+    enableSequenceGridFeatureEditing(pNr);
+
     // Change the cursor's icon to normal
     document.body.classList.remove('loading');
     if (typeof callback === 'function') {
@@ -1578,6 +1585,7 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
   let mainCell = table.rows[row].cells[col];
   mainCell.rowSpan = rowspan;
   mainCell.colSpan = colspan;
+  mainCell.classList.add("editable")
   mainCell.style.backgroundColor = color;
   // Add text to the center of the merged cell
   if (text.length > colspan)  {
