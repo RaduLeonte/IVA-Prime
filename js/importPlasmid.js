@@ -1759,7 +1759,7 @@ function featureTranslation(pNr) {
  * Convert sequence indices to table coordinates
  */
 function seqIndexToCoords(inputIndex, targetRow, currGridStructure) {
-  console.log("Translating, seqIndexCoords before:", inputIndex, targetRow)
+  //console.log("Translating, seqIndexCoords before:", inputIndex, targetRow)
   let outputRow = (Math.floor(inputIndex / gridWidth))*currGridStructure.length + targetRow;
   let outputIndex = inputIndex - Math.floor(inputIndex / gridWidth)*gridWidth - 1;
   if (outputIndex < 0) {
@@ -1768,7 +1768,7 @@ function seqIndexToCoords(inputIndex, targetRow, currGridStructure) {
   } else if (outputIndex >= gridWidth) {
 
   };
-  console.log("Translating, seqIndexCoords done:", outputRow, outputIndex)
+  //console.log("Translating, seqIndexCoords done:", outputRow, outputIndex)
   return [outputRow, outputIndex];
 };
 
@@ -1963,7 +1963,7 @@ function createFilledTriangle(featureID, triangleColor, orientation, row, col, p
 
   // Create a div element for the triangle
   const triangle = document.createElement("div");
-  triangle.id = featureID + "-triangle"
+  triangle.id = featureID.replace("/", "-") + "-triangle"
   /**
    * .triangle-right {
   width: 0px;
@@ -1989,7 +1989,7 @@ function createFilledTriangle(featureID, triangleColor, orientation, row, col, p
   };
 
   const styleElement = document.createElement('style');
-  const borderClasName = featureID + "-cell-borders" + pNr;
+  const borderClasName = featureID.replace("/", "-") + "-cell-borders" + pNr;
   const dynamicCSS = `
     .${borderClasName} {
       border-right: 3px solid var(--${triangleColorVariable});

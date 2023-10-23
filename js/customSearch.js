@@ -188,7 +188,7 @@ function highlightOccurences(pNr, targetStrandIndex, workingSequence, workingQue
             const [row, column] = seqIndexToCoords(index + j, 0, workingGridStructure);
             // Select and highlight the cell
             const cell = table.rows[row + targetStrandIndex].cells[column];
-            console.log("Custom search:",index + j, cell, row + targetStrandIndex, column);
+            //console.log("Custom search:",index + j, cell, row + targetStrandIndex, column);
             if (highlightClass) {
                 cell.classList.add(highlightClass);
             } else if (highlightColor) {
