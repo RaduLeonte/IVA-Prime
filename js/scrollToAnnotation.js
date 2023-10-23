@@ -4,10 +4,12 @@
  * TO DO:
  * - sometimes doesnt work
  */
-function addScrollingEffectToFeatureTable(tableId, containerId) {
+function addScrollingEffectToFeatureTable(pNr) {
   // Wait for the page to load
   document.addEventListener('DOMContentLoaded', function () {
     // Select specified table and content div
+    const tableId = (pNr === 1) ? "sidebar-table": "sidebar-table2";
+    const containerId = (pNr === 1) ? "file-content": "file-content2";
     const sidebarTable = document.getElementById(tableId);
     const fileContentDiv = document.getElementById(containerId);
   
@@ -21,16 +23,19 @@ function addScrollingEffectToFeatureTable(tableId, containerId) {
       // Get the label text from the second column in the clicked row
       const labelCell = clickedRow.cells[1];
       const label = labelCell.textContent;
+      console.log("Scrolling to:", label);
     
       // Find the corresponding cell in the "file-content" table
       const fileContentTable = fileContentDiv.querySelector('table');
       const cells = fileContentTable.querySelectorAll('td');
       let desiredCell = null;
       cells.forEach((cell) => {
-        if (cell.textContent === label) {
+        if (cell.textContent.includes(label)) {
           desiredCell = cell;
         };
       });
+
+      console.log("Scrolling to:", desiredCell);
     
       // Scroll the "file-content" div to the desired cell
       if (desiredCell) {
@@ -63,5 +68,5 @@ function addScrollingEffectToFeatureTable(tableId, containerId) {
 
 
 // Enables the effect for both plasmids
-addScrollingEffectToFeatureTable('sidebar-table', 'file-content', 1);
-addScrollingEffectToFeatureTable('sidebar-table2', 'file-content2', 2);
+addScrollingEffectToFeatureTable(1);
+addScrollingEffectToFeatureTable(2);
