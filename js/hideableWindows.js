@@ -63,7 +63,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // Update the global variables when the user clicks "Save Settings"
         updateGlobalVariables();
         // You can also perform additional actions here, like sending data to a server or saving to local storage
-        alert("Settings saved!");
+        //alert("Settings saved!");
+        hideAllHideableWindows();
     });
 
     populateSettings();
