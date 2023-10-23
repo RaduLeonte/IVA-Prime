@@ -235,93 +235,28 @@ function primerExtension(startingPos, targetStrand, direction, targetTm, minLeng
  * 
  * inputAA - amino acid sequence to optimize
  * 
- * TO DO:
- * - add more organisms
  */
 function optimizeAA(inputAA, targetOrganism) {
-    /**
-     * Function that recursively creates every possible DNA sequence for the specificied amino acid sequence if
-     * the length is under 10 amino acids, in which case it only returns the first DNA sequence generated.
-     *  
-     * TO DO:
-     * - Make the algorithm not have an O(n!), maybe cache the melting temperatures of the codons
-     * - Maybe optimize GC content?
-     */
-    function generateDNASequences(aminoAcidSequence) {
-    
-        const results = []; // Initialize empty list for generated sequences
-    
-        /**
-         * The function looks at the amino acid in the amino acid sequence specified by the index and calls itself for each possible codon
-         * that corresponds to the current amino acid.
-         * 
-         * aminoAcidSeq - full amino acid sequence
-         * index - current tree depth and sequence index
-         * currentSeq - the current sequence with all codons appended so far
-         */
-        function generateSequences(aminoAcidSeq, index, currentSeq) {
-            // Check if we've reached the end of the recursive tree
-            if (index === aminoAcidSeq.length) {
-                results.push(currentSeq); // Save progress by pushing to results
-                return;
-            };
-
-            const aminoAcid = aminoAcidSeq[index]; // Current amino acid
-            const possibleCodons = aaToCodon[aminoAcid]; // Return list of possible codonds for current amino acid
-
-            // For each possible codon, append the codon to the current sequence then branch the tree with an incremented index
-            for (let codon of possibleCodons) {
-                generateSequences(aminoAcidSeq, index + 1, currentSeq + codon);
-            };
-        };
-    
-        // If the sequence is less than 10 acids, generate all possible DNA sequences
-        if (aminoAcidSequence.length < 10) {
-            generateSequences(aminoAcidSequence, 0, '');
-        } else { // Else only choose the first codon for each acid
-            let basicSeq = "";
-            for (let aminoAcid of aminoAcidSequence) {
-                const possibleCodons = aaToCodon[aminoAcid];
-                const selectedCodon = possibleCodons[0];
-                basicSeq += selectedCodon;
-            };
-            results.push(basicSeq);
-        };
-    
-        return results;
-    };
-
     // Update last selected organism
     preferredOrganism = targetOrganism;
     saveUserPreference("preferredOrganism", targetOrganism);
     updateOrganismSelectorDefault();
 
     if (targetOrganism === "prioLowTM") {
-        // Call function to generate all possible DNA sequence that result in the input amino acid sequence
-        let dnaSequences = generateDNASequences(inputAA);
+        let outputSequence = "";
+        let organismCodonTable = lowTMTable;
 
-        // creates a dictionary with each DNA sequence as the key and its corresponding melting temperature as the entry.
-        const dnaTMDictionary = {};
-        for (let sequence of dnaSequences) {
-            const tm = get_tm(sequence, primerConc, saltConc);
-            dnaTMDictionary[sequence] = tm;
+        let tripletToAdd = "";
+        for (let i = 0; i < inputAA.length; i++) {
+            frequenciesList = Object.keys(organismCodonTable[inputAA[i]])
+            console.log("Optimizer:", frequenciesList)
+            tripletToAdd = organismCodonTable[inputAA[i]][frequenciesList[0]]
+            
+            outputSequence += tripletToAdd
+            console.log("Optimizer:", tripletToAdd)
         };
-
-        // Iterate over the dict and find the DNA sequence with the lowest melting temperature
-        let closestKey = null;
-        let closestDiff = Infinity;
-        for (let key in dnaTMDictionary) {
-            const tm = dnaTMDictionary[key];
-            const diff = Math.abs(tm - homoRegionTm);
-
-            if (diff < closestDiff) {
-                closestDiff = diff;
-                closestKey = key;
-            };
-        };
-
-        console.log("Optimizer - Closest value: " + closestKey + "(" + dnaTMDictionary[closestKey] + ")")
-        return closestKey;
+        console.log("Optimizer:", targetOrganism, inputAA, outputSequence)
+        return outputSequence;
     };
 
     /**
