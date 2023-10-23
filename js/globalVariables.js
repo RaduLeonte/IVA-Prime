@@ -1,7 +1,6 @@
 /**
  * Cookie handlers
  */
-
 function setCookie(name, value, daysToExpire, daysToExpire, isSecure, isCrossSite) {
     let cookieValue = `${name}=${value}; path=/`;
 
@@ -22,6 +21,7 @@ function setCookie(name, value, daysToExpire, daysToExpire, isSecure, isCrossSit
     document.cookie = cookieValue;
 };
 
+
 function getCookieValue(name) {
     const cookieName = `${name}=`;
     const cookies = document.cookie.split(';');
@@ -30,11 +30,11 @@ function getCookieValue(name) {
         let cookie = cookies[i].trim();
         if (cookie.indexOf(cookieName) === 0) {
             return cookie.substring(cookieName.length, cookie.length);
-        }
-    }
-
+        };
+    };
     return null;
 };
+
 
 function saveUserPreference(preferenceName, preferenceValue, daysToExpire) {
     // Retrieve the current user preferences from the cookie
@@ -46,6 +46,7 @@ function saveUserPreference(preferenceName, preferenceValue, daysToExpire) {
     // Save the updated user preferences to the cookie
     setCookie('userPreferences', JSON.stringify(userPreferences), daysToExpire);
 };
+
 
 function getUserPreference(preferenceName) {
     // Retrieve the current user preferences from the cookie

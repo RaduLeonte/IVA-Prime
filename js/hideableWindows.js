@@ -45,28 +45,31 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateGlobalVariables() {
         const unroundedPrimerConc = parseFloat(document.getElementById("primerConcSettingsInput").value)
         primerConc = unroundedPrimerConc.toFixed(2) * 1E-9;
-        saveUserPreference("primerConc", primerConc, null, true, true);
+        saveUserPreference("primerConc", primerConc, 30, true, true);
 
         saltConc = parseFloat(document.getElementById("saltConcSettingsInput").value);
-        saveUserPreference("saltConc", saltConc, null, true, true);
+        saveUserPreference("saltConc", saltConc, 30, true, true);
 
         homoRegionTm = parseFloat(document.getElementById("homoRegionTmSettingsInput").value);
-        saveUserPreference("homoRegionTm", homoRegionTm, null, true, true);
+        saveUserPreference("homoRegionTm", homoRegionTm, 30, true, true);
 
         tempRegionTm = parseFloat(document.getElementById("tempRegionTmSettingsInput").value);
-        saveUserPreference("tempRegionTm", tempRegionTm, null, true, true);
+        saveUserPreference("tempRegionTm", tempRegionTm, 30, true, true);
 
         upperBoundShortInsertions = parseFloat(document.getElementById("upperBoundShortInsertionsInput").value);
-        saveUserPreference("upperBoundShortInsertions", upperBoundShortInsertions, null, true, true);
+        saveUserPreference("upperBoundShortInsertions", upperBoundShortInsertions, 30, true, true);
 
         if (parseInt(document.getElementById("gridWithSettingsInput").value) !== gridWidth) {
-            makeContentGrid(1);
+            if (sequence !== "") {
+                makeContentGrid(1);
+            };
             if (sequence2 !== "") {
                 makeContentGrid(2);
             };
             gridWidth = parseInt(document.getElementById("gridWithSettingsInput").value);
-            saveUserPreference("gridWidth", gridWidth, null, true, true);
+            saveUserPreference("gridWidth", gridWidth, 30, true, true);
         };
+        console.log(document.cookie);
     };
 
     // Event listener for input changes
