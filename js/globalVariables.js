@@ -272,7 +272,7 @@ const codonTablesDict = {
         X: {0.44: "TGA", 0.36: "TAA", 0.20: "TAG", },
         Y: {0.52: "TAT", 0.48: "TAC", },
     },
-    "C": {
+    "C. elegans": {
         A: {0.36: "GCT", 0.31: "GCA", 0.20: "GCC", 0.13: "GCG", },
         C: {0.55: "TGT", 0.45: "TGC", },
         D: {0.68: "GAT", 0.33: "GAC", },
