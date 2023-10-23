@@ -950,7 +950,7 @@ function exportDNAFile(pNr) {
   const xmlString = serializer.serializeToString(xmlDoc).replace(/[\n\r]/g, '');;
 
   // Now, xmlString contains the XML structure as a string
-  downloadFile('featuresXMLTree', xmlString, 'xml');
+  //downloadFile('featuresXMLTree', xmlString, 'xml');
 
   const emptyFeaturesXML = "<?xml version=\"1.0\"?><Features nextValidID=\"1\"><Feature recentID=\"0\" name=\"Feature 1\" type=\"misc_feature\" allowSegmentOverlaps=\"0\" consecutiveTranslationNumbering=\"1\"><Segment range=\"2-3\" color=\"#a6acb3\" type=\"standard\"/></Feature></Features>";
   // length
