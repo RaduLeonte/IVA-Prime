@@ -1,7 +1,8 @@
 /**
  * Cookie handlers
  */
-function setCookie(name, value, daysToExpire, daysToExpire, isSecure, isCrossSite) {
+function setCookie(name, value, daysToExpire, isSecure, isCrossSite) {
+    //q console.log("Set cookie:", name, value, daysToExpire, isSecure, isCrossSite)
     let cookieValue = `${name}=${value}; path=/`;
 
     if (daysToExpire) {
@@ -19,6 +20,7 @@ function setCookie(name, value, daysToExpire, daysToExpire, isSecure, isCrossSit
     };
 
     document.cookie = cookieValue;
+    //console.log("Set cookie, new cookie:", cookieValue)
 };
 
 
@@ -36,7 +38,7 @@ function getCookieValue(name) {
 };
 
 
-function saveUserPreference(preferenceName, preferenceValue, daysToExpire) {
+function saveUserPreference(preferenceName, preferenceValue, daysToExpire, isSecure, isCrossSite) {
     // Retrieve the current user preferences from the cookie
     const userPreferences = JSON.parse(getCookieValue('userPreferences') || '{}');
     
@@ -44,7 +46,7 @@ function saveUserPreference(preferenceName, preferenceValue, daysToExpire) {
     userPreferences[preferenceName] = preferenceValue;
 
     // Save the updated user preferences to the cookie
-    setCookie('userPreferences', JSON.stringify(userPreferences), daysToExpire);
+    setCookie('userPreferences', JSON.stringify(userPreferences), daysToExpire, isSecure, isCrossSite);
 };
 
 

@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', function () {
             gridWidth = parseInt(document.getElementById("gridWithSettingsInput").value);
             saveUserPreference("gridWidth", gridWidth, 30, true, true);
         };
-        console.log(document.cookie);
+        //console.log(document.cookie);
     };
 
     // Event listener for input changes
