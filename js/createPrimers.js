@@ -29,8 +29,7 @@ function displayPrimers(primersType, primersDict) {
 
     for (const [primer, subprimersDict] of Object.entries(primersDict)) {
         console.log("Display primers:", primer, subprimersDict);
-        const primerName = document.createElement('p');
-        primerName.style.wordWrap = 'break-word'; // Add CSS style for word wrapping
+        const primerName = document.createElement('p'); // Add CSS style for word wrapping
         primerName.textContent = primer + ":";
         modDiv.appendChild(primerName);
 
@@ -54,6 +53,7 @@ function displayPrimers(primersType, primersDict) {
         spanTM.textContent = ` (${primerTMInfo.join(', ')})`
         primerSequence.appendChild(spanTM)
 
+        primerSequence.style.wordBreak = 'break-all';
         modDiv.appendChild(primerSequence);
     };
 
