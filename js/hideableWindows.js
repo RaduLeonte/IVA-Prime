@@ -28,11 +28,50 @@ document.addEventListener('DOMContentLoaded', function () {
             tmSpan.textContent = "--";
         };
     };
+
+    /**
+     * Settings inputs.
+     */
+    function populateSettings() {
+        document.getElementById("primerConcSettingsInput").value = primerConc* 1E9; // Display as nM, 
+        document.getElementById("saltConcSettingsInput").value = saltConc;
+        document.getElementById("homoRegionTmSettingsInput").value = homoRegionTm;
+        document.getElementById("tempRegionTmSettingsInput").value = tempRegionTm;
+        document.getElementById("gridWithSettingsInput").value = gridWidth;
+    };
+
+    function updateGlobalVariables() {
+        primerConc = parseFloat(document.getElementById("primerConcSettingsInput").value) * 1E-9;
+        saltConc = parseFloat(document.getElementById("saltConcSettingsInput").value);
+        homoRegionTm = parseFloat(document.getElementById("homoRegionTmSettingsInput").value);
+        tempRegionTm = parseFloat(document.getElementById("tempRegionTmSettingsInput").value);
+        if (parseInt(document.getElementById("gridWithSettingsInput").value) !== gridWidth) {
+            makeContentGrid(1);
+            if (sequence2 !== "") {
+                makeContentGrid(2);
+            };
+            gridWidth = parseInt(document.getElementById("gridWithSettingsInput").value);
+        };
+    };
+
+    // Event listener for input changes
+    //document.getElementById("settings-window").addEventListener("input", function (event) {
+    //    updateGlobalVariables();
+    //});
+
+    document.getElementById("save-settings-btn").addEventListener("click", function (event) {
+        // Update the global variables when the user clicks "Save Settings"
+        updateGlobalVariables();
+        // You can also perform additional actions here, like sending data to a server or saving to local storage
+        alert("Settings saved!");
+    });
+
+    populateSettings();
 });
 
 
 /**
- * Display  window.
+ * Display window.
  */
 function showHideableWindow(windowID) {
     const targetWindow = document.getElementById(windowID);
@@ -43,7 +82,7 @@ function showHideableWindow(windowID) {
 
 
 /**
- * Hide melting temperature calculator window.
+ * Hide window.
  */
 function hideHideableWindow(windowID) {
     const targetWindow = document.getElementById(windowID);

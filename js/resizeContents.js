@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', onMouseUp);
-        }
+        };
     });
 
     function onMouseMove(e) {
@@ -29,22 +29,23 @@ document.addEventListener('DOMContentLoaded', function() {
             newWidth = sidebarMinWidth;
         } else if (newWidth > sidebarMaxWidth) {
             newWidth = sidebarMaxWidth;
-        }
+        };
 
 
         resizableSidebar.style.width = `${newWidth}%`;
         const resizableSidebar2 = document.getElementById('sidebar2');
         if (resizableSidebar2) {
             resizableSidebar2.style.width = `${newWidth}%`;
-        }
-    }
+        };
+        updateAnnotationTrianglesWidth();
+    };
     
     function onMouseUp() {
         isResizingSidebar = false;
         document.documentElement.style.cursor = 'auto';
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
-    }
+    };
 });
 
 
@@ -60,14 +61,16 @@ function waitForSecondPlasmid(callback) {
       if (secondPlasmidImported) {
         clearInterval(checkForSecondPlasmid);
         callback();
-      }
+      };
     }, 100); // Check for table existence every 100ms
-}
+};
+
 
 // Listeners waiting for the tables to exist before enabling the cursor hover hint
 waitForSecondPlasmid(function() {
     enablePlasmidContainerResize();
 });
+
 
 function enablePlasmidContainerResize() {
     const resizableContainer = document.getElementById('first-plasmid-container');
@@ -88,7 +91,7 @@ function enablePlasmidContainerResize() {
 
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', onMouseUp);
-        }
+        };
     });
 
 
@@ -103,21 +106,21 @@ function enablePlasmidContainerResize() {
             newHeight = minHeight;
         } else if (newHeight > maxHeight) {
             newHeight = maxHeight;
-        }
+        };
 
         if (newHeight < parentHeight) {
             //console.log("New Height:", newHeight)
             resizableContainer.style.height = `${newHeight}%`;
-        }
-    }
+        };
+    };
     
     function onMouseUp() {
         isResizingContainer = false;
         document.documentElement.style.cursor = 'auto';
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
-    }
-}
+    };
+};
 
 
 /**
@@ -131,7 +134,7 @@ document.addEventListener('mousemove', (e) => {
         hoveringOverSidebarEdge = true;
     } else {
         hoveringOverSidebarEdge = false;
-    }
+    };
 
     const resizableContainer = document.getElementById('first-plasmid-container');
     const containerBottomY  = resizableContainer.offsetTop  + resizableContainer.offsetHeight;
@@ -139,7 +142,7 @@ document.addEventListener('mousemove', (e) => {
         hoveringOverContainerEdge = true;
     } else {
         hoveringOverContainerEdge = false;
-    }
+    };
 
     //console.log("Cursor:", hoveringOverSidebarEdge, hoveringOverContainerEdge)
     if (hoveringOverSidebarEdge && hoveringOverContainerEdge) {
@@ -150,5 +153,5 @@ document.addEventListener('mousemove', (e) => {
         document.documentElement.style.cursor = 'row-resize';
     } else {
         document.documentElement.style.cursor = 'auto';
-    }
+    };
 });

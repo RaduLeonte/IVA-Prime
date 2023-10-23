@@ -1278,7 +1278,6 @@ function makeContentGrid(pNr, callback) {
         // Append the cell to the row
         row.appendChild(cell);
       };
-
     };
 
     // Get cell width in current window for annotation triangles
@@ -1356,7 +1355,7 @@ function makeContentGrid(pNr, callback) {
             } else {
               targetRow.removeChild(targetCell);
             };
-            createFilledTriangle(key, annotationColor, "left", lowestCell.row, lowestCell.col);
+            createFilledTriangle(key, annotationColor, "left", lowestCell.row, lowestCell.col, pNr);
           } else {
             const targetRow = table.rows[highestCell.row];
             const targetCell = targetRow.cells[highestCell.col];
@@ -1374,14 +1373,14 @@ function makeContentGrid(pNr, callback) {
             } else {
               targetRow.removeChild(targetCell);
             };
-            createFilledTriangle(key, annotationColor, "right", highestCell.row, highestCell.col + 1);
+            createFilledTriangle(key, annotationColor, "right", highestCell.row, highestCell.col + 1, pNr);
           };
         };
 
         // Check if feature needs to be translated
         //console.log(currFeatures[key]);
         if ((currFeatures[key]["translation"]) || (currFeatures[key]["note"] && (currFeatures[key]["note"].includes(" translation: ")))) {
-          console.log("Translating: ", value.label, rangeStart, rangeEnd, pNr)
+          //console.log("Translating: ", value.label, rangeStart, rangeEnd, pNr)
           const targetStrand = (!value.span.includes("complement")) ? "fwd": "comp";
           translateSpan(targetStrand, rangeStart, rangeEnd, pNr);
         };
@@ -1393,6 +1392,9 @@ function makeContentGrid(pNr, callback) {
     //promoterTranslation(pNr);
     // Start the transaltion at the beginning of each feature
     //featureTranslation(pNr);
+
+    // Clean up cells that are not longer in a tr
+    cleanLostCells();
 
     // Change the cursor's icon to normal
     document.body.classList.remove('loading');
@@ -1421,7 +1423,7 @@ function makeAnnotation(rStart, rEnd, text, featureId, annotationColor, pNr, cur
 
 
   // Annotaiton span length
-  const annotationSpan = rEnd - rStart;
+  const annotationSpan = rEnd - rStart + 1;
   let currentSpan = annotationSpan; // Current span to draw
   let carryOver = annotationSpan; // Carry over for next line
   
@@ -1434,10 +1436,11 @@ function makeAnnotation(rStart, rEnd, text, featureId, annotationColor, pNr, cur
     };
 
     // Merge the corresponding cells to draw the annoation
+    console.log("MA0:", text, col, currentSpan, gridWidth)
     if (col + currentSpan >= gridWidth) {
       // If the currenspan would not fit on the line, draw it until we reach the end and
       // put the rest into carry over
-      console.log("MA1");
+      console.log("MA1:", text, row, col, 1, currentSpan, featureId, annotationColor, pNr,currGridStructure);
       // Calculate carry over
       carryOver = col + currentSpan - gridWidth;
       // Calculate length of the current annoation
@@ -1453,15 +1456,15 @@ function makeAnnotation(rStart, rEnd, text, featureId, annotationColor, pNr, cur
     } else if (currentSpan === gridWidth) {
       // If the currentspan covers exactly the current line there is some weird behaviour
       // so fill in the current line and one additional cell in the the following row
-      console.log("MA2");
+      console.log("MA2:", text, row, col, 1, currentSpan, featureId, annotationColor, pNr,currGridStructure);
       mergeCells(row, col, 1, currentSpan, text, featureId, annotationColor, pNr,currGridStructure);
       mergeCells(row + currGridStructure.length, col, 1, 1, text, featureId, annotationColor, pNr,currGridStructure);
       // Set carry over to 0 to signify that we're done
       carryOver = 0;
     } else {
       // The annotation can be fully drawn on the current row
-      console.log("MA3");
-      mergeCells(row, col, 1, currentSpan + 1, text, featureId, annotationColor, pNr, currGridStructure);
+      console.log("MA3:", text, row, col, 1, currentSpan, featureId, annotationColor, pNr,currGridStructure);
+      mergeCells(row, col, 1, currentSpan, text, featureId, annotationColor, pNr, currGridStructure);
       // Set carry over to 0 to signify that we're done
       carryOver = 0;
     };
@@ -1752,8 +1755,14 @@ function featureTranslation(pNr) {
  * Convert sequence indices to table coordinates
  */
 function seqIndexToCoords(inputIndex, targetRow, currGridStructure) {
-  const outputRow = (Math.floor(inputIndex / gridWidth))*currGridStructure.length + targetRow;
-  const outputIndex = inputIndex - Math.floor(inputIndex / gridWidth)*gridWidth - 1;
+  console.log("Translating, seqIndexCoords:", inputIndex, targetRow)
+  let outputRow = (Math.floor(inputIndex / gridWidth))*currGridStructure.length + targetRow;
+  let outputIndex = inputIndex - Math.floor(inputIndex / gridWidth)*gridWidth - 1;
+  if (outputIndex < 0) {
+    outputRow -= currGridStructure.length;
+    outputIndex = gridWidth - 1;
+  };
+  console.log("Translating, seqIndexCoords:", outputRow, outputIndex)
   return [outputRow, outputIndex];
 };
 
@@ -1815,19 +1824,20 @@ function startTranslation(codonPos, pNr) {
  * Translate specific span
  */
 function translateSpan(targetStrand, rangeStart, rangeEnd, pNr) {
+  //console.log("Translating:", targetStrand, rangeStart, rangeEnd, pNr);
   // Select the corresponding features and sequence
   let currGridStructure = null;
   let currSequence = "";
   if (pNr === 1) {
-    currSequence = sequence;
+    currSequence = (targetStrand === "fwd") ? sequence: complementaryStrand;
     currGridStructure = gridStructure;
   } else {
-    currSequence = sequence2;
+    currSequence = (targetStrand === "fwd") ? sequence2: complementaryStrand2;
     currGridStructure = gridStructure2;
   };
 
   const codonStartPos = (targetStrand === "fwd") ? rangeStart: rangeEnd;
-  const codonEndPos = (targetStrand === "fwd") ? rangeEnd + 1: rangeStart - 1;
+  const codonEndPos = (targetStrand === "fwd") ? rangeEnd + 1: rangeStart;
   let codonPos = codonStartPos;
   const dir = (targetStrand === "fwd") ? 1: -1;
 
@@ -1838,18 +1848,23 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, pNr) {
   // displayed in the middle cell of a group of 3 cells
   let row = tableCoords[0];
   let col = tableCoords[1] + 1*dir;
+  //console.log("Translating, tableCoords:", codonStartPos, tableCoords, row, col, dir)
 
-  console.log("Translating:", targetStrand, col, row, codonPos, codonEndPos)
+  //console.log("Translating:", targetStrand, col, row, codonPos, codonStartPos, codonEndPos)
   // Start translating until a stop codon is encountered
   //console.log("Starting translationa at " + codonPos + "(" + row + ", " + col + ").");
   while (true) {
     // Select current codon
     let codon = repeatingSlice(currSequence, codonPos - 1, codonPos + 2);
+    if (targetStrand !== "fwd") {
+      codon = repeatingSlice(currSequence, codonPos - 3, codonPos).split("").reverse().join("");
+      //console.log("Translating:", codon)
+    };
     // Get the corresponding amino acid
     let aminoAcid = translateCodon(codon);
 
     // Fill the cells
-    fillAACells(row, col, aminoAcid, pNr);
+    fillAACells(row, col, aminoAcid, pNr, dir);
     // Jump to next position
     col += 3*dir;
     codonPos += 3*dir;
@@ -1875,7 +1890,8 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, pNr) {
  * TO DO:
  * - 
  */
-function fillAACells(row, col, text, pNr) {
+function fillAACells(row, col, text, pNr, dir) {
+  //console.log("Translating, filling cells:", row, col, text, pNr)
   // Select the corresponding features and sequence
   let table = null;
   let currGridStructure = null;
@@ -1888,6 +1904,10 @@ function fillAACells(row, col, text, pNr) {
   };
 
   // Select the middle cell
+  if (col < 0) {
+    row -= currGridStructure.length;
+    col = col + gridWidth;
+  };
   let mainCell = table.rows[row].cells[col];
   if (!mainCell) { // If the cell does not exist, try the next row over at the beginning
     row += currGridStructure.length;
@@ -1895,7 +1915,7 @@ function fillAACells(row, col, text, pNr) {
 
     mainCell = table.rows[row].cells[col];
   };
-  //console.log("Translating, filling cells:", row, col, text, pNr)
+  //console.log("Translating, filling cells2:", row, col, text, pNr)
 
   // Select the left and right cells
   const leftCell = table.rows[row].cells[col-1];
@@ -1919,11 +1939,19 @@ function fillAACells(row, col, text, pNr) {
 /**
  * 
  */
-function createFilledTriangle(featureID, triangleColor, orientation, row, col) {
+function createFilledTriangle(featureID, triangleColor, orientation, row, col, pNr) {
   console.log("Triangles:", featureID, triangleColor, orientation, row, col)
   // Select the table cell using the row and col indices
-  const table = document.getElementById("sequence-grid");
-  const cell = table.rows[row].cells[col];
+  const tableID = (pNr === 1) ? "sequence-grid": "sequence-grid2";
+  const table = document.getElementById(tableID);
+  let cell = table.rows[row].cells[col];
+  if (!cell) {
+    const newCell = document.createElement("td")
+    newCell.id = "Test"
+    console.log("Hi:", row, col)
+    table.rows.appendChild(newCell);
+    cell = table.rows[row].cells[col];
+  };
   cell.classList.add("triangle-cell");
   cell.setAttribute("feature-id", featureID)
 
@@ -1939,7 +1967,7 @@ function createFilledTriangle(featureID, triangleColor, orientation, row, col) {
   border-left: var(--triangle-size) solid green;
 }
    */
-  const triangleColorVariable = triangle.id + "-color";
+  const triangleColorVariable = pNr + triangle.id + "-color";
   document.documentElement.style.setProperty(`--${triangleColorVariable}`, triangleColor);
   triangle.style.width = 0 + "px";
   triangle.style.height = 0 + "px";
@@ -1955,15 +1983,16 @@ function createFilledTriangle(featureID, triangleColor, orientation, row, col) {
   };
 
   const styleElement = document.createElement('style');
+  const borderClasName = featureID + "-cell-borders" + pNr;
   const dynamicCSS = `
-    .${featureID + "-cell-right"} {
+    .${borderClasName} {
       border-right: 3px solid var(--${triangleColorVariable});
       border-left: 3px solid var(--${triangleColorVariable});
     }
   `;
   styleElement.textContent = dynamicCSS;
   document.head.appendChild(styleElement);
-  cell.classList.add(featureID + "-cell-right");
+  cell.classList.add(borderClasName);
 
   // Add the triangle div to the table cell
   cell.appendChild(triangle);
@@ -1976,4 +2005,24 @@ function createFilledTriangle(featureID, triangleColor, orientation, row, col) {
 function updateAnnotationTrianglesWidth() {
   const randomCell = document.getElementById("Forward Strand");
   document.documentElement.style.setProperty('--triangle-width', randomCell.offsetWidth + 'px');
+};
+
+
+/**
+ * Clean up cells that dont have a parent tr
+ */
+function cleanLostCells() {
+  for (i = 1; i < 3; i++) {
+    const tableID = (i === 1) ? "sequence-grid": "sequence-grid2";
+    var table = document.getElementById(tableID);
+    var cells = table.querySelectorAll("td"); // Select all table cells (td elements)
+
+    // Step 2: Check if each cell is a child of a <tr> element, and remove if not
+    cells.forEach(function (cell) {
+      if (!cell.parentElement || cell.parentElement.tagName.toLowerCase() !== "tr") {
+        // If the cell is not a child of a <tr> element, remove it
+        cell.remove();
+      };
+    });
+  }
 };
