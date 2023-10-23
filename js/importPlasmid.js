@@ -1249,6 +1249,7 @@ function makeContentGrid(pNr, callback) {
       if (!row) {
         row = sequenceGrid.insertRow(i);
       } ;
+      row.id = currGridStructure[i % currGridStructureLength] + "-row";
       // Populate the sequence cells with the corresponding base
       for (let j = 0; j < gridWidth; j++) {
         const cell = document.createElement('td'); // Create the cell

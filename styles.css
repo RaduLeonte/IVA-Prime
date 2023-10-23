@@ -629,3 +629,7 @@ nav ul li a {
   position: relative;
   padding: 0px !important;
 }
+
+#Spacer-row {
+  height: 20px;
+}
