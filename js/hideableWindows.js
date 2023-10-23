@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
      * Settings inputs.
      */
     function populateSettings() {
-        document.getElementById("primerConcSettingsInput").value = primerConc* 1E9; // Display as nM, 
+        document.getElementById("primerConcSettingsInput").value = parseFloat(primerConc * 1E9).toFixed(2); // Display as nM, 
         document.getElementById("saltConcSettingsInput").value = saltConc;
         document.getElementById("homoRegionTmSettingsInput").value = homoRegionTm;
         document.getElementById("tempRegionTmSettingsInput").value = tempRegionTm;
@@ -41,18 +41,31 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById("gridWithSettingsInput").value = gridWidth;
     };
 
+
     function updateGlobalVariables() {
-        primerConc = parseFloat(document.getElementById("primerConcSettingsInput").value) * 1E-9;
+        const unroundedPrimerConc = parseFloat(document.getElementById("primerConcSettingsInput").value)
+        primerConc = unroundedPrimerConc.toFixed(2) * 1E-9;
+        saveUserPreference("primerConc", primerConc, null, true, true);
+
         saltConc = parseFloat(document.getElementById("saltConcSettingsInput").value);
+        saveUserPreference("saltConc", saltConc, null, true, true);
+
         homoRegionTm = parseFloat(document.getElementById("homoRegionTmSettingsInput").value);
+        saveUserPreference("homoRegionTm", homoRegionTm, null, true, true);
+
         tempRegionTm = parseFloat(document.getElementById("tempRegionTmSettingsInput").value);
+        saveUserPreference("tempRegionTm", tempRegionTm, null, true, true);
+
         upperBoundShortInsertions = parseFloat(document.getElementById("upperBoundShortInsertionsInput").value);
+        saveUserPreference("upperBoundShortInsertions", upperBoundShortInsertions, null, true, true);
+
         if (parseInt(document.getElementById("gridWithSettingsInput").value) !== gridWidth) {
             makeContentGrid(1);
             if (sequence2 !== "") {
                 makeContentGrid(2);
             };
             gridWidth = parseInt(document.getElementById("gridWithSettingsInput").value);
+            saveUserPreference("gridWidth", gridWidth, null, true, true);
         };
     };
 
@@ -125,14 +138,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const listOfWindows = Array.from(elementsWithHideableClass).map(element => element.id);
     for (const windowName of listOfWindows) {
         const button = document.getElementById(windowName.replace("-window", "") + '-btn');
+        
         button.addEventListener('click', function(event) {
             event.stopPropagation();
             event.stopImmediatePropagation()
             if (document.getElementById(windowName).style.display === "none") {
+                //console.log("Hiding windows1")
                 hideAllHideableWindows();
                 showHideableWindow(windowName);
             } else {
                 hideAllHideableWindows();
+                //console.log("Hiding windows2")
             };
         });
 
@@ -144,13 +160,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 const clickX = event.clientX;
                 const clickY = event.clientY;
-                if (
-                    clickX < windowRect.left || 
-                    clickX > windowRect.right || 
-                    clickY < windowRect.top || 
-                    clickY > windowRect.bottom
-                ) {
-                    hideHideableWindow(windowName);
+                console.log("Hiding windows", clickX, clickY, windowRect.left, windowRect.right, windowRect.top, windowRect.bottom)
+                console.log("Hiding windows", clickX < windowRect.left, clickX > windowRect.right,clickY < windowRect.top, clickY > windowRect.bottom)
+                if (clickX !== 0, clickY !== 0) {
+                    if (
+                        clickX < windowRect.left || 
+                        clickX > windowRect.right || 
+                        clickY < windowRect.top || 
+                        clickY > windowRect.bottom
+                    ) {
+                        hideHideableWindow(windowName);
+                        console.log("Hiding windows3")
+                    };
                 };
             };
         });

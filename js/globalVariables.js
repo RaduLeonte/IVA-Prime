@@ -2,17 +2,25 @@
  * Cookie handlers
  */
 
-function setCookie(name, value, daysToExpire) {
+function setCookie(name, value, daysToExpire, daysToExpire, isSecure, isCrossSite) {
     let cookieValue = `${name}=${value}; path=/`;
 
     if (daysToExpire) {
         const expirationDate = new Date();
         expirationDate.setDate(expirationDate.getDate() + daysToExpire);
         cookieValue += `; expires=${expirationDate.toUTCString()}`;
-    }
+    };
+
+    if (isSecure) {
+        cookieValue += '; Secure';
+    };
+
+    if (isCrossSite) {
+        cookieValue += '; SameSite=None';
+    };
 
     document.cookie = cookieValue;
-}
+};
 
 function getCookieValue(name) {
     const cookieName = `${name}=`;
@@ -26,7 +34,7 @@ function getCookieValue(name) {
     }
 
     return null;
-}
+};
 
 function saveUserPreference(preferenceName, preferenceValue, daysToExpire) {
     // Retrieve the current user preferences from the cookie
@@ -37,7 +45,7 @@ function saveUserPreference(preferenceName, preferenceValue, daysToExpire) {
 
     // Save the updated user preferences to the cookie
     setCookie('userPreferences', JSON.stringify(userPreferences), daysToExpire);
-}
+};
 
 function getUserPreference(preferenceName) {
     // Retrieve the current user preferences from the cookie
@@ -48,8 +56,8 @@ function getUserPreference(preferenceName) {
         return userPreferences[preferenceName];
     } else {
         return null; // or return a default value
-    }
-}
+    };
+};
 
 console.log(document.cookie)
 
@@ -57,12 +65,16 @@ console.log(document.cookie)
 /**
  * createPrimers
  */
-let primerConc = 100E-9; // M, primer concentration for melting temperatures
-let saltConc = 0.5; // M, primer concentration for melting temperatures
-
-let homoRegionTm = 49.5; // C, target temperature for the homologous region
-let tempRegionTm = 60; // C, target temperature for the template region
-let upperBoundShortInsertions = 49.5; // Insertions with a TM lower than this will be turned into short insertions
+// M, primer concentration for melting temperatures
+let primerConc = (getUserPreference("primerConc")) ? getUserPreference("primerConc") : 100E-9;
+// M, primer concentration for melting temperatures
+let saltConc = (getUserPreference("saltConc")) ? getUserPreference("saltConc") : 0.5;
+// C, target temperature for the homologous region
+let homoRegionTm = (getUserPreference("homoRegionTm")) ? getUserPreference("homoRegionTm") : 49.5;
+// C, target temperature for the template region
+let tempRegionTm = (getUserPreference("tempRegionTm")) ? getUserPreference("tempRegionTm") : 60;
+// Insertions with a TM lower than this will be turned into short insertions
+let upperBoundShortInsertions = (getUserPreference("upperBoundShortInsertions")) ? getUserPreference("upperBoundShortInsertions") : 49.5;
 
 let operationNr = 1; // modification counter
 
