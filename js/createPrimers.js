@@ -23,6 +23,7 @@ function displayPrimers(primersType, primersDict) {
     const modDiv = document.createElement("div");
     const h3 = document.createElement('h3');
     h3.id = 'primers-type';
+    h3.classList.add("editable");
     h3.textContent = operationNr + '. ' + primersType;
     operationNr++;
     modDiv.appendChild(h3);
@@ -31,6 +32,7 @@ function displayPrimers(primersType, primersDict) {
         console.log("Display primers:", primer, subprimersDict);
         const primerName = document.createElement('p'); // Add CSS style for word wrapping
         primerName.textContent = primer + ":";
+        primerName.classList.add("editable")
         modDiv.appendChild(primerName);
 
         const primerSequence = document.createElement('p');

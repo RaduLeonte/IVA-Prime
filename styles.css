@@ -633,3 +633,18 @@ nav ul li a {
 #Spacer-row {
   height: 20px;
 }
+
+.sidebar-table tr td {
+  position: relative;
+}
+
+.sidebar-table tr td input {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+}

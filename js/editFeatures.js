@@ -5,6 +5,7 @@ function enableSequenceGridFeatureEditing(pNr) {
       cell.addEventListener('dblclick', () => {
         const originalText = cell.textContent;
         const input = document.createElement('input');
+        input.classList.add("editable-input")
         input.type = 'text';
         input.value = originalText.replace("...", "");
         
@@ -44,4 +45,5 @@ function updateFeaturesDict(cell, input, pNr) {
             makeContentGrid(pNr);
         };
     };
+    enableSequenceGridFeatureEditing(pNr);
 };
