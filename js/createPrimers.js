@@ -426,7 +426,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
     let homoRev = "";
     let tempRev = "";
     // If the sequence to be inserted has a melting temperature lower than 49 C, extende the primer backward
-    if (get_tm(seqToInsert, primerConc, saltConc) < homoRegionTm) { // Mutation < 49 C, need homolog region
+    if (get_tm(seqToInsert, primerConc, saltConc) < upperBoundShortInsertions) { // Mutation < 49 C, need homolog region
         console.log("Mut under 49C")
         // Forward template binding region, extend forward on the forward strand from the end position
         tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);

@@ -62,6 +62,7 @@ let saltConc = 0.5; // M, primer concentration for melting temperatures
 
 let homoRegionTm = 49.5; // C, target temperature for the homologous region
 let tempRegionTm = 60; // C, target temperature for the template region
+let upperBoundShortInsertions = 49.5; // Insertions with a TM lower than this will be turned into short insertions
 
 let operationNr = 1; // modification counter
 

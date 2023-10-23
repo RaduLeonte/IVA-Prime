@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById("saltConcSettingsInput").value = saltConc;
         document.getElementById("homoRegionTmSettingsInput").value = homoRegionTm;
         document.getElementById("tempRegionTmSettingsInput").value = tempRegionTm;
+        document.getElementById("upperBoundShortInsertionsInput").value = upperBoundShortInsertions;
         document.getElementById("gridWithSettingsInput").value = gridWidth;
     };
 
@@ -45,6 +46,7 @@ document.addEventListener('DOMContentLoaded', function () {
         saltConc = parseFloat(document.getElementById("saltConcSettingsInput").value);
         homoRegionTm = parseFloat(document.getElementById("homoRegionTmSettingsInput").value);
         tempRegionTm = parseFloat(document.getElementById("tempRegionTmSettingsInput").value);
+        upperBoundShortInsertions = parseFloat(document.getElementById("upperBoundShortInsertionsInput").value);
         if (parseInt(document.getElementById("gridWithSettingsInput").value) !== gridWidth) {
             makeContentGrid(1);
             if (sequence2 !== "") {
