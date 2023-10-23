@@ -183,11 +183,12 @@ function highlightOccurences(pNr, targetStrandIndex, workingSequence, workingQue
     
     // Iterate over all cells that contain the search query and highlight them
     for (const index of indices) {
-        for (let j = 0; j < workingQuery.length; j++) {
+        for (let j = 1; j < workingQuery.length + 1; j++) {
             // Convert sequence index to table coordinates
             const [row, column] = seqIndexToCoords(index + j, 0, workingGridStructure);
             // Select and highlight the cell
-            const cell = table.rows[row + targetStrandIndex].cells[column + 1];
+            const cell = table.rows[row + targetStrandIndex].cells[column];
+            console.log("Custom search:",index + j, cell, row + targetStrandIndex, column);
             if (highlightClass) {
                 cell.classList.add(highlightClass);
             } else if (highlightColor) {

@@ -1595,16 +1595,16 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
   // Remove extra cells
   let k = 0;
   colspan--;
-  console.log("Merge cells, to delete: ", row, col, colspan, table.rows[row].cells.length);
+  //console.log("Merge cells, to delete: ", row, col, colspan, table.rows[row].cells.length);
   for (let j = col + 1; j < col + colspan; j++) {
     const cell = table.rows[row].cells[j - k];
     if (cell) {
-      console.log("Merge cells, deleting: ", row, j-k, table.rows[row].cells.length)
+      //console.log("Merge cells, deleting: ", row, j-k, table.rows[row].cells.length)
       cell.parentNode.removeChild(cell);
     };
     k++;
   };
-  console.log("Merge cells, after del: ",table.rows[row].cells.length)
+  //console.log("Merge cells, after del: ",table.rows[row].cells.length)
 };
 
 
@@ -1759,14 +1759,16 @@ function featureTranslation(pNr) {
  * Convert sequence indices to table coordinates
  */
 function seqIndexToCoords(inputIndex, targetRow, currGridStructure) {
-  console.log("Translating, seqIndexCoords:", inputIndex, targetRow)
+  console.log("Translating, seqIndexCoords before:", inputIndex, targetRow)
   let outputRow = (Math.floor(inputIndex / gridWidth))*currGridStructure.length + targetRow;
   let outputIndex = inputIndex - Math.floor(inputIndex / gridWidth)*gridWidth - 1;
   if (outputIndex < 0) {
     outputRow -= currGridStructure.length;
     outputIndex = gridWidth - 1;
+  } else if (outputIndex >= gridWidth) {
+
   };
-  console.log("Translating, seqIndexCoords:", outputRow, outputIndex)
+  console.log("Translating, seqIndexCoords done:", outputRow, outputIndex)
   return [outputRow, outputIndex];
 };
 
