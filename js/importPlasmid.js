@@ -1051,8 +1051,10 @@ function createSideBar(pNr) {
   `;
 
   // Iterate over the features and populate the table
+  console.log("Siderbar:", currFeatures)
   for (const featureName in currFeatures) {
     if (!featureName.includes("LOCUS") && !featureName.includes("source")) { // Skip LOCUS and source
+      console.log("Siderbar:", featureName, currFeatures[featureName])
       const feature = currFeatures[featureName];
 
       // Create a new table row
@@ -1072,7 +1074,7 @@ function createSideBar(pNr) {
   
       // Add feature range
       const rangeCell = document.createElement('td');
-      rangeCell.textContent = feature.span.replace("misc_feature ", "");
+      rangeCell.textContent = feature.span
       rangeCell.className = 'wrap-text';
       row.appendChild(rangeCell);
   

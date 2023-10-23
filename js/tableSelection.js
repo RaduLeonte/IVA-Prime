@@ -111,30 +111,6 @@ function addCellSelection(tableId, containerId, pNr) {
     };
   });
 
-  /**
-   * Removes the selected appearance from all the currently selected cells.
-   */
-  function clearSelection(pNr, clearingGlobalVars) {
-    console.log("CLEARING SELECTION")
-    // Find all selected cells and iterate over them to remove the selected class
-    const selectedCells = document.querySelectorAll('.selected-cell');
-    selectedCells.forEach((cell) => {
-      cell.classList.remove('selected-cell');
-    });
-    // Reset selected text variable
-    if (pNr === 1) {
-      selectedText = "";
-    } else {
-      selectedText2 = "";
-    };
-    // Reset cell selection
-    startCell = null;
-    endCell = null;
-    if (clearingGlobalVars) {
-      selectionStartPos = null;
-      selectionEndPos = null;
-    };
-  };
 
   /**
    * Update the selection on mouse movement.
@@ -332,9 +308,36 @@ function addCellSelection(tableId, containerId, pNr) {
 
 
 /**
+   * Removes the selected appearance from all the currently selected cells.
+   */
+function clearSelection(pNr, clearingGlobalVars) {
+  console.log("CLEARING SELECTION")
+  // Find all selected cells and iterate over them to remove the selected class
+  const selectedCells = document.querySelectorAll('.selected-cell');
+  selectedCells.forEach((cell) => {
+    cell.classList.remove('selected-cell');
+  });
+  // Reset selected text variable
+  if (pNr === 1) {
+    selectedText = "";
+  } else {
+    selectedText2 = "";
+  };
+  // Reset cell selection
+  startCell = null;
+  endCell = null;
+  if (clearingGlobalVars) {
+    selectionStartPos = null;
+    selectionEndPos = null;
+  };
+};
+
+
+/**
  * Select text from feature span.
  */
 function selectBySpan(inputSpan, pNr) {
+  clearSelection();
   // Clear the previous selection
   let currGridStructure = (pNr === 1) ? gridStructure: gridStructure2;
   const sequenceGridTable = (pNr === 1) ? document.getElementById('sequence-grid'): document.getElementById('sequence-grid2');

@@ -22,9 +22,9 @@ function addScrollingEffectToFeatureTable(pNr) {
       const clickedRow = event.target.closest('tr');
     
       // Get the label text from the second column in the clicked row
-      const labelCell = clickedRow.cells[1];
+      const labelCell = clickedRow.cells[0];
       const label = labelCell.innerText;
-      console.log("Scrolling to:", clickedRow.cells[1], label);
+      console.log("Scrolling to:", clickedRow.cells[0], label);
     
       // Find the corresponding cell in the "file-content" table
       const fileContentTable = fileContentDiv.querySelector('table');
@@ -33,7 +33,7 @@ function addScrollingEffectToFeatureTable(pNr) {
       let lowestRow = Number.MAX_VALUE; // Initialize with a large value
 
       cells.forEach((cell) => {
-        if (cell.textContent.trim().includes(label)) {
+        if (cell.getAttribute("feature-id") && cell.getAttribute("feature-id").includes(label)) {
           const cellRow = cell.closest('tr').rowIndex; // Get the row index of the current cell
           if (cellRow < lowestRow) {
             lowestRow = cellRow; // Update the lowest row if a lower one is found
