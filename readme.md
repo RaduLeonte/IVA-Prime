@@ -14,7 +14,6 @@ The tool can be accessed online at: **[ivaprime.com](https://www.ivaprime.com)**
     - [Insertion/Replacement Primers](#insertion/replacement-primers)
     - [Subcloning Primers](#subcloning-primers)
 - [Calculating Melting Temperatures](#calculating-melting-temperatures)
-- [License](#license)
 
 
 ## Primer Design
