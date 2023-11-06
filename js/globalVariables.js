@@ -113,6 +113,8 @@ gridStructure= gridStructure2 = ["Forward Strand",
                                 "Spacer"];
 let gridWidth = 60; // Amount of cells per row
 // Store content of imported file
+let originalFileExtension1 = null;
+let originalFileExtension2 = null;
 let importedFileHeader1 = null;
 let importedFileHeader2 = null;
 let importedFileContent1 = null;

@@ -90,6 +90,12 @@ function handleFileSelect(event) {
       let targetHeadersListElement = (pNr === 1) ? "plasmid-file-name1" : "plasmid-file-name2";
       targetHeadersListElement = document.getElementById(targetHeadersListElement);
       targetHeadersListElement.innerHTML = file.name;
+      // Update global variables
+      if (pNr === 1) {
+        originalFileExtension1 = fileExtension;
+      } else {
+        originalFileExtension2 = fileExtension;
+      };
       
       // Create the sidebar
       createSideBar(pNr);
@@ -555,7 +561,20 @@ function splitStringByMaxLength(inputString, maxLength) {
   }
 
   return result;
-}
+};
+
+
+/**
+ * Get file name from html element
+ */
+function getFileName(pNr) {
+  const fileNameElement = document.getElementById("plasmid-file-name" + pNr);
+  const fileExtensionMatch = fileNameElement.innerHTML.match(/\.([0-9a-z]+)(?=[?#])|(\.)(?:[\w]+)$/i);
+  console.log("getFileName", pNr, fileExtensionMatch, fileNameElement.innerHTML)
+  const outputName = (fileExtensionMatch) ? fileNameElement.innerHTML.replace(fileExtensionMatch[0], "") : fileNameElement.innerHTML;
+  console.log("getFileName", pNr, outputName)
+  return outputName;
+};
 
 
 /**
@@ -564,9 +583,8 @@ function splitStringByMaxLength(inputString, maxLength) {
 function exportGBFile(pNr) {
   console.log("Export GB File")
   // Output file name
-  const outputFileExtension = "gb"
-  const originalFileExtension = document.getElementById("plasmid-file-name" + pNr).innerHTML.match(/\.([0-9a-z]+)(?=[?#])|(\.)(?:[\w]+)$/i)[0].slice(1);
-  const outputFileName = document.getElementById("plasmid-file-name" + pNr).innerHTML.replace(/\.[^.]*$/, '');
+  const outputFileExtension = "gb";
+  const outputFileName = getFileName(pNr);
   
   // Init variables
   let outputFileContent = "";
@@ -580,6 +598,7 @@ function exportGBFile(pNr) {
    * Fil header
    */
   let currFileHeaderDict = null;
+  const originalFileExtension = (pNr === 1) ? originalFileExtension1: originalFileExtension2;
   // GB -> GB
   console.log(originalFileExtension, outputFileExtension);
   if (originalFileExtension === outputFileExtension) {
@@ -683,29 +702,11 @@ function exportDNAFile(pNr) {
   console.log("Export DNA File")
   // Output file name
   const outputFileExtension = "dna"
-  const originalFileExtension = document.getElementById("plasmid-file-name" + pNr).innerHTML.match(/\.([0-9a-z]+)(?=[?#])|(\.)(?:[\w]+)$/i)[0].slice(1);
-  const outputFileName = document.getElementById("plasmid-file-name" + pNr).innerHTML.replace(/\.[^.]*$/, '');
+  const outputFileName =  getFileName(pNr);;
 
   // Select target sequence and features
   const currSequence = (pNr === 1) ? sequence: sequence2;
   const currFeatures = (pNr === 1) ? sortBySpan(features): sortBySpan(features2);
-
-
-  /**
-   * Converts a string of hex bytes to string
-   */
-  function hexToString(inputBytes) {
-    inputBytes = inputBytes.split(" ")
-    let outputString = "";
-    inputBytes.forEach(inputByte => {
-      // Parse the hexadecimal string to an integer and convert it to a character
-      const char = String.fromCharCode(parseInt(inputByte, 16));
-      
-      // Append the character to the result string
-      outputString += char;
-    });
-    return outputString;
-  };
 
 
   /**
