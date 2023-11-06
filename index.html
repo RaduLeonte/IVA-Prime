@@ -6,7 +6,7 @@
     <head>
         <title>IVA Prime</title>
         <!-- Styling -->
-        <link rel="icon" href="iva-prime.ico">
+        <link rel="icon" href="assets/iva-prime.ico">
         <link href="https://fonts.googleapis.com/css2?family=Anonymous+Pro&display=swap" rel="stylesheet">
         <link rel="stylesheet" type="text/css" href="styles.css">
         <!-- Scripts -->
@@ -75,6 +75,15 @@
                         <label for="saltConcSettingsInput">Salt concentration [M]:</label>
                         <input type="text" id="saltConcSettingsInput" name="saltConcSettingsInput">
                     </div>
+                    <div class="settings-window-row">
+                        <label for="saltCorrectionEquation">Salt correction equation:</label>
+                        <select id="saltCorrectionEquation" name="saltCorrectionEquation">
+                            <option value="SchildkrautLifson">Schildkraut-Lifson</option>
+                            <option value="Owczarzy">Owczarzy</option>
+                        </select>
+                    </div>
+                    <img id ="saltCorrectionEquationImage" src="assets/Owczarzy equation.png" alt="Salt correction equation." style="max-width: 100%; height: 30px;">
+                    
                 </div>
 
                 <div class="settings-group">

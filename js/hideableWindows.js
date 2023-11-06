@@ -50,6 +50,9 @@ document.addEventListener('DOMContentLoaded', function () {
         saltConc = parseFloat(document.getElementById("saltConcSettingsInput").value);
         saveUserPreference("saltConc", saltConc, 30, true, true);
 
+        saltCorrectionEquation = document.getElementById("saltCorrectionEquation").value;
+        saveUserPreference("saltCorrectionEquation", saltCorrectionEquation, 30, true, true);
+
         homoRegionTm = parseFloat(document.getElementById("homoRegionTmSettingsInput").value);
         saveUserPreference("homoRegionTm", homoRegionTm, 30, true, true);
 
@@ -86,6 +89,23 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     populateSettings();
+
+    /**
+     * Salt correction equation listener
+     */
+    const saltCorrectionSelect = document.getElementById("saltCorrectionEquation");
+    const saltCorrectionEquationImage = document.getElementById("saltCorrectionEquationImage");
+
+    function updateSaltCorrectionImageSource() {
+        console.log("Change", saltCorrectionSelect.value, "assets/" + saltCorrectionEquation + " equation.png")
+        if (saltCorrectionSelect.value === "SchildkrautLifson") {
+            saltCorrectionEquationImage.src = "assets/" + saltCorrectionSelect.value + " equation.png";
+        } else if (saltCorrectionSelect.value === "Owczarzy") {
+            saltCorrectionEquationImage.src = "assets/" + saltCorrectionSelect.value + " equation.png";
+        };
+    };
+    saltCorrectionSelect.addEventListener("change", updateSaltCorrectionImageSource);
+    updateSaltCorrectionImageSource();
 });
 
 

@@ -123,7 +123,45 @@ function get_tm(sequence, c, m) {
     // Calculate the melting temperature and convert from K to C
     const tm = (deltaH0 / (deltaS0 + R * Math.log(c / symm_fraction))) - 273.15; 
     // Add a salt correction
-    const tm_corr = tm + 16.6 * Math.log(m);
+    console.log("getTM", saltCorrectionEquation)
+    const tm_corr = saltCorrection(tm, sequence, m, saltCorrectionEquation);
+
 
     return tm_corr;
+};
+
+
+/**
+ * Calculate fraction of GC content of sequence
+ */
+function fractionGC(sequence) {
+  let gc_count = (sequence.match(/[GC]/g) || []).length;
+  return gc_count / sequence.length;
+};
+
+
+/**
+ * Different salt correciton equations
+ */
+const saltCorrectionEquationDict = {
+  SchildkrautLifson : (T1, s, m) => {
+    return T1 + 16.6 * Math.log(m);
+  },
+  Owczarzy : (T1, s, m) => {
+    const fGC = fractionGC(s);
+    let reciprocT2 = (1/T1) + ((4.29*fGC - 3.95)*1E-5*Math.log(m)) + 9.4*1E-6*(Math.log(m)**2);
+    return 1/reciprocT2;
+  }
+};
+
+
+/**
+ * Salt correction
+ * 
+ * sequence - primer of interest
+ * c - primer concentration in M
+ * m - salt concentration in M
+ */
+function saltCorrection(T1, sequence, m, equation) {
+  return saltCorrectionEquationDict[equation](T1, sequence, m);
 };

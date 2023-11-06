@@ -511,7 +511,7 @@ nav ul li a {
   padding: 0px 10px;
 
   /* Add the background image properties */
-  background-image: url('settings_icon.svg'); /* Replace with your SVG file */
+  background-image: url('assets/settings_icon.svg'); /* Replace with your SVG file */
   background-size: 27px 27px; /* Adjust to the desired size */
   background-repeat: no-repeat;
   background-position: center center; /* Center the background image */
@@ -586,6 +586,7 @@ nav ul li a {
   flex-direction: column;
   align-items: center;
   min-width: 300px;
+  max-width: 600px;
 }
 
 .settings-window-row {
