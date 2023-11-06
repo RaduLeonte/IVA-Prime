@@ -8,6 +8,12 @@
 function addHoverPopupToTable(tableId, pNr) {
   // Select table
   const table = document.getElementById(tableId);
+  // Create popup for this table
+  const popup = document.createElement('div');
+  popup.id = tableId + "popup";
+  popup.className = 'hover-popup';
+  popup.style.display = "none"; // hide immediately
+  document.body.appendChild(popup);
 
   // Add the hover listener
   table.addEventListener('mouseover', function(event) {
@@ -18,9 +24,6 @@ function addHoverPopupToTable(tableId, pNr) {
       const rowIndex = row.rowIndex;
       const cellIndex = event.target.cellIndex;
 
-      // Create the hover popup
-      const popup = document.createElement('div');
-      popup.className = 'hover-popup';
       // Insert the popup text based on the hovered plasmid
       if (pNr === 1) {
         popup.textContent = basePosition !== -1 ? basePosition + " (" + rowIndex + ", " + cellIndex + ")" : "";
@@ -28,8 +31,7 @@ function addHoverPopupToTable(tableId, pNr) {
         popup.textContent = basePosition2 !== -1 ? basePosition2 + " (" + rowIndex + ", " + cellIndex + ")" : "";
       };
       
-      // Append the popup and position it accordingly
-      document.body.appendChild(popup);
+      // Position it accordingly
       positionPopup(popup, event.clientX, event.clientY);
     };
   });
@@ -61,7 +63,6 @@ function addHoverPopupToTable(tableId, pNr) {
       };
 
       // Update the text content and mvoe the popup into position
-      const popup = document.querySelector('.hover-popup');
       if (popup) {
         if (pNr === 1) {
           popup.textContent = basePosition !== -1 ? basePosition + " (" + event.target.parentNode.rowIndex + ", " + event.target.cellIndex + ")" : "";
@@ -77,10 +78,8 @@ function addHoverPopupToTable(tableId, pNr) {
 
   // Disable the popup if leaving the table and reset the hovering position tracker
   table.addEventListener('mouseout', function() {
-    const popup = document.querySelector('.hover-popup');
-    
     if (popup) {
-      document.body.removeChild(popup);
+      popup.style.display = "none";
     };
 
     if (pNr === 1) {
@@ -111,6 +110,7 @@ function positionPopup(popup, clientX, clientY) {
   popup.style.left = left + 'px';
   popup.style.top = top + 'px';
   popup.style.zIndex = '3';
+  popup.style.display = "block";
 };
 
 
