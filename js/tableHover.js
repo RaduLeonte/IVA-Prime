@@ -18,7 +18,7 @@ function addHoverPopupToTable(tableId, pNr) {
   // Add the hover listener
   table.addEventListener('mouseover', function(event) {
     // Check if we're hovering over a cell
-    if (event.target.tagName === 'TD') {
+    if (event.target.tagName === 'td') {
       // Get cell coordinates
       const row = event.target.parentNode;
       const rowIndex = row.rowIndex;
@@ -41,34 +41,55 @@ function addHoverPopupToTable(tableId, pNr) {
    * Tracks the cursor position and updates the position of the hover popup.
    */
   table.addEventListener('mousemove', function(event) {
-    if (event.target.tagName === 'TD') { // Check to see if we're hovering over a cell
+    if (event.target.tagName === 'TD' || event.target.tagName === 'DIV') { // Check to see if we're hovering over a cell
+
       // Find cell dimensions
-      const cellRect = event.target.getBoundingClientRect();
+      const targetCell = (event.target.tagName === 'TD') ? event.target: event.target.parentNode;
+      const targetCellSpan = targetCell.colSpan;
+      const targetCellRowIndex = targetCell.parentNode.rowIndex;
+
+      let totalColumnSpan = 0;
+      let cellFound = false;
+      for (let i = 0; i < targetCell.parentNode.cells.length; i++) {
+        const currentCell = targetCell.parentNode.cells[i];
+        if (currentCell === targetCell) {
+          cellFound = true;
+          break;
+        };
+        totalColumnSpan += currentCell.colSpan;
+      };
+      //const targetCellCellIndex = targetCell.cellIndex;
+      const targetCellCellIndex = totalColumnSpan;
+
+      const cellRect = targetCell.getBoundingClientRect();
       const cursorOffset = event.clientX - cellRect.left; // Cursor position inside the cell
       const cellWidth = cellRect.width;
+      const tdCursorCoords = Math.min(1, Math.max(0, cursorOffset / cellWidth)) * (targetCellSpan);
+      const basePositionOffset = Math.round(tdCursorCoords);
+      //console.log("Table Hover", targetCell, tdCursorCoords, basePositionOffset);
 
       // Check which side of the cell we're closer to
       if (cursorOffset < cellWidth / 2) { // Left side
         if (pNr === 1) {
-          basePosition = ((event.target.parentNode.rowIndex - event.target.parentNode.rowIndex % gridStructure.length) / gridStructure.length) * gridWidth + event.target.cellIndex + 1;
+          basePosition = ((targetCellRowIndex - targetCellRowIndex % gridStructure.length) / gridStructure.length) * gridWidth + targetCellCellIndex + 1 + basePositionOffset;
         } else {
-          basePosition2 = ((event.target.parentNode.rowIndex - event.target.parentNode.rowIndex % gridStructure2.length) / gridStructure2.length) * gridWidth + event.target.cellIndex + 1;
+          basePosition2 = ((targetCellRowIndex - targetCellRowIndex % gridStructure2.length) / gridStructure2.length) * gridWidth + targetCellCellIndex + 1 + basePositionOffset;
         };
       } else { // Right side
         if (pNr === 1) {
-          basePosition = ((event.target.parentNode.rowIndex - event.target.parentNode.rowIndex % gridStructure.length) / gridStructure.length) * gridWidth + event.target.cellIndex + 2;
+          basePosition = ((targetCellRowIndex - targetCellRowIndex % gridStructure.length) / gridStructure.length) * gridWidth + targetCellCellIndex + 1 + basePositionOffset;
         } else {
-          basePosition2 = ((event.target.parentNode.rowIndex - event.target.parentNode.rowIndex % gridStructure2.length) / gridStructure2.length) * gridWidth + event.target.cellIndex + 2;
+          basePosition2 = ((targetCellRowIndex - targetCellRowIndex % gridStructure2.length) / gridStructure2.length) * gridWidth + targetCellCellIndex + 1 + basePositionOffset;
         };
       };
 
       // Update the text content and mvoe the popup into position
       if (popup) {
         if (pNr === 1) {
-          popup.textContent = basePosition !== -1 ? basePosition + " (" + event.target.parentNode.rowIndex + ", " + event.target.cellIndex + ")" : "";
+          popup.textContent = basePosition !== -1 ? basePosition + " (" + targetCellRowIndex + ", " + targetCellCellIndex + ")" : "";
           positionPopup(popup, event.clientX, event.clientY);
         } else {
-          popup.textContent = basePosition2 !== -1 ? basePosition2 + " (" + event.target.parentNode.rowIndex + ", " + event.target.cellIndex + ")" : "";
+          popup.textContent = basePosition2 !== -1 ? basePosition2 + " (" + targetCellRowIndex + ", " + targetCellCellIndex + ")" : "";
           positionPopup(popup, event.clientX, event.clientY);
         };
       };
@@ -77,17 +98,30 @@ function addHoverPopupToTable(tableId, pNr) {
 
 
   // Disable the popup if leaving the table and reset the hovering position tracker
-  table.addEventListener('mouseout', function() {
+  table.addEventListener('mouseleave', function(event) {
+  const tableRect = table.getBoundingClientRect();
+  const mouseX = event.clientX;
+  const mouseY = event.clientY;
+
+  // Check if the cursor is outside the bounds of the table
+  if (
+    mouseX < tableRect.left ||
+    mouseX > tableRect.right ||
+    mouseY < tableRect.top ||
+    mouseY > tableRect.bottom
+  ) {
+    console.log("Mouse out of the table bounds");
     if (popup) {
       popup.style.display = "none";
-    };
+    }
 
     if (pNr === 1) {
       basePosition = -1;
     } else {
       basePosition2 = -1;
-    };
-  });
+    }
+  }
+});
 };
 
 

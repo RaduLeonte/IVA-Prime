@@ -54,17 +54,6 @@ function addCellSelection(tableId, containerId, pNr) {
   sequenceGridTable.addEventListener('mousedown', function (event) {
     console.log("Table selection mouse down")
     if (event.button === 0) { // Check for left click
-      // Clear the previous selection
-      if (!isShiftKeyPressed()) {
-        clearSelection(pNr, true);
-      };
-      // Record where the selection started
-      if (pNr === 1) {
-        selectionStartPos = basePosition;
-      } else {
-        selectionStartPos = basePosition2;
-      };
-
       initialSelectionStartCell = [event.target.closest('tr').rowIndex, event.target.closest('td').cellIndex]
       isSelecting = true;
       
@@ -72,12 +61,11 @@ function addCellSelection(tableId, containerId, pNr) {
       const targetCell = event.target.closest('td');
       const targetRow = targetCell.parentElement
       let targetSpan = null;
+      console.log("Mousedown", targetCell.id )
       if (targetCell.id === "Annotations") {
         const targetString = targetCell.getAttribute('feature-id');
-        let found = false;
         for (const entryKey in features) {
             if (entryKey === targetString) {
-                found = true;
                 targetSpan = features[entryKey]["span"];
                 break;
             };
@@ -86,7 +74,43 @@ function addCellSelection(tableId, containerId, pNr) {
         const currGridStructure = (pNr === 1) ? gridStructure: gridStructure2;
         const seqIndex = (gridWidth * Math.floor(targetRow.rowIndex/currGridStructure.length)) + targetCell.cellIndex + 1;
         targetSpan = (seqIndex - 1)+ ".." + (seqIndex + 1);
+      } else {
+        // Clear the previous selection
+        if (!isShiftKeyPressed()) {
+          clearSelection(pNr, true);
+          // Record where the selection started
+          if (pNr === 1) {
+            selectionStartPos = basePosition;
+          } else {
+            selectionStartPos = basePosition2;
+          };
+        } else {
+          if (pNr === 1) {
+            selectionEndPos = basePosition;
+          } else {
+            selectionEndPos = basePosition2;
+          };
+        };
+        if (selectionEndPos) {
+          targetSpan = (selectionStartPos < selectionEndPos) ? (selectionStartPos)+ ".." + (selectionEndPos - 1): "complement(" + (selectionEndPos)+ ".." + (selectionStartPos - 1) + ")";
+        } else {
+          setSelectionCursors(pNr, selectionStartPos, null);
+        };
       };
+
+      if (isShiftKeyPressed()) {
+        const targetSpanNumbers = removeNonNumeric(targetSpan).split("..").map(str => parseInt(str));
+        const currSelectionStartPos = Math.min(selectionStartPos, selectionEndPos);
+        const currSelectionEndPos = Math.max(selectionStartPos, selectionEndPos);
+        console.log("Shift key", currSelectionStartPos, currSelectionEndPos, targetSpan, targetSpanNumbers)
+        console.log(currSelectionStartPos !== Math.min(targetSpanNumbers[0], targetSpanNumbers[1] + 1))
+        console.log(currSelectionEndPos !== Math.max(targetSpanNumbers[0], targetSpanNumbers[1] + 1))
+        if (currSelectionStartPos !== Math.min(targetSpanNumbers[0], targetSpanNumbers[1] + 1) || currSelectionEndPos !== Math.max(targetSpanNumbers[0], targetSpanNumbers[1] + 1)) {
+              targetSpan = Math.min(currSelectionStartPos, targetSpanNumbers[0]) + ".." + Math.max(currSelectionEndPos - 1, targetSpanNumbers[1]);
+              console.log(targetSpan)
+        };
+      };
+
       
       isSelecting = true;
 
@@ -113,16 +137,8 @@ function addCellSelection(tableId, containerId, pNr) {
    * Update the selection on mouse movement.
    */
   fileContentContainer.addEventListener('mousemove', function (event) {
+    let closestCell = event.target.closest('td')
     if (isSelecting) { // Make sure we're currently selecting
-      const cellRect = event.target.getBoundingClientRect();
-      const cursorOffset = event.clientX - cellRect.left; // Cursor position inside the cell
-      const cellWidth = cellRect.width;
-      let closestSide = "right";
-      if (cursorOffset < cellWidth / 2) {
-        closestSide = "left";
-      };
-
-      // Find cell closest to the cursor
       if (pNr === 1) {
         selectionEndPos = basePosition;
         currGridStructure = gridStructure;
@@ -130,54 +146,54 @@ function addCellSelection(tableId, containerId, pNr) {
         selectionEndPos = basePosition2;
         currGridStructure = gridStructure2;
       };
-      let closestCell = event.target.closest('td')
-      let closestRow = event.target.closest('tr')
-      let selectionEndCell = [event.target.closest('tr').rowIndex, event.target.closest('td').cellIndex]
       // Check if the cell exists and if the current position is not the same as the selection start cell
-      if (closestCell && closestRow && basePosition !== selectionStartPos && closestCell.id !== "Annotations") {
+      if (closestCell) {
+        if (selectionStartPos === selectionEndPos) {
+          clearSelection(pNr, false);
+          setSelectionCursors(pNr, selectionStartPos, null);
+        } else {
+          let startRowIndex = null;
+          let startCellIndex = null;
+          let endRowIndex = null;
+          let endCellIndex = null;
+          if (selectionStartPos < selectionEndPos) {
+            const tableCoordsStartCell = seqIndexToCoords(selectionStartPos, 0, currGridStructure);
+            startRowIndex = tableCoordsStartCell[0];
+            startCellIndex = tableCoordsStartCell[1];
+            const tableCoordsEndCell = seqIndexToCoords(selectionEndPos - 1, 0, currGridStructure);
+            endRowIndex = tableCoordsEndCell[0];
+            endCellIndex = tableCoordsEndCell[1];
+          } else {
+            const tableCoordsStartCell = seqIndexToCoords(selectionEndPos, 0, currGridStructure);
+            startRowIndex = tableCoordsStartCell[0];
+            startCellIndex = tableCoordsStartCell[1];
+            const tableCoordsEndCell = seqIndexToCoords(selectionStartPos - 1, 0, currGridStructure);
+            endRowIndex = tableCoordsEndCell[0];
+            endCellIndex = tableCoordsEndCell[1];
+          };
+          
+          // Clear the previous selection
+          clearSelection(pNr, false);
+          setSelectionCursors(pNr, selectionStartPos, selectionEndPos);
 
-        // Test
-        // Go from whereever the cell upwards till the forward strand row
-        const rowAdjustment = currGridStructure.indexOf(closestCell.id)
-        selectionEndCell[0] -= rowAdjustment;
-        let selectionStartCell = initialSelectionStartCell;
-        if (closestSide === "left") {
-          selectionEndCell[1]--;
-        };
-
-        // swap if needed
-        if (selectionStartCell[0] >= selectionEndCell[0] && selectionStartCell[1] > selectionEndCell[1]) {
-          const tempCell = selectionEndCell;
-          selectionEndCell = selectionStartCell;
-          selectionStartCell = tempCell;
-          selectionStartCell[1]++;
-        };
-
-        startRowIndex = selectionStartCell[0];
-        startCellIndex = selectionStartCell[1];
-        endRowIndex = selectionEndCell[0];
-        endCellIndex = selectionEndCell[1];
-
-        // Clear the previous selection
-        clearSelection(pNr, false);
-
-        // Iterate over cells between start and end cells and select them
-        for (let i = startRowIndex; i <= endRowIndex; i++) {
-          // Current row
-          const row = sequenceGridTable.rows[i];
-          const start = (i === startRowIndex) ? startCellIndex : 0;
-          const end = (i === endRowIndex) ? endCellIndex : row.cells.length - 1;
-          // Iterate over all cells in the row
-          for (let j = start; j <= end; j++) {
-            const selectedCell = row.cells[j];
-            if (selectedCell.id === "Forward Strand" && selectedCell.innerText.trim() !== "") {
-              selectedCell.classList.add('selected-cell');
+          // Iterate over cells between start and end cells and select them
+          for (let i = startRowIndex; i <= endRowIndex; i++) {
+            // Current row
+            const row = sequenceGridTable.rows[i];
+            const start = (i === startRowIndex) ? startCellIndex : 0;
+            const end = (i === endRowIndex) ? endCellIndex : row.cells.length - 1;
+            // Iterate over all cells in the row
+            for (let j = start; j <= end; j++) {
+              const selectedCell = row.cells[j];
+              if (selectedCell.id === "Forward Strand" && selectedCell.innerText.trim() !== "") {
+                selectedCell.classList.add('selected-cell');
+              };
             };
           };
-        };
 
-        // Update the end cell
-        endCell = closestCell;
+          // Update the end cell
+          endCell = closestCell;
+        };
       };
     };
   });
@@ -187,47 +203,24 @@ function addCellSelection(tableId, containerId, pNr) {
    * Once left click is lifted, end the selection.
    */
   sequenceGridTable.addEventListener('mouseup', function (event) {
-    isSelecting = false;
-    let currentCursorPos = (pNr === 1) ? basePosition: basePosition2;
-    console.log("Table selection mouse up", currentCursorPos, selectionStartPos, event.shiftKey, selectionCursorPosition)
-    if (currentCursorPos === selectionStartPos) {
-      if (event.shiftKey && selectionCursorPosition && selectionCursorPosition !== currentCursorPos) {
-        const spanStart = (selectionCursorPosition < currentCursorPos) ? selectionCursorPosition: currentCursorPos;
-        const spanEnd = (selectionCursorPosition < currentCursorPos) ? currentCursorPos: selectionCursorPosition;
-        selectBySpan(spanStart + ".." + (spanEnd - 1), pNr);
-      };
-      setSelectionCursor(pNr, currentCursorPos);
-    } else {
-      if (event.button === 0 && isSelecting) { // Check if it was left click that was lifted and we are currently selecting
-        // Enable text selection after selecting cells
-        fileContentContainer.style.userSelect = '';
-        fileContentContainer.style.MozUserSelect = '';
-        fileContentContainer.style.webkitUserSelect = '';
-        fileContentContainer.style.msUserSelect = '';
+    if (event.button === 0 && isSelecting) { // Check if it was left click that was lifted and we are currently selecting
+      // Enable text selection after selecting cells
+      fileContentContainer.style.userSelect = '';
+      fileContentContainer.style.MozUserSelect = '';
+      fileContentContainer.style.webkitUserSelect = '';
+      fileContentContainer.style.msUserSelect = '';
 
-        // Extract text content from selected cells
-        if (pNr === 1) {
-          selectedText = getSelectedText();
-          console.log("Selected text: ", selectedText, selectionStartPos, selectionEndPos);
-        } else {
-          selectedText2 = getSelectedText();
-          console.log("Selected text: ", selectedText2, selectionStartPos, selectionEndPos);
-        };
+      // Extract text content from selected cells
+      if (pNr === 1) {
+        selectedText = getSelectedText(pNr);
+        console.log("Selected text: ", selectedText, selectionStartPos, selectionEndPos);
+      } else {
+        selectedText2 = getSelectedText(pNr);
+        console.log("Selected text: ", selectedText2, selectionStartPos, selectionEndPos);
       };
     };
+    isSelecting = false;
   });
-
-
-  /**
-   * Clear startCell and endCell references when leaving the table while selecting and signal that we are not selecting.
-   */
-  /* sequenceGridTable.addEventListener('mouseleave', function () {
-    if (isSelecting) {
-      startCell = null;
-      endCell = null;
-      isSelecting = false;
-    }
-  }); */
 
 
   /**
@@ -237,7 +230,7 @@ function addCellSelection(tableId, containerId, pNr) {
     console.log("Table selection mouse click")
     if (!event.target.closest('#sequence-grid') && !event.target.closest('#sequence-grid2') && !event.target.closest('.popup-window')) {
       clearSelection(pNr, true);
-      clearPreviousSelectionCursor();
+      clearSelectionCursors(pNr);
       startCell = null;
       endCell = null;
       isSelecting = false;
@@ -284,8 +277,9 @@ function addCellSelection(tableId, containerId, pNr) {
 /**
    * Finds all selected cells and concatenates their inner text into a string.
    */
-function getSelectedText() {
-  const selectedCells = document.querySelectorAll('.selected-cell');
+function getSelectedText(pNr) {
+  const tableID = (pNr === 1) ? "sequence-grid": "sequence-grid2";
+  const selectedCells = document.getElementById(tableID).querySelectorAll('.selected-cell');
   let text = '';
   selectedCells.forEach((cell) => {
     text += cell.textContent.trim();
@@ -295,10 +289,11 @@ function getSelectedText() {
 
 
 /**
-   * Removes the selected appearance from all the currently selected cells.
-   */
+* Removes the selected appearance from all the currently selected cells.
+*/
 function clearSelection(pNr, clearingGlobalVars) {
   console.log("CLEARING SELECTION")
+  clearSelectionCursors(pNr);
   // Find all selected cells and iterate over them to remove the selected class
   const selectedCells = document.querySelectorAll('.selected-cell');
   selectedCells.forEach((cell) => {
@@ -324,18 +319,22 @@ function clearSelection(pNr, clearingGlobalVars) {
  * Select text from feature span.
  */
 function selectBySpan(inputSpan, pNr) {
-  if (!isShiftKeyPressed()) {
-    clearSelection();
-  };
-
   let currGridStructure = (pNr === 1) ? gridStructure: gridStructure2;
   const sequenceGridTable = (pNr === 1) ? document.getElementById('sequence-grid'): document.getElementById('sequence-grid2');
 
   const spanList = removeNonNumeric(inputSpan);
   const range = spanList.split("..").map(Number);
 
-  selectionStartPos = range[0];
-  selectionEndPos = range[1] + 1;
+  if (!inputSpan.includes("complement")) {
+    selectionStartPos = range[0];
+    selectionEndPos = range[1] + 1;
+  } else {
+    selectionEndPos = range[0];
+    selectionStartPos = range[1] + 1;
+  };
+
+  clearSelection(pNr, false);
+  setSelectionCursors(pNr, selectionStartPos, selectionEndPos);
 
   const starCellCoords = seqIndexToCoords(range[0], 0, currGridStructure);
   const endCellCoords = seqIndexToCoords(range[1], 0, currGridStructure);
@@ -362,10 +361,10 @@ function selectBySpan(inputSpan, pNr) {
   };
 
   if (pNr === 1) {
-    selectedText = getSelectedText();
+    selectedText = getSelectedText(pNr);
     console.log("Selected text: ", selectedText, selectionStartPos, selectionEndPos);
   } else {
-    selectedText2 = getSelectedText();
+    selectedText2 = getSelectedText(pNr);
     console.log("Selected text: ", selectedText2, selectionStartPos, selectionEndPos);
   };
 };
@@ -374,29 +373,47 @@ function selectBySpan(inputSpan, pNr) {
 /**
  *  Set the position of the selection cursor
  */
-function setSelectionCursor(pNr, cursorPos) {
-  clearPreviousSelectionCursor();
-  selectionCursorPosition = cursorPos;
+function setSelectionCursors(pNr, cursorStartPos, cursorEndPos) {
+  if (cursorEndPos) {
+    const tempStartPos = cursorStartPos;
+    cursorStartPos = (cursorStartPos < cursorEndPos) ? cursorStartPos : cursorEndPos;
+    cursorEndPos = (tempStartPos < cursorEndPos) ? cursorEndPos : tempStartPos;
+  };
+  console.log("setSelectionCursors", cursorStartPos, cursorEndPos)
+  clearSelectionCursors(pNr);
   const currGridStructure = (pNr === 1) ? gridStructure: gridStructure2;
-  const tableCoords = seqIndexToCoords(selectionCursorPosition, 0, currGridStructure);
-
   const tableID = (pNr === 1) ? "sequence-grid": "sequence-grid2";
-  const targetCell1 = document.getElementById(tableID).rows[tableCoords[0]].cells[tableCoords[1]];
-  targetCell1.classList.add("selection-cursor-cell-left")
-  const targetCell2 = document.getElementById(tableID).rows[tableCoords[0] + 1].cells[tableCoords[1]];
-  targetCell2.classList.add("selection-cursor-cell-left")
+  const tableCoordsStart = seqIndexToCoords(cursorStartPos, 0, currGridStructure);
+
+  const targetCell1 = document.getElementById(tableID).rows[tableCoordsStart[0]].cells[tableCoordsStart[1]];
+  targetCell1.classList.add("selection-cursor-cell-left");
+  const targetCell2 = document.getElementById(tableID).rows[tableCoordsStart[0] + 1].cells[tableCoordsStart[1]];
+  targetCell2.classList.add("selection-cursor-cell-left");
+
+  if (cursorEndPos) {
+    const tableCoordsEnd = seqIndexToCoords(cursorEndPos - 1, 0, currGridStructure);
+    console.log("tableCoordsEnd", tableCoordsEnd)
+    const targetCell3 = document.getElementById(tableID).rows[tableCoordsEnd[0]].cells[tableCoordsEnd[1]];
+    targetCell3.classList.add("selection-cursor-cell-right");
+    const targetCell4 = document.getElementById(tableID).rows[tableCoordsEnd[0] + 1].cells[tableCoordsEnd[1]];
+    targetCell4.classList.add("selection-cursor-cell-right");
+  }
 };
 
 
 /**
  * Remove the selection cursor
  */
-function clearPreviousSelectionCursor() {
-  const cells = document.querySelectorAll('.selection-cursor-cell-left');
-  cells.forEach(cell => {
+function clearSelectionCursors(pNr) {
+  const tableID = (pNr === 1) ? "sequence-grid": "sequence-grid2";
+  const cellsLeft = document.getElementById(tableID).querySelectorAll('.selection-cursor-cell-left');
+  cellsLeft.forEach(cell => {
       cell.classList.remove('selection-cursor-cell-left');
   });
-  selectionCursorPosition = null;
+  const cellsRight = document.getElementById(tableID).querySelectorAll('.selection-cursor-cell-right');
+  cellsRight.forEach(cell => {
+      cell.classList.remove('selection-cursor-cell-right');
+  });
 };
 
 

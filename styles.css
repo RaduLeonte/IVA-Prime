@@ -662,3 +662,7 @@ nav ul li a {
 .selection-cursor-cell-left {
   border-left: 3px solid purple;
 }
+
+.selection-cursor-cell-right {
+  border-right: 3px solid purple;
+}
