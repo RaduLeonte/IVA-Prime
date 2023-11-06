@@ -163,6 +163,7 @@ let selectedText = ''; // Currently selected sequence in the first grid
 let selectedText2 = ''; // Currently selected sequence in the second grid
 let selectionStartPos = null;
 let selectionEndPos = null;
+let selectionCursorPosition = null;
 
 
 /**

@@ -320,7 +320,8 @@ nav ul li a {
     color: grey;
   }
 
-  .sequence-grid td:hover {
+  .ForwardStrand:hover,
+  .ComplementaryStrand:hover {
     background-color: #e0e0e0;
   }
 
@@ -648,4 +649,16 @@ nav ul li a {
   top: 0;
   left: 0;
   box-sizing: border-box;
+}
+
+.sequence-cursor-cell-left {
+  border-left: 2px solid red;
+}
+
+.sequence-cursor-cell-right {
+  border-right: 2px solid red;
+}
+
+.selection-cursor-cell-left {
+  border-left: 3px solid purple;
 }

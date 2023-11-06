@@ -19,9 +19,9 @@ function addCellBorderOnHover(tableId, containerId, pNr) {
             observer.disconnect(); // Stop observing DOM changes
             addCellBorderOnHover(tableId, containerId, pNr); // Call the function again now that the table exists
             break;
-          }
-        }
-      }
+          };
+        };
+      };
     });
     // Run observer
     observer.observe(document.documentElement, { childList: true, subtree: true });
@@ -38,15 +38,15 @@ function addCellBorderOnHover(tableId, containerId, pNr) {
     if (cell && cell !== previousCell) {
       // Reset previous cell border styles
       if (previousCell) {
-        previousCell.style.borderLeft = '';
-        previousCell.style.borderRight = '';
+        previousCell.classList.remove("sequence-cursor-cell-left")
+        previousCell.classList.remove("sequence-cursor-cell-right")
       };
       // Update the cell tracker
       previousCell = cell;
     };
 
     // If the cursor has changed cells
-    if (previousCell) {
+    if (previousCell && (previousCell.id === "Forward Strand" || previousCell.id === "Complementary Strand")) {
       // Find the area of the cell
       const cellRect = previousCell.getBoundingClientRect();
       // Find the borders of the cell
@@ -61,11 +61,11 @@ function addCellBorderOnHover(tableId, containerId, pNr) {
 
       // Apply border style to the side closest to the cursor
       if (distanceToLeft < distanceToRight) {
-        previousCell.style.borderLeft = '2px solid red';
-        previousCell.style.borderRight = '';
+        previousCell.classList.add("sequence-cursor-cell-left")
+        previousCell.classList.remove("sequence-cursor-cell-right")
       } else {
-        previousCell.style.borderRight = '2px solid red';
-        previousCell.style.borderLeft = '';
+        previousCell.classList.remove("sequence-cursor-cell-left")
+        previousCell.classList.add("sequence-cursor-cell-right")
       };
     };
   });
@@ -74,8 +74,8 @@ function addCellBorderOnHover(tableId, containerId, pNr) {
   sequenceGridTable.addEventListener('mouseleave', function(event) {
     // Reset cell border styles when leaving the table
     if (previousCell) {
-      previousCell.style.borderLeft = '';
-      previousCell.style.borderRight = '';
+      previousCell.classList.remove("sequence-cursor-cell-left")
+      previousCell.classList.remove("sequence-cursor-cell-right")
       previousCell = null;
     };
   });

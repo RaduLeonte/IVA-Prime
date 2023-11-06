@@ -55,7 +55,9 @@ function addCellSelection(tableId, containerId, pNr) {
     console.log("Table selection mouse down")
     if (event.button === 0) { // Check for left click
       // Clear the previous selection
-      clearSelection(pNr, true);
+      if (!isShiftKeyPressed()) {
+        clearSelection(pNr, true);
+      };
       // Record where the selection started
       if (pNr === 1) {
         selectionStartPos = basePosition;
@@ -67,13 +69,9 @@ function addCellSelection(tableId, containerId, pNr) {
       isSelecting = true;
       
       // Signal selection start
-      //console.log("Starting selection at: " + selectionStartPos);
-      //console.log(features)
       const targetCell = event.target.closest('td');
       const targetRow = targetCell.parentElement
       let targetSpan = null;
-      console.log("TC:", targetCell, selectionStartPos)
-      console.log("TR:", targetRow, selectionStartPos)
       if (targetCell.id === "Annotations") {
         const targetString = targetCell.getAttribute('feature-id');
         let found = false;
@@ -87,7 +85,6 @@ function addCellSelection(tableId, containerId, pNr) {
       } else if (targetCell.id === "Amino Acids" && targetCell.innerText !== "") {
         const currGridStructure = (pNr === 1) ? gridStructure: gridStructure2;
         const seqIndex = (gridWidth * Math.floor(targetRow.rowIndex/currGridStructure.length)) + targetCell.cellIndex + 1;
-        console.log(seqIndex, targetCell.cellIndex, targetRow.rowIndex)
         targetSpan = (seqIndex - 1)+ ".." + (seqIndex + 1);
       };
       
@@ -136,14 +133,12 @@ function addCellSelection(tableId, containerId, pNr) {
       let closestCell = event.target.closest('td')
       let closestRow = event.target.closest('tr')
       let selectionEndCell = [event.target.closest('tr').rowIndex, event.target.closest('td').cellIndex]
-      //console.log("Start Cell: ", initialSelectionStartCell, "End Cell: ", selectionEndCell)
       // Check if the cell exists and if the current position is not the same as the selection start cell
       if (closestCell && closestRow && basePosition !== selectionStartPos && closestCell.id !== "Annotations") {
 
         // Test
         // Go from whereever the cell upwards till the forward strand row
         const rowAdjustment = currGridStructure.indexOf(closestCell.id)
-        //console.log(closestCell.id, closestRow.rowIndex, closestCell.cellIndex, rowAdjustment)
         selectionEndCell[0] -= rowAdjustment;
         let selectionStartCell = initialSelectionStartCell;
         if (closestSide === "left") {
@@ -151,14 +146,12 @@ function addCellSelection(tableId, containerId, pNr) {
         };
 
         // swap if needed
-        //console.log("Before swap:", selectionStartCell, selectionEndCell)
         if (selectionStartCell[0] >= selectionEndCell[0] && selectionStartCell[1] > selectionEndCell[1]) {
           const tempCell = selectionEndCell;
           selectionEndCell = selectionStartCell;
           selectionStartCell = tempCell;
           selectionStartCell[1]++;
         };
-        //console.log("After swap:", selectionStartCell, selectionEndCell)
 
         startRowIndex = selectionStartCell[0];
         startCellIndex = selectionStartCell[1];
@@ -168,8 +161,6 @@ function addCellSelection(tableId, containerId, pNr) {
         // Clear the previous selection
         clearSelection(pNr, false);
 
-        //console.log("Iterating from: " + startRowIndex + ", " + startCellIndex);
-        //console.log("To: " + endRowIndex + ", " + endCellIndex);
         // Iterate over cells between start and end cells and select them
         for (let i = startRowIndex; i <= endRowIndex; i++) {
           // Current row
@@ -196,40 +187,35 @@ function addCellSelection(tableId, containerId, pNr) {
    * Once left click is lifted, end the selection.
    */
   sequenceGridTable.addEventListener('mouseup', function (event) {
-    console.log("Table selection mouse up")
-    if (event.button === 0 && isSelecting) { // Check if it was left click that was lifted and we are currently selecting
-      // Signat that we have stopped selecting
-      isSelecting = false;
+    isSelecting = false;
+    let currentCursorPos = (pNr === 1) ? basePosition: basePosition2;
+    console.log("Table selection mouse up", currentCursorPos, selectionStartPos, event.shiftKey, selectionCursorPosition)
+    if (currentCursorPos === selectionStartPos) {
+      if (event.shiftKey && selectionCursorPosition && selectionCursorPosition !== currentCursorPos) {
+        const spanStart = (selectionCursorPosition < currentCursorPos) ? selectionCursorPosition: currentCursorPos;
+        const spanEnd = (selectionCursorPosition < currentCursorPos) ? currentCursorPos: selectionCursorPosition;
+        selectBySpan(spanStart + ".." + (spanEnd - 1), pNr);
+      };
+      setSelectionCursor(pNr, currentCursorPos);
+    } else {
+      if (event.button === 0 && isSelecting) { // Check if it was left click that was lifted and we are currently selecting
+        // Enable text selection after selecting cells
+        fileContentContainer.style.userSelect = '';
+        fileContentContainer.style.MozUserSelect = '';
+        fileContentContainer.style.webkitUserSelect = '';
+        fileContentContainer.style.msUserSelect = '';
 
-      // Enable text selection after selecting cells
-      fileContentContainer.style.userSelect = '';
-      fileContentContainer.style.MozUserSelect = '';
-      fileContentContainer.style.webkitUserSelect = '';
-      fileContentContainer.style.msUserSelect = '';
-
-      // Extract text content from selected cells
-      if (pNr === 1) {
-        selectedText = getSelectedText();
-        console.log("Selected text: ", selectedText, selectionStartPos, selectionEndPos);
-      } else {
-        selectedText2 = getSelectedText();
-        console.log("Selected text: ", selectedText2, selectionStartPos, selectionEndPos);
+        // Extract text content from selected cells
+        if (pNr === 1) {
+          selectedText = getSelectedText();
+          console.log("Selected text: ", selectedText, selectionStartPos, selectionEndPos);
+        } else {
+          selectedText2 = getSelectedText();
+          console.log("Selected text: ", selectedText2, selectionStartPos, selectionEndPos);
+        };
       };
     };
   });
-
-
-  /**
-   * Finds all selected cells and concatenates their inner text into a string.
-   */
-  function getSelectedText() {
-    const selectedCells = document.querySelectorAll('.selected-cell');
-    let text = '';
-    selectedCells.forEach((cell) => {
-      text += cell.textContent.trim();
-    });
-    return text;
-  };
 
 
   /**
@@ -251,6 +237,7 @@ function addCellSelection(tableId, containerId, pNr) {
     console.log("Table selection mouse click")
     if (!event.target.closest('#sequence-grid') && !event.target.closest('#sequence-grid2') && !event.target.closest('.popup-window')) {
       clearSelection(pNr, true);
+      clearPreviousSelectionCursor();
       startCell = null;
       endCell = null;
       isSelecting = false;
@@ -291,19 +278,19 @@ function addCellSelection(tableId, containerId, pNr) {
       };
     };
   });
+};
 
 
-  /**
-   * Copies the input text into the clipboard.
+/**
+   * Finds all selected cells and concatenates their inner text into a string.
    */
-  function copyToClipboard(text) {
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
-  };
+function getSelectedText() {
+  const selectedCells = document.querySelectorAll('.selected-cell');
+  let text = '';
+  selectedCells.forEach((cell) => {
+    text += cell.textContent.trim();
+  });
+  return text;
 };
 
 
@@ -337,8 +324,10 @@ function clearSelection(pNr, clearingGlobalVars) {
  * Select text from feature span.
  */
 function selectBySpan(inputSpan, pNr) {
-  clearSelection();
-  // Clear the previous selection
+  if (!isShiftKeyPressed()) {
+    clearSelection();
+  };
+
   let currGridStructure = (pNr === 1) ? gridStructure: gridStructure2;
   const sequenceGridTable = (pNr === 1) ? document.getElementById('sequence-grid'): document.getElementById('sequence-grid2');
 
@@ -356,8 +345,7 @@ function selectBySpan(inputSpan, pNr) {
   const endRowIndex = endCellCoords[0];
   const endCellIndex = endCellCoords[1];
 
-  //console.log("Iterating from: " + startRowIndex + ", " + startCellIndex);
-  //console.log("To: " + endRowIndex + ", " + endCellIndex);
+
   // Iterate over cells between start and end cells and select them
   for (let i = startRowIndex; i <= endRowIndex; i++) {
     // Current row
@@ -372,6 +360,51 @@ function selectBySpan(inputSpan, pNr) {
       };
     };
   };
+
+  if (pNr === 1) {
+    selectedText = getSelectedText();
+    console.log("Selected text: ", selectedText, selectionStartPos, selectionEndPos);
+  } else {
+    selectedText2 = getSelectedText();
+    console.log("Selected text: ", selectedText2, selectionStartPos, selectionEndPos);
+  };
+};
+
+
+/**
+ *  Set the position of the selection cursor
+ */
+function setSelectionCursor(pNr, cursorPos) {
+  clearPreviousSelectionCursor();
+  selectionCursorPosition = cursorPos;
+  const currGridStructure = (pNr === 1) ? gridStructure: gridStructure2;
+  const tableCoords = seqIndexToCoords(selectionCursorPosition, 0, currGridStructure);
+
+  const tableID = (pNr === 1) ? "sequence-grid": "sequence-grid2";
+  const targetCell1 = document.getElementById(tableID).rows[tableCoords[0]].cells[tableCoords[1]];
+  targetCell1.classList.add("selection-cursor-cell-left")
+  const targetCell2 = document.getElementById(tableID).rows[tableCoords[0] + 1].cells[tableCoords[1]];
+  targetCell2.classList.add("selection-cursor-cell-left")
+};
+
+
+/**
+ * Remove the selection cursor
+ */
+function clearPreviousSelectionCursor() {
+  const cells = document.querySelectorAll('.selection-cursor-cell-left');
+  cells.forEach(cell => {
+      cell.classList.remove('selection-cursor-cell-left');
+  });
+  selectionCursorPosition = null;
+};
+
+
+/**
+ * Check if shiftkey is pressed
+ */
+function isShiftKeyPressed() {
+  return window.event ? !!window.event.shiftKey : false;
 };
 
 
