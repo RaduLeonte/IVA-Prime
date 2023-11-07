@@ -44,9 +44,21 @@ function addCellSelection(tableId, containerId, pNr) {
 
   // Initialize selection variables
   let isSelecting = false;
-  let startCell = null;
-  let endCell = null;
-  let initialSelectionStartCell = null;
+
+
+  /**
+   * Selection cursor hover
+   */
+  sequenceGridTable.addEventListener('mousemove', function (event) {
+    const currBasePosition = (pNr === 1) ? basePosition: basePosition2;
+    if ((currBasePosition === selectionStartPos || currBasePosition === selectionEndPos) && selectionEndPos) {
+        sequenceGridTable.style.cursor = 'ew-resize';
+        hoveringOverSelectionCursor = (currBasePosition === selectionStartPos) ? "start": "end";
+    } else {
+        sequenceGridTable.style.cursor = 'default';
+        hoveringOverSelectionCursor = null;
+    };
+  });
 
   /**
    * Selection start.
@@ -54,80 +66,82 @@ function addCellSelection(tableId, containerId, pNr) {
   sequenceGridTable.addEventListener('mousedown', function (event) {
     console.log("Table selection mouse down")
     if (event.button === 0) { // Check for left click
-      initialSelectionStartCell = [event.target.closest('tr').rowIndex, event.target.closest('td').cellIndex]
       isSelecting = true;
-      
-      // Signal selection start
-      const targetCell = event.target.closest('td');
-      const targetRow = targetCell.parentElement
-      let targetSpan = null;
-      console.log("Mousedown", targetCell.id )
-      if (targetCell.id === "Annotations") {
-        const targetString = targetCell.getAttribute('feature-id');
-        for (const entryKey in features) {
-            if (entryKey === targetString) {
-                targetSpan = features[entryKey]["span"];
-                break;
+      if (!hoveringOverSelectionCursor) {
+        initialSelectionStartCell = [event.target.closest('tr').rowIndex, event.target.closest('td').cellIndex]
+        
+        // Signal selection start
+        const targetCell = event.target.closest('td');
+        const targetRow = targetCell.parentElement
+        let targetSpan = null;
+        console.log("Mousedown", targetCell.id )
+        if (targetCell.id === "Annotations") {
+          const targetString = targetCell.getAttribute('feature-id');
+          for (const entryKey in features) {
+              if (entryKey === targetString) {
+                  targetSpan = features[entryKey]["span"];
+                  break;
+              };
+          };
+        } else if (targetCell.id === "Amino Acids" && targetCell.innerText !== "") {
+          const currGridStructure = (pNr === 1) ? gridStructure: gridStructure2;
+          const seqIndex = (gridWidth * Math.floor(targetRow.rowIndex/currGridStructure.length)) + targetCell.cellIndex + 1;
+          targetSpan = (seqIndex - 1)+ ".." + (seqIndex + 1);
+        } else {
+          // Clear the previous selection
+          if (!isShiftKeyPressed()) {
+            clearSelection(pNr, true);
+            // Record where the selection started
+            if (pNr === 1) {
+              selectionStartPos = basePosition;
+            } else {
+              selectionStartPos = basePosition2;
             };
-        };
-      } else if (targetCell.id === "Amino Acids" && targetCell.innerText !== "") {
-        const currGridStructure = (pNr === 1) ? gridStructure: gridStructure2;
-        const seqIndex = (gridWidth * Math.floor(targetRow.rowIndex/currGridStructure.length)) + targetCell.cellIndex + 1;
-        targetSpan = (seqIndex - 1)+ ".." + (seqIndex + 1);
-      } else {
-        // Clear the previous selection
-        if (!isShiftKeyPressed()) {
-          clearSelection(pNr, true);
-          // Record where the selection started
-          if (pNr === 1) {
-            selectionStartPos = basePosition;
           } else {
-            selectionStartPos = basePosition2;
+            if (pNr === 1) {
+              selectionEndPos = basePosition;
+            } else {
+              selectionEndPos = basePosition2;
+            };
           };
-        } else {
-          if (pNr === 1) {
-            selectionEndPos = basePosition;
+          if (selectionEndPos) {
+            targetSpan = (selectionStartPos < selectionEndPos) ? (selectionStartPos)+ ".." + (selectionEndPos - 1): "complement(" + (selectionEndPos)+ ".." + (selectionStartPos - 1) + ")";
           } else {
-            selectionEndPos = basePosition2;
+            setSelectionCursors(pNr, selectionStartPos, null);
           };
         };
-        if (selectionEndPos) {
-          targetSpan = (selectionStartPos < selectionEndPos) ? (selectionStartPos)+ ".." + (selectionEndPos - 1): "complement(" + (selectionEndPos)+ ".." + (selectionStartPos - 1) + ")";
-        } else {
-          setSelectionCursors(pNr, selectionStartPos, null);
+
+        if (isShiftKeyPressed()) {
+          const targetSpanNumbers = removeNonNumeric(targetSpan).split("..").map(str => parseInt(str));
+          const currSelectionStartPos = Math.min(selectionStartPos, selectionEndPos);
+          const currSelectionEndPos = Math.max(selectionStartPos, selectionEndPos);
+          console.log("Shift key", currSelectionStartPos, currSelectionEndPos, targetSpan, targetSpanNumbers)
+          console.log(currSelectionStartPos !== Math.min(targetSpanNumbers[0], targetSpanNumbers[1] + 1))
+          console.log(currSelectionEndPos !== Math.max(targetSpanNumbers[0], targetSpanNumbers[1] + 1))
+          if (currSelectionStartPos !== Math.min(targetSpanNumbers[0], targetSpanNumbers[1] + 1) || currSelectionEndPos !== Math.max(targetSpanNumbers[0], targetSpanNumbers[1] + 1)) {
+                targetSpan = Math.min(currSelectionStartPos, targetSpanNumbers[0]) + ".." + Math.max(currSelectionEndPos - 1, targetSpanNumbers[1]);
+                console.log(targetSpan)
+          };
         };
-      };
 
-      if (isShiftKeyPressed()) {
-        const targetSpanNumbers = removeNonNumeric(targetSpan).split("..").map(str => parseInt(str));
-        const currSelectionStartPos = Math.min(selectionStartPos, selectionEndPos);
-        const currSelectionEndPos = Math.max(selectionStartPos, selectionEndPos);
-        console.log("Shift key", currSelectionStartPos, currSelectionEndPos, targetSpan, targetSpanNumbers)
-        console.log(currSelectionStartPos !== Math.min(targetSpanNumbers[0], targetSpanNumbers[1] + 1))
-        console.log(currSelectionEndPos !== Math.max(targetSpanNumbers[0], targetSpanNumbers[1] + 1))
-        if (currSelectionStartPos !== Math.min(targetSpanNumbers[0], targetSpanNumbers[1] + 1) || currSelectionEndPos !== Math.max(targetSpanNumbers[0], targetSpanNumbers[1] + 1)) {
-              targetSpan = Math.min(currSelectionStartPos, targetSpanNumbers[0]) + ".." + Math.max(currSelectionEndPos - 1, targetSpanNumbers[1]);
-              console.log(targetSpan)
+        
+        isSelecting = true;
+
+        // Reset cell selection
+        startCell = null;
+        endCell = null;
+
+        // Disable text selection while selecting cells
+        fileContentContainer.style.userSelect = 'none';
+        fileContentContainer.style.MozUserSelect = 'none';
+        fileContentContainer.style.webkitUserSelect = 'none';
+        fileContentContainer.style.msUserSelect = 'none';
+        // Prevent the default left mouse click behavior (e.g., text selection)
+        event.preventDefault();
+
+        if (targetSpan) {
+          selectBySpan(targetSpan, pNr);
         };
-      };
-
-      
-      isSelecting = true;
-
-      // Reset cell selection
-      startCell = null;
-      endCell = null;
-
-      // Disable text selection while selecting cells
-      fileContentContainer.style.userSelect = 'none';
-      fileContentContainer.style.MozUserSelect = 'none';
-      fileContentContainer.style.webkitUserSelect = 'none';
-      fileContentContainer.style.msUserSelect = 'none';
-      // Prevent the default left mouse click behavior (e.g., text selection)
-      event.preventDefault();
-
-      if (targetSpan) {
-        selectBySpan(targetSpan, pNr);
       };
     };
   });
@@ -139,13 +153,17 @@ function addCellSelection(tableId, containerId, pNr) {
   fileContentContainer.addEventListener('mousemove', function (event) {
     let closestCell = event.target.closest('td')
     if (isSelecting) { // Make sure we're currently selecting
-      if (pNr === 1) {
-        selectionEndPos = basePosition;
-        currGridStructure = gridStructure;
-      } else {
-        selectionEndPos = basePosition2;
-        currGridStructure = gridStructure2;
+      if (!hoveringOverSelectionCursor) {
+        selectionEndPos = (pNr === 1) ? basePosition: basePosition2;
+      } else {
+        if (hoveringOverSelectionCursor === "start") {
+          selectionStartPos = (pNr === 1) ? basePosition: basePosition2;
+        } else {
+          selectionEndPos = (pNr === 1) ? basePosition: basePosition2;
+        };
       };
+      currGridStructure = (pNr === 1) ? gridStructure: gridStructure2;
+      
       // Check if the cell exists and if the current position is not the same as the selection start cell
       if (closestCell) {
         if (selectionStartPos === selectionEndPos) {

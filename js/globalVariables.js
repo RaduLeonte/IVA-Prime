@@ -164,6 +164,7 @@ let selectedText2 = ''; // Currently selected sequence in the second grid
 let selectionStartPos = null;
 let selectionEndPos = null;
 let selectionCursorPosition = null;
+let hoveringOverSelectionCursor = null;
 
 
 /**
