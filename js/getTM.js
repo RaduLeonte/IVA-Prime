@@ -163,5 +163,6 @@ const saltCorrectionEquationDict = {
  * m - salt concentration in M
  */
 function saltCorrection(T1, sequence, m, equation) {
+  console.log("Salt corr", equation)
   return saltCorrectionEquationDict[equation](T1, sequence, m);
 };

@@ -73,7 +73,7 @@ let primerConc = (getUserPreference("primerConc")) ? getUserPreference("primerCo
 // M, primer concentration for melting temperatures
 let saltConc = (getUserPreference("saltConc")) ? getUserPreference("saltConc") : 0.5;
 // M, primer concentration for melting temperatures
-let saltCorrectionEquation = (getUserPreference("saltCorrectionEquation")) ? getUserPreference("saltCorrectionEquation") : "Owczarzy";
+let saltCorrectionEquation = (getUserPreference("saltCorrectionEquation")) ? getUserPreference("saltCorrectionEquation") : "SchildkrautLifson";
 // C, target temperature for the homologous region
 let homoRegionTm = (getUserPreference("homoRegionTm")) ? getUserPreference("homoRegionTm") : 49.5;
 // C, target temperature for the template region

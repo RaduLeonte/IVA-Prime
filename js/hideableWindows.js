@@ -98,11 +98,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function updateSaltCorrectionImageSource() {
         console.log("Change", saltCorrectionSelect.value, "assets/" + saltCorrectionEquation + " equation.png")
-        if (saltCorrectionSelect.value === "SchildkrautLifson") {
-            saltCorrectionEquationImage.src = "assets/" + saltCorrectionSelect.value + " equation.png";
-        } else if (saltCorrectionSelect.value === "Owczarzy") {
-            saltCorrectionEquationImage.src = "assets/" + saltCorrectionSelect.value + " equation.png";
-        };
+        saltCorrectionEquationImage.src = "assets/" + saltCorrectionSelect.value + " equation.png";
+        saveUserPreference("saltCorrectionEquation", saltCorrectionSelect.value, 30, true, true);
+        saltCorrectionEquation = saltCorrectionSelect.value;
     };
     saltCorrectionSelect.addEventListener("change", updateSaltCorrectionImageSource);
     updateSaltCorrectionImageSource();
