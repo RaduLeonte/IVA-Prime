@@ -66,10 +66,20 @@
                 <h2>Settings:</h2>
                 <div class="settings-group">
                     <h3>Melting temperature parameters:</h3>
+
+                    <!-- Primer concentration -->
+                    <h4>Primers</h4>
                     <div class="settings-window-row">
                         <label for="primerConcSettingsInput">Primer concentration [nM]:</label>
                         <input type="text" id="primerConcSettingsInput" name="primerConcSettingsInput">
                     </div>
+
+                    <!-- Salt correction -->
+                    <h4>Salt Correction</h4>     
+                    <div class="settings-window-row">
+                        <label for="applyingSaltCorrectionCheckbox">Apply Salt correction:</label>
+                        <input type="checkbox" id="applyingSaltCorrectionCheckbox" name="applyingSaltCorrectionCheckbox" checked="true">
+                    </div>         
                     <div class="settings-window-row">
                         <label for="saltConcSettingsInput">Salt concentration [M]:</label>
                         <input type="text" id="saltConcSettingsInput" name="saltConcSettingsInput">
@@ -83,6 +93,17 @@
                     </div>
                     <img id ="saltCorrectionEquationImage" src="assets/SchildkrautLifson equation.png" alt="Salt correction equation." style="max-width: 100%; height: 30px;">
                     
+                    <!-- DMSO correction -->
+                    <h4>DMSO Correction</h4> 
+                    <div class="settings-window-row">
+                        <label for="applyingDMSOCorrectionCheckbox">Apply DMSO correction:</label>
+                        <input type="checkbox" id="applyingDMSOCorrectionCheckbox" name="applyingDMSOCorrectionCheckbox">
+                    </div>
+                    <div class="settings-window-row">
+                        <label for="dmsoConcSettingsInput">DMSO concentration [M]:</label>
+                        <input type="text" id="dmsoConcSettingsInput" name="dmsoConcSettingsInput">
+                    </div>
+                    <img id ="dmsoCorrectionEquationImage" src="assets/DMSO equation.png" alt="DMSO correction equation." style="max-width: 100%; height: 25px;">
                 </div>
 
                 <div class="settings-group">

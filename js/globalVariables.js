@@ -68,12 +68,6 @@ console.log(document.cookie)
 /**
  * createPrimers
  */
-// M, primer concentration for melting temperatures
-let primerConc = (getUserPreference("primerConc")) ? getUserPreference("primerConc") : 100E-9;
-// M, primer concentration for melting temperatures
-let saltConc = (getUserPreference("saltConc")) ? getUserPreference("saltConc") : 0.5;
-// M, primer concentration for melting temperatures
-let saltCorrectionEquation = (getUserPreference("saltCorrectionEquation")) ? getUserPreference("saltCorrectionEquation") : "SchildkrautLifson";
 // C, target temperature for the homologous region
 let homoRegionTm = (getUserPreference("homoRegionTm")) ? getUserPreference("homoRegionTm") : 49.5;
 // C, target temperature for the template region
@@ -100,6 +94,19 @@ let customSearchEnabledSecondPlasmid = false;
 /**
  * getTm
  */
+// M, primer concentration for melting temperatures
+let primerConc = (getUserPreference("primerConc")) ? getUserPreference("primerConc") : 100E-9;
+
+let applyingSaltCorrection =  (getUserPreference("applyingSaltCorrection")) ? getUserPreference("applyingSaltCorrection") : true;
+console.log(applyingSaltCorrection)
+// M, salt concentration for melting temperatures
+let saltConc = (getUserPreference("saltConc")) ? getUserPreference("saltConc") : 0.5;
+
+let applyingDMSOCorrection =  (getUserPreference("applyingDMSOCorrection")) ? getUserPreference("applyingDMSOCorrection") : false;
+// M, DMSO concentration for melting temperatures
+let dmsoConc = (getUserPreference("dmsoConc")) ? getUserPreference("dmsoConc") : 0;
+// M, primer concentration for melting temperatures
+let saltCorrectionEquation = (getUserPreference("saltCorrectionEquation")) ? getUserPreference("saltCorrectionEquation") : "SchildkrautLifson";
 let isTmCalcWindowVisible = false;
 
 

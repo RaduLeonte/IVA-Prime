@@ -123,9 +123,11 @@ function get_tm(sequence, c, m) {
     // Calculate the melting temperature and convert from K to C
     const tm = (deltaH0 / (deltaS0 + R * Math.log(c / symm_fraction))) - 273.15; 
     // Add a salt correction
-    console.log("getTM", saltCorrectionEquation)
-    const tm_corr = saltCorrection(tm, sequence, m, saltCorrectionEquation);
+    console.log("getTM", saltCorrectionEquation, applyingSaltCorrection, saltConc)
+    let tm_corr = (applyingSaltCorrection && saltConc &&  saltConc !== NaN && saltConc !== 0) ? saltCorrection(tm, sequence, m, saltCorrectionEquation): tm;
 
+    // Add DMSO correction
+    tm_corr = (applyingDMSOCorrection && dmsoConc && dmsoConc !== NaN) ? tm_corr - 0.6*dmsoConc: tm_corr;
 
     return tm_corr;
 };

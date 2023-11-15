@@ -43,9 +43,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     function updateGlobalVariables() {
+        // Primer concentration
         const unroundedPrimerConc = parseFloat(document.getElementById("primerConcSettingsInput").value)
         primerConc = unroundedPrimerConc.toFixed(2) * 1E-9;
         saveUserPreference("primerConc", primerConc, 30, true, true);
+
+        // Salt correction
+        applyingSaltCorrection = document.getElementById("applyingSaltCorrectionCheckbox").checked;
+        saveUserPreference("applyingSaltCorrection", applyingSaltCorrection, 30, true, true);
 
         saltConc = parseFloat(document.getElementById("saltConcSettingsInput").value);
         saveUserPreference("saltConc", saltConc, 30, true, true);
@@ -53,6 +58,14 @@ document.addEventListener('DOMContentLoaded', function () {
         saltCorrectionEquation = document.getElementById("saltCorrectionEquation").value;
         saveUserPreference("saltCorrectionEquation", saltCorrectionEquation, 30, true, true);
 
+        // DMSO correction
+        applyingDMSOCorrection = document.getElementById("applyingDMSOCorrectionCheckbox").checked;
+        saveUserPreference("applyingDMSOCorrection", applyingDMSOCorrection, 30, true, true);
+
+        dmsoConc = parseFloat(document.getElementById("dmsoConcSettingsInput").value);
+        saveUserPreference("dmsoConc", dmsoConc, 30, true, true);
+
+        // Primer settings
         homoRegionTm = parseFloat(document.getElementById("homoRegionTmSettingsInput").value);
         saveUserPreference("homoRegionTm", homoRegionTm, 30, true, true);
 
@@ -72,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function () {
             gridWidth = parseInt(document.getElementById("gridWithSettingsInput").value);
             saveUserPreference("gridWidth", gridWidth, 30, true, true);
         };
-        //console.log(document.cookie);
+        console.log(document.cookie);
     };
 
     // Event listener for input changes
