@@ -1,7 +1,7 @@
 /**
  * Enable editing functionality to file name elements
  */
-function enableEditingOFileNames(pNr) {
+function enableEditingOfFileNames(pNr) {
   const editableElements = document.getElementById("header-list").querySelectorAll('.editable');
   editableElements.forEach(element => {enableElementEditing(element, pNr)});
 };
@@ -37,6 +37,8 @@ function enableElementEditing(element, pNr) {
       fileExtension = /(?:\.([^.]+))?$/.exec(originalText)[1];
       console.log(fileExtension)
       input.value = originalText.replace("." + fileExtension, "");
+    } else {
+      input.value = originalText;
     };
     
     
@@ -70,6 +72,8 @@ function updateElementText(e, newText, originalText) {
     e.textContent = newText;
   } else if (e.tagName === "A") {
     e.textContent = (newText !== "") ? newText: originalText;
+  } else {
+    e.textContent = newText;
   };
 };
 
@@ -98,5 +102,5 @@ function updateFeaturesDict(cell, pNr) {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-  enableEditingOFileNames(1);
+  enableEditingOfFileNames(1);
 });
