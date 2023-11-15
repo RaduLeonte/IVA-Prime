@@ -37,6 +37,7 @@ function displayPrimers(primersType, primersDict) {
 
         const primerSequence = document.createElement('p');
         let primerTMInfo = []
+        let primerLength = 0;
         for (const [subprimer, subprimerProperties] of Object.entries(subprimersDict)) {
             const span = document.createElement('span');
             span.id = "primer-region-span" + "-" + primer;
@@ -48,8 +49,10 @@ function displayPrimers(primersType, primersDict) {
             primerSequence.appendChild(span)
             span.addEventListener('mouseover', primerRegionHover);
             span.addEventListener('mouseout', removePrimerRegionHighlight);
-            primerTMInfo.push(parseFloat(get_tm(subprimerProperties["seq"], primerConc, saltConc).toFixed(2)));
+            primerTMInfo.push(parseFloat(get_tm(subprimerProperties["seq"], primerConc, saltConc).toFixed(2)) + "°C");
+            primerLength += subprimerProperties["seq"].length;
         };
+        primerTMInfo.push(primerLength + " bp")
 
         const spanTM = document.createElement('span');
         spanTM.textContent = ` (${primerTMInfo.join(', ')})`
