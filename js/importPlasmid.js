@@ -1000,7 +1000,9 @@ function exportDNAFile(pNr) {
  * Download file.
  */
 function downloadFile(downloadFileName, downloadFileContent, downloadFileType) {
+  console.log("downloadFile:", downloadFileName, downloadFileContent, downloadFileType)
   // Create a Blob
+  let blobURL = null;
   let blob = null;
   if (downloadFileType === "dna") {
     const byteArray = new Uint8Array(downloadFileContent);
@@ -1008,20 +1010,28 @@ function downloadFile(downloadFileName, downloadFileContent, downloadFileType) {
   } else {
     blob = new Blob([downloadFileContent], { type: "text/plain" });
   };
-  const blobURL = URL.createObjectURL(blob);
+  if (blobURL !== null) {
+    window.URL.revokeObjectURL(blobURL);
+  }
+  blobURL = window.URL.createObjectURL(blob);
 
   // Create a download link
   const downloadLink = document.createElement("a");
   downloadLink.href = blobURL;
   downloadLink.download = downloadFileName + "." + downloadFileType; // File name
-  document.body.appendChild(downloadLink);
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  container.appendChild(downloadLink);
+  // document.body.appendChild(downloadLink);
   downloadLink.style.display = "none";
 
   // Start the download
   downloadLink.click();
 
   // Clean up by revoking the Blob URL once the download is complete
-  URL.revokeObjectURL(blobURL);
+  setTimeout(() => {
+    window.URL.revokeObjectURL(blobURL);
+  }, 1000);
 };
 
 
