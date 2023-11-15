@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
       <li id="mutation" disabled>Mutate/Replace selection</li>
       <li id="subcloning" disabled>Subclone selection</li>
       <li id="begin-translation" disabled>Begin translation here</li>
+      <li id="translate-selection" disabled>Translate selection</li>
     </ul>
   `;
   document.body.appendChild(contextMenu);
@@ -72,6 +73,12 @@ document.addEventListener('DOMContentLoaded', function () {
       } else { // Else search for the first ATG then start there
         startTranslation(sequence.indexOf("ATG", insertionPosition) + 1, 1);
       };
+    } else if (menuItemId === 'translate-selection') {
+      console.log('Translating current selection', selectionStartPos, selectionEndPos);
+      const translateSpanStart = Math.min(selectionStartPos, selectionEndPos);
+      const translateSpanEnd = Math.max(selectionStartPos, selectionEndPos) - 3;
+      console.log('Translating current selection', translateSpanStart, translateSpanEnd);
+      translateSpan("fwd", translateSpanStart, translateSpanEnd, 1);
     };
 
     // Hide the menu once done
@@ -92,6 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const mutationMenuItem = document.getElementById('mutation');
     const subcloningMenuItem = document.getElementById('subcloning');
     const beginTranslationMenuItem = document.getElementById('begin-translation');
+    const translateSelectionMenuItem = document.getElementById('translate-selection');
 
     // Enable or disable menu items based on if the user is making a selection
     if (selectedText) {
@@ -101,6 +109,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Re-enable deletions and mutations
       deletionMenuItem.classList.remove('disabled');
       mutationMenuItem.classList.remove('disabled');
+      translateSelectionMenuItem.classList.remove('disabled');
     } else {
       // If there is no selection, re-enable insertions and translations
       insertionMenuItem.classList.remove('disabled');
@@ -108,6 +117,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Disable deletions and mutations
       deletionMenuItem.classList.add('disabled');
       mutationMenuItem.classList.add('disabled');
+      translateSelectionMenuItem.classList.add('disabled');
     };
 
     // If there is a selection and a second plasmid has been imported, enable the subcloning option
