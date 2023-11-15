@@ -1469,7 +1469,7 @@ function makeContentGrid(pNr, callback) {
     cleanLostCells();
 
     // Enable feature cell editing
-    enableSequenceGridFeatureEditing(pNr);
+    enableSidebarEditing(pNr);
 
     // Change the cursor's icon to normal
     document.body.classList.remove('loading');
