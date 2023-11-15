@@ -709,6 +709,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
     segmentStartPos--;
     segmentEndPos--;
 
+
     // Insertion is added into the main sequence and complementary strand is remade
     if (pNr === 1) {
         sequence = sequence.substring(0, segmentStartPos) + newFeatureSequence + sequence.substring(segmentEndPos);
@@ -754,7 +755,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
                 } else if (featureStart < spanEnd) {
                     //Inside, delete
                     console.log("Case Insertion inside", featureStart, featureEnd, spanStart, spanEnd)
-                    return "delete";
+                    return "inside";
                 } else if (featureStart > spanEnd) {
                     //way after, do noghing
                     console.log("Case Insertion way after", featureStart, featureEnd, spanStart, spanEnd)
@@ -798,7 +799,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
                 if (featureStart >= spanStart && featureEnd >= spanStart && featureStart <= spanEnd && featureEnd <= spanEnd && featureStart !== featureEnd) {
                     // 0. new feature is inside the old feature, delete
                     console.log("Case Replacement Case 0", featureStart, featureEnd, spanStart, spanEnd)
-                    return "delete";
+                    return "inside";
                 } else if (featureStart < spanStart && featureEnd < spanStart && featureStart < spanEnd && featureEnd < spanEnd) {
                     // 1. Find how much t"o shift features after the insertion
                     console.log("Case Replacement Case 1", featureStart, featureEnd, spanStart, spanEnd)
@@ -831,11 +832,19 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
     if (pNr === 1) {
         Object.entries(features).forEach(([key, value]) => {
             const decision = checkNewFeatureOverlap(key, value, segmentStartPos, segmentEndPos, featureShift);
-            if (decision === "shift") {
+            if (decision === "shift" || decision === "inside") {
                 const spanDirection = (!value.span.includes("complement")) ? "fwd": "rev";
                 const currSpan = removeNonNumeric(value.span).split("..").map(Number);
-                const newSpanStart = currSpan[0] + featureShift;
-                const newSpanEnd = currSpan[1] + featureShift;
+                let newSpanStart = null;
+                let newSpanEnd = null;
+                if (decision === "inside") {
+                    newSpanStart = currSpan[0];
+                    newSpanEnd = currSpan[1] + featureShift;
+                } else {
+                    newSpanStart = currSpan[0] + featureShift;
+                    newSpanEnd = currSpan[1] + featureShift;
+                };
+                
                 if (spanDirection === "fwd") {
                     features[key].span = newSpanStart + ".." + newSpanEnd; // Update span of the feature
                 } else {
@@ -848,11 +857,19 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
     } else {
         Object.entries(features2).forEach(([key, value]) => {
             const decision = checkNewFeatureOverlap(key, value, segmentStartPos, segmentEndPos,);
-            if (decision === "shift") {
+            if (decision === "shift"  || decision === "inside") {
                 const spanDirection = (!value.span.includes("complement")) ? "fwd": "rev";
                 const currSpan = removeNonNumeric(value.span).split("..").map(Number);
-                const newSpanStart = currSpan[0] + featureShift;
-                const newSpanEnd = currSpan[1] + featureShift;
+                let newSpanStart = null;
+                let newSpanEnd = null;
+                if (decision === "inside") {
+                    newSpanStart = currSpan[0];
+                    newSpanEnd = currSpan[1] + featureShift;
+                } else {
+                    newSpanStart = currSpan[0] + featureShift;
+                    newSpanEnd = currSpan[1] + featureShift;
+                };
+
                 if (spanDirection === "fwd") {
                     features2[key].span = newSpanStart + ".." + newSpanEnd; // Update span of the feature
                 } else {
