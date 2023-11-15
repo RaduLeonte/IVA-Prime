@@ -997,10 +997,56 @@ function exportDNAFile(pNr) {
 
 
 /**
+ * Get user browser
+ */
+function getBrowserInfo() {
+  const userAgent = navigator.userAgent;
+  let browserName;
+  let browserVersion;
+
+  // Check for Chrome
+  if (userAgent.indexOf("Chrome") > -1) {
+    browserName = "Chrome";
+    browserVersion = userAgent.match(/Chrome\/(\d+\.\d+)/)[1];
+  }
+  // Check for Firefox
+  else if (userAgent.indexOf("Firefox") > -1) {
+    browserName = "Firefox";
+    browserVersion = userAgent.match(/Firefox\/(\d+\.\d+)/)[1];
+  }
+  // Check for Safari
+  else if (userAgent.indexOf("Safari") > -1) {
+    browserName = "Safari";
+    browserVersion = userAgent.match(/Version\/(\d+\.\d+)/)[1];
+  }
+  // Check for Edge
+  else if (userAgent.indexOf("Edg") > -1) {
+    browserName = "Edge";
+    browserVersion = userAgent.match(/Edg\/(\d+\.\d+)/)[1];
+  }
+  // Check for Internet Explorer
+  else if (userAgent.indexOf("MSIE") > -1 || userAgent.indexOf("Trident") > -1) {
+    browserName = "Internet Explorer";
+    browserVersion = userAgent.match(/(?:MSIE|rv:)\s?(\d+\.\d+)/)[1];
+  }
+  // Default to unknown
+  else {
+    browserName = "Unknown";
+    browserVersion = "Unknown";
+  }
+
+  return {
+    browserName,
+    browserVersion,
+  };
+};
+
+
+/**
  * Download file.
  */
 function downloadFile(downloadFileName, downloadFileContent, downloadFileType) {
-  console.log("downloadFile:", downloadFileName, downloadFileContent, downloadFileType)
+  console.log("downloadFile:", getBrowserInfo(), downloadFileName, downloadFileContent, downloadFileType)
   // Create a Blob
   let blobURL = null;
   let blob = null;
@@ -1017,21 +1063,29 @@ function downloadFile(downloadFileName, downloadFileContent, downloadFileType) {
 
   // Create a download link
   const downloadLink = document.createElement("a");
-  downloadLink.href = blobURL;
-  downloadLink.download = downloadFileName + "." + downloadFileType; // File name
-  const container = document.createElement("div");
-  document.body.appendChild(container);
-  container.appendChild(downloadLink);
-  // document.body.appendChild(downloadLink);
-  downloadLink.style.display = "none";
-
-  // Start the download
-  downloadLink.click();
-
-  // Clean up by revoking the Blob URL once the download is complete
-  setTimeout(() => {
-    window.URL.revokeObjectURL(blobURL);
-  }, 1000);
+  const userBrowser = getBrowserInfo().browserName
+  if (userBrowser === "Safari") {
+    console.log("Safari hack.");
+    const reader = new FileReader();
+    reader.onload = function () {
+      downloadLink.href = reader.result;
+      downloadLink.download = downloadFileName + "." + downloadFileType;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    };
+    reader.readAsDataURL(blob);
+  } else {
+    const blobURL = window.URL.createObjectURL(blob);
+    downloadLink.href = blobURL;
+    downloadLink.download = downloadFileName + "." + downloadFileType;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    setTimeout(() => {
+      window.URL.revokeObjectURL(blobURL);
+    }, 1000);
+  }
 };
 
 
