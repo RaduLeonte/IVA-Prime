@@ -134,18 +134,6 @@ nav ul li a {
     vertical-align: middle;
   }
 
-  #header-list-right #info-btn a {
-    font-size: 28px;
-    font-weight: bold;
-    background-color: #333;
-    color: white;
-    border-radius: 5px;
-    display: inline-block;
-    text-align: center;
-    padding: 0px 10px;
-    height: auto;
-  }
-
   #header-list-right #tm-calc-btn a {
     background-color: #333;
     color: white;
@@ -155,10 +143,6 @@ nav ul li a {
   }
 
   #header-list-right #tm-calc-btn a:hover {
-    background-color: #5c5c5c;
-  }
-
-  #header-list-right #info-btn a:hover {
     background-color: #5c5c5c;
   }
 
@@ -499,7 +483,7 @@ nav ul li a {
 }
 
 
-#header-list-right #settings-btn a {
+.svg-icon-btn a {
   font-size: 28px;
   font-weight: bold;
   background-color: #333;
@@ -509,17 +493,16 @@ nav ul li a {
   text-align: center;
   height: 35px;
   width: 35px;
-  padding: 0px 10px;
+  padding: 0px 10px !important;
 
   /* Add the background image properties */
-  background-image: url('assets/settings_icon.svg'); /* Replace with your SVG file */
   background-size: 27px 27px; /* Adjust to the desired size */
   background-repeat: no-repeat;
   background-position: center center; /* Center the background image */
   fill: white;
 }
 
-#header-list-right #settings-btn a:hover {
+.svg-icon-btn a:hover {
   background-color: #5c5c5c;
 }
 
