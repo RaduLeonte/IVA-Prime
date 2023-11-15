@@ -30,7 +30,7 @@ function initiateSearchFunctionality(pNr) {
                 // Event listener for typing
                 customSearchInput.addEventListener('input', function() {
                     // Send search query
-                    searchOccurrences(pNr);
+                    searchOccurrences(customSearchInput, pNr);
                 });
                 if (pNr === 1) {
                     customSearchEnabledFirstPlasmid = true;
@@ -49,108 +49,73 @@ function initiateSearchFunctionality(pNr) {
             };
         };
     });
+};
 
-    /**
+
+/**
      * Reset highlighted cells in the specified grid
      */
-    function resetTableCells(pNr) {
-        // Select table element
-        let table = null;
-        if (pNr === 1) {
-            table = document.getElementById("sequence-grid");
-        } else {
-            table = document.getElementById("sequence-grid2");
-        };
-        
-        // Find all cells with the "selected-cell-search" class and remove it
-        const cells = table.getElementsByClassName("selected-cell-search");
-        while (cells.length > 0) {
-            cells[0].classList.remove("selected-cell-search");
-        };
+function resetTableCells(pNr) {
+    // Select table element
+    let table = null;
+    if (pNr === 1) {
+        table = document.getElementById("sequence-grid");
+    } else {
+        table = document.getElementById("sequence-grid2");
     };
-
-    /**
-     * Scroll to the next selected cell
-     */
-    function scrollToNextSelectedCell(pNr) {
-        // Select table element
-        let table = null;
-        if (pNr === 1) {
-            table = document.getElementById("sequence-grid");
-        } else {
-            table = document.getElementById("sequence-grid2");
-        };
-
-        // Make a list of all selected cells
-        const selectedCells = Array.from(table.getElementsByClassName("selected-cell-search"));
     
-        // Make sure there are actually selected cells
-        if (selectedCells.length > 0) {
-
-            // Find the index of the nearest occurence
-            const currentIndex = selectedCells.findIndex(cell => {
-                const rect = cell.getBoundingClientRect();
-                return rect.top >= 0 && rect.bottom <= window.innerHeight;
-            });
-    
-            // If theres a next result to scroll to, do it
-            if (currentIndex > -1) {
-                const nextIndex = currentIndex + 1;
-                const nextCell = selectedCells[nextIndex];
-                
-                if (nextCell) {
-                    nextCell.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
-                };
-            };
-        };
+    // Find all cells with the "selected-cell-search" class and remove it
+    const cells = table.getElementsByClassName("selected-cell-search");
+    while (cells.length > 0) {
+        cells[0].classList.remove("selected-cell-search");
     };
+};
       
 
-    /**
-     * Find all occurences of the search query in the sequence, highligh the cells then scroll to the nearest occurence.
-     */
-    function searchOccurrences(pNr) {
-        // Reset highlighted cells
-        resetTableCells(pNr);
+/**
+ * Find all occurences of the search query in the sequence, highligh the cells then scroll to the nearest occurence.
+ */
+function searchOccurrences(customSearchInput, pNr) {
+    // Reset highlighted cells
+    resetTableCells(pNr);
 
-        // Get search query from the search bar
-        const searchQuery = customSearchInput.value;
-        const searchQueryComplement = searchQuery.split('').reverse().join('');
-        //console.log("Search:", searchQuery, searchQueryComplement)
+    // Get search query from the search bar
+    const searchQuery = customSearchInput.value;
+    const searchQueryComplement = searchQuery.split('').reverse().join('');
+    //console.log("Search:", searchQuery, searchQueryComplement)
 
-        // Select the sequence and grid structure of the plasmid of interest
-        let currSequence = null;
-        let currSequenceComp = null;
-        let currGridStructure = null;
-        if (pNr === 1) {
-            currSequence = sequence;
-            currSequenceComp = complementaryStrand;
-            currGridStructure = gridStructure;
-        } else {
-            currSequence = sequence2;
-            currSequenceComp = complementaryStrand2;
-            currGridStructure = gridStructure2;
-        };
+    // Select the sequence and grid structure of the plasmid of interest
+    let currSequence = null;
+    let currSequenceComp = null;
+    let currGridStructure = null;
+    if (pNr === 1) {
+        currSequence = sequence;
+        currSequenceComp = complementaryStrand;
+        currGridStructure = gridStructure;
+    } else {
+        currSequence = sequence2;
+        currSequenceComp = complementaryStrand2;
+        currGridStructure = gridStructure2;
+    };
 
-        // If the query is not empty
-        if (searchQuery) {
-            for (i = 0; i < 2; i++) {
-                let workingSequence = "";
-                let workingQuery = "";
-                if (i === 0) {
-                    workingSequence = currSequence;
-                    workingQuery = searchQuery;
-                } else {
-                    workingSequence = currSequenceComp;
-                    workingQuery = searchQueryComplement;
-                };
-                // Get a list of indices for all occurences of the search query
-                highlightOccurences(pNr, i, workingSequence, workingQuery, currGridStructure, "selected-cell-search", null);
+    // If the query is not empty
+    if (searchQuery) {
+        for (i = 0; i < 2; i++) {
+            let workingSequence = "";
+            let workingQuery = "";
+            if (i === 0) {
+                workingSequence = currSequence;
+                workingQuery = searchQuery;
+            } else {
+                workingSequence = currSequenceComp;
+                workingQuery = searchQueryComplement;
             };
-
-            // Scroll to the nearest occurence of the search query
-            scrollToNextSelectedCell(pNr);
+            // Get a list of indices for all occurences of the search query
+            highlightOccurences(pNr, i, workingSequence, workingQuery, currGridStructure, "selected-cell-search", null);
         };
+
+        // Scroll to the nearest occurence of the search query
+        scrollToNextSelectedCell(pNr);
     };
 };
 
@@ -192,6 +157,54 @@ function highlightOccurences(pNr, targetStrandIndex, workingSequence, workingQue
                 cell.style.backgroundColor = highlightColor;
                 cell.style.color = "white";
             };
+        };
+    };
+};
+
+
+/**
+ * Scroll to the next selected cell
+ */
+function scrollToNextSelectedCell(pNr) {
+    console.log("scrollToNextSelectedCell, pNr", pNr)
+    // Select table element
+    let table = null;
+    if (pNr === 1) {
+        table = document.getElementById("sequence-grid");
+    } else {
+        table = document.getElementById("sequence-grid2");
+    };
+
+    function isAnyCellInView(cellsList) {
+        for (let i = 0; i < cellsList.length; i++) {
+            let element = cellsList[i];
+            let rect = element.getBoundingClientRect();
+            if (
+                rect.bottom >= 0 &&
+                rect.top <= (window.innerHeight || document.documentElement.clientHeight)
+            ) {
+                return true;
+            };
+        };
+        return false;
+    };
+
+    // Make a list of all selected cells
+    const selectedCells = Array.from(table.getElementsByClassName("selected-cell-search"));
+
+    // Make sure there are actually selected cells
+    if (selectedCells.length > 0) {
+        const anyCellInView = isAnyCellInView(selectedCells);
+
+        console.log("scrollToNextSelectedCell, currentIndex", anyCellInView)
+
+        // If theres a next result to scroll to, do it
+        if (!anyCellInView) {
+            console.log("scrollToNextSelectedCell, selectedCells[0]", selectedCells[0])
+            selectedCells[0].scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+            });
         };
     };
 };
