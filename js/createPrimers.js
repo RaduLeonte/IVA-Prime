@@ -49,7 +49,7 @@ function displayPrimers(primersType, primersDict) {
             primerSequence.appendChild(span)
             span.addEventListener('mouseover', primerRegionHover);
             span.addEventListener('mouseout', removePrimerRegionHighlight);
-            primerTMInfo.push(parseFloat(get_tm(subprimerProperties["seq"], primerConc, saltConc).toFixed(2)) + "°C");
+            primerTMInfo.push(parseFloat(get_tm(subprimerProperties["seq"], primerConc, saltConc).toFixed(2)) + " °C");
             primerLength += subprimerProperties["seq"].length;
         };
         primerTMInfo.push(primerLength + " bp")
