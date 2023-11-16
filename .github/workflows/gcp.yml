@@ -1,5 +1,5 @@
 ---
-name: Build and Push Python Image to Google Cloud Platform
+name: Build and Push Docker Image to Google Cloud Platform
 on:
   push:
     branches: [ automatic-deployment-test ]
