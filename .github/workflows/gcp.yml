@@ -55,4 +55,4 @@ jobs:
 
     - name: Deploy to App Engine
       run: |
-        gcloud app deploy app.yaml
+        docker-compose -f docker-compose-deploy.yml run --rm gcloud sh -c "gcloud app deploy --project iva-prime"
