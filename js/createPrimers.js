@@ -50,14 +50,14 @@ function displayPrimers(primersType, primersDict) {
             primerSequence.appendChild(span)
             span.addEventListener('mouseover', primerRegionHover);
             span.addEventListener('mouseout', removePrimerRegionHighlight);
-            primerTMInfo.push(parseFloat(get_tm(subprimerProperties["seq"], primerConc, saltConc).toFixed(2)) + " °C");
+            primerTMInfo.push(parseFloat(get_tm(subprimerProperties["seq"], primerConc, saltConc).toFixed(2)) + " °C, " + subprimerProperties["seq"].length + " bp");
             primerLength += subprimerProperties["seq"].length;
         };
-        primerTMInfo.push(primerLength + " bp")
+        primerTMInfo.push("Total: " + primerLength + " bp")
 
         const pTM = document.createElement('p')
         const spanTM = document.createElement('span');
-        spanTM.textContent = ` (${primerTMInfo.join(', ')})`;
+        spanTM.textContent = ` (${primerTMInfo.join('; ')})`;
         pTM.appendChild(spanTM)
         primerSequence.appendChild(pTM)
 
