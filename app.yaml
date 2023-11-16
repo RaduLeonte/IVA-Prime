@@ -6,7 +6,3 @@ handlers:
     static_dir: static/
   - url: /.*
     script: auto
-
-containers:
-  - name: iva-prime
-    image: eu.gcr.io/iva-prime/iva-prime:latest

@@ -52,3 +52,7 @@ jobs:
         docker tag $IMAGE_NAME:latest europe-west6-docker.pkg.dev/$PROJECT_ID/images/$IMAGE_NAME:$GIT_TAG
         docker push europe-west6-docker.pkg.dev/$PROJECT_ID/images/$IMAGE_NAME:latest
         docker push europe-west6-docker.pkg.dev/$PROJECT_ID/images/$IMAGE_NAME:$GIT_TAG
+
+    - name: Deploy to App Engine
+      run: |
+        gcloud app deploy app.yaml
