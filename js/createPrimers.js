@@ -80,13 +80,12 @@ function addExportPrimersButtonListener() {
     console.log("Enabling Primer Export Buttons")
     const targetDropdown = document.querySelector('#export-primers-dropdown');
     targetDropdown.style.display = "block";
-    const fileName = document.getElementById("plasmid-file-name1").innerText.replace(/\.[^/.]+$/, "") + " primers";
   
     let dropdownOptions = document.querySelectorAll('#export-primers-dropdown .dropdown-content a');
     dropdownOptions.forEach(function (option) {
         let id = option.id;
         option.addEventListener('click', function () {
-          exportPrimersDict[id.split('-')[2]](fileName); // Extract the export type from the option id
+          exportPrimersDict[id.split('-')[2]](); // Extract the export type from the option id
         });
     });
 };
@@ -96,14 +95,65 @@ function addExportPrimersButtonListener() {
  * Export primers to different files
  */
 const exportPrimersDict = {
+    // Plain text
+    txt : () => {
+        const fileName = document.getElementById("plasmid-file-name1").innerText.replace(/\.[^/.]+$/, "") + " primers";
+        const htmlTextContent = document.getElementsByClassName('sidebar-content')[0].innerText;
+        let lines = htmlTextContent.split("\n");
+        lines = lines.filter(function(item) {
+            return item.trim() !== '';
+        });
+
+        let textContent = "";
+        for (i = 1; i < lines.length; i += 7) {
+            textContent += i !== 1 ? "\n": "";
+            textContent += lines[i] + "\n";
+            textContent += lines[i + 1] + " " + lines[i + 2] + " " + lines[i + 3] + "\n";
+            textContent += lines[i + 4] + " " + lines[i + 5] + " " + lines[i + 6] + "\n";
+        };
+
+        const blob = new Blob([textContent], { type: 'text/plain' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName + '.txt';
+        link.click();
+    },
     // Microsoft Word
-    doc : (fileName) => {
+    doc : () => {
+        const fileName = document.getElementById("plasmid-file-name1").innerText.replace(/\.[^/.]+$/, "") + " primers";
         const htmlContent = document.getElementsByClassName('sidebar-content')[0].innerHTML;
+        
         const docx = window.htmlDocx.asBlob(htmlContent);
-    
         const link = document.createElement('a');
         link.href = URL.createObjectURL(docx);
         link.download = fileName + '.docx';
+        link.click();
+    },
+    // CSV
+    csv : () => {
+        const fileName = document.getElementById("plasmid-file-name1").innerText.replace(/\.[^/.]+$/, "") + " primers";
+        const htmlTextContent = document.getElementsByClassName('sidebar-content')[0].innerText;
+        let lines = htmlTextContent.split("\n");
+        lines = lines.filter(function(item) {
+            return item.trim() !== '';
+        });
+
+        let textContent = "Name,Sequence\n";
+        let j = 1;
+        for (i = 1; i < lines.length; i += 7) {
+            const fwdPrimerName = "primer" + j + "_fwd";
+            const revPrimerName = "primer" + j + "_rev";
+            j++;
+            textContent += fwdPrimerName + "," + lines[i + 2] + "\n";
+            textContent += revPrimerName + "," + lines[i + 5] + "\n";
+        };
+
+        console.log(lines);
+
+        const blob = new Blob([textContent], { type: 'text/plain' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName + '.csv';
         link.click();
     }
 };
