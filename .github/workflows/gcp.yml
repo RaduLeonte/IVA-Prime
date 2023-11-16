@@ -8,7 +8,7 @@ jobs:
     name: Build and Push to GCP
     runs-on: ubuntu-latest
     env:
-      IMAGE_NAME: IVA Prime
+      IMAGE_NAME: IVA-Prime
       PROJECT_ID: iva-prime
     steps:
     - name: Checkout
@@ -21,7 +21,7 @@ jobs:
         export_default_credentials: true
 
     - name: Build Docker Image
-      run: docker build $IMAGE_NAME:latest .
+      run: docker build -t $IMAGE_NAME:latest .
 
     - name: Automatic Tagging of Releases
       id: increment-git-tag
