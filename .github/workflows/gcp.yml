@@ -12,7 +12,7 @@ jobs:
       PROJECT_ID: iva-prime
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@automatic-deployment-test
 
     - uses: google-github-actions/setup-gcloud@automatic-deployment-test
       with:
