@@ -138,7 +138,7 @@ const exportPrimersDict = {
             return item.trim() !== '';
         });
 
-        let textContent = "Name,Sequence\n";
+        let textContent = "Prime Name,Primer Sequence\n";
         let j = 1;
         for (i = 1; i < lines.length; i += 7) {
             const fwdPrimerName = "primer" + j + "_fwd";
@@ -155,6 +155,28 @@ const exportPrimersDict = {
         link.href = URL.createObjectURL(blob);
         link.download = fileName + '.csv';
         link.click();
+    },
+    // Excel file
+    xlsx: () => {
+        const fileName = document.getElementById("plasmid-file-name1").innerText.replace(/\.[^/.]+$/, "") + " primers";
+        const htmlTextContent = document.getElementsByClassName('sidebar-content')[0].innerText;
+        let lines = htmlTextContent.split("\n");
+        lines = lines.filter(function (item) {return item.trim() !== '';});
+
+        let data = [["Primer Name", "Primer Sequence"]];
+        let j = 1;
+        for (i = 1; i < lines.length; i += 7) {
+            const fwdPrimerName = "primer" + j + "_fwd";
+            const revPrimerName = "primer" + j + "_rev";
+            j++;
+            data.push([fwdPrimerName, lines[i + 2]]);
+            data.push([revPrimerName, lines[i + 5]]);
+        };
+
+        let wb = XLSX.utils.book_new();
+        wb.SheetNames.push("Sheet 1");
+        wb.Sheets["Sheet 1"] = XLSX.utils.aoa_to_sheet(data);
+        XLSX.writeFile(wb, fileName + '.xlsx')
     }
 };
 
