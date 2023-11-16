@@ -8,7 +8,7 @@ jobs:
     name: Build and Push to GCP
     runs-on: ubuntu-latest
     env:
-      IMAGE_NAME: IVA-Prime
+      IMAGE_NAME: iva-prime
       PROJECT_ID: iva-prime
     steps:
     - name: Checkout
