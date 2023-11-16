@@ -9,4 +9,4 @@ handlers:
 
 containers:
   - name: iva-prime
-    image: gcr.io/iva-prime/iva-prime:latest
+    image: eu.gcr.io/iva-prime/iva-prime:latest
