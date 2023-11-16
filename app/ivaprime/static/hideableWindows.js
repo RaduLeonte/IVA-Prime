@@ -110,8 +110,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const saltCorrectionEquationImage = document.getElementById("saltCorrectionEquationImage");
 
     function updateSaltCorrectionImageSource() {
-        console.log("Change", saltCorrectionSelect.value, "assets/" + saltCorrectionEquation + " equation.png")
-        saltCorrectionEquationImage.src = "{% static '" + saltCorrectionSelect.value + " equation.png' %}";
+        const newPath = "/static/" + saltCorrectionSelect.value + "%20equation.png"
+        console.log("Change", saltCorrectionSelect.value, newPath)
+        saltCorrectionEquationImage.src = newPath;
         saveUserPreference("saltCorrectionEquation", saltCorrectionSelect.value, 30, true, true);
         saltCorrectionEquation = saltCorrectionSelect.value;
     };
