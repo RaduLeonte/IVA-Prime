@@ -1,0 +1,6 @@
+when deploying new version
+run:
+docker-compose run --rm app sh -c "python manage.py collectstatic"
+
+then:
+docker-compose -f docker-compose-deploy.yml run --rm gcloud sh -c "gcloud app deploy --project iva-prime"
