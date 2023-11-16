@@ -14,6 +14,7 @@ function displayPrimers(primersType, primersDict) {
 
     // Change sidebar headline
     var element = document.getElementById("primers-type");
+    if (element.textContent !== "Primers:") {addExportPrimersButtonListener()};
     element.textContent = "Primers:";
 
 
@@ -69,6 +70,42 @@ function displayPrimers(primersType, primersDict) {
     // Reset selection
     selectedText = "";
     selectedText2 = "";
+};
+
+
+/**
+ * Add event listener to the export primers button
+ */
+function addExportPrimersButtonListener() {
+    console.log("Enabling Primer Export Buttons")
+    const targetDropdown = document.querySelector('#export-primers-dropdown');
+    targetDropdown.style.display = "block";
+    const fileName = document.getElementById("plasmid-file-name1").innerText.replace(/\.[^/.]+$/, "") + " primers";
+  
+    let dropdownOptions = document.querySelectorAll('#export-primers-dropdown .dropdown-content a');
+    dropdownOptions.forEach(function (option) {
+        let id = option.id;
+        option.addEventListener('click', function () {
+          exportPrimersDict[id.split('-')[2]](fileName); // Extract the export type from the option id
+        });
+    });
+};
+
+
+/**
+ * Export primers to different files
+ */
+const exportPrimersDict = {
+    // Microsoft Word
+    doc : (fileName) => {
+        const htmlContent = document.getElementsByClassName('sidebar-content')[0].innerHTML;
+        const docx = window.htmlDocx.asBlob(htmlContent);
+    
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(docx);
+        link.download = fileName + '.docx';
+        link.click();
+    }
 };
 
 

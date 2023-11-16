@@ -25,6 +25,8 @@
         <script src="js/resizeContents.js"></script>
         <script src="js/hideableWindows.js"></script>
         <script src="js/editFeatures.js"></script>
+        <!-- Libraries -->
+        <script src="js/html-docx.js"></script>
     </head>
     <body>
         <header>
@@ -167,16 +169,26 @@
                         <div id="export-dropdown" class="dropdown" style="display: none;">
                             <button class="save-button">Save File</button>
                             <div class="dropdown-content">
-                            <a id="export-btn-gb" href="#">GB File</a>
-                            <a id="export-btn-dna" href="#">DNA File</a>
+                                <a id="export-btn-gb" href="#">GB File</a>
+                                <a id="export-btn-dna" href="#">DNA File</a>
                             </div>
                         </div>
         
                         <div id="export-dropdown-second" class="dropdown" style="display: none;">
                             <button class="save-button">Save Second File</button>
                             <div class="dropdown-content">
-                            <a id="export-second-btn-gb" href="#">GB File</a>
-                            <a id="export-second-btn-dna" href="#">DNA File</a>
+                                <a id="export-second-btn-gb" href="#">GB File</a>
+                                <a id="export-second-btn-dna" href="#">DNA File</a>
+                            </div>
+                        </div>
+
+                        <div id="export-primers-dropdown" class="dropdown" style="display: none;">
+                            <button class="save-button">Export Primers</button>
+                            <div class="dropdown-content">
+                                <!--<a id="export-primers-txt" href="#">Plain Text</a>-->
+                                <a id="export-primers-doc" href="#">MS Word File</a>
+                                <!--<a id="export-primers-csv" href="#">DNA File</a>-->
+                                <!--<a id="export-primers-csv" href="#">DNA File</a>-->
                             </div>
                         </div>
                     </div>
