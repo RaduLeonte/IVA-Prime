@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function updateSaltCorrectionImageSource() {
         console.log("Change", saltCorrectionSelect.value, "assets/" + saltCorrectionEquation + " equation.png")
-        saltCorrectionEquationImage.src = "assets/" + saltCorrectionSelect.value + " equation.png";
+        saltCorrectionEquationImage.src = "{% static '" + saltCorrectionSelect.value + " equation.png' %}";
         saveUserPreference("saltCorrectionEquation", saltCorrectionSelect.value, 30, true, true);
         saltCorrectionEquation = saltCorrectionSelect.value;
     };
