@@ -176,7 +176,21 @@ const exportPrimersDict = {
         let wb = XLSX.utils.book_new();
         wb.SheetNames.push("Sheet 1");
         wb.Sheets["Sheet 1"] = XLSX.utils.aoa_to_sheet(data);
-        XLSX.writeFile(wb, fileName + '.xlsx')
+        XLSX.writeFile(wb, fileName + '.xlsx');
+    },
+    // Microsynth Excel Template
+    microsynth: () => {
+        const fileName = "js/pET-28 a (+) primers.xlsx"; // Replace with your file name
+        const wb = XLSX.readFile(fileName);
+
+        // Access the first sheet (assuming it's the only sheet)
+        const ws = wb.Sheets[wb.SheetNames[0]];
+
+        // Edit specific cells
+        ws['A1'].v = "New Value"; // Example: change the value in cell A1
+
+        // Save the modified workbook
+        XLSX.writeFile(wb, "js/modified_" + fileName);
     }
 };
 
