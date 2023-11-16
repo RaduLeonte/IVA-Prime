@@ -53,6 +53,5 @@ jobs:
         docker push europe-west6-docker.pkg.dev/$PROJECT_ID/images/$IMAGE_NAME:latest
         docker push europe-west6-docker.pkg.dev/$PROJECT_ID/images/$IMAGE_NAME:$GIT_TAG
 
-    - name: Deploy to App Engine
-      run: |
-        docker-compose -f docker-compose-deploy.yml run --rm gcloud sh -c "gcloud app deploy --project iva-prime"
+    - id: 'deploy'
+      uses: 'google-github-actions/deploy-appengine@v1'
