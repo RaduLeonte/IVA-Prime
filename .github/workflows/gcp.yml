@@ -2,7 +2,7 @@
 name: Build and Push Docker Image to Google Cloud Platform
 on:
   push:
-    branches: [ automatic-deployment-test ]
+    branches: [ master ]
 jobs:
   build-push-gcr:
     name: Build and Push to GCP
