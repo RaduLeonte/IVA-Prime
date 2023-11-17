@@ -1,4 +1,4 @@
-<img src="assets/IVA Prime logo.png" align="right" />
+<img src="IVA Prime logo.png" align="right" />
 
 # IVA Prime
 
