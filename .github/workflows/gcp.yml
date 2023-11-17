@@ -1,0 +1,26 @@
+---
+name: Build and Push Docker Image to Google Cloud Platform
+on:
+  push:
+    branches: [ master ]
+jobs:
+  build-push-gcr:
+    name: Build and Push to GCP
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: iva-prime
+      PROJECT_ID: iva-prime
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - id: "auth"
+      name: 'Authenticate to Google Cloud'
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.SERVICE_ACCOUNT_KEY }}
+        project_id: ${{ env.PROJECT_ID }}
+        export_default_credentials: true
+
+    - id: 'deploy'
+      uses: 'google-github-actions/deploy-appengine@v1'

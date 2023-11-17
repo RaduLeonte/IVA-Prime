@@ -1,0 +1,651 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    overflow: hidden; /* Prevents the whole page from scrolling */
+    display:flex;
+    align-items: stretch;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+}
+
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 10px;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;; /* Ensures menu bar stays on top */
+    width: auto;
+}
+
+nav {
+  display: flex;
+  justify-content: space-between; /* Pushes ul elements to the left and right edges of the nav */
+  align-items: center; /* Vertically centers the ul elements */
+}
+
+nav ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+nav ul li {
+    display: inline;
+    margin-right: 10px;
+}
+
+nav ul li a {
+    color: #fff;
+    text-decoration: none;
+}
+
+.strands {
+    font-size: 18px;
+    word-wrap: break-word; /* Allows text to wrap */
+    /*white-space: pre-wrap;  Preserves whitespace */
+}
+
+
+.strands {
+    position: relative;
+  }
+  
+  .strands p {
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    line-height: 4.5em;
+    letter-spacing: 0.2em;
+    font-kerning: none;
+  }
+  
+  #complementary_strand {
+    background-color: transparent;
+    opacity: 0.5; /* Adjust the opacity as desired */
+    margin-top: 1.4em; /* Adjust the margin-top value to match line-height */
+  }
+
+
+  .custom-context-menu {
+    position: absolute;
+    display: none;
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #ccc;
+    padding: 8px;
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+    z-index: 9999;
+  }
+  
+  .custom-context-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .custom-context-menu li {
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  
+  .custom-context-menu li:hover {
+    background-color: #555;
+  }
+
+  .custom-context-menu li.disabled {
+    color: gray;
+    cursor: not-allowed;
+    pointer-events: none; /* Disable click events on disabled items */
+    opacity: 0.5; /* Reduce opacity to visually indicate disabled state */
+  }
+  
+  
+
+  .horizontal-list {
+    display: flex;
+    list-style: none;
+    padding: 0;
+  }
+  
+  .horizontal-list li {
+    margin-right: 10px;
+  }
+
+  #header-list-right {
+    align-items: center;
+  }
+
+  #header-list-right li {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 5px;
+  }
+  
+  #header-list-right li a {
+    padding: 10px 20px;
+    text-decoration: none;
+    vertical-align: middle;
+  }
+
+  #header-list-right #tm-calc-btn a {
+    background-color: #333;
+    color: white;
+    border-radius: 5px;
+    text-align: center;
+    display: block;
+  }
+
+  #header-list-right #tm-calc-btn a:hover {
+    background-color: #5c5c5c;
+  }
+
+  #header-list li {
+    display: inline-block;
+    margin: 5px;
+  }
+  
+  #header-list li a {
+    padding: 10px 20px;
+    text-decoration: none;
+  }
+  
+  #header-list #import-btn a {
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 5px;
+    display: block;
+    text-align: center;
+  }
+  
+  #header-list #import-btn a:hover {
+    background-color: #45a049;
+  }
+
+  #header-list #import-demo-btn a {
+    background-color:  #FF9900;
+    color: white;
+    border-radius: 5px;
+    display: block;
+    text-align: center;
+  }
+
+  #header-list #import-demo-btn a:hover {
+    background-color: #FF8000;
+  }
+
+  #header-list #import-second-demo-btn a {
+    background-color:  #FF9900;
+    color: white;
+    border-radius: 5px;
+    display: block;
+    text-align: center;
+  }
+
+  #header-list #import-second-demo-btn a:hover {
+    background-color: #FF8000;
+  }
+
+  #header-list #import-second-btn a {
+    background-color: #9932CC; /* This is a nice purple color */
+    color: white;
+    border-radius: 5px;
+    display: block;
+    text-align: center;
+  }
+
+  #header-list #import-second-btn a:hover {
+      background-color: #800080; /* This is a slightly lighter purple for the hover effect */
+  }
+
+
+  .sidebar {
+    background-color: #f2f2f2;
+    overflow-y: scroll; /* Enables sidebar scrolling */
+    border-right: #b8b8b8;
+    border-right-style: solid;
+    display: block;
+}
+
+.sidebar-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.sidebar-table th,
+.sidebar-table td {
+    padding: 8px;
+    border: 1px solid #ccc;
+}
+
+.sidebar-table th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+    text-align: left;
+}
+
+.sidebar-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.sidebar-table tr:hover {
+  background-color: #dcdcdc; /* Dark gray */
+  cursor: pointer;
+}
+
+
+.wrap-text {
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+
+.sidebar-content {
+    background-color: #f2f2f2;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.sidebar-content p {
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+}
+
+.sidebar-content p:not(:last-child) {
+    margin-bottom: 10px;
+}
+
+.sidebar-content p:first-child {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.sidebar-content p:last-child {
+    margin-bottom: 0;
+}
+
+.floating-box {
+    position: fixed;
+    background-color: red;
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    z-index: 9000;
+  }
+  
+  .sequence-grid {
+    z-index: 1;
+    table-layout: fixed;
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .sequence-grid td {
+    padding: 5px;
+    text-align: center;
+    font-family: monospace;
+    white-space: pre;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+  }
+
+  td.AminoAcids {
+    color: grey;
+  }
+
+  .ForwardStrand:hover,
+  .ComplementaryStrand:hover {
+    background-color: #e0e0e0;
+  }
+
+  .sequence-grid td.selected-cell {
+    background-color: rgba(0, 150, 255, 0.2);
+  }
+
+  .sequence-grid td.selected-cell-subcloning-target {
+    background-color: rgba(128, 0, 128, 0.2);
+  }
+
+  .sequence-grid td.selected-cell-search {
+    background-color: yellow;
+  }
+  
+  #sequence-row, #complementary-row, #empty-row {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  
+  #sequence-row td, #complementary-row td, #empty-row td {
+    width: 20px; /* Adjust the width as needed */
+    height: 20px; /* Adjust the height as needed */
+  }
+  
+.hover-popup {
+  position: absolute;
+  background-color: #ffffff;
+  padding: 5px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+  color: #333333;
+}
+
+/* Popup window */
+
+.popup-window {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #f2f2f2;
+  border: 1px solid #ccc;
+  padding: 20px;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.popup-window h2 {
+  margin: 0 0 10px;
+}
+
+.popup-window label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.popup-window button {
+  padding: 8px 16px;
+  margin-right: 10px;
+}
+
+.popup-window #create-primers-button {
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 5px;
+}
+
+.popup-window #create-primers-button:hover {
+  background-color: #45a049;
+}
+
+.popup-window #cancel-button {
+  background-color: #ccc;
+  color: white;
+  border-radius: 5px;
+}
+
+.popup-window #cancel-button:hover {
+  background-color: #999;
+}
+
+.loading * {
+  cursor: wait !important;
+}
+
+.search-bar {
+  display: none;
+  background-color: #333;
+  color: #fff;
+  border: none;
+  position: sticky;
+  top: 10px;
+  right: 10px;
+  z-index: 9999;
+}
+
+.stop-codon-hint{
+  margin-top: 0px;
+  color: #555;
+  font-size: 14px;
+}
+
+
+.popup-window-input {
+  width: 100%;
+  width: -moz-available;          /* WebKit-based browsers will ignore this. */
+  width: -webkit-fill-available;  /* Mozilla-based browsers will ignore this. */
+  width: fill-available;
+  padding: 5px;
+  margin-bottom: 10px;
+}
+
+
+.parent-container {
+  flex:1;
+  display: flex;
+  align-items: stretch;
+  overflow: auto;
+  flex-direction: column;
+}
+
+.first-plasmid-container {
+  display: flex;
+  height: 100%;
+  overflow: hidden; /* Prevents the container from scrolling */
+  align-items: stretch;
+}
+
+.second-plasmid-container {
+  border-top: #c6c6c6;
+  border-top-style: solid;
+  display: flex;
+  overflow: hidden; /* Prevents the container from scrolling */
+  align-items: stretch;
+  flex: 1;
+}
+
+
+.content {
+  flex: 3;
+  padding: 20px;
+  position: relative;
+  overflow-y: scroll; /* Enables content scrolling */
+  font-family: "Anonymous Pro", sans-serif;
+}
+
+#header-list-right {
+  margin-left: auto; /* Pushes this ul to the right */
+}
+
+.tm-calc-window {
+  position: fixed;
+  background-color: #f2f2f2;
+  border: 1px solid #ccc;
+  padding: 20px;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tm-calc-window h2 {
+  margin: 0 0 10px;
+}
+
+.tm-calc-window label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+
+.svg-icon-btn a {
+  font-size: 28px;
+  font-weight: bold;
+  background-color: #333;
+  color: white;
+  border-radius: 5px;
+  display: inline-block;
+  text-align: center;
+  height: 35px;
+  width: 35px;
+  padding: 0px 10px !important;
+
+  /* Add the background image properties */
+  background-size: 27px 27px; /* Adjust to the desired size */
+  background-repeat: no-repeat;
+  background-position: center center; /* Center the background image */
+  fill: white;
+}
+
+.svg-icon-btn a:hover {
+  background-color: #5c5c5c;
+}
+
+.export-btn-list {
+  margin: 0;
+}
+
+.save-button {
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 5px;
+  display: block;
+  text-align: center;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.save-button:hover {
+  background-color: #45a049;
+}
+
+/* Style for the dropdown content */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  border-radius: 5px;
+}
+
+.dropdown-content a {
+  color: black;
+  padding: 10px 20px;
+  text-decoration: none;
+  display: block;
+}
+
+/* Change color on hover */
+.dropdown-content a:hover {
+  background-color: #ddd;
+}
+
+.dropdown {
+  padding: 10px;
+}
+
+/* Show the dropdown when the button is hovered over */
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+#primers-type{
+  margin-top: 0px;
+}
+
+.hideable-window {
+  position: fixed;
+  background-color: #f2f2f2;
+  border: 1px solid #ccc;
+  padding: 20px;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  flex-direction: column;
+  align-items: center;
+  min-width: 300px;
+  max-width: 600px;
+}
+
+.settings-window-row {
+  margin-bottom: 10px;
+}
+
+.settings-window-row label {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.settings-window-row input {
+  display: inline-block;
+  max-width: 50%;
+}
+
+.standard-btn-a {
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 5px;
+  display: block;
+  text-align: center;
+  padding: 10px 20px;
+  text-decoration: none;
+}
+
+.standard-btn-a:hover {
+  background-color: #45a049;
+}
+
+.forward-strand-base {
+  border-bottom: 3px solid gray !important;
+}
+
+:root {
+  --triangle-height: 16px;
+  --triangle-width: 8px;
+}
+
+.triangle-cell {
+  position: relative;
+  padding: 0px !important;
+}
+
+#Spacer-row {
+  height: 20px;
+}
+
+.sidebar-table tr td {
+  position: relative;
+}
+
+.sidebar-table tr td input {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+}
+
+.sequence-cursor-cell-left {
+  border-left: 2px solid red;
+}
+
+.sequence-cursor-cell-right {
+  border-right: 2px solid red;
+}
+
+.selection-cursor-cell-left {
+  border-left: 3px solid purple;
+}
+
+.selection-cursor-cell-right {
+  border-right: 3px solid purple;
+}
