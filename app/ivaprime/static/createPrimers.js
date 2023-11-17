@@ -182,16 +182,6 @@ const exportPrimersDict = {
     },
     // Microsynth Excel Template
     microsynth: () => {
-        function intToExcelColumn(index) {
-            let result = '';
-            while (index > 0) {
-              const remainder = (index - 1) % 26;
-              result = String.fromCharCode('A'.charCodeAt(0) + remainder) + result;
-              index = Math.floor((index - 1) / 26);
-            };
-            return result;
-        };
-
         const htmlTextContent = document.getElementsByClassName('sidebar-content')[0].innerText;
         let lines = htmlTextContent.split("\n");
         lines = lines.filter(function (item) {return item.trim() !== '';});
