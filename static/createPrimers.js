@@ -180,7 +180,7 @@ const exportPrimersDict = {
     },
     // Microsynth Excel Template
     microsynth: () => {
-        const fileName = "js/pET-28 a (+) primers.xlsx"; // Replace with your file name
+        const fileName = "/static/pET-28 a (+) primers.xlsx"; // Replace with your file name
         const wb = XLSX.readFile(fileName);
 
         // Access the first sheet (assuming it's the only sheet)
@@ -190,7 +190,7 @@ const exportPrimersDict = {
         ws['A1'].v = "New Value"; // Example: change the value in cell A1
 
         // Save the modified workbook
-        XLSX.writeFile(wb, "js/modified_" + fileName);
+        XLSX.writeFile(wb, "modified_" + fileName);
     }
 };
 

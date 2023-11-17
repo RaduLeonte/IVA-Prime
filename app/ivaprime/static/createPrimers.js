@@ -166,8 +166,10 @@ const exportPrimersDict = {
         let data = [["Primer Name", "Primer Sequence"]];
         let j = 1;
         for (i = 1; i < lines.length; i += 7) {
-            const fwdPrimerName = "primer" + j + "_fwd";
-            const revPrimerName = "primer" + j + "_rev";
+            const regexMatch = lines[i].match(/^(\d+\.\s*)(\w+(\s+\w+)*)$/);
+            const type = (regexMatch) ? regexMatch[2].split(/\s+/)[regexMatch[2].split(/\s+/).length - 1]: lines[i];
+            const fwdPrimerName = (regexMatch) ? "primer" + j + "_" + type.toLowerCase() + "_fwd": type + "_fwd";
+            const revPrimerName = (regexMatch) ? "primer" + j + "_" + type.toLowerCase() + "_rev": type + "_rev";
             j++;
             data.push([fwdPrimerName, lines[i + 2]]);
             data.push([revPrimerName, lines[i + 5]]);
@@ -180,18 +182,82 @@ const exportPrimersDict = {
     },
     // Microsynth Excel Template
     microsynth: () => {
-        const fileName = "js/pET-28 a (+) primers.xlsx"; // Replace with your file name
-        const wb = XLSX.readFile(fileName);
+        function intToExcelColumn(index) {
+            let result = '';
+            while (index > 0) {
+              const remainder = (index - 1) % 26;
+              result = String.fromCharCode('A'.charCodeAt(0) + remainder) + result;
+              index = Math.floor((index - 1) / 26);
+            };
+            return result;
+        };
 
-        // Access the first sheet (assuming it's the only sheet)
-        const ws = wb.Sheets[wb.SheetNames[0]];
+        const htmlTextContent = document.getElementsByClassName('sidebar-content')[0].innerText;
+        let lines = htmlTextContent.split("\n");
+        lines = lines.filter(function (item) {return item.trim() !== '';});
 
-        // Edit specific cells
-        ws['A1'].v = "New Value"; // Example: change the value in cell A1
+        let primerList = [];
+        let j = 1;
+        for (i = 1; i < lines.length; i += 7) {
+            const regexMatch = lines[i].match(/^(\d+\.\s*)(\w+(\s+\w+)*)$/);
+            const type = (regexMatch) ? regexMatch[2].split(/\s+/)[regexMatch[2].split(/\s+/).length - 1]: lines[i];
+            const fwdPrimerName = (regexMatch) ? "primer" + j + "_" + type.toLowerCase() + "_fwd": type + "_fwd";
+            const revPrimerName = (regexMatch) ? "primer" + j + "_" + type.toLowerCase() + "_rev": type + "_rev";
+            j++;
+            primerList.push([fwdPrimerName, lines[i + 2], null, "DES", (lines[i + 2].length <= 60) ? "GEN": 0.04]);
+            primerList.push([revPrimerName, lines[i + 5], null, "DES", (lines[i + 5].length <= 60) ? "GEN": 0.04]);
+        };
 
-        // Save the modified workbook
-        XLSX.writeFile(wb, "js/modified_" + fileName);
-    }
+
+        const formName = "MicrosynthUploadFormDNA.xlsx";
+        const templatePath = "/static/" + formName;
+
+        //const ExcelJS = require('exceljs');
+
+        fetch(templatePath)
+            .then((res) => res.arrayBuffer())
+            .then((ab) => {
+                const workbook = new ExcelJS.Workbook();
+                return workbook.xlsx.load(ab);
+            })
+            .then((workbook) => {
+                const worksheet = workbook.getWorksheet("DNA Order"); // Assuming the second sheet needs to be modified
+                console.log("Microsynth", worksheet.name, primerList);
+
+                for (let i = 0; i < primerList.length; i++) {
+                    const row = primerList[i];
+                    const rowIndex = i + 4;
+                    const cellId = "A" + rowIndex;
+                    console.log("Microsynth", "Adding row at", cellId, "with data", row);
+              
+                    // Create an array representing the entire row with only the specified columns modified
+                    const modifiedRow = Array.from({ length: worksheet.columnCount }, (_, colIndex) => {
+                      if (colIndex !== 2 ) {
+                        return row[colIndex];
+                      } else {
+                        return worksheet.getCell(rowIndex, colIndex + 1).value;
+                      }
+                    });
+              
+                    // Insert the modified row into the worksheet
+                    worksheet.spliceRows(rowIndex, 1, modifiedRow);
+                };
+
+                // Save the modified workbook
+                return workbook.xlsx.writeBuffer();
+            })
+            .then((buffer) => {
+                // Create a Blob from the buffer and trigger the download
+                const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = formName;
+                link.click();
+            })
+            .catch((error) => {
+                console.error("Error fetching or reading the file:", error);
+            });
+        }
 };
 
 
