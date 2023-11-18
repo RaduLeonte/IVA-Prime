@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
       <p> Optimize codons for: <select name="targetOrganismSelector" id="targetOrganismSelector">
         <option value="prioLowTM">Prioritize melting temperature</option>
       </select> </p>
+      <p class="stop-codon-hint">Codon frequency tables from <a href="https://www.genscript.com/tools/codon-frequency-table" target="_blank">GenScript</a>.</p>
     </div>
     <div>
       <button id="create-primers-button">Create Primers</button>
