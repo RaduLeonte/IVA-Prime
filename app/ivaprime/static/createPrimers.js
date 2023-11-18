@@ -58,11 +58,11 @@ function displayPrimers(primersType, primersDict) {
         const pTM = document.createElement('p')
         const spanTM = document.createElement('span');
         spanTM.textContent = ` (${primerTMInfo.join('; ')})`;
-        pTM.appendChild(spanTM)
-        primerSequence.appendChild(pTM)
+        pTM.appendChild(spanTM);
 
         primerSequence.style.wordBreak = 'break-all';
         modDiv.appendChild(primerSequence);
+        modDiv.appendChild(pTM);
     };
 
     
