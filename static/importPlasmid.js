@@ -90,6 +90,7 @@ function handleFileSelect(event) {
       let targetHeadersListElement = (pNr === 1) ? "plasmid-file-name1" : "plasmid-file-name2";
       targetHeadersListElement = document.getElementById(targetHeadersListElement);
       targetHeadersListElement.innerHTML = file.name;
+      targetHeadersListElement.style.display = "block";
       // Update global variables
       if (pNr === 1) {
         originalFileExtension1 = fileExtension;
@@ -167,6 +168,7 @@ function importDemoFile(pNr) {
   let targetHeadersListElement = (pNr === 1) ? "plasmid-file-name1" : "plasmid-file-name2";
   targetHeadersListElement = document.getElementById(targetHeadersListElement);
   targetHeadersListElement.innerHTML = fileName;
+  targetHeadersListElement.style.display = "block";
   
   // Create the sidebar
   createSideBar(pNr);

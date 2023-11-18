@@ -58,11 +58,11 @@ function displayPrimers(primersType, primersDict) {
         const pTM = document.createElement('p')
         const spanTM = document.createElement('span');
         spanTM.textContent = ` (${primerTMInfo.join('; ')})`;
-        pTM.appendChild(spanTM)
-        primerSequence.appendChild(pTM)
+        pTM.appendChild(spanTM);
 
         primerSequence.style.wordBreak = 'break-all';
         modDiv.appendChild(primerSequence);
+        modDiv.appendChild(pTM);
     };
 
     
@@ -507,7 +507,7 @@ function optimizeAA(inputAA, targetOrganism) {
  */
 function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  replaceStartPos, replaceEndPos) {
     // Define operation type
-    let operationType = "Mutation/Replacement";
+    let operationType = "Mutation";
     if (!replaceEndPos) { // if startPos equals endPos then its just an insertion
         replaceEndPos = replaceStartPos;
         operationType = "Insertion"
@@ -565,7 +565,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
         primersDict["Reverse Primer"] = {1: {"seq": tempRev, "color": primerColorGreen}};
         
         console.log("Primers Dict:", primersDict)
-        displayPrimers("Short Insertion", primersDict);
+        displayPrimers("Short " + operationType, primersDict);
     } else { //  // Mutation > 49 C
         console.log("Mut over 49C")
         // Forward template bindin region
@@ -591,7 +591,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
                                          2: {"seq": tempRev, "color": primerColorGreen}};
         
         console.log("Primers Dict:", primersDict)
-        displayPrimers("Medium Insertion", primersDict);
+        displayPrimers("Medium " + operationType, primersDict);
     }
 
     // Update the sequence and features
