@@ -253,6 +253,12 @@ nav ul li a {
     overflow-y: auto;
 }
 
+.sidebar-content {
+  background-color: #f2f2f2;
+  padding: 20px;
+  overflow-y: auto;
+}
+
 .sidebar-content p {
     margin: 0;
     padding: 0;
