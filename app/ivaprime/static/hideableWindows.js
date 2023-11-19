@@ -9,17 +9,19 @@ document.addEventListener('DOMContentLoaded', function () {
     const primerInput2 = document.getElementById("tm-calc-primer-input2");
     const primerTmSpan1 = document.getElementById("tm-calc-primer-tm1");
     const primerTmSpan2 = document.getElementById("tm-calc-primer-tm2");
+    const primerTmInfo1 = document.getElementById("tm-calc-info-span1");
+    const primerTmInfo2 = document.getElementById("tm-calc-info-span2");
 
     // Add input event listeners to both input elements
     primerInput1.addEventListener("input", function () {
-        updateTmSpan(primerInput1, primerTmSpan1);
+        updateTmSpan(primerInput1, primerTmSpan1, primerTmInfo1);
     });
     primerInput2.addEventListener("input", function () {
-        updateTmSpan(primerInput2, primerTmSpan2);
+        updateTmSpan(primerInput2, primerTmSpan2, primerTmInfo2);
     });
 
     // Function to update the <span> element with the input value
-    function updateTmSpan(inputElement, tmSpan) {
+    function updateTmSpan(inputElement, tmSpan, infoSpan) {
         // Get the value from the input element
         const inputValue = inputElement.value;
         if (inputValue !== "" && /^[ACTG]+$/.test(inputValue)) {
@@ -27,6 +29,9 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             tmSpan.textContent = "--";
         };
+        infoSpan.textContent = "(" + meltingTempAlgorithmChoice + ", " + Math.round(primerConc*1E9) + " nM";
+        if (applyingSaltCorrection) {infoSpan.textContent += ", " + saltCorrectionEquation + ", " + saltConc + " M";};
+        infoSpan.textContent += ")";
     };
 
     /**
@@ -43,6 +48,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     function updateGlobalVariables() {
+        // Melting temperature calculator algorithm
+        meltingTempAlgorithmChoice = document.getElementById("meltingTempAlgorithmChoice").value;
+        saveUserPreference("meltingTempAlgorithmChoice", meltingTempAlgorithmChoice, 30, true, true);
+
         // Primer concentration
         const unroundedPrimerConc = parseFloat(document.getElementById("primerConcSettingsInput").value)
         primerConc = unroundedPrimerConc.toFixed(2) * 1E-9;
@@ -102,6 +111,22 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     populateSettings();
+
+    /**
+     * Melting temperature calculator algorithm listener
+     */
+    const meltingTempAlgorithmSelect = document.getElementById("meltingTempAlgorithmChoice");
+    const meltingTempAlgorithmEquationImage = document.getElementById("meltingTempAlgorithmEquationImage");
+
+    function updateMeltingTemperatureAlgorithmImageSource() {
+        const newPath = "/static/" + meltingTempAlgorithmSelect.value + "%20equation.png"
+        console.log("Change", meltingTempAlgorithmSelect.value, newPath)
+        meltingTempAlgorithmEquationImage.src = newPath;
+        saveUserPreference("meltingTempAlgorithmChoice", meltingTempAlgorithmSelect.value, 30, true, true);
+        meltingTempAlgorithmChoice = meltingTempAlgorithmSelect.value;
+    };
+    meltingTempAlgorithmSelect.addEventListener("change", updateMeltingTemperatureAlgorithmImageSource);
+    updateMeltingTemperatureAlgorithmImageSource();
 
     /**
      * Salt correction equation listener
