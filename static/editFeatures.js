@@ -18,6 +18,16 @@ function enableSidebarEditing(pNr) {
 
 
 /**
+ * Enable editing functionality to annotations
+ * */
+function enableAnnotationEditing(pNr) {
+  const targetGrid = (pNr === 1) ? document.getElementById("sequence-grid"):  document.getElementById("sequence-grid2");
+  const editableElements = targetGrid.querySelectorAll('.editable');
+  editableElements.forEach(element => {enableElementEditing(element, pNr)});
+};
+
+
+/**
  * Add event listener for editing
  */
 function enableElementEditing(element, pNr) {
@@ -30,7 +40,7 @@ function enableElementEditing(element, pNr) {
     input.type = 'text';
     let fileExtension = null;
     if (element.tagName === "TD" && element.id === "Annotations") {
-      input.value = originalText.replace("...", "");
+      input.value = originalText.replaceAll("...", "");
     } else if (element.tagName === "TD") {
       input.value = originalText
     } else if (element.tagName === "A") {
@@ -68,8 +78,10 @@ function enableElementEditing(element, pNr) {
  * Update the target element's text 
  */
 function updateElementText(e, newText, originalText) {
-  if (e.tagName === "TD") {
+  if (e.tagName === "TD" && e.id !== "Annotations") {
     e.textContent = newText;
+  } else if (e.tagName === "TD" && e.id === "Annotations") {
+    e.textContent = (newText !== "") ? newText.replaceAll("...", ""): originalText.replaceAll("...", "");
   } else if (e.tagName === "A") {
     e.textContent = (newText !== "") ? newText: originalText;
   } else {

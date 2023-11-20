@@ -1471,6 +1471,7 @@ function makeContentGrid(pNr, callback) {
     cleanLostCells();
 
     // Enable feature cell editing
+    enableAnnotationEditing(pNr)
     enableSidebarEditing(pNr);
 
     // Change the cursor's icon to normal
