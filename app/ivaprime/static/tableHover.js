@@ -18,7 +18,7 @@ function addHoverPopupToTable(tableId, pNr) {
   // Add the hover listener
   table.addEventListener('mouseover', function(event) {
     // Check if we're hovering over a cell
-    if (event.target.tagName === 'td') {
+    if (event.target.tagName === 'TD' && (event.target.id === 'Forward Strand' || event.target.id === 'Complementary Strand')) {
       // Get cell coordinates
       const row = event.target.parentNode;
       const rowIndex = row.rowIndex;
@@ -32,6 +32,9 @@ function addHoverPopupToTable(tableId, pNr) {
       };
       
       // Position it accordingly
+      positionPopup(popup, event.clientX, event.clientY);
+    } else if (event.target.tagName === 'td' && event.getAttribute("aaIndex")) {
+      popup.textContent = event.target.innerText + event.getAttribute("aaIndex");
       positionPopup(popup, event.clientX, event.clientY);
     };
   });
@@ -85,12 +88,20 @@ function addHoverPopupToTable(tableId, pNr) {
 
       // Update the text content and mvoe the popup into position
       if (popup) {
-        if (pNr === 1) {
-          popup.textContent = basePosition !== -1 ? basePosition + " (" + targetCellRowIndex + ", " + targetCellCellIndex + ")" : "";
-          positionPopup(popup, event.clientX, event.clientY);
+        if (event.target.id === 'Forward Strand' || event.target.id === 'Complementary Strand') {
+          if (pNr === 1) {
+            popup.textContent = basePosition !== -1 ? basePosition + " (" + targetCellRowIndex + ", " + targetCellCellIndex + ")" : "";
+            positionPopup(popup, event.clientX, event.clientY);
+          } else {
+            popup.textContent = basePosition2 !== -1 ? basePosition2 + " (" + targetCellRowIndex + ", " + targetCellCellIndex + ")" : "";
+            positionPopup(popup, event.clientX, event.clientY);
+          };
+        } else if (event.target.id === 'Amino Acids' && event.target.getAttribute("aaindex")) {
+            //console.log(event.target.textContent + event.target.getAttribute("aaindex"))
+            popup.textContent = event.target.textContent.replace("-", "X") + event.target.getAttribute("aaindex");
+            positionPopup(popup, event.clientX, event.clientY);
         } else {
-          popup.textContent = basePosition2 !== -1 ? basePosition2 + " (" + targetCellRowIndex + ", " + targetCellCellIndex + ")" : "";
-          positionPopup(popup, event.clientX, event.clientY);
+            popup.style.display = "none";
         };
       };
     };
@@ -99,29 +110,29 @@ function addHoverPopupToTable(tableId, pNr) {
 
   // Disable the popup if leaving the table and reset the hovering position tracker
   table.addEventListener('mouseleave', function(event) {
-  const tableRect = table.getBoundingClientRect();
-  const mouseX = event.clientX;
-  const mouseY = event.clientY;
+    const tableRect = table.getBoundingClientRect();
+    const mouseX = event.clientX;
+    const mouseY = event.clientY;
 
-  // Check if the cursor is outside the bounds of the table
-  if (
-    mouseX < tableRect.left ||
-    mouseX > tableRect.right ||
-    mouseY < tableRect.top ||
-    mouseY > tableRect.bottom
-  ) {
-    console.log("Mouse out of the table bounds");
-    if (popup) {
-      popup.style.display = "none";
-    }
+    // Check if the cursor is outside the bounds of the table
+    if (
+      mouseX < tableRect.left ||
+      mouseX > tableRect.right ||
+      mouseY < tableRect.top ||
+      mouseY > tableRect.bottom
+    ) {
+      console.log("Mouse out of the table bounds");
+      if (popup) {
+        popup.style.display = "none";
+      }
 
-    if (pNr === 1) {
-      basePosition = -1;
-    } else {
-      basePosition2 = -1;
+      if (pNr === 1) {
+        basePosition = -1;
+      } else {
+        basePosition2 = -1;
+      }
     }
-  }
-});
+  });
 };
 
 

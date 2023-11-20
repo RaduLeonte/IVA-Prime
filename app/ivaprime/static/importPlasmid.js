@@ -1879,6 +1879,7 @@ function startTranslation(codonPos, pNr) {
 
   // Start translating until a stop codon is encountered
   //console.log("Starting translationa at " + codonPos + "(" + row + ", " + col + ").");
+  let aaIndex = 1;
   while (true) {
     // Select current codon
     let codon = repeatingSlice(currSequence, codonPos - 1, codonPos + 2);
@@ -1886,7 +1887,8 @@ function startTranslation(codonPos, pNr) {
     let aminoAcid = translateCodon(codon);
 
     // Fill the cells
-    fillAACells(row, col, aminoAcid, pNr);
+    fillAACells(row, col, aminoAcid, pNr, aaIndex);
+    aaIndex++;
     // Jump to next position
     col += 3;
     codonPos += 3;
@@ -1936,6 +1938,7 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, pNr) {
   //console.log("Translating:", targetStrand, col, row, codonPos, codonStartPos, codonEndPos)
   // Start translating until a stop codon is encountered
   //console.log("Starting translationa at " + codonPos + "(" + row + ", " + col + ").");
+  let aaIndex = 1;
   while (true) {
     // Select current codon
     let codon = repeatingSlice(currSequence, codonPos - 1, codonPos + 2);
@@ -1947,7 +1950,8 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, pNr) {
     let aminoAcid = translateCodon(codon);
 
     // Fill the cells
-    fillAACells(row, col, aminoAcid, pNr, dir);
+    fillAACells(row, col, aminoAcid, pNr, aaIndex);
+    aaIndex++;
     // Jump to next position
     col += 3*dir;
     codonPos += 3*dir;
@@ -1971,7 +1975,7 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, pNr) {
  * Merge 3 cells in the amino acids row in order to display the amino acid.
  * 
  */
-function fillAACells(row, col, text, pNr, dir) {
+function fillAACells(row, col, text, pNr, aaIndex) {
   //console.log("Translating, filling cells:", row, col, text, pNr)
   // Select the corresponding features and sequence
   let table = null;
@@ -2014,6 +2018,7 @@ function fillAACells(row, col, text, pNr, dir) {
   // Add text to the center of the merged cell
   mainCell.textContent = text;
   mainCell.style.textAlign = 'center';
+  mainCell.setAttribute("aaIndex", aaIndex);
 };
 
 

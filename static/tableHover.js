@@ -18,7 +18,7 @@ function addHoverPopupToTable(tableId, pNr) {
   // Add the hover listener
   table.addEventListener('mouseover', function(event) {
     // Check if we're hovering over a cell
-    if (event.target.tagName === 'td') {
+    if (event.target.tagName === 'td' && (event.target.id === 'Forward Strand' || event.target.id === 'Complementary Strand')) {
       // Get cell coordinates
       const row = event.target.parentNode;
       const rowIndex = row.rowIndex;
@@ -32,6 +32,9 @@ function addHoverPopupToTable(tableId, pNr) {
       };
       
       // Position it accordingly
+      positionPopup(popup, event.clientX, event.clientY);
+    } else if (event.target.tagName === 'td' && event.getAttribute("aaIndex")) {
+      popup.textContent = event.target.innerText + event.getAttribute("aaIndex");
       positionPopup(popup, event.clientX, event.clientY);
     };
   });
