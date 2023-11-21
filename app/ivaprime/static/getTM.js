@@ -6,6 +6,8 @@
  * m - salt concentration in M
  */
 function get_tm(primer_sequence, c, m) {
+    // Convert from nM to M
+    c = c / 1E9
     // Calculate the melting temperature
     console.log("getTM", meltingTempAlgorithmChoice, saltCorrectionEquation, applyingSaltCorrection, saltConc, applyingDMSOCorrection, dmsoConc)
     const tm = meltingTemperatureAlgorithmDict[meltingTempAlgorithmChoice](primer_sequence, c); 

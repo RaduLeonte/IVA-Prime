@@ -59,18 +59,38 @@ function getUserPreference(preferenceName) {
         return null; // or return a default value
     };
 };
-
 console.log("Settings:", JSON.stringify(JSON.parse(getCookieValue('userPreferences') || '{}'), null, 2));
+
+
+/**
+ * Default settings
+ */
+const defaultSetingsDict = {
+    "primerConc": 100,
+    "meltingTempAlgorithmChoice": "nnSantaLucia",
+    "applyingSaltCorrection": true,
+    "saltConc": 0.5,
+    "saltCorrectionEquation": "SchildkrautLifson",
+    "applyingDMSOCorrection": false,
+    "dmsoConc": 0,
+    "homoRegionTm": 49.5,
+    "tempRegionTm": 60,
+    "upperBoundShortInsertions": 49.5,
+    "colorTheme": "lightTheme",
+    "gridWidth": 60,
+};
+let colorTheme = (getUserPreference("colorTheme")  !== null) ? getUserPreference("colorTheme") : defaultSetingsDict["colorTheme"];
+
 
 /**
  * createPrimers
  */
 // C, target temperature for the homologous region
-let homoRegionTm = (getUserPreference("homoRegionTm")  !== null) ? getUserPreference("homoRegionTm") : 49.5;
+let homoRegionTm = (getUserPreference("homoRegionTm")  !== null) ? getUserPreference("homoRegionTm") : defaultSetingsDict["homoRegionTm"];
 // C, target temperature for the template region
-let tempRegionTm = (getUserPreference("tempRegionTm")  !== null) ? getUserPreference("tempRegionTm") : 60;
+let tempRegionTm = (getUserPreference("tempRegionTm")  !== null) ? getUserPreference("tempRegionTm") : defaultSetingsDict["tempRegionTm"];
 // Insertions with a TM lower than this will be turned into short insertions
-let upperBoundShortInsertions = (getUserPreference("upperBoundShortInsertions")  !== null) ? getUserPreference("upperBoundShortInsertions") : 49.5;
+let upperBoundShortInsertions = (getUserPreference("upperBoundShortInsertions")  !== null) ? getUserPreference("upperBoundShortInsertions") : defaultSetingsDict["upperBoundShortInsertions"];
 
 let operationNr = 1; // modification counter
 
@@ -92,21 +112,21 @@ let customSearchEnabledSecondPlasmid = false;
  * getTm
  */
 // M, primer concentration for melting temperatures
-let primerConc = (getUserPreference("primerConc") !== null) ? getUserPreference("primerConc") : 100E-9;
+let primerConc = (getUserPreference("primerConc") !== null) ? getUserPreference("primerConc") : defaultSetingsDict["primerConc"];
 // Melting temperature calculator algorithm
-let meltingTempAlgorithmChoice = (getUserPreference("meltingTempAlgorithmChoice") !== null) ? getUserPreference("meltingTempAlgorithmChoice") : "nnSantaLucia";
+let meltingTempAlgorithmChoice = (getUserPreference("meltingTempAlgorithmChoice") !== null) ? getUserPreference("meltingTempAlgorithmChoice") : defaultSetingsDict["meltingTempAlgorithmChoice"];
 
 // Applying salt correction flag
-let applyingSaltCorrection =  (getUserPreference("applyingSaltCorrection") !== null) ? getUserPreference("applyingSaltCorrection") : true;
+let applyingSaltCorrection =  (getUserPreference("applyingSaltCorrection") !== null) ? getUserPreference("applyingSaltCorrection") : defaultSetingsDict["applyingSaltCorrection"];
 // M, salt concentration for melting temperatures
 let saltConc = (getUserPreference("saltConc") !== null) ? getUserPreference("saltConc") : 0.5;
 // Salt correction equation choice
-let saltCorrectionEquation = (getUserPreference("saltCorrectionEquation") !== null) ? getUserPreference("saltCorrectionEquation") : "SchildkrautLifson";
+let saltCorrectionEquation = (getUserPreference("saltCorrectionEquation") !== null) ? getUserPreference("saltCorrectionEquation") : defaultSetingsDict["saltCorrectionEquation"];
 
 // Applying DMSO flag
-let applyingDMSOCorrection =  (getUserPreference("applyingDMSOCorrection") !== null) ? getUserPreference("applyingDMSOCorrection") : false;
+let applyingDMSOCorrection =  (getUserPreference("applyingDMSOCorrection") !== null) ? getUserPreference("applyingDMSOCorrection") :  defaultSetingsDict["applyingDMSOCorrection"];
 // M, DMSO concentration for melting temperatures
-let dmsoConc = (getUserPreference("dmsoConc") !== null) ? getUserPreference("dmsoConc") : 0;
+let dmsoConc = (getUserPreference("dmsoConc") !== null) ? getUserPreference("dmsoConc") : defaultSetingsDict["dmsoConc"];
 
 
 let isTmCalcWindowVisible = false;
@@ -122,7 +142,7 @@ gridStructure= gridStructure2 = ["Forward Strand",
                                 "Amino Acids",
                                 "Annotations",
                                 "Spacer"];
-let gridWidth = (getUserPreference("gridWidth") !== null) ? getUserPreference("gridWidth") : 60; // Amount of cells per row
+let gridWidth = (getUserPreference("gridWidth") !== null) ? getUserPreference("gridWidth") : defaultSetingsDict["gridWidth"]; // Amount of cells per row
 // Store content of imported file
 let originalFileExtension1 = null;
 let originalFileExtension2 = null;

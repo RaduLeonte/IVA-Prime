@@ -38,80 +38,84 @@ document.addEventListener('DOMContentLoaded', function () {
      * Settings inputs.
      */
     function populateSettings() {
-        // Algo
-        document.getElementById("primerConcSettingsInput").value = parseFloat(primerConc * 1E9).toFixed(2);
-        document.getElementById("meltingTempAlgorithmChoice").value = meltingTempAlgorithmChoice;
+        const container = document.getElementById("settings-window");
+        const setingsElements = container.querySelectorAll('input[type="text"], input[type="checkbox"], input[type="number"], select');
 
-        // Salt correction
-        document.getElementById("applyingSaltCorrectionCheckbox").checked = applyingSaltCorrection;
-        document.getElementById("saltConcSettingsInput").value = saltConc;
-        document.getElementById("saltCorrectionEquation").value = saltCorrectionEquation;
+        setingsElements.forEach(function (element) {
+            // Get the variable name based on the element's ID
+            var variableName = element.id.replace("SettingsElement", "");
 
-        // DMSO
-        console.log("Before", document.getElementById("applyingDMSOCorrectionCheckbox").checked, applyingDMSOCorrection)
-        document.getElementById("applyingDMSOCorrectionCheckbox").checked = applyingDMSOCorrection;
-        console.log("After", document.getElementById("applyingDMSOCorrectionCheckbox").value)
-        document.getElementById("dmsoConcSettingsInput").value = dmsoConc;
+            // Check if the variable exists
+            if (eval(variableName) !== undefined) {
+                // Set the element's value to the variable's value
+                console.log(eval(variableName))
+                element.value = eval(variableName);
+            };
+        });
+    };
 
-        // IVA params
-        document.getElementById("homoRegionTmSettingsInput").value = homoRegionTm;
-        document.getElementById("tempRegionTmSettingsInput").value = tempRegionTm;
-        document.getElementById("upperBoundShortInsertionsInput").value = upperBoundShortInsertions;
 
-        // UI
-        document.getElementById("gridWithSettingsInput").value = gridWidth;
+    /**
+     * Settings inputs.
+     */
+    function resetDefaultSettings() {
+        const container = document.getElementById("settings-window");
+        const setingsElements = container.querySelectorAll('input[type="text"], input[type="checkbox"], input[type="number"], select');
+
+        setingsElements.forEach(function (element) {
+            // Get the variable name based on the element's ID
+            var variableName = element.id.replace("SettingsElement", "");
+
+            // Check if the variable exists
+            if (eval(variableName) !== undefined) {
+                if (element.type === "text" || element.type === "number" || element.tagName === "SELECT") {
+                    element.value = defaultSetingsDict[variableName];
+                } else if (element.type === "checkbox") {
+                    element.checked = defaultSetingsDict[variableName];
+                };
+            };
+        });
+        updateGlobalVariables()
     };
 
 
     function updateGlobalVariables() {
-        // Melting temperature calculator algorithm
-        meltingTempAlgorithmChoice = document.getElementById("meltingTempAlgorithmChoice").value;
-        saveUserPreference("meltingTempAlgorithmChoice", meltingTempAlgorithmChoice, 30, true, true);
+        const container = document.getElementById("settings-window");
+        const setingsElements = container.querySelectorAll('input[type="text"], input[type="checkbox"], input[type="number"], select');
 
-        // Primer concentration
-        const unroundedPrimerConc = parseFloat(document.getElementById("primerConcSettingsInput").value)
-        primerConc = unroundedPrimerConc.toFixed(2) * 1E-9;
-        saveUserPreference("primerConc", primerConc, 30, true, true);
+        setingsElements.forEach(function (element) {
+            // Get the variable name based on the element's ID
+            var variableName = element.id.replace("SettingsElement", "");
 
-        // Salt correction
-        applyingSaltCorrection = document.getElementById("applyingSaltCorrectionCheckbox").checked;
-        saveUserPreference("applyingSaltCorrection", applyingSaltCorrection, 30, true, true);
-
-        saltConc = parseFloat(document.getElementById("saltConcSettingsInput").value);
-        saveUserPreference("saltConc", saltConc, 30, true, true);
-
-        saltCorrectionEquation = document.getElementById("saltCorrectionEquation").value;
-        saveUserPreference("saltCorrectionEquation", saltCorrectionEquation, 30, true, true);
-
-        // DMSO correction
-        applyingDMSOCorrection = document.getElementById("applyingDMSOCorrectionCheckbox").checked;
-        saveUserPreference("applyingDMSOCorrection", applyingDMSOCorrection, 30, true, true);
-
-        dmsoConc = parseFloat(document.getElementById("dmsoConcSettingsInput").value);
-        saveUserPreference("dmsoConc", dmsoConc, 30, true, true);
-
-        // Primer settings
-        homoRegionTm = parseFloat(document.getElementById("homoRegionTmSettingsInput").value);
-        saveUserPreference("homoRegionTm", homoRegionTm, 30, true, true);
-
-        tempRegionTm = parseFloat(document.getElementById("tempRegionTmSettingsInput").value);
-        saveUserPreference("tempRegionTm", tempRegionTm, 30, true, true);
-
-        upperBoundShortInsertions = parseFloat(document.getElementById("upperBoundShortInsertionsInput").value);
-        saveUserPreference("upperBoundShortInsertions", upperBoundShortInsertions, 30, true, true);
-
-        // Gridwith
-        // only remake grid if the value changed
-        if (parseInt(document.getElementById("gridWithSettingsInput").value) !== gridWidth) {
-            if (sequence !== "") {
-                makeContentGrid(1);
+            // Check if the variable exists
+            if (eval(variableName) !== undefined) {
+                // Set the element's value to the variable's value
+                console.log(element, element.tagName, element.type)
+                if (element.type === "text") {
+                    console.log(variableName + " = parseFloat(document.getElementById(\"" + variableName + "SettingsElement\"" +").value)")
+                    eval(variableName + " = parseFloat(document.getElementById(\"" + variableName + "SettingsElement\"" + ").value)");
+                } else if (element.tagName === "SELECT") {
+                    eval(variableName + " = document.getElementById(\"" + variableName + "SettingsElement\"" + ").value");
+                } else if (element.type === "checkbox") {
+                    eval(variableName + " = document.getElementById(\"" + variableName + "SettingsElement\"" + ").checked");
+                } else if (element.type === "number") {
+                    if (variableName === "gridWidth") {
+                        if (gridWidth !== parseInt(document.getElementById(variableName + "SettingsElement").value)) {
+                            if (sequence !== "") {
+                                makeContentGrid(1);
+                            };
+                            if (sequence2 !== "") {
+                                makeContentGrid(2);
+                            };
+                        };
+                    };
+                    eval(variableName + " = parseInt(document.getElementById(\"" + variableName + "SettingsElement\"" + ").value)");
+                };
+                saveUserPreference(variableName, eval(variableName), 30, true, true);
             };
-            if (sequence2 !== "") {
-                makeContentGrid(2);
-            };
-            gridWidth = parseInt(document.getElementById("gridWithSettingsInput").value);
-            saveUserPreference("gridWidth", gridWidth, 30, true, true);
-        };
+        });
+        updateMeltingTemperatureAlgorithmImageSource();
+        updateSaltCorrectionImageSource
         console.log("Updating settings:", JSON.stringify(JSON.parse(getCookieValue('userPreferences') || '{}'), null, 2));
     };
 
@@ -119,6 +123,10 @@ document.addEventListener('DOMContentLoaded', function () {
     //document.getElementById("settings-window").addEventListener("input", function (event) {
     //    updateGlobalVariables();
     //});
+
+    document.getElementById("reset-default-settings-btn").addEventListener("click", function (event) {
+        resetDefaultSettings();
+    });
 
     document.getElementById("save-settings-btn").addEventListener("click", function (event) {
         // Update the global variables when the user clicks "Save Settings"
@@ -133,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function () {
     /**
      * Melting temperature calculator algorithm listener
      */
-    const meltingTempAlgorithmSelect = document.getElementById("meltingTempAlgorithmChoice");
+    const meltingTempAlgorithmSelect = document.getElementById("meltingTempAlgorithmChoiceSettingsElement");
     const meltingTempAlgorithmEquationImage = document.getElementById("meltingTempAlgorithmEquationImage");
 
     function updateMeltingTemperatureAlgorithmImageSource() {
@@ -149,7 +157,7 @@ document.addEventListener('DOMContentLoaded', function () {
     /**
      * Salt correction equation listener
      */
-    const saltCorrectionSelect = document.getElementById("saltCorrectionEquation");
+    const saltCorrectionSelect = document.getElementById("saltCorrectionEquationSettingsElement");
     const saltCorrectionEquationImage = document.getElementById("saltCorrectionEquationImage");
 
     function updateSaltCorrectionImageSource() {

@@ -594,17 +594,30 @@ nav ul li a {
 }
 
 .standard-btn-a {
-  background-color: #4CAF50;
-  color: white;
   border-radius: 5px;
   display: block;
   text-align: center;
   padding: 10px 20px;
   text-decoration: none;
+  margin-bottom: 10px;
 }
 
-.standard-btn-a:hover {
+.save-settings-btn{
+  background-color: #4CAF50;
+  color: white;
+}
+
+.save-settings-btn:hover{
   background-color: #45a049;
+}
+
+.reset-default-settings-btn{
+  background-color: #aeaeae;
+  color: white;
+}
+
+.reset-default-settings-btn:hover{
+  background-color: #9d9d9d;
 }
 
 .forward-strand-base {
