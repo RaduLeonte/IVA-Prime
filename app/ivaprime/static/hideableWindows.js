@@ -38,11 +38,27 @@ document.addEventListener('DOMContentLoaded', function () {
      * Settings inputs.
      */
     function populateSettings() {
-        document.getElementById("primerConcSettingsInput").value = parseFloat(primerConc * 1E9).toFixed(2); // Display as nM, 
+        // Algo
+        document.getElementById("primerConcSettingsInput").value = parseFloat(primerConc * 1E9).toFixed(2);
+        document.getElementById("meltingTempAlgorithmChoice").value = meltingTempAlgorithmChoice;
+
+        // Salt correction
+        document.getElementById("applyingSaltCorrectionCheckbox").checked = applyingSaltCorrection;
         document.getElementById("saltConcSettingsInput").value = saltConc;
+        document.getElementById("saltCorrectionEquation").value = saltCorrectionEquation;
+
+        // DMSO
+        console.log("Before", document.getElementById("applyingDMSOCorrectionCheckbox").checked, applyingDMSOCorrection)
+        document.getElementById("applyingDMSOCorrectionCheckbox").checked = applyingDMSOCorrection;
+        console.log("After", document.getElementById("applyingDMSOCorrectionCheckbox").value)
+        document.getElementById("dmsoConcSettingsInput").value = dmsoConc;
+
+        // IVA params
         document.getElementById("homoRegionTmSettingsInput").value = homoRegionTm;
         document.getElementById("tempRegionTmSettingsInput").value = tempRegionTm;
         document.getElementById("upperBoundShortInsertionsInput").value = upperBoundShortInsertions;
+
+        // UI
         document.getElementById("gridWithSettingsInput").value = gridWidth;
     };
 
@@ -84,6 +100,8 @@ document.addEventListener('DOMContentLoaded', function () {
         upperBoundShortInsertions = parseFloat(document.getElementById("upperBoundShortInsertionsInput").value);
         saveUserPreference("upperBoundShortInsertions", upperBoundShortInsertions, 30, true, true);
 
+        // Gridwith
+        // only remake grid if the value changed
         if (parseInt(document.getElementById("gridWithSettingsInput").value) !== gridWidth) {
             if (sequence !== "") {
                 makeContentGrid(1);
@@ -94,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function () {
             gridWidth = parseInt(document.getElementById("gridWithSettingsInput").value);
             saveUserPreference("gridWidth", gridWidth, 30, true, true);
         };
-        console.log(document.cookie);
+        console.log("Updating settings:", JSON.stringify(JSON.parse(getCookieValue('userPreferences') || '{}'), null, 2));
     };
 
     // Event listener for input changes

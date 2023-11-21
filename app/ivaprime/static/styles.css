@@ -575,6 +575,8 @@ nav ul li a {
   align-items: center;
   min-width: 300px;
   max-width: 600px;
+  max-height: 80vh;
+  overflow-y: scroll;
 }
 
 .settings-window-row {

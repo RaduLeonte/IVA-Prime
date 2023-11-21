@@ -2,7 +2,6 @@
  * Cookie handlers
  */
 function setCookie(name, value, daysToExpire, isSecure, isCrossSite) {
-    //q console.log("Set cookie:", name, value, daysToExpire, isSecure, isCrossSite)
     let cookieValue = `${name}=${value}; path=/`;
 
     if (daysToExpire) {
@@ -20,7 +19,6 @@ function setCookie(name, value, daysToExpire, isSecure, isCrossSite) {
     };
 
     document.cookie = cookieValue;
-    //console.log("Set cookie, new cookie:", cookieValue)
 };
 
 
@@ -62,18 +60,17 @@ function getUserPreference(preferenceName) {
     };
 };
 
-console.log(document.cookie)
-
+console.log("Settings:", JSON.stringify(JSON.parse(getCookieValue('userPreferences') || '{}'), null, 2));
 
 /**
  * createPrimers
  */
 // C, target temperature for the homologous region
-let homoRegionTm = (getUserPreference("homoRegionTm")) ? getUserPreference("homoRegionTm") : 49.5;
+let homoRegionTm = (getUserPreference("homoRegionTm")  !== null) ? getUserPreference("homoRegionTm") : 49.5;
 // C, target temperature for the template region
-let tempRegionTm = (getUserPreference("tempRegionTm")) ? getUserPreference("tempRegionTm") : 60;
+let tempRegionTm = (getUserPreference("tempRegionTm")  !== null) ? getUserPreference("tempRegionTm") : 60;
 // Insertions with a TM lower than this will be turned into short insertions
-let upperBoundShortInsertions = (getUserPreference("upperBoundShortInsertions")) ? getUserPreference("upperBoundShortInsertions") : 49.5;
+let upperBoundShortInsertions = (getUserPreference("upperBoundShortInsertions")  !== null) ? getUserPreference("upperBoundShortInsertions") : 49.5;
 
 let operationNr = 1; // modification counter
 
@@ -94,23 +91,22 @@ let customSearchEnabledSecondPlasmid = false;
 /**
  * getTm
  */
-// Melting temperature calculator algorithm
-let meltingTempAlgorithmChoice = (getUserPreference("meltingTempAlgorithmChoice")) ? getUserPreference("meltingTempAlgorithmChoice") : "nnSantaLucia";
 // M, primer concentration for melting temperatures
-let primerConc = (getUserPreference("primerConc")) ? getUserPreference("primerConc") : 100E-9;
+let primerConc = (getUserPreference("primerConc") !== null) ? getUserPreference("primerConc") : 100E-9;
+// Melting temperature calculator algorithm
+let meltingTempAlgorithmChoice = (getUserPreference("meltingTempAlgorithmChoice") !== null) ? getUserPreference("meltingTempAlgorithmChoice") : "nnSantaLucia";
 
 // Applying salt correction flag
-let applyingSaltCorrection =  (getUserPreference("applyingSaltCorrection")) ? getUserPreference("applyingSaltCorrection") : true;
-console.log(applyingSaltCorrection)
+let applyingSaltCorrection =  (getUserPreference("applyingSaltCorrection") !== null) ? getUserPreference("applyingSaltCorrection") : true;
 // M, salt concentration for melting temperatures
-let saltConc = (getUserPreference("saltConc")) ? getUserPreference("saltConc") : 0.5;
+let saltConc = (getUserPreference("saltConc") !== null) ? getUserPreference("saltConc") : 0.5;
 // Salt correction equation choice
-let saltCorrectionEquation = (getUserPreference("saltCorrectionEquation")) ? getUserPreference("saltCorrectionEquation") : "SchildkrautLifson";
+let saltCorrectionEquation = (getUserPreference("saltCorrectionEquation") !== null) ? getUserPreference("saltCorrectionEquation") : "SchildkrautLifson";
 
 // Applying DMSO flag
-let applyingDMSOCorrection =  (getUserPreference("applyingDMSOCorrection")) ? getUserPreference("applyingDMSOCorrection") : false;
+let applyingDMSOCorrection =  (getUserPreference("applyingDMSOCorrection") !== null) ? getUserPreference("applyingDMSOCorrection") : false;
 // M, DMSO concentration for melting temperatures
-let dmsoConc = (getUserPreference("dmsoConc")) ? getUserPreference("dmsoConc") : 0;
+let dmsoConc = (getUserPreference("dmsoConc") !== null) ? getUserPreference("dmsoConc") : 0;
 
 
 let isTmCalcWindowVisible = false;
@@ -126,7 +122,7 @@ gridStructure= gridStructure2 = ["Forward Strand",
                                 "Amino Acids",
                                 "Annotations",
                                 "Spacer"];
-let gridWidth = 60; // Amount of cells per row
+let gridWidth = (getUserPreference("gridWidth") !== null) ? getUserPreference("gridWidth") : 60; // Amount of cells per row
 // Store content of imported file
 let originalFileExtension1 = null;
 let originalFileExtension2 = null;
@@ -156,7 +152,7 @@ let secondPlasmidImported = false;
  * insertionPopUpWindow 
  */
 // User inputs int he insertion pop up window
-let preferredOrganism = (getUserPreference("preferredOrganism")) ? getUserPreference("preferredOrganism") : "Escherichia coli";
+let preferredOrganism = (getUserPreference("preferredOrganism")  !== null) ? getUserPreference("preferredOrganism") : "Escherichia coli";
 let dnaSequenceInput = '';
 let aminoAcidSequenceInput = '';
 

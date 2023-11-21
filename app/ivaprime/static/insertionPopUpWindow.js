@@ -38,7 +38,6 @@ document.addEventListener('DOMContentLoaded', function () {
       newOption.setAttribute('selected','selected');
     };
     select.add(newOption,undefined);
-    console.log("Selector: ", organismsList[i])
   };
 
   // Button listeners
@@ -57,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Get target organism from select object
       const targetOrganism = "";
 
-      console.log("HERE2", dnaSequenceInput, aminoAcidSequenceInput, insertionPosition, selectionStartPos, selectionEndPos)
+      //console.log("HERE2", dnaSequenceInput, aminoAcidSequenceInput, insertionPosition, selectionStartPos, selectionEndPos)
       // Call the function to create insertion primers or replacement primers if we have text selected
       if (!selectionEndPos || selectionEndPos === -1) {
         createReplacementPrimers(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, insertionPosition);
