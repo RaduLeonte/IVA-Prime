@@ -286,12 +286,12 @@ const exportPrimersDict = {
 function primerRegionHover(event) {
     // Get the inner text of the span
     const targetSpan = event.target
+    console.log(targetSpan.parentElement.parentElement)
     const spanSequence = targetSpan.innerText;
-    const spanDirection = (targetSpan.id.includes("Forward")) ? "fwd": "rev";
+    const spanDirection = (targetSpan.parentElement.parentElement.getAttribute("direction") === "fwd") ? "fwd": "rev";
     console.log(spanDirection)
     const spanColor = window.getComputedStyle(targetSpan).backgroundColor;
-    
-    console.log('Span Text:', spanSequence, spanColor);
+    console.log('Looking for:', spanSequence, spanColor);
     
     // Highlight hovered sequence in plasmid files
     for (targetPlasmid = 1; targetPlasmid < 3; targetPlasmid++) {
@@ -304,7 +304,7 @@ function primerRegionHover(event) {
         };
         const searchQuery = (spanDirection === "fwd") ? spanSequence: spanSequence.split('').reverse().join('');
         const targetStrand = (spanDirection === "fwd") ? 0: 1;
-        console.log("Search query:", targetPlasmid, targetStrand, searchQuery, null, spanColor);
+        console.log("Search query:",  targetPlasmid, targetStrand, searchQuery, null, spanColor);
         highlightOccurences(targetPlasmid, targetStrand, currSequence, searchQuery, currGridstructure, null, spanColor);
     };
 };
