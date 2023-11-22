@@ -84,6 +84,9 @@ function updateElementText(e, newText, originalText) {
     e.textContent = (newText !== "") ? newText.replaceAll("...", ""): originalText.replaceAll("...", "");
   } else if (e.tagName === "A") {
     e.textContent = (newText !== "") ? newText: originalText;
+  } else if (e.id === "primers-type" || e.id === "primer-id") {
+    e.textContent = (newText !== "") ? newText: originalText;
+    if (originalText !== newText && newText !== "") {e.setAttribute("edited", true)};
   } else {
     e.textContent = newText;
   };

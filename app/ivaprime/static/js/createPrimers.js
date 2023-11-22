@@ -20,28 +20,37 @@ function displayPrimers(primersType, primersDict) {
 
     // Display primer pair nr and type of mod
     const modDiv = document.createElement("div");
+    modDiv.id = "mod-div"
     const h3 = document.createElement('h3');
     h3.id = 'primers-type';
+    h3.setAttribute("primers-type", primersType.toLowerCase());
     h3.classList.add("editable");
     enableElementEditing(h3, 1)
+    h3.setAttribute("edited", false);
     h3.textContent = operationNr + '. ' + primersType;
     operationNr++;
     modDiv.appendChild(h3);
 
     for (const [primer, subprimersDict] of Object.entries(primersDict)) {
         console.log("Display primers:", primer, subprimersDict);
+        const primerDiv = document.createElement("div");
+        primerDiv.id = "primer-div";
+        primerDiv.setAttribute("direction", primer.toLowerCase().includes("forward") ? "fwd": "rev");
+
         const primerName = document.createElement('p'); // Add CSS style for word wrapping
         primerName.textContent = primer + ":";
         primerName.classList.add("editable")
+        primerName.setAttribute("edited", false);
+        primerName.id = "primer-id";
         enableElementEditing(primerName, 1)
-        modDiv.appendChild(primerName);
+        primerDiv.appendChild(primerName);
 
         const primerSequence = document.createElement('p');
+        primerSequence.id = 'primer-sequence';
         let primerTMInfo = []
         let primerLength = 0;
         for (const [subprimer, subprimerProperties] of Object.entries(subprimersDict)) {
             const span = document.createElement('span');
-            span.id = "primer-region-span" + "-" + primer;
             span.style.color = "white";
             span.style.backgroundColor = subprimerProperties["color"];
             span.style.fontWeight = 'bold';
@@ -61,8 +70,9 @@ function displayPrimers(primersType, primersDict) {
         pTM.appendChild(spanTM);
 
         primerSequence.style.wordBreak = 'break-all';
-        modDiv.appendChild(primerSequence);
-        modDiv.appendChild(pTM);
+        primerDiv.appendChild(primerSequence);
+        primerDiv.appendChild(pTM);
+        modDiv.append(primerDiv);
     };
 
     
@@ -88,6 +98,60 @@ function addExportPrimersButtonListener() {
           exportPrimersDict[id.split('-')[2]](); // Extract the export type from the option id
         });
     });
+};
+
+
+/**
+ *  Converts the primers from the sidebar html element into a 2d array.
+ */
+function getPrimersAsTable(includeColumnNames = false) {
+    const sidebarDiv = document.getElementsByClassName('sidebar-content')[0];
+    const modDivs = sidebarDiv.querySelectorAll('#mod-div');
+    const fileName = document.getElementById("plasmid-file-name1").innerText.replace(/\.[^/.]+$/, "") + " primers";
+    console.log("modDivs", modDivs)
+
+    let tableData = [];
+    if (includeColumnNames === true) {tableData.push(["Primer Name", "Primer Sequence"])}
+    for (var i = 0; i < modDivs.length; i++) {
+        const currentDiv = modDivs[i];
+        const h3Div = currentDiv.querySelector("#primers-type");
+        const modType = h3Div.getAttribute("primers-type");
+        console.log("Mod Type", modType);
+        console.log(currentDiv)
+        const primerDivs = currentDiv.querySelectorAll("#primer-div");
+        console.log(primerDivs)
+        for (var j = 0; j < primerDivs.length; j++) {
+            const currPrimerDiv = primerDivs[j]
+
+            const primerIdDiv = currPrimerDiv.querySelector("#primer-id");
+            let primerId = ""
+            const primerDirection = currPrimerDiv.getAttribute("direction");
+
+            const h3Edited = currentDiv.querySelector("#primers-type").getAttribute("edited");
+            const modIndex = (h3Edited === true) ? "": currentDiv.innerText.split(" ")[0].replace(".", "");
+            const idEdited = primerIdDiv.getAttribute("edited");
+            const subcloningVectorSuffix = (primerIdDiv.innerText.toLowerCase().includes("vector")) ? "_vec": "";
+            // id and h3 edited -> id
+            // id edited -> id
+            // h3 edited -> id from h3
+            // none edited -> default
+            console.log("Edited", idEdited, idEdited === "true", h3Edited, h3Edited === "true")
+            if (idEdited === "true") {
+                primerId = primerIdDiv.innerText;
+            } else if (h3Edited === "true") {
+                primerId = h3Div.innerText + subcloningVectorSuffix + "_" + primerDirection;
+            } else {
+                primerId = modType + modIndex + subcloningVectorSuffix + "_" + primerDirection;
+            };
+
+            const primerSeq = currPrimerDiv.querySelector("#primer-sequence").innerText;
+
+            console.log("Primer", primerId, primerSeq, primerIdDiv.getAttribute("edited"));
+
+            tableData.push([primerId, primerSeq])
+        };
+    };
+    return tableData
 };
 
 
@@ -132,24 +196,15 @@ const exportPrimersDict = {
     // CSV
     csv : () => {
         const fileName = document.getElementById("plasmid-file-name1").innerText.replace(/\.[^/.]+$/, "") + " primers";
-        const htmlTextContent = document.getElementsByClassName('sidebar-content')[0].innerText;
-        let lines = htmlTextContent.split("\n");
-        lines = lines.filter(function(item) {
-            return item.trim() !== '';
+        const tableData = getPrimersAsTable(includeColumnNames = true);
+
+        let csvLines = tableData.map(function(row) {
+            return row.map(function(cell) {
+                return '"' + String(cell).replace(/"/g, '""') + '"';
+            }).join(',');
         });
-
-        let textContent = "Prime Name,Primer Sequence\n";
-        let j = 1;
-        for (i = 1; i < lines.length; i += 7) {
-            const fwdPrimerName = "primer" + j + "_fwd";
-            const revPrimerName = "primer" + j + "_rev";
-            j++;
-            textContent += fwdPrimerName + "," + lines[i + 2] + "\n";
-            textContent += revPrimerName + "," + lines[i + 5] + "\n";
-        };
-
-        console.log(lines);
-
+    
+        const textContent = csvLines.join('\n');
         const blob = new Blob([textContent], { type: 'text/plain' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
@@ -159,51 +214,25 @@ const exportPrimersDict = {
     // Excel file
     xlsx: () => {
         const fileName = document.getElementById("plasmid-file-name1").innerText.replace(/\.[^/.]+$/, "") + " primers";
-        const htmlTextContent = document.getElementsByClassName('sidebar-content')[0].innerText;
-        let lines = htmlTextContent.split("\n");
-        lines = lines.filter(function (item) {return item.trim() !== '';});
-
-        let data = [["Primer Name", "Primer Sequence"]];
-        let j = 1;
-        for (i = 1; i < lines.length; i += 7) {
-            const regexMatch = lines[i].match(/^(\d+\.\s*)(\w+(\s+\w+)*)$/);
-            const type = (regexMatch) ? regexMatch[2].split(/\s+/)[regexMatch[2].split(/\s+/).length - 1]: lines[i];
-            const fwdPrimerName = (regexMatch) ? "primer" + j + "_" + type.toLowerCase() + "_fwd": type + "_fwd";
-            const revPrimerName = (regexMatch) ? "primer" + j + "_" + type.toLowerCase() + "_rev": type + "_rev";
-            j++;
-            data.push([fwdPrimerName, lines[i + 2]]);
-            data.push([revPrimerName, lines[i + 5]]);
-        };
+        const tableData = getPrimersAsTable(includeColumnNames = true);
 
         let wb = XLSX.utils.book_new();
         wb.SheetNames.push("Sheet 1");
-        wb.Sheets["Sheet 1"] = XLSX.utils.aoa_to_sheet(data);
+        wb.Sheets["Sheet 1"] = XLSX.utils.aoa_to_sheet(tableData);
         XLSX.writeFile(wb, fileName + '.xlsx');
     },
     // Microsynth Excel Template
     microsynth: () => {
-        const htmlTextContent = document.getElementsByClassName('sidebar-content')[0].innerText;
-        let lines = htmlTextContent.split("\n");
-        lines = lines.filter(function (item) {return item.trim() !== '';});
-
+        const tableData = getPrimersAsTable(includeColumnNames = false);
         let primerList = [];
-        let j = 1;
-        for (i = 1; i < lines.length; i += 7) {
-            const regexMatch = lines[i].match(/^(\d+\.\s*)(\w+(\s+\w+)*)$/);
-            const type = (regexMatch) ? regexMatch[2].split(/\s+/)[regexMatch[2].split(/\s+/).length - 1]: lines[i];
-            const fwdPrimerName = (regexMatch) ? "primer" + j + "_" + type.toLowerCase() + "_fwd": type + "_fwd";
-            const revPrimerName = (regexMatch) ? "primer" + j + "_" + type.toLowerCase() + "_rev": type + "_rev";
-            j++;
-            primerList.push([fwdPrimerName, lines[i + 2], null, "DES", (lines[i + 2].length <= 60) ? "GEN": 0.04]);
-            primerList.push([revPrimerName, lines[i + 5], null, "DES", (lines[i + 5].length <= 60) ? "GEN": 0.04]);
+        for (i = 0; i < tableData.length; i++) {
+            const primerId = tableData[i][0];
+            const primerSeq = tableData[i][1]
+            primerList.push([primerId, primerSeq, null, "DES", (primerSeq <= 60) ? "GEN": 0.04]);
         };
-
 
         const formName = "MicrosynthUploadFormDNA.xlsx";
         const templatePath = "/static/" + formName;
-
-        //const ExcelJS = require('exceljs');
-
         fetch(templatePath)
             .then((res) => res.arrayBuffer())
             .then((ab) => {
