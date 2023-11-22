@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             tmSpan.textContent = "--";
         };
-        infoSpan.textContent = "(" + meltingTempAlgorithmChoice + ", " + Math.round(primerConc*1E9) + " nM";
+        infoSpan.textContent = "(" + meltingTempAlgorithmChoice + ", " + Math.round(primerConc) + " nM";
         if (applyingSaltCorrection) {infoSpan.textContent += ", " + saltCorrectionEquation + ", " + saltConc + " M";};
         infoSpan.textContent += ")";
     };
