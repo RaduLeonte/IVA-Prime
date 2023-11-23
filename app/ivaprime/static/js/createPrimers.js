@@ -228,7 +228,7 @@ const exportPrimersDict = {
         for (i = 0; i < tableData.length; i++) {
             const primerId = tableData[i][0];
             const primerSeq = tableData[i][1]
-            primerList.push([primerId, primerSeq, null, "DES", (primerSeq <= 60) ? "GEN": 0.04]);
+            primerList.push([primerId, primerSeq, null, "DES", (primerSeq.length <= 60) ? "GEN": 0.04]);
         };
 
         const formName = "MicrosynthUploadFormDNA.xlsx";
