@@ -74,6 +74,7 @@ const defaultSetingsDict = {
     "applyingDMSOCorrection": false,
     "dmsoConc": 0,
     "homoRegionTm": 49.5,
+    "primerDistribution": false,
     "tempRegionTm": 60,
     "upperBoundShortInsertions": 49.5,
     "colorTheme": "lightTheme",
@@ -85,6 +86,8 @@ let colorTheme = (getUserPreference("colorTheme")  !== null) ? getUserPreference
 /**
  * createPrimers
  */
+// Setting deciding wether to distribute insertion across both forward and reverse primers or whether to keep it on one.
+let primerDistribution = (getUserPreference("primerDistribution")  !== null) ? getUserPreference("primerDistribution") : defaultSetingsDict["primerDistribution"];
 // C, target temperature for the homologous region
 let homoRegionTm = (getUserPreference("homoRegionTm")  !== null) ? getUserPreference("homoRegionTm") : defaultSetingsDict["homoRegionTm"];
 // C, target temperature for the template region

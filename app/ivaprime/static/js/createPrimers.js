@@ -565,7 +565,6 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
     };
     
 
-
     // Make the primers
     let homoFwd = "";
     let tempFwd = "";
@@ -573,44 +572,141 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
     let tempRev = "";
     // If the sequence to be inserted has a melting temperature lower than 49 C, extende the primer backward
     if (get_tm(seqToInsert, primerConc, saltConc) < upperBoundShortInsertions) { // Mutation < 49 C, need homolog region
-        console.log("Mut under 49C")
-        // Forward template binding region, extend forward on the forward strand from the end position
-        tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
-        // Forward homologous region, extend backwards on the forward strand from the start position
-        homoFwd = primerExtension(replaceStartPos, "fwdStrand", "backward", homoRegionTm, 7, 1);
-        console.log("Short ins:", replaceStartPos, replaceEndPos)
-        
-        // There is no need for a homologous region in the reverse primer, the homologous region of the forward primer
-        // will bind to the template binding region of the reverse primer instead.
-        homoRev = "";
-        // Reverse template binding region, extend forward on the complementary strand from the start position
-        tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, 7, 1);
 
-        // Display primers in the sidebar
-        let primersDict = {}
-        primersDict["Forward Primer"] = {1: {"seq": homoFwd, "color": primerColorOrange},
-                                         2: {"seq": seqToInsert, "color": primerColorRed},
-                                         3: {"seq": tempFwd, "color": primerColorGreen}};
-        primersDict["Reverse Primer"] = {1: {"seq": tempRev, "color": primerColorGreen}};
-        
-        console.log("Primers Dict:", primersDict)
-        displayPrimers("Short " + operationType, primersDict);
+        if (primerDistribution === false) {
+            console.log("Short insertion: DONT DISTRIBUTE")
+            // Forward template binding region, extend forward on the forward strand from the end position
+            tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
+            // Reverse template binding region, extend forward on the complementary strand from the start position
+            tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, 7, 1);
+
+            // Forward homologous region, extend backwards on the forward strand from the start position
+            homoFwd = primerExtension(replaceStartPos, "fwdStrand", "backward", homoRegionTm, 7, 1);
+            // There is no need for a homologous region in the reverse primer, the homologous region of the forward primer
+            // will bind to the template binding region of the reverse primer instead.
+            homoRev = "";
+            
+            // Display primers in the sidebar
+            let primersDict = {}
+            primersDict["Forward Primer"] = {1: {"seq": homoFwd, "color": primerColorOrange},
+                                            2: {"seq": seqToInsert, "color": primerColorRed},
+                                            3: {"seq": tempFwd, "color": primerColorGreen}};
+            primersDict["Reverse Primer"] = {1: {"seq": tempRev, "color": primerColorGreen}};
+            
+            console.log("Primers Dict:", primersDict)
+            displayPrimers("Short " + operationType, primersDict);
+        } else if (primerDistribution === true) {
+            console.log("Short insertion: DISTRIBUTE")
+
+            let homoFragmentLength1 = 0;
+            let homoFragmentLength2 = 0;
+            let homoFwd1 = primerExtension(replaceStartPos, "fwdStrand", "backward", homoRegionTm, 7, 1);
+            let homoFwd2 = primerExtension(replaceEndPos, "fwdStrand", "forward", homoRegionTm, 7, 1);
+            let overlappingSeq = homoFwd1 + seqToInsert + homoFwd2;
+
+            let turn = "homoFwd1";
+            while (true) {
+                if (turn === "homoFwd1") {
+                    if (get_tm(overlappingSeq.slice(1), primerConc, saltConc) > homoRegionTm || Math.abs(homoRegionTm - get_tm(overlappingSeq.slice(1), primerConc, saltConc)) <= Math.abs(homoRegionTm - get_tm(overlappingSeq, primerConc, saltConc))) {
+                        overlappingSeq = overlappingSeq.slice(1);
+                        homoFragmentLength1++;
+                        turn = "homoFwd2";
+                    } else{break};
+                } else if (turn === "homoFwd2") {
+                    if (get_tm(overlappingSeq.slice(0, -1), primerConc, saltConc) > homoRegionTm || Math.abs(homoRegionTm - get_tm(overlappingSeq.slice(0, -1), primerConc, saltConc)) <= Math.abs(homoRegionTm - get_tm(overlappingSeq, primerConc, saltConc))) {
+                        overlappingSeq = overlappingSeq.slice(0, -1);
+                    homoFragmentLength2++;
+                    turn = "homoFwd1";
+                    } else{break};
+                };
+            };
+
+            if (get_tm(overlappingSeq.slice(1), primerConc, saltConc) > homoRegionTm || Math.abs(homoRegionTm - get_tm(overlappingSeq.slice(1), primerConc, saltConc)) <= Math.abs(homoRegionTm - get_tm(overlappingSeq, primerConc, saltConc))) {
+                overlappingSeq = overlappingSeq.slice(1);
+                homoFragmentLength1++;
+            };
+            if (get_tm(overlappingSeq.slice(0, -1), primerConc, saltConc) > homoRegionTm || Math.abs(homoRegionTm - get_tm(overlappingSeq.slice(0, -1), primerConc, saltConc)) <= Math.abs(homoRegionTm - get_tm(overlappingSeq, primerConc, saltConc))) {
+                overlappingSeq = overlappingSeq.slice(0, -1);
+                homoFragmentLength2++;
+            };
+
+            homoFwd1 = homoFwd1.slice(homoFragmentLength1, homoFwd1.length);
+            homoFwd2 = homoFwd2.slice(0, overlappingSeq.length - homoFragmentLength2 + 1);
+            tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1)
+
+            let homoRev1 = getComplementaryStrand(homoFwd2).split('').reverse().join('');
+            let homoRev2 = getComplementaryStrand(homoFwd1).split('').reverse().join('');
+            console.log("Short insertion", replaceStartPos, replaceStartPos + homoRev2.length)
+            tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, 7, 1)
+ 
+            // Display primers in the sidebar
+            let primersDict = {}
+            primersDict["Forward Primer"] = {1: {"seq": homoFwd1, "color": primerColorOrange},
+                                            2: {"seq": seqToInsert, "color": primerColorRed},
+                                            4: {"seq": tempFwd, "color": primerColorGreen}};
+            primersDict["Reverse Primer"] = {1: {"seq": homoRev1, "color": primerColorOrange},
+                                             2: {"seq": getComplementaryStrand(seqToInsert).split("").reverse().join(""), "color": primerColorRed},
+                                             4: {"seq": tempRev, "color": primerColorGreen}};
+            
+            console.log("Primers Dict:", primersDict)
+            displayPrimers("Short " + operationType, primersDict);
+        };
     } else { //  // Mutation > 49 C
-        console.log("Mut over 49C")
         // Forward template bindin region
         tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, 7, 1);
-        // Forward homologous region is just the sequence to be inserted
-        homoFwd = seqToInsert;
-        
-        // The reverse starts of as the complementary sequence to the sequence to be inserted
-        // but wil be shortened until the optimal target melting temperature is reached
-        homoRev = getComplementaryStrand(homoFwd).split('').reverse().join('');;
-        while (get_tm(homoRev, primerConc, saltConc) > homoRegionTm) {
-            homoRev = homoRev.slice(1);
-        }
-
         // Reverse template binding region
         tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, 7, 1);
+        
+        // Forward homologous region is just the sequence to be inserted
+        homoFwd = seqToInsert;
+        // The reverse starts of as the complementary sequence to the sequence to be inserted
+        // but wil be shortened until the optimal target melting temperature is reached
+        homoRev = getComplementaryStrand(homoFwd).split('').reverse().join('');
+
+        if (primerDistribution === false) {
+            while (true) {
+                if (get_tm(homoRev.slice(1), primerConc, saltConc) > homoRegionTm || Math.abs(homoRegionTm - get_tm(homoRev.slice(1), primerConc, saltConc)) <= Math.abs(homoRegionTm - get_tm(homoRev, primerConc, saltConc))) {
+                    homoRev = homoRev.slice(1);
+                } else {break};
+            };
+        } else if (primerDistribution === true) {
+            let homoFwdFragmentLength = 0;
+            let homoRevFragmentLength = 0;
+            let overlappingSeq = seqToInsert;
+            let turn = "fwd";
+            console.log("Long insertion", homoRegionTm)
+            while (true) {
+                if (turn === "fwd") {
+                    if (get_tm(overlappingSeq.slice(1), primerConc, saltConc) > homoRegionTm || Math.abs(homoRegionTm - get_tm(overlappingSeq.slice(1), primerConc, saltConc)) <= Math.abs(homoRegionTm - get_tm(overlappingSeq, primerConc, saltConc))) {
+                        console.log("Long insertion fwd", overlappingSeq, get_tm(overlappingSeq.slice(1), primerConc, saltConc))
+                        overlappingSeq = overlappingSeq.slice(1);
+                        homoFwdFragmentLength++;
+                        turn = "rev";
+                    } else{break};
+                } else if (turn === "rev") {
+                    if (get_tm(overlappingSeq.slice(0, -1), primerConc, saltConc) > homoRegionTm || Math.abs(homoRegionTm - get_tm(overlappingSeq.slice(0, -1), primerConc, saltConc)) <= Math.abs(homoRegionTm - get_tm(overlappingSeq, primerConc, saltConc))) {
+                        console.log("Long insertion rev", overlappingSeq, get_tm(overlappingSeq.slice(1), primerConc, saltConc))
+                        overlappingSeq = overlappingSeq.slice(0, -1);
+                        homoRevFragmentLength++;
+                        turn = "fwd";
+                    } else{break};
+                };
+            };
+
+            if (get_tm(overlappingSeq.slice(1), primerConc, saltConc) > homoRegionTm || Math.abs(homoRegionTm - get_tm(overlappingSeq.slice(1), primerConc, saltConc)) <= Math.abs(homoRegionTm - get_tm(overlappingSeq, primerConc, saltConc))) {
+                overlappingSeq = overlappingSeq.slice(1);
+                homoFwdFragmentLength++;
+            };
+            if (get_tm(overlappingSeq.slice(0, -1), primerConc, saltConc) > homoRegionTm || Math.abs(homoRegionTm - get_tm(overlappingSeq.slice(0, -1), primerConc, saltConc)) <= Math.abs(homoRegionTm - get_tm(overlappingSeq, primerConc, saltConc))) {
+                overlappingSeq = overlappingSeq.slice(0, -1);
+                homoRevFragmentLength++;
+            };
+            console.log("Long insertion", homoFwdFragmentLength, homoRevFragmentLength)
+            console.log("Long insertion", homoFwd, homoFwd.length, homoRev, homoRev.length)
+            homoFwd = homoFwd.slice(homoFwdFragmentLength, homoFwd.length);
+            homoRev = homoRev.slice(homoRevFragmentLength, homoRev.length);
+            console.log("Long insertion", homoFwd, homoFwd.length, homoRev, homoRev.length)
+        };
 
         // Display primers in the sidebar
         let primersDict = {}
