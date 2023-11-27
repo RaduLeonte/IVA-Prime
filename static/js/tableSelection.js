@@ -11,14 +11,8 @@ function addCellSelection(tableId, containerId, pNr) {
   const fileContentContainer = document.getElementById(containerId);
 
   // Select the current grid structure
-  let currGridStructure = null;
-  if (pNr === 1) {
-    selectionEndPos = basePosition;
-    currGridStructure = gridStructure;
-  } else {
-    selectionEndPos = basePosition2;
-    currGridStructure = gridStructure2;
-  };
+  let currGridStructure = (pNr === 1) ? gridStructure: gridStructure2;
+  selectionEndPos = (pNr === 1) ? basePosition: basePosition2;
 
    // Table doesn't exist yet, observe the DOM for changes
   if (!sequenceGridTable) {
@@ -260,35 +254,36 @@ function addCellSelection(tableId, containerId, pNr) {
    * Listens for CTRl+C and copies the currently selected text into the clipboard.
    */
   document.addEventListener('keydown', function (event) {
-    // Select selected text for the specified plasmid.
-    let currSelectedText = "";
-    if (pNr === 1) {
-      currSelectedText = selectedText;
-    } else {
-      currSelectedText = selectedText2;
-    };
     // Check if we've actually clicked ctrl+c and we have text selected
-    if ((event.ctrlKey || event.metaKey) && event.key === 'c' && currSelectedText !== '') {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'c' && (selectedText !== '' || selectedText2 !== "")) {
       event.preventDefault(); // Prevent default copy behavior
-
-      // Create a temporary textarea element to copy text to clipboard
-      const tempTextArea = document.createElement('textarea');
-      tempTextArea.value = currSelectedText;
-      document.body.appendChild(tempTextArea);
-      tempTextArea.select();
-
-      try {
-        // Execute the copy command
-        document.execCommand('copy');
-        console.log('Copied to clipboard:', currSelectedText);
-      } catch (err) {
-        console.error('Unable to copy to clipboard:', err);
-      } finally {
-        // Remove the temporary textarea element
-        document.body.removeChild(tempTextArea);
-      };
+      copySelectionToClipboard(pNr);
     };
   });
+};
+
+
+/**
+   * Copy selection to cliboard.
+   */
+function copySelectionToClipboard(pNr = 1) {
+  let currSelectedText = (pNr === 1) ? selectedText: selectedText2;
+  // Create a temporary textarea element to copy text to clipboard
+  const tempTextArea = document.createElement('textarea');
+  tempTextArea.value = currSelectedText;
+  document.body.appendChild(tempTextArea);
+  tempTextArea.select();
+
+  try {
+    // Execute the copy command
+    document.execCommand('copy');
+    console.log('Copied to clipboard:', currSelectedText);
+  } catch (err) {
+    console.error('Unable to copy to clipboard:', err);
+  } finally {
+    // Remove the temporary textarea element
+    document.body.removeChild(tempTextArea);
+  };
 };
 
 

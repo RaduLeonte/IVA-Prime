@@ -54,57 +54,74 @@ nav ul li a {
     position: relative;
   }
   
-  .strands p {
-    position: absolute;
-    top: 0;
-    left: 0;
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    line-height: 4.5em;
-    letter-spacing: 0.2em;
-    font-kerning: none;
-  }
-  
-  #complementary_strand {
-    background-color: transparent;
-    opacity: 0.5; /* Adjust the opacity as desired */
-    margin-top: 1.4em; /* Adjust the margin-top value to match line-height */
-  }
+.strands p {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  line-height: 4.5em;
+  letter-spacing: 0.2em;
+  font-kerning: none;
+}
+
+#complementary_strand {
+  background-color: transparent;
+  opacity: 0.5; /* Adjust the opacity as desired */
+  margin-top: 1.4em; /* Adjust the margin-top value to match line-height */
+}
 
 
-  .custom-context-menu {
-    position: absolute;
-    display: none;
-    background-color: #333;
-    color: #fff;
-    border: 1px solid #ccc;
-    padding: 8px;
-    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-    z-index: 9999;
-  }
-  
-  .custom-context-menu ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  
-  .custom-context-menu li {
-    padding: 6px 12px;
-    cursor: pointer;
-  }
-  
-  .custom-context-menu li:hover {
-    background-color: #555;
-  }
+.custom-context-menu {
+  position: absolute;
+  display: none;
+  background-color: #333;
+  color: #fff;
+  border: 1px solid #ccc;
+  padding: 8px;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+}
 
-  .custom-context-menu li.disabled {
-    color: gray;
-    cursor: not-allowed;
-    pointer-events: none; /* Disable click events on disabled items */
-    opacity: 0.5; /* Reduce opacity to visually indicate disabled state */
-  }
+.custom-context-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.custom-context-menu li {
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.custom-context-menu li:hover {
+  background-color: #555;
+}
+
+.custom-context-menu li.disabled {
+  color: gray;
+  cursor: not-allowed;
+  pointer-events: none; /* Disable click events on disabled items */
+  opacity: 0.5; /* Reduce opacity to visually indicate disabled state */
+}
+
+  /* New styles for div and h3 elements */
+.custom-context-menu .group {
+  margin-top: 10px; /* Adjust as needed */
+}
+
+.custom-context-menu h3 {
+  margin: 0;
+  padding: 5px;
+  background-color: #555; /* Adjust the background color to be less prominent */
+  color: #fff; /* Text color for the title */
+  font-size: 14px; /* Adjust the font size */
+}
+
+.custom-context-menu ul {
+  border-top: 1px solid #555; /* Divider between groups */
+}
   
   
 

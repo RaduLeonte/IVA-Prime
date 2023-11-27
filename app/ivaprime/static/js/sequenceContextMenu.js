@@ -8,14 +8,28 @@ document.addEventListener('DOMContentLoaded', function () {
   const contextMenu = document.createElement('div');
   contextMenu.className = 'custom-context-menu';
   contextMenu.innerHTML = `
-    <ul>
-      <li id="insertion">Insert here</li>
-      <li id="deletion" disabled>Delete selection</li>
-      <li id="mutation" disabled>Mutate/Replace selection</li>
-      <li id="subcloning" disabled>Subclone selection</li>
-      <li id="begin-translation" disabled>Begin translation here</li>
-      <li id="translate-selection" disabled>Translate selection</li>
-    </ul>
+    <div>
+      <h3>Selection</h3>
+      <ul>
+        <li id="copy-selection">Copy selection</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Operations</h3>
+      <ul>
+        <li id="insertion">Insert here</li>
+        <li id="deletion" disabled>Delete selection</li>
+        <li id="mutation" disabled>Mutate selection</li>
+        <li id="subcloning" disabled>Subclone selection</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Translation</h3>
+      <ul>
+        <li id="begin-translation" disabled>Begin translation here</li>
+        <li id="translate-selection" disabled>Translate selection</li>
+      </ul>
+    </div>
   `;
   document.body.appendChild(contextMenu);
   contextMenu.style.display = "none";
@@ -53,7 +67,10 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     // Item logic
-    if (menuItemId === 'insertion') {
+    if (menuItemId === 'copy-selection') {
+      console.log('Copyting selection.');
+      copySelectionToClipboard();
+    } else if (menuItemId === 'insertion') {
       console.log('Insertion selected');
       showPopupWindow("Insert here:"); // Show the popup window for insertions/replacements
     } else if (menuItemId === 'deletion') {
@@ -94,6 +111,7 @@ document.addEventListener('DOMContentLoaded', function () {
     insertionPosition = basePosition;
   
     // Select all the menu items
+    const copySelectionMenuItem = document.getElementById('copy-selection');
     const insertionMenuItem = document.getElementById('insertion');
     const deletionMenuItem = document.getElementById('deletion');
     const mutationMenuItem = document.getElementById('mutation');
@@ -103,6 +121,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Enable or disable menu items based on if the user is making a selection
     if (selectedText) {
+      copySelectionMenuItem.classList.remove("disabled")
       // If there is a selection, disable insertions and translations
       insertionMenuItem.classList.add('disabled');
       beginTranslationMenuItem.classList.add('disabled');
@@ -111,6 +130,7 @@ document.addEventListener('DOMContentLoaded', function () {
       mutationMenuItem.classList.remove('disabled');
       translateSelectionMenuItem.classList.remove('disabled');
     } else {
+      copySelectionMenuItem.classList.add("disabled")
       // If there is no selection, re-enable insertions and translations
       insertionMenuItem.classList.remove('disabled');
       beginTranslationMenuItem.classList.remove('disabled');
