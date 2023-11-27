@@ -38,8 +38,8 @@
                     <ul id="header-list"  class="horizontal-list">
                         <li id="import-btn"><a href="#" id="import-btn-a">Import File</a></li>
                         <li id="import-demo-btn"><a href="#">Try Demo File</a></li>
-                        <li id="import-second-btn" style="display: none;"><a href="#">Import Second Plasmid for Subcloning</a></li>
-                        <li id="import-second-demo-btn" style="display: none;"><a href="#" id="import-second-btn-a">Import Second Demo Plasmid for Subcloning</a></li>
+                        <li id="import-second-btn" style="display: none;"><a href="#">Import Subcloning Target</a></li>
+                        <li id="import-second-demo-btn" style="display: none;"><a href="#" id="import-second-btn-a">Import Demo Subcloning Target</a></li>
                         <li style="display: flex;align-items: center;text-align: center;"><a id="plasmid-file-name1" class="editable" style="display: none;"></a></li>
                         <li style="display: flex;align-items: center;text-align: center;"><a id="plasmid-file-name2" class="editable" style="display: none;"></a></li>
                     </ul>   
@@ -162,15 +162,87 @@
     
                 <!-- Info window -->
                 <div id="info-window" class="hideable-window" style="display: none;">
-                    <h2>Info:</h2>
-                    <p> IVA Primer is a tool that can automatically generate primers used in IVA cloning.</p>
-                    <p> Short guide: <p>
-                    <ol>
-                        <li>Click on "Import plasmid" to import either a .gb or .dna file.</li>
-                        <li>Right click to make insertions or select regions to delete or replace.</li>
-                        <li>Import a second plasmid to serve as a destination for subcloning.</li>
-                        <li>Primers for the modifications will appear in the sidebar.</li>
-                    </ol>
+                    <h1>IVA Prime</h1>
+                    <p>This web application allows you to import plasmid files (.gb and .dna), and then easily generate primers for
+                        IVA Cloning by editing the DNA sequence as you wish. The primer design technique is originally based on the work
+                        by García-Nafría et al.
+                    </p>
+                    <h3>Links:</h3>
+                    <ul>
+                        <li>Original paper by García-Nafría et al.: <a href="https://www.nature.com/articles/srep27459">DOI: 10.1038/srep27459</a></li>
+                        <li>Source code: <a href="https://github.com/RaduLeonte/IVA-Prime">GitHub Repository</a></li>
+                    </ul>
+                    <h2>Guides</h2>
+                        <h3>Importing</h3>
+                        <ol>
+                            <li><p>Click on <span id="import-btn"><a class="info-window-btn" href="#">Import File</a></span> to import either a
+                                .gb or .dna file. (Or click <span id="import-demo-btn"><a class="info-window-btn" href="#">Try Demo File</a></span> to import an empty pET-28a(+)
+                                vector.)</p>
+                            </li>
+                            <li>Navigate using the sequence grid on the right or by clicking on a specific feature in the sidebar.</li>
+                            <li>Import a second plasmid by clicking <span id="import-second-btn"><a class="info-window-btn" href="#">Import Subcloning Target</a></span>. The second plasmid only serves
+                                as a subcloning <i>target</i> and cannot be edited like the first plasmid.
+                            </li>
+                        </ol>
+
+                        <h3>Insertions</h3>
+                        <ol>
+                            <li>Left click at the position you would like to insert a sequence.
+                                <img src="{% static 'insertion position selection.gif' %}">
+                            </li>
+                            <li>Right-click to open the context menu and select <span class="info-window-menu-btn">Insert here</span>.
+                                <img src="{% static 'insertion menu item selection.gif' %}">
+                            </li>
+                            <li>Enter a DNA or amino acid sequence to insert.</li>
+                            <li>Select a target organism for codon optimisation (Escherichia coli, human, yeast etc.).</li>
+                            <li>Press <button id="create-primers-button" class="info-window-create-primers-btn">Create Primers</button>.</li>
+                        </ol>
+
+                        <h3>Deletions</h3>
+                        <ol>
+                            <li>Select a region to be deleted.
+                                <img src="{% static 'deletion selection.gif' %}" alt="Selecting region to be deleted.">
+                            </li>
+                            <li>Right-click to open the context menu and select <span class="info-window-menu-btn">Delete selection</span>.
+                                <img src="{% static 'deletion menu item selection.gif' %}">
+                            </li>
+                        </ol>
+
+                        <h3>Mutations</h3>
+                        <ol>
+                            <li>Select a region to be mutated.
+                                <img src="{% static 'mutation selection.gif' %}">
+                            </li>
+                            <li>Right-click to open the context menu and select <span class="info-window-menu-btn">Mutate selection</span>.
+                                <img src="{% static 'mutation menu item selection.gif' %}">
+                            </li>
+                            <li>Enter a DNA or amino acid sequence to replace the selection with.</li>
+                            <li>Select a target organism for codon optimisation (Escherichia coli, human, yeast etc.).</li>
+                            <li>Press <button id="create-primers-button" class="info-window-create-primers-btn">Create Primers</button>.</li>
+                        </ol>
+
+                        <h3>Subcloning</h3>
+                        <ol>
+                            <li>Import a second plasmid to serve as the subcloning target by clicking <span id="import-second-btn"><a class="info-window-btn" href="#">Import Subcloning Target</a></span>.</li>
+                            <li>In the subcloning origin plasmid, select a region to be subcloned.
+                                <img src="{% static 'subcloning selection.gif' %}">
+                            </li>
+                            <li>Right-click to open the context menu and select <span class="info-window-menu-btn">Subclone selection</span>.
+                                <img src="{% static 'subcloning menu item selection.gif' %}">
+                            </li>
+                            <li>In the subcloning target plasmid, press left-click at the position you would like to subclone into
+                                <img src="{% static 'subcloning pure insertion.gif' %}">
+                                <i>or</i> select a region to be replaced by the subcloned sequence.
+                                <img src="{% static 'subcloning replacement.gif' %}"></li>
+                        </ol>
+
+                        <h3>Saving the primers and modified plasmid to file</h3>
+                        <ul>
+                            <li>Click <button id="create-primers-button" class="info-window-create-primers-btn">Export Primers</button>
+                                in the sidebar to save the primers as a text document or as a table.</li>
+                            <li>Click <button id="create-primers-button" class="info-window-create-primers-btn">Save File</button> 
+                                to save the modified plasmid file as either a .gb or a .dna file.</li>
+                        </ul>
                 </div>
             </div>
             
