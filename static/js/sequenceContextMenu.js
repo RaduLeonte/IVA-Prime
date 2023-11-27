@@ -8,25 +8,27 @@ document.addEventListener('DOMContentLoaded', function () {
   const contextMenu = document.createElement('div');
   contextMenu.className = 'custom-context-menu';
   contextMenu.innerHTML = `
-    <div>
-      <h3>Selection</h3>
-      <ul>
-        <li id="copy-selection">Copy selection</li>
-      </ul>
-    </div>
-    <div>
-      <h3>Operations</h3>
+  <div>
+      <h3>IVA Cloning Operations</h3>
       <ul>
         <li id="insertion">Insert here</li>
         <li id="deletion" disabled>Delete selection</li>
         <li id="mutation" disabled>Mutate selection</li>
         <li id="subcloning" disabled>Subclone selection</li>
       </ul>
+    </div>  
+  <div>
+      <h3>Copy</h3>
+      <ul>
+        <li id="copy-selection">Copy selection</li>
+        <li id="copy-complement">Copy complement of selection</li>
+        <li id="copy-rev-complement">Copy reverse complement of selection</li>
+      </ul>
     </div>
     <div>
       <h3>Translation</h3>
       <ul>
-        <li id="begin-translation" disabled>Begin translation here</li>
+        <li id="begin-translation" disabled>Begin translation at first ATG</li>
         <li id="translate-selection" disabled>Translate selection</li>
       </ul>
     </div>
@@ -69,7 +71,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // Item logic
     if (menuItemId === 'copy-selection') {
       console.log('Copyting selection.');
-      copySelectionToClipboard();
+      copySelectionToClipboard(1, );
+    } else if (menuItemId === 'copy-complement') {
+      console.log('Copyting selection.');
+      copySelectionToClipboard(1, "complement");
+    } else if (menuItemId === 'copy-rev-complement') {
+      console.log('Copyting selection.');
+      copySelectionToClipboard(1, "revcomplement");
     } else if (menuItemId === 'insertion') {
       console.log('Insertion selected');
       showPopupWindow("Insert here:"); // Show the popup window for insertions/replacements
@@ -112,16 +120,22 @@ document.addEventListener('DOMContentLoaded', function () {
   
     // Select all the menu items
     const copySelectionMenuItem = document.getElementById('copy-selection');
+    const copyComplementSelectionMenuItem = document.getElementById('copy-complement');
+    const copyRevComplementSelectionMenuItem = document.getElementById('copy-rev-complement');
+
     const insertionMenuItem = document.getElementById('insertion');
     const deletionMenuItem = document.getElementById('deletion');
     const mutationMenuItem = document.getElementById('mutation');
     const subcloningMenuItem = document.getElementById('subcloning');
+
     const beginTranslationMenuItem = document.getElementById('begin-translation');
     const translateSelectionMenuItem = document.getElementById('translate-selection');
 
     // Enable or disable menu items based on if the user is making a selection
     if (selectedText) {
-      copySelectionMenuItem.classList.remove("disabled")
+      copySelectionMenuItem.classList.remove("disabled");
+      copyComplementSelectionMenuItem.classList.remove("disabled");
+      copyRevComplementSelectionMenuItem.classList.remove("disabled");
       // If there is a selection, disable insertions and translations
       insertionMenuItem.classList.add('disabled');
       beginTranslationMenuItem.classList.add('disabled');
@@ -130,7 +144,9 @@ document.addEventListener('DOMContentLoaded', function () {
       mutationMenuItem.classList.remove('disabled');
       translateSelectionMenuItem.classList.remove('disabled');
     } else {
-      copySelectionMenuItem.classList.add("disabled")
+      copySelectionMenuItem.classList.add("disabled");
+      copyComplementSelectionMenuItem.classList.add("disabled");
+      copyRevComplementSelectionMenuItem.classList.add("disabled");
       // If there is no selection, re-enable insertions and translations
       insertionMenuItem.classList.remove('disabled');
       beginTranslationMenuItem.classList.remove('disabled');

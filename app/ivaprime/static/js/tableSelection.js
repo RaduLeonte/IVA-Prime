@@ -266,14 +266,19 @@ function addCellSelection(tableId, containerId, pNr) {
 /**
    * Copy selection to cliboard.
    */
-function copySelectionToClipboard(pNr = 1) {
+function copySelectionToClipboard(pNr = 1, special = null) {
   let currSelectedText = (pNr === 1) ? selectedText: selectedText2;
+  if (special === "complement") {
+    currSelectedText = getComplementaryStrand(currSelectedText);
+  } else if (special === "revcomplement") {
+    currSelectedText = getComplementaryStrand(currSelectedText).split("").reverse().join("");
+  };
+  
   // Create a temporary textarea element to copy text to clipboard
   const tempTextArea = document.createElement('textarea');
   tempTextArea.value = currSelectedText;
   document.body.appendChild(tempTextArea);
   tempTextArea.select();
-
   try {
     // Execute the copy command
     document.execCommand('copy');
