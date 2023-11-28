@@ -68,7 +68,6 @@ console.log("Settings:", JSON.stringify(JSON.parse(getCookieValue('userPreferenc
 const defaultSetingsDict = {
     "primerConc": 100,
     "meltingTempAlgorithmChoice": "nnSantaLucia",
-    "applyingSaltCorrection": true,
     "saltConc": 0.5,
     "saltCorrectionEquation": "SchildkrautLifson",
     "applyingDMSOCorrection": false,

@@ -67,11 +67,9 @@ console.log("Settings:", JSON.stringify(JSON.parse(getCookieValue('userPreferenc
  */
 const defaultSetingsDict = {
     "primerConc": 100,
-    "meltingTempAlgorithmChoice": "nnSantaLucia",
-    "applyingSaltCorrection": true,
-    "saltConc": 0.5,
+    "meltingTempAlgorithmChoice": "oligoCalc",
+    "saltConc": 0,
     "saltCorrectionEquation": "SchildkrautLifson",
-    "applyingDMSOCorrection": false,
     "dmsoConc": 0,
     "homoRegionMinLength": 15,
     "homoRegionTm": 49.5,
@@ -89,6 +87,7 @@ let colorTheme = (getUserPreference("colorTheme")  !== null) ? getUserPreference
  */
 // Setting deciding wether to distribute insertion across both forward and reverse primers or whether to keep it on one.
 let primerDistribution = (getUserPreference("primerDistribution")  !== null) ? getUserPreference("primerDistribution") : defaultSetingsDict["primerDistribution"];
+console.log("primerDis", primerDistribution )
 // Minimum length for homologous region
 let homoRegionMinLength = (getUserPreference("homoRegionMinLength")  !== null) ? getUserPreference("homoRegionMinLength") : defaultSetingsDict["homoRegionMinLength"];
 // C, target temperature for the homologous region
@@ -122,15 +121,11 @@ let primerConc = (getUserPreference("primerConc") !== null) ? getUserPreference(
 // Melting temperature calculator algorithm
 let meltingTempAlgorithmChoice = (getUserPreference("meltingTempAlgorithmChoice") !== null) ? getUserPreference("meltingTempAlgorithmChoice") : defaultSetingsDict["meltingTempAlgorithmChoice"];
 
-// Applying salt correction flag
-let applyingSaltCorrection =  (getUserPreference("applyingSaltCorrection") !== null) ? getUserPreference("applyingSaltCorrection") : defaultSetingsDict["applyingSaltCorrection"];
 // M, salt concentration for melting temperatures
 let saltConc = (getUserPreference("saltConc") !== null) ? getUserPreference("saltConc") : 0.5;
 // Salt correction equation choice
 let saltCorrectionEquation = (getUserPreference("saltCorrectionEquation") !== null) ? getUserPreference("saltCorrectionEquation") : defaultSetingsDict["saltCorrectionEquation"];
 
-// Applying DMSO flag
-let applyingDMSOCorrection =  (getUserPreference("applyingDMSOCorrection") !== null) ? getUserPreference("applyingDMSOCorrection") :  defaultSetingsDict["applyingDMSOCorrection"];
 // M, DMSO concentration for melting temperatures
 let dmsoConc = (getUserPreference("dmsoConc") !== null) ? getUserPreference("dmsoConc") : defaultSetingsDict["dmsoConc"];
 

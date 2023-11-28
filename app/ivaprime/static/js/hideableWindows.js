@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
             tmSpan.textContent = "--";
         };
         infoSpan.textContent = "(" + meltingTempAlgorithmChoice + ", " + Math.round(primerConc) + " nM";
-        if (applyingSaltCorrection) {infoSpan.textContent += ", " + saltCorrectionEquation + ", " + saltConc + " M";};
+        if (saltConc && saltConc !== NaN && saltConc !== 0) {infoSpan.textContent += ", " + saltCorrectionEquation + ", " + saltConc + " M";};
         infoSpan.textContent += ")";
     };
 
@@ -90,11 +90,12 @@ document.addEventListener('DOMContentLoaded', function () {
             // Check if the variable exists
             if (eval(variableName) !== undefined) {
                 // Set the element's value to the variable's value
-                console.log(element, element.tagName, element.type)
+                //console.log(element, element.tagName, element.type)
                 if (element.type === "text") {
                     console.log(variableName + " = parseFloat(document.getElementById(\"" + variableName + "SettingsElement\"" +").value)")
                     eval(variableName + " = parseFloat(document.getElementById(\"" + variableName + "SettingsElement\"" + ").value)");
                 } else if (element.tagName === "SELECT") {
+                    console.log("SELECT", element)
                     eval(variableName + " = document.getElementById(\"" + variableName + "SettingsElement\"" + ").value");
                 } else if (element.type === "checkbox") {
                     eval(variableName + " = document.getElementById(\"" + variableName + "SettingsElement\"" + ").checked");
@@ -115,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function () {
             };
         });
         updateMeltingTemperatureAlgorithmImageSource();
-        updateSaltCorrectionImageSource
+        updateSaltCorrectionImageSource();
         console.log("Updating settings:", JSON.stringify(JSON.parse(getCookieValue('userPreferences') || '{}'), null, 2));
     };
 
@@ -136,15 +137,17 @@ document.addEventListener('DOMContentLoaded', function () {
         hideAllHideableWindows();
     });
 
-    populateSettings();
+    updateGlobalVariables();
 
     /**
      * Melting temperature calculator algorithm listener
      */
     const meltingTempAlgorithmSelect = document.getElementById("meltingTempAlgorithmChoiceSettingsElement");
-    const meltingTempAlgorithmEquationImage = document.getElementById("meltingTempAlgorithmEquationImage");
 
     function updateMeltingTemperatureAlgorithmImageSource() {
+        const meltingTempAlgorithmSelect = document.getElementById("meltingTempAlgorithmChoiceSettingsElement");
+        const meltingTempAlgorithmEquationImage = document.getElementById("meltingTempAlgorithmEquationImage");
+
         const newPath = "/static/" + meltingTempAlgorithmSelect.value + "%20equation.png"
         console.log("Change", meltingTempAlgorithmSelect.value, newPath)
         meltingTempAlgorithmEquationImage.src = newPath;
@@ -158,9 +161,11 @@ document.addEventListener('DOMContentLoaded', function () {
      * Salt correction equation listener
      */
     const saltCorrectionSelect = document.getElementById("saltCorrectionEquationSettingsElement");
-    const saltCorrectionEquationImage = document.getElementById("saltCorrectionEquationImage");
 
     function updateSaltCorrectionImageSource() {
+        const saltCorrectionSelect = document.getElementById("saltCorrectionEquationSettingsElement");
+        const saltCorrectionEquationImage = document.getElementById("saltCorrectionEquationImage");
+
         const newPath = "/static/" + saltCorrectionSelect.value + "%20equation.png"
         console.log("Change", saltCorrectionSelect.value, newPath)
         saltCorrectionEquationImage.src = newPath;
@@ -212,6 +217,34 @@ function hideAllHideableWindows() {
     const popupWindows = document.querySelectorAll('.hideable-window');
     for (const popupWindow of popupWindows) {
         popupWindow.style.display = 'none';
+    };
+};
+
+
+/**
+ * Slide settings tab
+ */
+function slideTab(e, direction) {
+    console.log(e)
+    console.log(e.getAttribute("disabled"))
+    if (e.getAttribute("disabled") !== "true") {
+        const tabsList = document.querySelectorAll(".tab");
+        let translate = (direction === "advanced") ? -100 : 100;
+        console.log("Sliding", translate);
+        console.log(tabsList);
+        tabsList.forEach((tabElement) => {
+            const matches = tabElement.style.transform.match(/translateX\(([^)]+)\)/);
+            const currTransformValue = matches ? parseFloat(matches[1]) : 0;
+            tabElement.style.transform = `translateX(${currTransformValue + translate}%)`;
+            tabElement.style.position = (tabElement.style.position !== "absolute") ? "absolute": "static";
+        });
+        const tabBtns = document.querySelectorAll(".settings-tab-button");
+        tabBtns.forEach((tabBtn) => {
+            tabBtn.setAttribute("disabled", "false");
+            tabBtn.classList.remove("settings-tab-button-highlighted");
+        });
+        e.setAttribute("disabled", "true");
+        e.classList.add("settings-tab-button-highlighted");
     };
 };
 

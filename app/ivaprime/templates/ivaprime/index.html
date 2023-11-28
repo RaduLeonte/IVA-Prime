@@ -56,7 +56,7 @@
             <div>
                 <!-- TM Calculator window -->
                 <div id="tm-calc-window" class="hideable-window" style="display: none;">
-                    <h2>Calculate melting temperatures:</h2>
+                    <h1>Calculate melting temperatures</h1>
                     <div>
                         <label for="tm-calc-primer-input1">Primer 1 TM = <span id="tm-calc-primer-tm1">--</span> °C <span id="tm-calc-info-span1" style="display: block;"></span></label>
                         <input type="text" id="tm-calc-primer-input1"  class="popup-window-input">
@@ -68,100 +68,115 @@
                 </div>
                 <!-- Settings window -->
                 <div id="settings-window" class="hideable-window" style="display: none;">
-                    <h2>Settings:</h2>
-                    <div class="settings-group">
-                        <h3>Template binding region melting temperature parameters:</h3>
-    
-                        <!-- Algorithm -->
-                        <h4>Calculator</h4>
-                        <div class="settings-window-row">
-                            <label for="primerConcSettingsElement">Primer concentration [nM]:</label>
-                            <input type="text" id="primerConcSettingsElement" name="primerConcSettingsElement">
-                        </div>
-                        <div class="settings-window-row">
-                            <label for="meltingTempAlgorithmChoiceSettingsElement">Calculator Algorithm:</label>
-                            <select id="meltingTempAlgorithmChoiceSettingsElement" name="meltingTempAlgorithmChoiceSettingsElement">
-                                <option value="nnSantaLucia">Nearest-neighbor (SantaLucia)</option>
-                                <option value="oligoCalc">Basic (Oligo Calc)</option>
-                            </select>
-                        </div>
-                        <img id ="meltingTempAlgorithmEquationImage" src="{% static 'nnSantaLucia equation.png' %}" alt="Melting temperature equation." style="max-width: 100%; height: 50px;">
-    
-                        <!-- Salt correction -->
-                        <h4>Salt Correction</h4>     
-                        <div class="settings-window-row">
-                            <label for="applyingSaltCorrectionSettingsElement">Apply Salt correction:</label>
-                            <input type="checkbox" id="applyingSaltCorrectionSettingsElement" name="applyingSaltCorrectionSettingsElement" checked="true">
-                        </div>         
-                        <div class="settings-window-row">
-                            <label for="saltConcSettingsElement">Salt concentration [M]:</label>
-                            <input type="text" id="saltConcSettingsElement" name="saltConcSettingsElement">
-                        </div>
-                        <div class="settings-window-row">
-                            <label for="saltCorrectionEquationSettingsElement">Salt correction equation:</label>
-                            <select id="saltCorrectionEquationSettingsElement" name="saltCorrectionEquationSettingsElement">
-                                <option value="SchildkrautLifson">Schildkraut-Lifson</option>
-                                <option value="Owczarzy">Owczarzy</option>
-                            </select>
-                        </div>
-                        <img id ="saltCorrectionEquationImage" src="{% static 'SchildkrautLifson equation.png' %}" alt="Salt correction equation." style="max-width: 100%; height: 30px;">
-                        
-                        <!-- DMSO correction -->
-                        <h4>DMSO Correction</h4> 
-                        <div class="settings-window-row">
-                            <label for="applyingDMSOCorrectionSettingsElement">Apply DMSO correction:</label>
-                            <input type="checkbox" id="applyingDMSOCorrectionSettingsElement" name="applyingDMSOCorrectionSettingsElement" checked="false">
-                        </div>
-                        <div class="settings-window-row">
-                            <label for="dmsoConcSettingsElement">DMSO concentration [M]:</label>
-                            <input type="text" id="dmsoConcSettingsElement" name="dmsoConcSettingsElement">
-                        </div>
-                        <img id ="dmsoCorrectionEquationImage" src="{% static 'DMSO equation.png' %}" alt="DMSO correction equation." style="max-width: 100%; height: 25px;">
+                    <div class="tabs-btns-list">
+                        <ul class="horizontal-list">
+                            <li><a class="standard-btn-a settings-tab-button settings-tab-button-highlighted" onClick="slideTab(this, 'basic')" href=# disabled="true">Basic</a></li>
+                            <li><a class="standard-btn-a settings-tab-button" onClick="slideTab(this, 'advanced')" href=# disabled="false">Advanced</a></li>
+                        </ul>
+                        <ul class="horizontal-list horizontal-list-right">
+                            <li><a id="reset-default-settings-btn" class="standard-btn-a reset-default-settings-btn" href=#>Reset Default Settings</a></li>
+                            <li><a id="save-settings-btn" class="standard-btn-a save-settings-btn" href=#>Save Settings</a></li>
+                        </ul>
                     </div>
-    
-                    <div class="settings-group">
-                        <h3>Primer generation settings:</h3>
-                        <div class="settings-window-row">
-                            <label for="primerDistributionSettingsElement">Distribute insertion across primer pairs:</label>
-                            <input type="checkbox" id="primerDistributionSettingsElement" name="primerDistributionSettingsElement" checked="false">
+                    <div class="tabs">
+
+                        <!-- Basic settings -->
+                        <div class="tab basic-settings">
+                            <h1> Basic Settings</h1>
+
+                            <div class="settings-group">
+                                <h3>Primer generation settings:</h3>
+                                <div class="settings-window-row">
+                                    <label for="primerDistributionSettingsElement">Distribute insertion across primer pairs:</label>
+                                    <input type="checkbox" id="primerDistributionSettingsElement" name="primerDistributionSettingsElement" checked="false">
+                                </div>
+                            </div>
+
+                            <div class="settings-group">
+                                <h3>Appearance settings:</h3>
+
+                                <div class="settings-window-row">
+                                    <label for="colorThemeSettingsElement">Theme:</label>
+                                    <select id="colorThemeSettingsElement" name="colorThemeSettingsElement">
+                                        <option value="lightTheme">Light</option>
+                                        <option value="darkTheme" disabled>Dark</option>
+                                    </select>
+                                </div>
+            
+                                <div class="settings-window-row">
+                                    <label for="gridWidthSettingsElement">Grid size (bases per row):</label>
+                                    <input type="number" id="gridWidthSettingsElement" name="gridWidthSettingsElement" min="10" max="9999" value="60">
+                                </div>
+                            </div>
                         </div>
-                        <div class="settings-window-row">
-                            <label for="homoRegionMinLengthSettingsElement">Homologous region minimum length [bp]:</label>
-                            <input type="text" id="homoRegionMinLengthSettingsElement" name="homoRegionMinLengthSettingsElement">
-                        </div>
-                        <div class="settings-window-row">
-                            <label for="homoRegionTmSettingsElement">Homologous region target TM [°C]:</label>
-                            <input type="text" id="homoRegionTmSettingsElement" name="homoRegionTmSettingsElement">
-                        </div>
-                        <div class="settings-window-row">
-                            <label for="tempRegionTmSettingsElement">Template binding region target TM [°C]:</label>
-                            <input type="text" id="tempRegionTmSettingsElement" name="tempRegionTmSettingsElement">
-                        </div>
-                        <div class="settings-window-row">
-                            <label for="upperBoundShortInsertionsSettingsElement">Upper bound short insertions TM [°C]:</label>
-                            <input type="text" id="upperBoundShortInsertionsSettingsElement" name="upperBoundShortInsertionsSettingsElement">
+
+                        <!-- Advanced settings -->
+                        <div class="tab advanced-settings" style="position: absolute; transform: translateX(100%);">   
+                            <h1>Advanced Settings</h1>
+
+                            <div class="settings-group">
+                                <h3>Template binding region melting temperature parameters:</h3>
+            
+                                <!-- Algorithm -->
+                                <h4>Calculator</h4>
+                                <div class="settings-window-row">
+                                    <label for="primerConcSettingsElement">Primer concentration [nM]:</label>
+                                    <input type="text" id="primerConcSettingsElement" name="primerConcSettingsElement">
+                                </div>
+                                <div class="settings-window-row">
+                                    <label for="meltingTempAlgorithmChoiceSettingsElement">Calculator Algorithm:</label>
+                                    <select id="meltingTempAlgorithmChoiceSettingsElement" name="meltingTempAlgorithmChoiceSettingsElement">
+                                        <option value="nnSantaLucia">Nearest-neighbor (SantaLucia)</option>
+                                        <option value="oligoCalc">Basic (Oligo Calc)</option>
+                                    </select>
+                                </div>
+                                <img id ="meltingTempAlgorithmEquationImage" src="{% static 'nnSantaLucia equation.png' %}" alt="Melting temperature equation." style="max-width: 100%; height: 50px;">
+            
+                                <!-- Salt correction -->
+                                <h4>Salt Correction</h4>            
+                                <div class="settings-window-row">
+                                    <label for="saltConcSettingsElement">Salt concentration [M]:</label>
+                                    <input type="text" id="saltConcSettingsElement" name="saltConcSettingsElement">
+                                </div>
+                                <div class="settings-window-row">
+                                    <label for="saltCorrectionEquationSettingsElement">Salt correction equation:</label>
+                                    <select id="saltCorrectionEquationSettingsElement" name="saltCorrectionEquationSettingsElement">
+                                        <option value="SchildkrautLifson">Schildkraut-Lifson</option>
+                                        <option value="Owczarzy">Owczarzy</option>
+                                    </select>
+                                </div>
+                                <img id ="saltCorrectionEquationImage" src="{% static 'SchildkrautLifson equation.png' %}" alt="Salt correction equation." style="max-width: 100%; height: 30px;">
+                                
+                                <!-- DMSO correction -->
+                                <h4>DMSO Correction</h4> 
+                                <div class="settings-window-row">
+                                    <label for="dmsoConcSettingsElement">DMSO concentration [M]:</label>
+                                    <input type="text" id="dmsoConcSettingsElement" name="dmsoConcSettingsElement">
+                                </div>
+                                <img id ="dmsoCorrectionEquationImage" src="{% static 'DMSO equation.png' %}" alt="DMSO correction equation." style="max-width: 100%; height: 25px;">
+                            </div>
+            
+                            <div class="settings-group">
+                                <h3>Primer generation settings:</h3>
+                                <div class="settings-window-row">
+                                    <label for="homoRegionMinLengthSettingsElement">Homologous region minimum length [bp]:</label>
+                                    <input type="text" id="homoRegionMinLengthSettingsElement" name="homoRegionMinLengthSettingsElement">
+                                </div>
+                                <div class="settings-window-row">
+                                    <label for="homoRegionTmSettingsElement">Homologous region target TM [°C]:</label>
+                                    <input type="text" id="homoRegionTmSettingsElement" name="homoRegionTmSettingsElement">
+                                </div>
+                                <div class="settings-window-row">
+                                    <label for="tempRegionTmSettingsElement">Template binding region target TM [°C]:</label>
+                                    <input type="text" id="tempRegionTmSettingsElement" name="tempRegionTmSettingsElement">
+                                </div>
+                                <div class="settings-window-row">
+                                    <label for="upperBoundShortInsertionsSettingsElement">Upper bound short insertions TM [°C]:</label>
+                                    <input type="text" id="upperBoundShortInsertionsSettingsElement" name="upperBoundShortInsertionsSettingsElement">
+                                </div>
+                            </div>
                         </div>
                     </div>
-    
-                    <div class="settings-group">
-                        <h3>Appearance settings:</h3>
-    
-                        <div class="settings-window-row">
-                            <label for="colorThemeSettingsElement">Theme:</label>
-                            <select id="colorThemeSettingsElement" name="colorThemeSettingsElement">
-                                <option value="lightTheme">Light</option>
-                                <option value="darkTheme" disabled>Dark</option>
-                            </select>
-                        </div>
-    
-                        <div class="settings-window-row">
-                            <label for="gridWidthSettingsElement">Grid size (bases per row):</label>
-                            <input type="number" id="gridWidthSettingsElement" name="gridWidthSettingsElement" min="10" max="9999" value="60">
-                        </div>
-                    </div>
-                    
-                    <a id="reset-default-settings-btn" class="standard-btn-a reset-default-settings-btn" href=#>Reset Default Settings</a>
-                    <a id="save-settings-btn" class="standard-btn-a save-settings-btn" href=#>Save Settings</a>
                 </div>
     
                 <!-- Info window -->

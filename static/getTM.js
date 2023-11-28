@@ -9,14 +9,13 @@ function get_tm(primer_sequence, c, m) {
     // Convert from nM to M
     c = c / 1E9
     // Calculate the melting temperature
-    console.log("getTM", meltingTempAlgorithmChoice, saltCorrectionEquation, applyingSaltCorrection, saltConc, applyingDMSOCorrection, dmsoConc)
     const tm = meltingTemperatureAlgorithmDict[meltingTempAlgorithmChoice](primer_sequence, c); 
     
     // Add a salt correction
-    let tm_corr = (applyingSaltCorrection && saltConc &&  saltConc !== NaN && saltConc !== 0) ? saltCorrectionEquationDict[saltCorrectionEquation](tm, primer_sequence, m): tm;
+    let tm_corr = (saltConc &&  saltConc !== NaN && saltConc !== 0) ? saltCorrectionEquationDict[saltCorrectionEquation](tm, primer_sequence, m): tm;
 
     // Add DMSO correction
-    tm_corr = (applyingDMSOCorrection && dmsoConc && dmsoConc !== NaN) ? tm_corr - 0.6*dmsoConc: tm_corr;
+    tm_corr = (dmsoConc && dmsoConc !== NaN && dmsoConc !== 0) ? tm_corr - 0.6*dmsoConc: tm_corr;
 
     return tm_corr;
 };

@@ -624,6 +624,12 @@ nav ul li a {
   max-width: 625px;
   max-height: 80vh;
   overflow-y: scroll;
+  overflow-x: hidden;
+  transition: all 0.7s;
+}
+
+.hideable-window h1 {
+  margin-bottom: 0px;
 }
 
 .hideable-window h4 {
@@ -648,9 +654,32 @@ nav ul li a {
   max-width: 50%;
 }
 
+.tabs{
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tab{
+  width: 100%;
+  height: fit-content;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.7s;
+}
+
+.tabs-btns-list{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.horizontal-list-right{
+  margin-left: auto;
+}
+
 .standard-btn-a {
   border-radius: 5px;
-  display: block;
   text-align: center;
   padding: 10px 20px;
   text-decoration: none;
@@ -673,6 +702,23 @@ nav ul li a {
 
 .reset-default-settings-btn:hover{
   background-color: #9d9d9d;
+}
+
+.settings-tab-button-highlighted{
+  background-color: #4c93af !important;
+}
+
+.settings-tab-button-highlighted:hover{
+  background-color: #3e7991 !important;
+}
+
+.settings-tab-button{
+  background-color: #84a7b4;
+  color: white;
+}
+
+.settings-tab-button:hover{
+  background-color: #688591;
 }
 
 .forward-strand-base {
