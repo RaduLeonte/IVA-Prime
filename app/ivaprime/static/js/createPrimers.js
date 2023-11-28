@@ -1272,12 +1272,13 @@ function getComplementaryStrand(inputSequence) {
         'A': 'T',
         'T': 'A',
         'G': 'C',
-        'C': 'G'
+        'C': 'G',
+        'N': 'N'
     };
 
     // Convert to uppercase, make into list, map to complementary base, then turn back into string
     const complementaryStrand = inputSequence.toUpperCase()
-        .replace(/[^ACTG]+/g, '')
+        .replace(/[^ACTNG]+/g, '')
         .split('')
         .map(nucleotide => nucleotideComplements[nucleotide])
         .join('');

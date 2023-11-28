@@ -431,19 +431,19 @@ function parseDNAFile(fileContent, pNr) {
         if (byteArray[i + j] !== subarray[j]) {
           match = false;
           break;
-        }
-      }
+        };
+      };
       if (match) {
         return i;
-      }
-    }
+      };
+    };
     return -1;
-  }
+  };
 
   // Extract sequence data
   // Sequence data USUALLY ends in byte array 02 00 00, so find that and keep only stuff before it
   let sequenceBA = fileBA.slice(25, findSubarrayIndex(fileBA, [2, 0, 0]));
-  let currSequence = new TextDecoder().decode(sequenceBA).toUpperCase().replace(/[^TACG]/gi, ''); // Convert to string and only keep ACTG
+  let currSequence = new TextDecoder().decode(sequenceBA).toUpperCase().replace(/[^TACGN]/gi, ''); // Convert to string and only keep ACTG
   let currComplementarySequence = getComplementaryStrand(currSequence); // Create complementary strand
 
   // Extract features
