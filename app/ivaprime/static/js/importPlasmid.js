@@ -1651,7 +1651,7 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, pNr, cur
   let mainCell = table.rows[row].cells[col];
   mainCell.rowSpan = rowspan;
   mainCell.colSpan = colspan;
-  mainCell.classList.add("editable")
+  //mainCell.classList.add("editable")
   mainCell.style.backgroundColor = color;
   // Add text to the center of the merged cell
   if (text.length > colspan)  {

@@ -724,29 +724,36 @@ nav ul li a {
   border-right: 3px solid purple;
 }
 
-.sidebar-table .editable::before {
-  content: url('/static/pencil.svg'); /* Replace 'path-to-your-pencil-svg-file.svg' with the actual path to your SVG file */
+.editable{
+  pointer-events: none;
+}
+
+.editable::after{
+  content: url('/static/pencil.svg');
   position: absolute;
+  cursor: pointer;
+  pointer-events: all;
+}
+
+.sidebar-table .editable::after {
   top: -2px;
   right: 3px;
-  width: 10px; /* Set the width and height according to your SVG dimensions */
+  width: 10px;
   height: 10px;
-  cursor: pointer; /* Optional: Add a pointer cursor for better UX */
 }
 
 .sequence-grid .editable::after {
-  content: url('/static/pencil.svg'); /* Replace 'path-to-your-pencil-svg-file.svg' with the actual path to your SVG file */
-  position: absolute;
-  width: 24px; /* Set the width and height according to your SVG dimensions */
+  width: 24px;
   height: 24px;
-  cursor: pointer; /* Optional: Add a pointer cursor for better UX */
 }
 
 .horizontal-list .editable::after {
-  content: url('/static/pencil.svg'); /* Replace 'path-to-your-pencil-svg-file.svg' with the actual path to your SVG file */
-  position: absolute;
-  width: 24px; /* Set the width and height according to your SVG dimensions */
+  width: 24px;
   height: 24px;
-  cursor: pointer; /* Optional: Add a pointer cursor for better UX */
   filter: invert(100%);
+}
+
+.sidebar-content .editable::after {
+  width: 24px;
+  height: 24px;
 }

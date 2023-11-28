@@ -28,49 +28,71 @@ function enableAnnotationEditing(pNr) {
 
 
 /**
+ * Find if element has a before or after element
+ */
+function getAfterOrBeforeElement(element) {
+  const afterElement = window.getComputedStyle(element, '::after');
+  const beforeElement = window.getComputedStyle(element, '::before');
+
+  if (afterElement.content !== 'none') {
+    return '::after';
+  } else if (beforeElement.content !== 'none') {
+    return '::before';
+  } else {
+    return null;
+  };
+};
+
+
+/**
  * Add event listener for editing
  */
 function enableElementEditing(element, pNr) {
-  element.addEventListener('dblclick', () => {
-    const originalText = element.textContent;
-    console.log("Editable elements:", element, element.tagName, originalText)
-    const input = document.createElement('input');
-    input.classList.add("editable-input");
-    input.classList.add("wrap-text");
-    input.type = 'text';
-    let fileExtension = null;
-    if (element.tagName === "TD" && element.id === "Annotations") {
-      input.value = originalText.replaceAll("...", "");
-    } else if (element.tagName === "TD") {
-      input.value = originalText
-    } else if (element.tagName === "A") {
-      fileExtension = /(?:\.([^.]+))?$/.exec(originalText)[1];
-      console.log(fileExtension)
-      input.value = originalText.replace("." + fileExtension, "");
-    } else {
-      input.value = originalText;
-    };
-    
-    
-    // Save the edited content when Enter is pressed
-    input.addEventListener('keyup', (event) => {
-      if (event.key === 'Enter') {
-        if (element.tagName === "A") {input.value = input.value + "." + fileExtension}
-        updateElementText(element, input.value, originalText);
-        if (element.tagName === "TD") {updateFeaturesDict(element, pNr)};
+  // Add click event listener to ::after element
+  const afterOrBefore = getAfterOrBeforeElement(element);
+  const pseudoElement = afterOrBefore ? element : element.querySelector(afterOrBefore);
+  if (pseudoElement) {
+    pseudoElement.addEventListener('click', () => {
+      const originalText = element.textContent;
+      console.log("Editable elements:", element, element.tagName, originalText)
+      const input = document.createElement('input');
+      input.classList.add("editable-input");
+      input.classList.add("wrap-text");
+      input.type = 'text';
+      let fileExtension = null;
+      if (element.tagName === "TD" && element.id === "Annotations") {
+        input.value = originalText.replaceAll("...", "");
+      } else if (element.tagName === "TD") {
+        input.value = originalText
+      } else if (element.tagName === "A") {
+        fileExtension = /(?:\.([^.]+))?$/.exec(originalText)[1];
+        console.log(fileExtension)
+        input.value = originalText.replace("." + fileExtension, "");
+      } else {
+        input.value = originalText;
       };
+      
+      
+      // Save the edited content when Enter is pressed
+      input.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') {
+          if (element.tagName === "A") {input.value = input.value + "." + fileExtension}
+          updateElementText(element, input.value, originalText);
+          if (element.tagName === "TD") {updateFeaturesDict(element, pNr)};
+        };
+      });
+  
+      input.addEventListener('blur', () => {
+        if (element.tagName === "A") {input.value = input.value + "." + fileExtension}
+        updateElementText(element, input.value, originalText);       
+        if (element.tagName === "TD") {updateFeaturesDict(element, pNr)};
+      });
+      
+      element.textContent = '';
+      element.appendChild(input);
+      input.focus();
     });
-
-    input.addEventListener('blur', () => {
-      if (element.tagName === "A") {input.value = input.value + "." + fileExtension}
-      updateElementText(element, input.value, originalText);       
-      if (element.tagName === "TD") {updateFeaturesDict(element, pNr)};
-    });
-    
-    element.textContent = '';
-    element.appendChild(input);
-    input.focus();
-  });
+  };
 };
 
 
