@@ -78,6 +78,7 @@ const defaultSetingsDict = {
     "upperBoundShortInsertions": 49.5,
     "colorTheme": "lightTheme",
     "gridWidth": 60,
+    "preferredOrganism" : "Escherichia coli"
 };
 let colorTheme = (getUserPreference("colorTheme")  !== null) ? getUserPreference("colorTheme") : defaultSetingsDict["colorTheme"];
 
@@ -172,7 +173,7 @@ let secondPlasmidImported = false;
  * insertionPopUpWindow 
  */
 // User inputs int he insertion pop up window
-let preferredOrganism = (getUserPreference("preferredOrganism")  !== null) ? getUserPreference("preferredOrganism") : "Escherichia coli";
+let preferredOrganism = (getUserPreference("preferredOrganism")  !== null) ? getUserPreference("preferredOrganism") : defaultSetingsDict["preferredOrganism"];
 let dnaSequenceInput = '';
 let aminoAcidSequenceInput = '';
 
