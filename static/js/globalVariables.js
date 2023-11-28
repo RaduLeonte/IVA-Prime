@@ -87,7 +87,6 @@ let colorTheme = (getUserPreference("colorTheme")  !== null) ? getUserPreference
  */
 // Setting deciding wether to distribute insertion across both forward and reverse primers or whether to keep it on one.
 let primerDistribution = (getUserPreference("primerDistribution")  !== null) ? getUserPreference("primerDistribution") : defaultSetingsDict["primerDistribution"];
-console.log("primerDis", primerDistribution )
 // Minimum length for homologous region
 let homoRegionMinLength = (getUserPreference("homoRegionMinLength")  !== null) ? getUserPreference("homoRegionMinLength") : defaultSetingsDict["homoRegionMinLength"];
 // C, target temperature for the homologous region

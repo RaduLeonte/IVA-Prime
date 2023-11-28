@@ -50,6 +50,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Set the element's value to the variable's value
                 console.log(eval(variableName))
                 element.value = eval(variableName);
+                if (element.type === "text") {
+                    element.value = eval(variableName);
+                } else if (element.tagName === "SELECT") {
+                    element.value = eval(variableName);
+                } else if (element.type === "checkbox") {
+                    element.checked = eval(variableName);
+                } else if (element.type === "number") {
+                    element.value = eval(variableName);
+                };
             };
         });
     };
@@ -90,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Check if the variable exists
             if (eval(variableName) !== undefined) {
                 // Set the element's value to the variable's value
-                //console.log(element, element.tagName, element.type)
+                console.log(element, element.tagName, element.type)
                 if (element.type === "text") {
                     console.log(variableName + " = parseFloat(document.getElementById(\"" + variableName + "SettingsElement\"" +").value)")
                     eval(variableName + " = parseFloat(document.getElementById(\"" + variableName + "SettingsElement\"" + ").value)");
@@ -137,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function () {
         hideAllHideableWindows();
     });
 
-    updateGlobalVariables();
+    populateSettings();
 
     /**
      * Melting temperature calculator algorithm listener
