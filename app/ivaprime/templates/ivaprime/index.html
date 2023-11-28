@@ -70,7 +70,7 @@
                 <div id="settings-window" class="hideable-window" style="display: none;">
                     <h2>Settings:</h2>
                     <div class="settings-group">
-                        <h3>Melting temperature parameters:</h3>
+                        <h3>Template binding region melting temperature parameters:</h3>
     
                         <!-- Algorithm -->
                         <h4>Calculator</h4>
@@ -124,13 +124,17 @@
                         <div class="settings-window-row">
                             <label for="primerDistributionSettingsElement">Distribute insertion across primer pairs:</label>
                             <input type="checkbox" id="primerDistributionSettingsElement" name="primerDistributionSettingsElement" checked="false">
-                        </div>  
+                        </div>
                         <div class="settings-window-row">
-                            <label for="homoRegionTmSettingsElement">Homologous region TM [°C]:</label>
+                            <label for="homoRegionMinLengthSettingsElement">Homologous region minimum length [bp]:</label>
+                            <input type="text" id="homoRegionMinLengthSettingsElement" name="homoRegionMinLengthSettingsElement">
+                        </div>
+                        <div class="settings-window-row">
+                            <label for="homoRegionTmSettingsElement">Homologous region target TM [°C]:</label>
                             <input type="text" id="homoRegionTmSettingsElement" name="homoRegionTmSettingsElement">
                         </div>
                         <div class="settings-window-row">
-                            <label for="tempRegionTmSettingsElement">Template binding region TM [°C]:</label>
+                            <label for="tempRegionTmSettingsElement">Template binding region target TM [°C]:</label>
                             <input type="text" id="tempRegionTmSettingsElement" name="tempRegionTmSettingsElement">
                         </div>
                         <div class="settings-window-row">

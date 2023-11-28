@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Get the value from the input element
         const inputValue = inputElement.value;
         if (inputValue !== "" && /^[ACTG]+$/.test(inputValue)) {
-            tmSpan.textContent = parseFloat(get_tm(inputValue, primerConc, saltConc).toFixed(2));
+            tmSpan.textContent = parseFloat(get_tm(inputValue, primerConc, saltConc, meltingTempAlgorithmChoice).toFixed(2));
         } else {
             tmSpan.textContent = "--";
         };

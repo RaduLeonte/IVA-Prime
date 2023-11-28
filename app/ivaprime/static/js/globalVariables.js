@@ -73,6 +73,7 @@ const defaultSetingsDict = {
     "saltCorrectionEquation": "SchildkrautLifson",
     "applyingDMSOCorrection": false,
     "dmsoConc": 0,
+    "homoRegionMinLength": 15,
     "homoRegionTm": 49.5,
     "primerDistribution": false,
     "tempRegionTm": 60,
@@ -88,6 +89,8 @@ let colorTheme = (getUserPreference("colorTheme")  !== null) ? getUserPreference
  */
 // Setting deciding wether to distribute insertion across both forward and reverse primers or whether to keep it on one.
 let primerDistribution = (getUserPreference("primerDistribution")  !== null) ? getUserPreference("primerDistribution") : defaultSetingsDict["primerDistribution"];
+// Minimum length for homologous region
+let homoRegionMinLength = (getUserPreference("homoRegionMinLength")  !== null) ? getUserPreference("homoRegionMinLength") : defaultSetingsDict["homoRegionMinLength"];
 // C, target temperature for the homologous region
 let homoRegionTm = (getUserPreference("homoRegionTm")  !== null) ? getUserPreference("homoRegionTm") : defaultSetingsDict["homoRegionTm"];
 // C, target temperature for the template region
