@@ -121,7 +121,7 @@ let primerConc = (getUserPreference("primerConc") !== null) ? getUserPreference(
 let meltingTempAlgorithmChoice = (getUserPreference("meltingTempAlgorithmChoice") !== null) ? getUserPreference("meltingTempAlgorithmChoice") : defaultSetingsDict["meltingTempAlgorithmChoice"];
 
 // M, salt concentration for melting temperatures
-let saltConc = (getUserPreference("saltConc") !== null) ? getUserPreference("saltConc") : 0.5;
+let saltConc = (getUserPreference("saltConc") !== null) ? getUserPreference("saltConc") : defaultSetingsDict["saltConc"];
 // Salt correction equation choice
 let saltCorrectionEquation = (getUserPreference("saltCorrectionEquation") !== null) ? getUserPreference("saltCorrectionEquation") : defaultSetingsDict["saltCorrectionEquation"];
 
