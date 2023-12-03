@@ -768,13 +768,19 @@ header {
   display: flex;
   justify-content: flex-start;
   align-items: center;
+  height: 70px;
 }
 
 .nav-left, .nav-right {
   padding: 10px;
 }
 
+.nav-left{
+  min-width: 306px;
+}
+
 .nav-right {
+  min-width: 315px;
   margin-left: auto;
 }
 
@@ -797,39 +803,40 @@ header {
 .nav-tabs {
   display:flex;
   align-items: center;
-  width: auto;
+  flex-grow: 1;
+  justify-content: flex-start;
+  overflow: hidden;
 }
 
 .plasmid-tabs-container {
   display: flex;
+  overflow: hidden;
   overflow-x: hidden;
   white-space: nowrap;
-  justify-content: space-between;
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
+  flex-grow: 1;
 }
 
 .plasmid-tabs-list {
   display: flex;
-  text-align: center;
   list-style: none;
   margin: 0;
   padding: 0;
   list-style-type: none;
-  border-bottom: 1px solid #DAE0E7;
+}
+
+.plasmid-tabs-list > * {
+  vertical-align:middle;
 }
 
 .plasmid-tab {
-	height: 44px;
-	margin: 0 8px -1px 0;
-	border: 1px solid #DAE0E7;
-  background: #d3d3d3;
-	border-radius: 8px 8px 0 0;
-	overflow: hidden;
+  border-radius: 8px;
+  display: inline-block;
 }
 
 .plasmid-tab:hover {
-  background: #fff;
+  background: #646464;
 }
 
 .plasmid-tab, .plasmid-tab a {
@@ -838,8 +845,7 @@ header {
 
 .plasmid-tab a {
   text-decoration: none;
-	color: #333;
-  font-weight: bold;
+	color: white;
   display: inline-block;
 }
 
@@ -849,9 +855,12 @@ header {
 }
 
 .plasmid-tab-selected {
-  height: 45px;
-	border-bottom: none;
-	background: #DAE0E7;
+  font-weight: bold;
+	background-color: #4caf4f81;
+}
+
+.plasmid-tab-selected:hover {
+	background-color: #4CAF50;
 }
 
 .plasmid-tab-dropdown {
