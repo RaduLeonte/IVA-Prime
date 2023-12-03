@@ -10,39 +10,6 @@ body {
     width: 100vw;
 }
 
-header {
-    background-color: #333;
-    color: #fff;
-    padding: 10px;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 9999;; /* Ensures menu bar stays on top */
-    width: auto;
-}
-
-nav {
-  display: flex;
-  justify-content: space-between; /* Pushes ul elements to the left and right edges of the nav */
-  align-items: center; /* Vertically centers the ul elements */
-}
-
-nav ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-nav ul li {
-    display: inline;
-    margin-right: 10px;
-}
-
-nav ul li a {
-    color: #fff;
-    text-decoration: none;
-}
-
 .strands {
     font-size: 18px;
     word-wrap: break-word; /* Allows text to wrap */
@@ -129,27 +96,21 @@ nav ul li a {
     display: flex;
     list-style: none;
     padding: 0;
+    align-items: center;
   }
   
   .horizontal-list li {
-    margin-right: 10px;
-  }
-
-  #header-list-right {
-    align-items: center;
-  }
-
-  #header-list-right li {
     display: inline-block;
     vertical-align: middle;
     margin: 5px;
   }
-  
-  #header-list-right li a {
+
+  .horizontal-list li a {
     padding: 10px 20px;
     text-decoration: none;
     vertical-align: middle;
   }
+  
 
   #header-list-right #tm-calc-btn a {
     background-color: #333;
@@ -162,16 +123,7 @@ nav ul li a {
   #header-list-right #tm-calc-btn a:hover {
     background-color: #5c5c5c;
   }
-
-  #header-list li {
-    display: inline-block;
-    margin: 5px;
-  }
   
-  #header-list li a {
-    padding: 10px 20px;
-    text-decoration: none;
-  }
   
   #import-btn a {
     background-color: #4CAF50;
@@ -805,28 +757,115 @@ nav ul li a {
   height: 24px;
 }
 
-
-#plasmid-tabs-container {
+header {
+  background-color: #333;
+  color: #fff;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;; /* Ensures menu bar stays on top */
+  width: 100%;
   display: flex;
-  overflow-x: hidden; /* Hide the horizontal scrollbar */
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.nav-left, .nav-right {
+  padding: 10px;
+}
+
+.nav-right {
+  margin-left: auto;
+}
+
+.nav-left ul, .nav-right ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav-left ul li, .nav-right ul li {
+  display: inline;
+  margin-right: 10px;
+}
+
+.nav-left ul li a, .nav-right ul li a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.nav-tabs {
+  display:flex;
+  align-items: center;
   width: auto;
-  max-width: 50%;
+}
+
+.plasmid-tabs-container {
+  display: flex;
+  overflow-x: hidden;
   white-space: nowrap;
-  scroll-behavior: smooth; /* Add smooth scrolling behavior */
+  justify-content: space-between;
+  scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
 }
 
-#plasmid-tabs-list {
+.plasmid-tabs-list {
   display: flex;
+  text-align: center;
   list-style: none;
   margin: 0;
   padding: 0;
+  list-style-type: none;
+  border-bottom: 1px solid #DAE0E7;
 }
 
-#plasmid-tabs-list li {
-  padding: 10px;
-  margin: 0 5px;
-  border: 1px solid #ddd;
+.plasmid-tab {
+	height: 44px;
+	margin: 0 8px -1px 0;
+	border: 1px solid #DAE0E7;
+  background: #d3d3d3;
+	border-radius: 8px 8px 0 0;
+	overflow: hidden;
+}
+
+.plasmid-tab:hover {
+  background: #fff;
+}
+
+.plasmid-tab, .plasmid-tab a {
+  transition: all .25s;
+}
+
+.plasmid-tab a {
+  text-decoration: none;
+	color: #333;
+  font-weight: bold;
+  display: inline-block;
+}
+
+.plasmid-tab a:first-child {
+	padding: 12px 2px 12px 16px;
+  white-space: nowrap;
+}
+
+.plasmid-tab-selected {
+  height: 45px;
+	border-bottom: none;
+	background: #DAE0E7;
+}
+
+.plasmid-tab-dropdown {
+  width: 16px;
+	height: 16px;
+	margin: 0 14px 0 12px;
+	padding: 3px;
+	border-radius: 16px;
+	line-height: 16px;
+	text-align: center;
+}
+
+.plasmid-tab-dropdown:hover {
+	background: #DAE0E7;
 }
 
 #scroll-left, #scroll-right {

@@ -136,6 +136,7 @@ let isTmCalcWindowVisible = false;
  * importPlasmid
  */
 // Grid structure, each entry is a row in the table
+let firstImport = true;
 let plasmidDict = {};
 let currentlyOpenedPlasmid = null;
 let defaultGridStructure = ["Forward Strand",
@@ -180,8 +181,6 @@ let aminoAcidSequenceInput = '';
  * tableHover 
  */
 // 
-let basePosition = -1; // Cursor position in the first grid (sequence coords)
-let basePosition2 = -1; // Cursor position in the sublocning plasmid grid (sequence coords)
 
 
 /**

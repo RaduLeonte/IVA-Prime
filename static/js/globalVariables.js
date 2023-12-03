@@ -109,8 +109,7 @@ const primerColorCyan = "rgb(140, 202, 242)"
 /**
  * customSearch
  */
-let customSearchEnabledFirstPlasmid = false;
-let customSearchEnabledSecondPlasmid = false;
+let searchOn = false;
 
 
 /**
@@ -137,8 +136,10 @@ let isTmCalcWindowVisible = false;
  * importPlasmid
  */
 // Grid structure, each entry is a row in the table
-let gridStructure, gridStructure2;
-gridStructure= gridStructure2 = ["Forward Strand",
+let firstImport = true;
+let plasmidDict = {};
+let currentlyOpenedPlasmid = null;
+let defaultGridStructure = ["Forward Strand",
                                 "Complementary Strand",
                                 "Amino Acids",
                                 "Annotations",
@@ -149,8 +150,6 @@ let originalFileExtension1 = null;
 let originalFileExtension2 = null;
 let importedFileHeader1 = null;
 let importedFileHeader2 = null;
-let importedFileContent1 = null;
-let importedFileContent2 = null;
 // Initialise empty sequence and features variables
 let sequence = "";
 let complementaryStrand = "";
@@ -182,8 +181,6 @@ let aminoAcidSequenceInput = '';
  * tableHover 
  */
 // 
-let basePosition = -1; // Cursor position in the first grid (sequence coords)
-let basePosition2 = -1; // Cursor position in the sublocning plasmid grid (sequence coords)
 
 
 /**

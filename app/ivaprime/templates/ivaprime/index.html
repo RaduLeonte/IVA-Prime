@@ -12,7 +12,6 @@
             <link rel="stylesheet" type="text/css" href="{% static 'styles.css' %}">
             <!-- Scripts -->
             <script src="{% static 'js/globalVariables.js' %}"></script>
-            <script src="{% static 'js/plasmidDemoFile.js' %}"></script>
             <script src="{% static 'js/getTM.js' %}"></script>
             <script src="{% static 'js/importPlasmid.js' %}"></script>
             <script src="{% static 'js/sequenceContextMenu.js' %}"></script>
@@ -34,32 +33,30 @@
         </head>
         <body>
             <header>
-                <nav>
+                <div class="nav-left">
                     <!-- Left side header buttons -->
                     <ul id="header-list"  class="horizontal-list">
                         <li id="import-btn"><a href="#" id="import-btn-a">Import File</a></li>
                         <li id="import-demo-btn"><a href="#">Try Demo File</a></li>
-                        <li id="import-second-btn" style="display: none;"><a href="#">Import Subcloning Target</a></li>
-                        <li id="import-second-demo-btn" style="display: none;"><a href="#" id="import-second-btn-a">Import Demo Subcloning Target</a></li>
-                        <li style="display: flex;align-items: center;text-align: center;"><a id="plasmid-file-name1" class="editable" style="display: none;"></a></li>
-                        <li style="display: flex;align-items: center;text-align: center;"><a id="plasmid-file-name2" class="editable" style="display: none;"></a></li>
                     </ul>
-
+                </div>
+                <div class="nav-tabs">
                     <!-- Plasmid tabs -->
                     <div id="scroll-left" onclick="scrollTabs('left')">‹</div>
-                    <div id="plasmid-tabs-container">
-                        <ul id="plasmid-tabs-list">
+                    <div id="plasmid-tabs-container" class="plasmid-tabs-container">
+                        <ul id="plasmid-tabs-list" class="plasmid-tabs-list">
                         </ul>
                     </div>
                     <div id="scroll-right" onclick="scrollTabs('right')">›</div>
-
+                </div>
+                <div class ="nav-right">
                     <!-- Right side header buttons -->
                     <ul id="header-list-right" class="horizontal-list">
                         <li id="tm-calc-btn"><a href="#" disabled>TM Calculator</a></li>
                         <li id="settings-btn" class="svg-icon-btn"><a href="#" disabled style="background-image: url('{% static 'settings_icon.svg' %}')"></a></li>
                         <li id="info-btn" class="svg-icon-btn"><a href="#" disabled style="background-image: url('{% static 'info_icon.svg' %}')"></a></li>
                     </ul>
-                </nav>
+                </div>
             </header>
     
             <!-- Hideable windows -->

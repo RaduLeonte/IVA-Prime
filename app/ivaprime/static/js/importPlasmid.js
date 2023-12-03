@@ -3,33 +3,26 @@
  */
 window.onload = function() {
     // Create file input element and run the file select on click
-    addImportButtonListener();
+    const targetButton = '#import-btn a';
+    document.querySelector(targetButton).addEventListener('click', function (event) {
+      event.preventDefault();
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.style.display = 'none';
+      document.body.appendChild(fileInput);
+      fileInput.addEventListener('change', function(event) {
+        handleFileSelect(event, plasmidIndex=nextFreePlasmidIndex(), serverFile=null);
+      });
+      fileInput.click();
+    });
 
     // Demo buttoon functionality
     const demoButton = document.getElementById("import-demo-btn");
     demoButton.addEventListener('click', function() {
-      importDemoFile(1);
+      handleFileSelect(null, plasmidIndex=nextFreePlasmidIndex(), serverFile="\\static\\plasmids\\pET-28a(+).dna");
     });
 };
 
-
-/**
- * Add event listener to the first import button.
- */
-function addImportButtonListener() {
-  const targetButton = '#import-btn a';
-  document.querySelector(targetButton).addEventListener('click', function (event) {
-    event.preventDefault();
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.style.display = 'none';
-    document.body.appendChild(fileInput);
-    fileInput.addEventListener('change', function(event) {
-      handleFileSelect(event, plasmidIndex=0, firstImport=true);
-    });
-    fileInput.click();
-  });
-}
 
 
 /**
@@ -56,10 +49,31 @@ function addExportButtonsListeners(pNr) {
 
 
 /**
+ * 
+ */
+function nextFreePlasmidIndex() {
+  return Object.keys(plasmidDict).length;
+};
+
+
+/**
  * Handles file selection functionality.
  */
-function handleFileSelect(event, plasmidIndex=0, firstImport=false) {
-  const file = event.target.files[0]; // Get file path.
+async function handleFileSelect(event, plasmidIndex=0, serverFile=null) {
+  document.body.classList.add('loading');
+  let file = null;
+  if (serverFile) {
+    console.log("Importing demo file:", serverFile);
+    const response = await fetch(serverFile);
+
+    const fileContent = await response.text();
+    file = new Blob([fileContent]);
+    file.name = serverFile.match(/[^\\/]*$/)[0];
+  } else {
+    file = event.target.files[0];
+  };
+
+  console.log(file)
   const fileExtension =  /\.([0-9a-z]+)(?:[\?#]|$)/i.exec(file.name)[0]; // Fish out file extension of the file
   // If the file has an acceptable file extension start parsing
   const acceptedFileExtensions = [".gbk", ".gb", ".dna"]
@@ -86,112 +100,44 @@ function handleFileSelect(event, plasmidIndex=0, firstImport=false) {
       plasmidDict[plasmidIndex]["fileComplementarySequence"] = parsedFile.fileComplementarySequence;
       plasmidDict[plasmidIndex]["fileFeatures"] = parsedFile.fileFeatures;
       plasmidDict[plasmidIndex]["selectedText"] = "";
-      plasmidDict[plasmidIndex]["selectedText"] = null;
-      plasmidDict[plasmidIndex]["selectedText"] = null;
       plasmidDict[plasmidIndex]["selectionStartPos"] = null;
       plasmidDict[plasmidIndex]["selectionEndPos"] = null;
+      plasmidDict[plasmidIndex]["basePosition"] = -1;
       
 
+      // Add plasmid tab
       const plasmidTabsList = document.getElementById("plasmid-tabs-list");
       const plasmidTabId = "plasmid-tab-" + plasmidIndex;
       let liElement = document.getElementById(plasmidTabId);
       // Check if tab element already exists and
       if (!liElement) {
         liElement = document.createElement("LI");
-        plasmidTabsList.appendChild(liElement)
+        plasmidTabsList.appendChild(liElement);
       };
-      liElement.innerText = plasmidDict[plasmidIndex]["fileName"];
+      liElement.innerHTML = `<a href="#">${plasmidDict[plasmidIndex]["fileName"]}</a><a class="plasmid-tab-dropdown" href="#">▼</a>`;
+      liElement.classList.add("plasmid-tab");
+      if (firstImport === true) {
+        liElement.classList.add("plasmid-tab-selected");
+      };
       
       // Create the sidebar
-      createSidebar(plasmidIndex);
+      plasmidDict[plasmidIndex]["sidebar"] = createSidebar(plasmidIndex);
 
       // Create content grid
-      makeContentGrid(plasmidIndex);
+      plasmidDict[plasmidIndex]["contentGrid"] = makeContentGrid(plasmidIndex);
       
       // Once the file is loaded, enable search function
       if (firstImport === true) {
         initiateSearchFunctionality();
-        currentlyOpenedPlasmid = 0;
+        firstImport = false;
+        switchPlasmidTab(plasmidIndex);
       };
     };
 
       // Run reader
       reader.readAsText(file);
     };
-};
-
-
-/**
- * Import demo file.
- */
-function importDemoFile(pNr) {
-  console.log("Importing demo")
-  // Initialise file reader
-  const fileName = "pET-28 a (+).gb"
-  
-  parseGBFile(pet28aPlus, pNr);
-    
-  // Update header with filename
-  let targetHeadersListElement = (pNr === 1) ? "plasmid-file-name1" : "plasmid-file-name2";
-  targetHeadersListElement = document.getElementById(targetHeadersListElement);
-  targetHeadersListElement.innerHTML = fileName;
-  targetHeadersListElement.style.display = "block";
-  
-  // Create the sidebar
-  createSideBar(pNr);
-
-  // Create content grid
-  if (pNr === 1) {
-    makeContentGrid(pNr, function() {
-      const contentDiv = document.querySelector('.content')
-      contentDiv.style.overflow = 'auto'; // Enable scrolling after file import
-
-      // Hide the import demo file button
-      const demoButton = document.getElementById("import-demo-btn");
-      demoButton.style.display = 'none';
-
-      // Show the second import button after the first file is imported
-      const importSecondButton = document.getElementById('import-second-demo-btn');
-      importSecondButton.style.display = 'block';
-
-
-      // Add an event listener to the second import button
-      const secondDemoButton = document.getElementById("import-second-demo-btn");
-      secondDemoButton.addEventListener('click', function() {
-        importDemoFile(2);
-      });
-      addImportButtonListener(1);
-    });
-  } else {
-    makeContentGrid(pNr);
-    addImportButtonListener(1);
-    // Hide  the second import button after the first file is imported
-    const importSecondButton = document.getElementById('import-second-demo-btn');
-    importSecondButton.style.display = 'none';
-  }
-
-  if (pNr === 2) {
-    // Get the first container div
-    const firstPlasmidContainer = document.getElementById('first-plasmid-container');
-
-    // After the second file is imported, create the second plasmid window
-    const secondPlasmidContainer = document.getElementById('second-plasmid-container');
-    secondPlasmidContainer.style.display = 'flex';
-
-    // Set the height of the divs to 50vh
-    firstPlasmidContainer.style.height = '50%';
-
-    // Set overflow to auto
-    firstPlasmidContainer.style.overflow = 'auto';
-    secondPlasmidContainer.style.overflow = 'auto';
-    
-    secondPlasmidImported = true;
-  };
-    
-  // Once the file is loaded, enable search function
-  initiateSearchFunctionality(pNr);
-  // Enable export buttons
-  addExportButtonsListeners(pNr);
+  document.body.classList.remove('loading');
 };
 
 
@@ -1037,11 +983,19 @@ function downloadFile(downloadFileName, downloadFileContent, downloadFileType) {
  * Populate the sidebar with the features from the specified plasmid.
  */
 function createSidebar(plasmidIndex) {
-  // Sidebar contents
   let currFeatures = plasmidDict[plasmidIndex]["fileFeatures"];
-  let sidebarTable = document.getElementById('sidebar-table');
+  
+  const sidebarElement = document.createElement("div");
+
+  const primersElement = document.createElement("div");
+  primersElement.classList.add("sidebar-content");
+  primersElement.innerHTML = `<h2 id="primers-type">Primers will appear here.</h2>`;
+  sidebarElement.appendChild(primersElement);
 
   // Set table headers
+  const sidebarTable = document.createElement("TABLE");
+  sidebarTable.id = "sidebar-table";
+  sidebarTable.classList.add("sidebar-table");
   sidebarTable.innerHTML = `
       <tr>
           <th class = 'wrap-text'>Feature</th>
@@ -1052,7 +1006,6 @@ function createSidebar(plasmidIndex) {
   `;
 
   // Iterate over the features and populate the table
-  console.log("Siderbar:", currFeatures)
   for (const featureName in currFeatures) {
     if (!featureName.includes("LOCUS") && !featureName.includes("source")) { // Skip LOCUS and source
       console.log("Siderbar:", featureName, currFeatures[featureName])
@@ -1109,6 +1062,10 @@ function createSidebar(plasmidIndex) {
       sidebarTable.appendChild(row);
     };
   };
+
+  sidebarElement.appendChild(sidebarTable);
+
+  return sidebarElement;
 };
 
 
@@ -1116,6 +1073,7 @@ function createSidebar(plasmidIndex) {
  * Remove everything but numbers and ".." in order to have a clean span
 */
 function removeNonNumeric(inputString) {
+  console.log("removeNonNumeric", inputString)
   const cleanedString = inputString.replace(/[^\d.]/g, '');
   return cleanedString;
 };
@@ -1196,197 +1154,182 @@ function checkAnnotationOverlap(inputFeatures, plasmidIndex) {
 
 // Creat the content table grid
 function makeContentGrid(plasmidIndex) {
-  // Changes the cursor to have a loading icon
-  document.body.classList.add('loading');
-
-  setTimeout(function() {
-    // Init variables
-    let currSequence = plasmidDict[plasmidIndex]["fileSequence"];
-    let currComplementarySequence = plasmidDict[plasmidIndex]["fileComplementarySequence"];
-    let currFeatures = plasmidDict[plasmidIndex]["fileFeatures"];
-    
-    const currentGridId = "sequence-grid-" + plasmidIndex
-    let sequenceGrid = document.getElementById(currentGridId);
-    if (!sequenceGrid) {
-      sequenceGrid = document.createElement("TABLE");
-      sequenceGrid.id = currentGridId;
-      sequenceGrid.classList.add("sequence-grid");
-      const fileContentDiv = document.getElementById("file-content");
-      fileContentDiv.appendChild(sequenceGrid);
-    }
-    let gridHeight = 0;
-    plasmidDict[plasmidIndex]["gridStructure"] = checkAnnotationOverlap(currFeatures, plasmidIndex);
-    let currGridStructure = plasmidDict[plasmidIndex]["gridStructure"];
-
-    // Create the grid
-    let currGridStructureLength = currGridStructure.length; // How many rows per line 
-    // Sequence length / gridWidth rounded up to the nearest multiple to see how many lines are needed
-    // Multiply with the amount of rows per line to get the total amount of table rows
-    gridHeight = Math.ceil(currSequence.length / gridWidth) * currGridStructureLength;
-
-    // Clear previous grid contents
-    sequenceGrid.innerHTML = '';
-    // Iterate over each row 
-    for (let i = 0; i < gridHeight; i++) {
-      let row = sequenceGrid.rows[i]; // Get the corresponding row$
-      // If the row doesn't exist, create a new one
-      if (!row) {
-        row = sequenceGrid.insertRow(i);
-      } ;
-      row.id = currGridStructure[i % currGridStructureLength] + "-row";
-      // Populate the sequence cells with the corresponding base
-      for (let j = 0; j < gridWidth; j++) {
-        const cell = document.createElement('td'); // Create the cell
-        let currentChar = ""
-        let linesCreated = Math.floor(i / currGridStructureLength) // Check how many "lines" have been created so far
+  // Init variables
+  let currSequence = plasmidDict[plasmidIndex]["fileSequence"];
+  let currComplementarySequence = plasmidDict[plasmidIndex]["fileComplementarySequence"];
+  let currFeatures = plasmidDict[plasmidIndex]["fileFeatures"];
   
-        if ((i + 1) % currGridStructureLength === 1) { // If we're on the forward strand
-          currentChar = currSequence[linesCreated*gridWidth + j] // Add the corrseponding char
-        } else if ((i + 1) % currGridStructureLength === 2) {// If we're on the comlpementary strand
-          currentChar = currComplementarySequence[linesCreated*gridWidth + j]
-        };
-        // If we've run out of bases to add add nothing
-        if (!currentChar) {
-          currentChar = ""
-        };
+  const currentGridId = "sequence-grid-" + plasmidIndex;
+  let sequenceGrid = document.createElement("TABLE");
+  sequenceGrid.id = currentGridId;
+  sequenceGrid.classList.add("sequence-grid");
 
-        // Insert the base to the cell's text content
-        cell.textContent = currentChar;
-        // Add a cell id to distinguish the cells
-        cell.id = currGridStructure[i % currGridStructureLength];
-        // Add a cell class
-        cell.classList.add(currGridStructure[i % currGridStructureLength].replace(" ", ""));
-        if (cell.id === "Forward Strand" && currentChar !== "") {
-          cell.classList.add("forward-strand-base");
-        };
+  let gridHeight = 0;
+  plasmidDict[plasmidIndex]["gridStructure"] = checkAnnotationOverlap(currFeatures, plasmidIndex);
+  let currGridStructure = plasmidDict[plasmidIndex]["gridStructure"];
 
-        // Append the cell to the row
-        row.appendChild(cell);
+  // Create the grid
+  let currGridStructureLength = currGridStructure.length; // How many rows per line 
+  // Sequence length / gridWidth rounded up to the nearest multiple to see how many lines are needed
+  // Multiply with the amount of rows per line to get the total amount of table rows
+  gridHeight = Math.ceil(currSequence.length / gridWidth) * currGridStructureLength;
+
+  // Clear previous grid contents
+  sequenceGrid.innerHTML = '';
+  // Iterate over each row 
+  for (let i = 0; i < gridHeight; i++) {
+    let row = sequenceGrid.rows[i]; // Get the corresponding row$
+    // If the row doesn't exist, create a new one
+    if (!row) {
+      row = sequenceGrid.insertRow(i);
+    } ;
+    row.id = currGridStructure[i % currGridStructureLength] + "-row";
+    // Populate the sequence cells with the corresponding base
+    for (let j = 0; j < gridWidth; j++) {
+      const cell = document.createElement('td'); // Create the cell
+      let currentChar = ""
+      let linesCreated = Math.floor(i / currGridStructureLength) // Check how many "lines" have been created so far
+
+      if ((i + 1) % currGridStructureLength === 1) { // If we're on the forward strand
+        currentChar = currSequence[linesCreated*gridWidth + j] // Add the corrseponding char
+      } else if ((i + 1) % currGridStructureLength === 2) {// If we're on the comlpementary strand
+        currentChar = currComplementarySequence[linesCreated*gridWidth + j]
+      };
+      // If we've run out of bases to add add nothing
+      if (!currentChar) {
+        currentChar = ""
+      };
+
+      // Insert the base to the cell's text content
+      cell.textContent = currentChar;
+      // Add a cell id to distinguish the cells
+      cell.id = currGridStructure[i % currGridStructureLength];
+      // Add a cell class
+      cell.classList.add(currGridStructure[i % currGridStructureLength].replace(" ", ""));
+      if (cell.id === "Forward Strand" && currentChar !== "") {
+        cell.classList.add("forward-strand-base");
+      };
+
+      // Append the cell to the row
+      row.appendChild(cell);
+    };
+  };
+
+  // Get cell width in current window for annotation triangles
+  window.addEventListener('resize', updateAnnotationTrianglesWidth);
+  updateAnnotationTrianglesWidth();
+  
+  // Iterate over the features and create the annotatations
+  Object.entries(currFeatures).forEach(([key, value]) => {
+    if (value.span && !key.includes("source")) { // If the feature includes a span and is not "source"
+      // Get the current feature's span
+      const direction = (value.span.includes("complement")) ? "left": "right";
+      const spanList = removeNonNumeric(value.span);
+      const range = spanList.split("..").map(Number);
+      const rangeStart = range[0];
+      const rangeEnd = range[1];
+      const annotText = (value.label) ? value.label: key;
+      const annotationColor = generateRandomUniqueColor();
+      if (!value["color"]) {
+        value["color"] = annotationColor;
+      };
+      recentColor = annotationColor; // Store the colour history
+      console.log(annotText, rangeStart + ".." + rangeEnd)
+      // Make the annotation at the specified indices
+      makeAnnotation(rangeStart - 1, rangeEnd - 1, annotText, key, annotationColor, sequenceGrid, currGridStructure);
+
+
+      const triangleID = key;
+      const featureCells = [];
+      for (let rowIdx = 0; rowIdx < sequenceGrid.rows.length; rowIdx++) {
+        for (let colIdx = 0; colIdx < sequenceGrid.rows[rowIdx].cells.length; colIdx++) {
+            const cell = sequenceGrid.rows[rowIdx].cells[colIdx];
+            const featureId = cell.getAttribute("feature-id");
+    
+            // Check if the cell has the attribute "feature-id" with the value "terminator"
+            if (featureId === triangleID) {
+              featureCells.push({ row: rowIdx, col: colIdx });
+            };
+        };
+      } ;
+      console.log("Triangles, found cells:", featureCells)
+
+      if (featureCells.length > 0) {
+        let lowestCell = featureCells[0];
+        let highestCell = featureCells[0];
+    
+        for (const cell of featureCells) {
+            if (cell.row < lowestCell.row || (cell.row === lowestCell.row && cell.col < lowestCell.col)) {
+                lowestCell = cell;
+            };
+            if (cell.row > highestCell.row || (cell.row === highestCell.row && cell.col > highestCell.col)) {
+                highestCell = cell;
+            };
+        };
+    
+        console.log("Triangles, Top-left cell:", lowestCell);
+        console.log("Triangles, Bottom-right cell:", highestCell);
+        console.log("Triangles:", direction)
+
+        if (direction === "left") {
+          const targetRow = sequenceGrid.rows[lowestCell.row];
+          const targetCell = targetRow.cells[lowestCell.col];
+          console.log("Triangles, target cell:", targetRow, targetCell)
+          const newCell = document.createElement("td");
+          // Copy attributes from targetCell to newCell
+          newCell.id = targetCell.id;
+          newCell.class = targetCell.class;
+          newCell["feature-id"] = targetCell["feature-id"];
+          // Append the new cell right before the target cell
+          targetRow.insertBefore(newCell, targetCell);
+
+          if (targetCell.colSpan > 1) {
+            targetCell.colSpan--;
+          } else {
+            targetRow.removeChild(targetCell);
+          };
+          createFilledTriangle(key, annotationColor, "left", lowestCell.row, lowestCell.col, sequenceGrid, plasmidIndex);
+        } else {
+          const targetRow = sequenceGrid.rows[highestCell.row];
+          const targetCell = targetRow.cells[highestCell.col];
+          console.log("Triangles, target cell:", targetRow, targetCell)
+          const newCell = document.createElement("td");
+          // Copy attributes from targetCell to newCell
+          newCell.id = targetCell.id;
+          newCell.class = targetCell.class;
+          newCell["feature-id"] = targetCell["feature-id"];
+          // Append the new cell right before the target cell
+          targetRow.parentNode.insertBefore(newCell, targetRow.nextSibling);
+
+          if (targetCell.colSpan > 1) {
+            targetCell.colSpan--;
+          } else {
+            targetRow.removeChild(targetCell);
+          };
+          createFilledTriangle(key, annotationColor, "right", highestCell.row, highestCell.col + 1, sequenceGrid, plasmidIndex);
+        };
+      };
+
+      // Check if feature needs to be translated
+      //console.log(currFeatures[key]);
+      if ((currFeatures[key]["translation"]) || (currFeatures[key]["note"] && (currFeatures[key]["note"].includes(" translation: ")))) {
+        //console.log("Translating: ", value.label, rangeStart, rangeEnd, pNr)
+        const targetStrand = (!value.span.includes("complement")) ? "fwd": "comp";
+        translateSpan(targetStrand, rangeStart, rangeEnd, sequenceGrid, currGridStructure, plasmidIndex);
       };
     };
-
-    // Get cell width in current window for annotation triangles
-    window.addEventListener('resize', updateAnnotationTrianglesWidth);
-    updateAnnotationTrianglesWidth();
-    
-    // Iterate over the features and create the annotatations
-    Object.entries(currFeatures).forEach(([key, value]) => {
-      if (value.span && !key.includes("source")) { // If the feature includes a span and is not "source"
-        // Get the current feature's span
-        const direction = (value.span.includes("complement")) ? "left": "right";
-        const spanList = removeNonNumeric(value.span);
-        const range = spanList.split("..").map(Number);
-        const rangeStart = range[0];
-        const rangeEnd = range[1];
-        const annotText = (value.label) ? value.label: key;
-        const annotationColor = generateRandomUniqueColor();
-        if (!value["color"]) {
-          value["color"] = annotationColor;
-        };
-        recentColor = annotationColor; // Store the colour history
-        console.log(annotText, rangeStart + ".." + rangeEnd)
-        // Make the annotation at the specified indices
-        makeAnnotation(rangeStart - 1, rangeEnd - 1, annotText, key, annotationColor, sequenceGrid, currGridStructure);
-
-  
-        const triangleID = key;
-        const featureCells = [];
-        for (let rowIdx = 0; rowIdx < sequenceGrid.rows.length; rowIdx++) {
-          for (let colIdx = 0; colIdx < sequenceGrid.rows[rowIdx].cells.length; colIdx++) {
-              const cell = sequenceGrid.rows[rowIdx].cells[colIdx];
-              const featureId = cell.getAttribute("feature-id");
-      
-              // Check if the cell has the attribute "feature-id" with the value "terminator"
-              if (featureId === triangleID) {
-                featureCells.push({ row: rowIdx, col: colIdx });
-              };
-          };
-        } ;
-        console.log("Triangles, found cells:", featureCells)
-
-        if (featureCells.length > 0) {
-          let lowestCell = featureCells[0];
-          let highestCell = featureCells[0];
-      
-          for (const cell of featureCells) {
-              if (cell.row < lowestCell.row || (cell.row === lowestCell.row && cell.col < lowestCell.col)) {
-                  lowestCell = cell;
-              };
-              if (cell.row > highestCell.row || (cell.row === highestCell.row && cell.col > highestCell.col)) {
-                  highestCell = cell;
-              };
-          };
-      
-          console.log("Triangles, Top-left cell:", lowestCell);
-          console.log("Triangles, Bottom-right cell:", highestCell);
-          console.log("Triangles:", direction)
-
-          if (direction === "left") {
-            const targetRow = sequenceGrid.rows[lowestCell.row];
-            const targetCell = targetRow.cells[lowestCell.col];
-            console.log("Triangles, target cell:", targetRow, targetCell)
-            const newCell = document.createElement("td");
-            // Copy attributes from targetCell to newCell
-            newCell.id = targetCell.id;
-            newCell.class = targetCell.class;
-            newCell["feature-id"] = targetCell["feature-id"];
-            // Append the new cell right before the target cell
-            targetRow.insertBefore(newCell, targetCell);
-
-            if (targetCell.colSpan > 1) {
-              targetCell.colSpan--;
-            } else {
-              targetRow.removeChild(targetCell);
-            };
-            createFilledTriangle(key, annotationColor, "left", lowestCell.row, lowestCell.col, sequenceGrid, plasmidIndex);
-          } else {
-            const targetRow = sequenceGrid.rows[highestCell.row];
-            const targetCell = targetRow.cells[highestCell.col];
-            console.log("Triangles, target cell:", targetRow, targetCell)
-            const newCell = document.createElement("td");
-            // Copy attributes from targetCell to newCell
-            newCell.id = targetCell.id;
-            newCell.class = targetCell.class;
-            newCell["feature-id"] = targetCell["feature-id"];
-            // Append the new cell right before the target cell
-            targetRow.parentNode.insertBefore(newCell, targetRow.nextSibling);
-
-            if (targetCell.colSpan > 1) {
-              targetCell.colSpan--;
-            } else {
-              targetRow.removeChild(targetCell);
-            };
-            createFilledTriangle(key, annotationColor, "right", highestCell.row, highestCell.col + 1, sequenceGrid, plasmidIndex);
-          };
-        };
-
-        // Check if feature needs to be translated
-        //console.log(currFeatures[key]);
-        if ((currFeatures[key]["translation"]) || (currFeatures[key]["note"] && (currFeatures[key]["note"].includes(" translation: ")))) {
-          //console.log("Translating: ", value.label, rangeStart, rangeEnd, pNr)
-          const targetStrand = (!value.span.includes("complement")) ? "fwd": "comp";
-          translateSpan(targetStrand, rangeStart, rangeEnd, sequenceGrid, currGridStructure, plasmidIndex);
-        };
-      };
-    });
+  });
 
 
-    // Check the sequence for common promotes and start the translation there
-    //promoterTranslation(pNr);
-    // Start the transaltion at the beginning of each feature
-    //featureTranslation(pNr);
+  // Check the sequence for common promotes and start the translation there
+  //promoterTranslation(pNr);
+  // Start the transaltion at the beginning of each feature
+  //featureTranslation(pNr);
 
-    // Clean up cells that are not longer in a tr
-    cleanLostCells(sequenceGrid);
+  // Clean up cells that are not longer in a tr
+  cleanLostCells(sequenceGrid);
 
-    // Enable feature cell editing
-    enableSidebarEditing();
-
-    addCellSelection(plasmidIndex);
-
-    // Change the cursor's icon to normal
-    document.body.classList.remove('loading');
-  }, 1);
+  return sequenceGrid;
 };
 
 

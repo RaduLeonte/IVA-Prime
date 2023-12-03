@@ -1,30 +1,14 @@
-/**
- * Enable editing functionality to file name elements
- */
-function enableEditingOfFileNames(pNr) {
-  const editableElements = document.getElementById("header-list").querySelectorAll('.editable');
-  editableElements.forEach(element => {enableElementEditing(element, pNr)});
-};
 
 
 /**
  * Enable editing functionality only to sidebar elements
  * */
-function enableSidebarEditing(pNr) {
-  const targetSidebar = (pNr === 1) ? document.getElementById("sidebar-table"):  document.getElementById("sidebar-table2");
+function enableSidebarEditing() {
+  const targetSidebar = document.getElementById("sidebar-table");
   const editableElements = targetSidebar.querySelectorAll('.editable');
-  editableElements.forEach(element => {enableElementEditing(element, pNr)});
+  editableElements.forEach(element => {enableElementEditing(element)});
 };
 
-
-/**
- * Enable editing functionality to annotations
- * */
-function enableAnnotationEditing(pNr) {
-  const targetGrid = (pNr === 1) ? document.getElementById("sequence-grid"):  document.getElementById("sequence-grid2");
-  const editableElements = targetGrid.querySelectorAll('.editable');
-  editableElements.forEach(element => {enableElementEditing(element, pNr)});
-};
 
 
 /**
@@ -47,7 +31,7 @@ function getAfterOrBeforeElement(element) {
 /**
  * Add event listener for editing
  */
-function enableElementEditing(element, pNr) {
+function enableElementEditing(element) {
   // Add click event listener to ::after element
   const afterOrBefore = getAfterOrBeforeElement(element);
   const pseudoElement = afterOrBefore ? element : element.querySelector(afterOrBefore);
@@ -78,14 +62,14 @@ function enableElementEditing(element, pNr) {
         if (event.key === 'Enter') {
           if (element.tagName === "A") {input.value = input.value + "." + fileExtension}
           updateElementText(element, input.value, originalText);
-          if (element.tagName === "TD") {updateFeaturesDict(element, pNr)};
+          if (element.tagName === "TD") {updateFeaturesDict(element)};
         };
       });
   
       input.addEventListener('blur', () => {
         if (element.tagName === "A") {input.value = input.value + "." + fileExtension}
         updateElementText(element, input.value, originalText);       
-        if (element.tagName === "TD") {updateFeaturesDict(element, pNr)};
+        if (element.tagName === "TD") {updateFeaturesDict(element)};
       });
       
       element.textContent = '';
@@ -118,26 +102,22 @@ function updateElementText(e, newText, originalText) {
 /**
  *  Update the features dict with the data currently in the sidebar table or in the annotations
  */
-function updateFeaturesDict(cell, pNr) {
-    const currFeatures = (pNr === 1) ? features: features2;
+function updateFeaturesDict(cell) {
+    const currFeatures = plasmidDict[currentlyOpenedPlasmid]["fileFeatures"];
     if (cell.id === "Annotations") {
         const newContent = cell.textContent.replace("...", "")
         if (currFeatures[cell.getAttribute("feature-id")]["label"] !== newContent) {
             currFeatures[cell.getAttribute("feature-id")]["label"] = newContent;
-            createSideBar(pNr);
-            makeContentGrid(pNr);
+            createSidebar(currentlyOpenedPlasmid);
+            makeContentGrid(currentlyOpenedPlasmid);
         };
     } else if (cell.id.includes("sidebar")) {
         console.log("Editable cells:", cell, cell.parentElement.children[0].innerText, cell.id.replace("sidebar-"), cell.textContent)
         currFeatures[cell.parentElement.children[0].innerText][cell.id.replace("sidebar-", "")] = cell.textContent;
-        createSideBar(pNr);
+        createSidebar(currentlyOpenedPlasmid);
         if (cell.id === "sidebar-label") {
-            makeContentGrid(pNr);
+            makeContentGrid(currentlyOpenedPlasmid);
         };
     };
-    enableSidebarEditing(pNr);
+    enableSidebarEditing();
 };
-
-document.addEventListener('DOMContentLoaded', function() {
-  enableEditingOfFileNames(1);
-});

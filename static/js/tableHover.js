@@ -5,15 +5,18 @@
  * - dont create the popup on every mousement
  * - dont delete the popup just hide it
  */
-function addHoverPopupToTable(tableId, pNr) {
+function addHoverPopupToTable(plasmidIndex) {
   // Select table
+  const tableId = "sequence-grid-" + plasmidIndex
   const table = document.getElementById(tableId);
   // Create popup for this table
   const popup = document.createElement('div');
-  popup.id = tableId + "popup";
+  popup.id = tableId + "-popup";
   popup.className = 'hover-popup';
   popup.style.display = "none"; // hide immediately
   document.body.appendChild(popup);
+
+  console.log("Adding hover popup:", plasmidIndex, tableId, table, popup)
 
   // Add the hover listener
   table.addEventListener('mouseover', function(event) {
@@ -25,11 +28,7 @@ function addHoverPopupToTable(tableId, pNr) {
       const cellIndex = event.target.cellIndex;
 
       // Insert the popup text based on the hovered plasmid
-      if (pNr === 1) {
-        popup.textContent = basePosition !== -1 ? basePosition + " (" + rowIndex + ", " + cellIndex + ")" : "";
-      } else {
-        popup.textContent = basePosition2 !== -1 ? basePosition2 + " (" + rowIndex + ", " + cellIndex + ")" : "";
-      };
+      popup.textContent = plasmidDict[plasmidIndex]["basePosition"] !== -1 ? plasmidDict[plasmidIndex]["basePosition"] + " (" + rowIndex + ", " + cellIndex + ")" : "";
       
       // Position it accordingly
       positionPopup(popup, event.clientX, event.clientY);
@@ -72,36 +71,19 @@ function addHoverPopupToTable(tableId, pNr) {
       //console.log("Table Hover", targetCell, tdCursorCoords, basePositionOffset);
 
       // Check which side of the cell we're closer to
-      if (cursorOffset < cellWidth / 2) { // Left side
-        if (pNr === 1) {
-          basePosition = ((targetCellRowIndex - targetCellRowIndex % gridStructure.length) / gridStructure.length) * gridWidth + targetCellCellIndex + 1 + basePositionOffset;
-        } else {
-          basePosition2 = ((targetCellRowIndex - targetCellRowIndex % gridStructure2.length) / gridStructure2.length) * gridWidth + targetCellCellIndex + 1 + basePositionOffset;
-        };
-      } else { // Right side
-        if (pNr === 1) {
-          basePosition = ((targetCellRowIndex - targetCellRowIndex % gridStructure.length) / gridStructure.length) * gridWidth + targetCellCellIndex + 1 + basePositionOffset;
-        } else {
-          basePosition2 = ((targetCellRowIndex - targetCellRowIndex % gridStructure2.length) / gridStructure2.length) * gridWidth + targetCellCellIndex + 1 + basePositionOffset;
-        };
-      };
+      const gridStructureLength = plasmidDict[plasmidIndex]["gridStructure"].length
+      plasmidDict[plasmidIndex]["basePosition"] = ((targetCellRowIndex - targetCellRowIndex % gridStructureLength) / gridStructureLength) * gridWidth + targetCellCellIndex + 1 + basePositionOffset;
 
       // Update the text content and mvoe the popup into position
       if (popup) {
         if (event.target.id === 'Forward Strand' || event.target.id === 'Complementary Strand') {
-          if (pNr === 1) {
-            popup.textContent = basePosition !== -1 ? basePosition + " (" + targetCellRowIndex + ", " + targetCellCellIndex + ")" : "";
-            positionPopup(popup, event.clientX, event.clientY);
-          } else {
-            popup.textContent = basePosition2 !== -1 ? basePosition2 + " (" + targetCellRowIndex + ", " + targetCellCellIndex + ")" : "";
-            positionPopup(popup, event.clientX, event.clientY);
-          };
+          popup.textContent = plasmidDict[plasmidIndex]["basePosition"] !== -1 ? plasmidDict[plasmidIndex]["basePosition"] + " (" + targetCellRowIndex + ", " + targetCellCellIndex + ")" : "";
+          positionPopup(popup, event.clientX, event.clientY);
         } else if (event.target.id === 'Amino Acids' && event.target.getAttribute("aaindex")) {
-            //console.log(event.target.textContent + event.target.getAttribute("aaindex"))
-            popup.textContent = event.target.textContent.replace("-", "X") + event.target.getAttribute("aaindex");
-            positionPopup(popup, event.clientX, event.clientY);
+          popup.textContent = event.target.textContent.replace("-", "X") + event.target.getAttribute("aaindex");
+          positionPopup(popup, event.clientX, event.clientY);
         } else {
-            popup.style.display = "none";
+          popup.style.display = "none";
         };
       };
     };
@@ -124,13 +106,9 @@ function addHoverPopupToTable(tableId, pNr) {
       console.log("Mouse out of the table bounds");
       if (popup) {
         popup.style.display = "none";
-      }
+      };
 
-      if (pNr === 1) {
-        basePosition = -1;
-      } else {
-        basePosition2 = -1;
-      }
+      plasmidDict[plasmidIndex]["basePosition"] = -1;
     }
   });
 };
@@ -157,27 +135,3 @@ function positionPopup(popup, clientX, clientY) {
   popup.style.zIndex = '3';
   popup.style.display = "block";
 };
-
-
-/**
- * Wait for tables to exist then return.
- */
-function waitForTableToExist(tableId, callback) {
-  const checkTableExistence = setInterval(function() {
-    const table = document.getElementById(tableId);
-    if (table) {
-      clearInterval(checkTableExistence);
-      callback();
-    };
-  }, 100); // Check for table existence every 100ms
-};
-
-
-// Listeners waiting for the tables to exist before enabling the cursor hover hint
-waitForTableToExist('sequence-grid', function() {
-  addHoverPopupToTable('sequence-grid', 1);
-});
-
-waitForTableToExist('sequence-grid2', function() {
-  addHoverPopupToTable('sequence-grid2', 2);
-});
