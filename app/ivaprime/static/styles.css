@@ -804,3 +804,33 @@ nav ul li a {
   width: 24px;
   height: 24px;
 }
+
+
+#plasmid-tabs-container {
+  display: flex;
+  overflow-x: hidden; /* Hide the horizontal scrollbar */
+  width: auto;
+  max-width: 50%;
+  white-space: nowrap;
+  scroll-behavior: smooth; /* Add smooth scrolling behavior */
+  scroll-snap-type: x mandatory;
+}
+
+#plasmid-tabs-list {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#plasmid-tabs-list li {
+  padding: 10px;
+  margin: 0 5px;
+  border: 1px solid #ddd;
+}
+
+#scroll-left, #scroll-right {
+  cursor: pointer;
+  font-size: 24px;
+  margin: 10px;
+}

@@ -26,6 +26,7 @@
             <script src="{% static 'js/resizeContents.js' %}"></script>
             <script src="{% static 'js/hideableWindows.js' %}"></script>
             <script src="{% static 'js/editFeatures.js' %}"></script>
+            <script src="{% static 'js/plasmidTabs.js' %}"></script>
             <!-- Libraries -->
             <script src="{% static 'js/html-docx.js' %}"></script>
             <script src="{% static 'js/xlsx.full.min.js' %}"></script>
@@ -42,7 +43,16 @@
                         <li id="import-second-demo-btn" style="display: none;"><a href="#" id="import-second-btn-a">Import Demo Subcloning Target</a></li>
                         <li style="display: flex;align-items: center;text-align: center;"><a id="plasmid-file-name1" class="editable" style="display: none;"></a></li>
                         <li style="display: flex;align-items: center;text-align: center;"><a id="plasmid-file-name2" class="editable" style="display: none;"></a></li>
-                    </ul>   
+                    </ul>
+
+                    <!-- Plasmid tabs -->
+                    <div id="scroll-left" onclick="scrollTabs('left')">‹</div>
+                    <div id="plasmid-tabs-container">
+                        <ul id="plasmid-tabs-list">
+                        </ul>
+                    </div>
+                    <div id="scroll-right" onclick="scrollTabs('right')">›</div>
+
                     <!-- Right side header buttons -->
                     <ul id="header-list-right" class="horizontal-list">
                         <li id="tm-calc-btn"><a href="#" disabled>TM Calculator</a></li>
@@ -269,6 +279,7 @@
             <div class="parent-container" id="parent-container">
                 <!-- Plasmid nr 1 -->
                 <div class="first-plasmid-container" id="first-plasmid-container">
+                    
                     <!-- Sidebar -->
                     <div id="sidebar" class="sidebar" style="width: 25%;">
                         <!-- Export buttons -->
@@ -316,33 +327,6 @@
                         <input type="text" id="custom-search-input" class="search-bar" placeholder="Search">  
                         <!-- Plasmid sequence grid-->
                         <div id="file-content" class="strands">
-                            <table id="sequence-grid" class="sequence-grid">
-                                <tbody>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-    
-                <!-- Plasdmid nr 2 -->
-                <div class="second-plasmid-container" id="second-plasmid-container" style="display: none;">
-                    <!-- Sidebar -->
-                    <div class="sidebar" id="sidebar2" style="width: 25%;">
-                        <!-- Features table -->
-                        <table class="sidebar-table" id="sidebar-table2">
-                        </table>
-                    </div>
-                    
-                    <!-- Plasmid content -->
-                    <div class="content" id="content2">
-                        <!-- Custom search -->
-                        <input type="text" id="custom-search-input2" class="search-bar" placeholder="Search">  
-                        <!-- Plasmid sequence grid-->
-                        <div id="file-content2" class="strands">
-                            <table id="sequence-grid2" class="sequence-grid">
-                                <tbody>
-                                </tbody>
-                            </table>
                         </div>
                     </div>
                 </div>
