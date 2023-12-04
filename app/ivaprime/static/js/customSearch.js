@@ -31,11 +31,11 @@ function initiateSearchFunctionality() {
 
 
 /**
-     * Reset highlighted cells in the specified grid
-     */
+ * Reset highlighted cells in the specified grid
+ */
 function resetTableCells() {
     // Select table element
-    let table = table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
+    let table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
     
     // Find all cells with the "selected-cell-search" class and remove it
     const cells = table.getElementsByClassName("selected-cell-search");

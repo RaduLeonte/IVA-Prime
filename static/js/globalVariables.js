@@ -136,14 +136,14 @@ let isTmCalcWindowVisible = false;
  * importPlasmid
  */
 // Grid structure, each entry is a row in the table
-let firstImport = true;
 let plasmidDict = {};
 let currentlyOpenedPlasmid = null;
-let defaultGridStructure = ["Forward Strand",
-                                "Complementary Strand",
-                                "Amino Acids",
-                                "Annotations",
-                                "Spacer"];
+let defaultGridStructure = [
+    "Forward Strand",
+    "Complementary Strand",
+    "Amino Acids",
+    "Annotations",
+    "Spacer"];
 let gridWidth = (getUserPreference("gridWidth") !== null) ? getUserPreference("gridWidth") : defaultSetingsDict["gridWidth"]; // Amount of cells per row
 // Store content of imported file
 let originalFileExtension1 = null;

@@ -128,7 +128,6 @@ let saltCorrectionEquation = (getUserPreference("saltCorrectionEquation") !== nu
 // M, DMSO concentration for melting temperatures
 let dmsoConc = (getUserPreference("dmsoConc") !== null) ? getUserPreference("dmsoConc") : defaultSetingsDict["dmsoConc"];
 
-
 let isTmCalcWindowVisible = false;
 
 
@@ -136,7 +135,6 @@ let isTmCalcWindowVisible = false;
  * importPlasmid
  */
 // Grid structure, each entry is a row in the table
-let firstImport = true;
 let plasmidDict = {};
 let currentlyOpenedPlasmid = null;
 let defaultGridStructure = ["Forward Strand",
@@ -145,27 +143,8 @@ let defaultGridStructure = ["Forward Strand",
                                 "Annotations",
                                 "Spacer"];
 let gridWidth = (getUserPreference("gridWidth") !== null) ? getUserPreference("gridWidth") : defaultSetingsDict["gridWidth"]; // Amount of cells per row
-// Store content of imported file
-let originalFileExtension1 = null;
-let originalFileExtension2 = null;
-let importedFileHeader1 = null;
-let importedFileHeader2 = null;
-// Initialise empty sequence and features variables
-let sequence = "";
-let complementaryStrand = "";
-let features = null;
-let sequence2 = "";
-let complementaryStrand2 = "";
-let features2 = null;
 // Global variable that stores the most recent color used
 let recentColor = '';
-
-
-/**
- * importSubcloningPlasmid 
- */
-// Keep track if the second plasmid has been imported (to disable the button etc)
-let secondPlasmidImported = false;
 
 
 /**
@@ -175,12 +154,6 @@ let secondPlasmidImported = false;
 let preferredOrganism = (getUserPreference("preferredOrganism")  !== null) ? getUserPreference("preferredOrganism") : defaultSetingsDict["preferredOrganism"];
 let dnaSequenceInput = '';
 let aminoAcidSequenceInput = '';
-
-
-/**
- * tableHover 
- */
-// 
 
 
 /**

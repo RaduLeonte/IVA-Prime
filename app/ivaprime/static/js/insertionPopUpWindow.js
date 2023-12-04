@@ -53,10 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const allowedLetterCodes = Object.keys(aaToCodon);
       aminoAcidSequenceInput = aminoAcidSequenceInput.split('').filter(char => allowedLetterCodes.includes(char)).join('');
 
-      // Get target organism from select object
-      const targetOrganism = "";
 
-      //console.log("HERE2", dnaSequenceInput, aminoAcidSequenceInput, insertionPosition, selectionStartPos, selectionEndPos)
       // Call the function to create insertion primers or replacement primers if we have text selected
       if (!selectionEndPos || selectionEndPos === -1) {
         createReplacementPrimers(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, insertionPosition);

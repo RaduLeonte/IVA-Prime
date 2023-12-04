@@ -410,8 +410,6 @@ body {
   color: #fff;
   border: none;
   position: sticky;
-  top: 10px;
-  right: 10px;
   z-index: 9999;
 }
 
@@ -820,6 +818,7 @@ header {
 
 .plasmid-tabs-list {
   display: flex;
+  gap: 5px;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -833,6 +832,7 @@ header {
 .plasmid-tab {
   border-radius: 8px;
   display: inline-block;
+  position: relative;
 }
 
 .plasmid-tab:hover {
@@ -875,6 +875,48 @@ header {
 
 .plasmid-tab-dropdown:hover {
 	background: #DAE0E7;
+}
+
+.plasmid-tab-dropdown-menu {
+  position: fixed;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 5px;
+  margin: 0;
+  max-width: 300px;
+}
+
+.plasmid-tab-dropdown-menu h3 {
+  margin: 0;
+  padding: 5px;
+  background-color: #555;
+  color: #fff;
+  font-size: 16px;
+}
+
+.plasmid-tab-dropdown-menu ul {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.plasmid-tab-dropdown-menu ul li:last-child {
+  border-bottom: 2px solid #b8b8b8;
+}
+
+.plasmid-tab-dropdown-menu ul:last-child li:last-child {
+  border-bottom: 0px solid #b8b8b8;
+}
+
+.plasmid-tab-dropdown-menu ul a {
+  color: black;
+  padding: 10px 20px;
+  text-decoration: none;
+  display: block;
+}
+
+.plasmid-tab-dropdown-menu ul a:hover {
+  background-color: #ddd;
 }
 
 #scroll-left, #scroll-right {
