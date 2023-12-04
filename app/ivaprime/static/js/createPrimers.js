@@ -618,6 +618,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
                         overlappingSeq = overlappingSeq.slice(1);
                         homoFragmentLength1++;
                         turn = "homoFwd2";
+                        console.log("Short insertion", "homofwd1")
                     } else{break};
                 } else if (turn === "homoFwd2") {
                     const stillAboveTargetTM = get_tm(overlappingSeq.slice(0, -1), primerConc, saltConc, "oligoCalc") > homoRegionTm;
@@ -627,12 +628,15 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
                         overlappingSeq = overlappingSeq.slice(0, -1);
                         homoFragmentLength2++;
                         turn = "homoFwd1";
+                        console.log("Short insertion", "homofwd2")
                     } else{break};
                 };
             };
-
+            console.log("Short insertion", homoFragmentLength1, homoFragmentLength2)
             homoFwd1 = homoFwd1.slice(homoFragmentLength1, homoFwd1.length);
-            homoFwd2 = homoFwd2.slice(0, overlappingSeq.length - homoFragmentLength2 + 1);
+            console.log("Short insertion", homoFwd2, 0, overlappingSeq)
+            homoFwd2 = homoFwd2.slice(0, homoFwd2.length - homoFragmentLength2);
+            console.log("Short insertion", homoFwd2)
             tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice,  7, 1)
 
             let homoRev1 = getComplementaryStrand(homoFwd2).split('').reverse().join('');
