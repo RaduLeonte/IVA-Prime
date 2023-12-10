@@ -14,7 +14,9 @@ document.addEventListener('DOMContentLoaded', function () {
         <li id="deletion" disabled>Delete selection</li>
         <li id="mutation" disabled>Mutate selection</li>
         <li id="replacement" disabled>Replace selection</li>
-        <li id="subcloning" disabled>Subclone selection</li>
+        <li id="mark-for-subcloning" disabled>Mark selection for subcloning</li>
+        <li id="subcloning" disabled>Subclone into selection</li>
+        <li id="subcloning-with-insertion" disabled>Subclone with insertion into selection</li>
       </ul>
     </div>  
   <div>
@@ -68,31 +70,81 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     // Item logic
+    
+    /**
+     * Copy forward strand
+     */
     if (menuItemId === 'copy-selection') {
       console.log('Copyting selection.');
       copySelectionToClipboard(currentlyOpenedPlasmid, null);
+    
+    /**
+     * Copy complementary strand
+     */
     } else if (menuItemId === 'copy-complement') {
       console.log('Copyting selection.');
       copySelectionToClipboard(currentlyOpenedPlasmid, "complement");
+    
+    /**
+     * Copy reverse complement
+     */
     } else if (menuItemId === 'copy-rev-complement') {
       console.log('Copyting selection.');
       copySelectionToClipboard(currentlyOpenedPlasmid, "revcomplement");
+    
+    /**
+     * Insert here
+     */
     } else if (menuItemId === 'insertion') {
       console.log('Insertion selected');
       showPopupWindow("Insert here:", "Insertion"); // Show the popup window for insertions/replacements
+    
+    /**
+     * Delete selection
+     */
     } else if (menuItemId === 'deletion') {
       console.log('Deletion selected');
       //createDeletionPrimers(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]); // Create deletion primers
       createReplacementPrimers("", "", "", plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"], "Deletion");
+    
+    /**
+     * Mutate selection
+     */
     } else if (menuItemId === 'mutation') {
       console.log('Mutation selected');
       showPopupWindow("Mutate selection to:", "Mutation"); // Show the popup window for insertions/replacements
+    
+    /**
+     * Replace selection
+     */
     } else if (menuItemId === 'replacement') {
       console.log('Mutation selected');
       showPopupWindow("Replace selection with:", "Replacement"); // Show the popup window for insertions/replacements
+    
+    /**
+     * Mark selection as subcloning target
+     */
+    } else if (menuItemId === 'mark-for-subcloning') {
+      console.log('Marking selection for subcloning');
+      markSelectionForSubcloning(currentlyOpenedPlasmid, plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]);
+    
+      /**
+     * Subclone into selection
+     */
     } else if (menuItemId === 'subcloning') {
       console.log('Subcloning selected');
-      createSubcloningPrimers(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]); // Start subcloning logic
+      createSubcloningPrimersNew(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"], "", "", "", "", null);
+
+    /**
+     * Subclone into selection with insertion
+     */
+    } else if (menuItemId === 'subcloning-with-insertion') {
+      console.log('Subcloning selected');
+      showPopupWindow("Subclone with insertions:", "Subcloning");
+
+    /**
+     * Begin translation at first ATG
+     */
     } else if (menuItemId === 'begin-translation') {
       console.log('Beginning translation');
       // Start translation logic
@@ -101,6 +153,10 @@ document.addEventListener('DOMContentLoaded', function () {
       } else { // Else search for the first ATG then start there
         startTranslation(plasmidDict[currentlyOpenedPlasmid]["fileSequence"].indexOf("ATG", insertionPosition) + 1, 1);
       };
+    
+    /**
+     * Translate current selection
+     */
     } else if (menuItemId === 'translate-selection') {
       console.log('Translating current selection', plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]);
       const translateSpanStart = Math.min(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]);
@@ -130,7 +186,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const deletionMenuItem = document.getElementById('deletion');
     const mutationMenuItem = document.getElementById('mutation');
     const replacementMenuItem = document.getElementById('replacement');
+
+    const markForSubcloningMenuItem = document.getElementById('mark-for-subcloning');
     const subcloningMenuItem = document.getElementById('subcloning');
+    const subcloningWithInsertionMenuItem = document.getElementById('subcloning-with-insertion');
 
     const beginTranslationMenuItem = document.getElementById('begin-translation');
     const translateSelectionMenuItem = document.getElementById('translate-selection');
@@ -140,33 +199,41 @@ document.addEventListener('DOMContentLoaded', function () {
       copySelectionMenuItem.classList.remove("disabled");
       copyComplementSelectionMenuItem.classList.remove("disabled");
       copyRevComplementSelectionMenuItem.classList.remove("disabled");
+
       // If there is a selection, disable insertions and translations
       insertionMenuItem.classList.add('disabled');
       beginTranslationMenuItem.classList.add('disabled');
+
       // Re-enable deletions and mutations
       deletionMenuItem.classList.remove('disabled');
       mutationMenuItem.classList.remove('disabled');
       replacementMenuItem.classList.remove('disabled');
       translateSelectionMenuItem.classList.remove('disabled');
+      markForSubcloningMenuItem.classList.remove('disabled');
     } else {
       copySelectionMenuItem.classList.add("disabled");
       copyComplementSelectionMenuItem.classList.add("disabled");
       copyRevComplementSelectionMenuItem.classList.add("disabled");
+
       // If there is no selection, re-enable insertions and translations
       insertionMenuItem.classList.remove('disabled');
       beginTranslationMenuItem.classList.remove('disabled');
+
       // Disable deletions and mutations
       deletionMenuItem.classList.add('disabled');
       mutationMenuItem.classList.add('disabled');
       replacementMenuItem.classList.add('disabled');
       translateSelectionMenuItem.classList.add('disabled');
+      markForSubcloningMenuItem.classList.add('disabled');
     };
 
     // If there is a selection and a second plasmid has been imported, enable the subcloning option
-    if (plasmidDict[currentlyOpenedPlasmid]["selectedText"] && Object.keys(plasmidDict).length !== 1) {
+    if (subcloningOriginSpan) {
       subcloningMenuItem.classList.remove('disabled');
+      subcloningWithInsertionMenuItem.classList.remove('disabled');
     } else {
       subcloningMenuItem.classList.add('disabled');
+      subcloningWithInsertionMenuItem.classList.add('disabled');
     };
     
     // Reposition the context menu

@@ -122,6 +122,33 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, w
 
 
 /**
+ * Search for query occurences in sequence then add a class or highlight 
+ */
+function highlightSpan(plasmidIndex, targetStrandIndex, spanStart, spanEnd, highlightClass, backgroundColor, textColor) {
+    startIndex = Math.min(spanStart, spanEnd);
+    endIndex = Math.max(spanStart, spanEnd);
+    // Select table element
+    let table = document.getElementById("sequence-grid-" + plasmidIndex);
+    if (table) {
+        // Iterate over all cells that contain the search query and highlight them
+        for (let j = startIndex; j < endIndex; j++) {
+            // Convert sequence index to table coordinates
+            const [row, column] = seqIndexToCoords(j, 0, plasmidDict[plasmidIndex]["gridStructure"]);
+            // Select and highlight the cell
+            const cell = table.rows[row + targetStrandIndex].cells[column];
+            console.log("highlightSpan", cell)
+            if (highlightClass) {
+                cell.classList.add(highlightClass);
+            } else if (highlightColor) {
+                cell.style.backgroundColor = backgroundColor;
+                cell.style.color = textColor;
+            };
+        };
+    };
+};
+
+
+/**
  * Scroll to the next selected cell
  */
 function scrollToNextSelectedCell() {

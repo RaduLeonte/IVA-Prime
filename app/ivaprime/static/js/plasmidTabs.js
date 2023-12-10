@@ -9,16 +9,18 @@ function scrollTabs(direction) {
 };
 
 
-function updateSidebarAndGrid(plasmidIndex) {
+function updateSidebarAndGrid() {
     // Update sidebar table
-    const sidebarTableContainer = document.getElementById('sidebar-table');
-    sidebarTableContainer.innerHTML = plasmidDict[plasmidIndex]["sidebarTable"].innerHTML;
+    const sidebarTableContainer = document.querySelector('.sidebar-content');
+    sidebarTableContainer.after(plasmidDict[currentlyOpenedPlasmid]["sidebarTable"]);
+    //console.log("Updating to", currentlyOpenedPlasmid, plasmidDict[currentlyOpenedPlasmid]["sidebarTable"].innerHTML.slice(200, 300))
+    //sidebarTableContainer.appendChild(plasmidDict[currentlyOpenedPlasmid]["sidebarTable"]);
     enableSidebarEditing()
     
     // Update content grid
     const contentGridContainer = document.getElementById('file-content');
     contentGridContainer.innerHTML = "";
-    contentGridContainer.appendChild(plasmidDict[plasmidIndex]["contentGrid"])
+    contentGridContainer.appendChild(plasmidDict[currentlyOpenedPlasmid]["contentGrid"]);
 };
 
 
@@ -26,6 +28,7 @@ function saveSidebarAndGrid() {
     if (document.getElementById('sidebar-table') && document.getElementById('sequence-grid-' + currentlyOpenedPlasmid)) {
         // Sidebar
         plasmidDict[currentlyOpenedPlasmid]["sidebarTable"] = document.getElementById('sidebar-table');
+        console.log("Updating save table", currentlyOpenedPlasmid, document.getElementById('sidebar-table').innerHTML.slice(200, 300), plasmidDict[currentlyOpenedPlasmid]["sidebarTable"].innerHTML.slice(200, 300))
 
         // Content grid
         plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = document.getElementById('sequence-grid-' + currentlyOpenedPlasmid);
@@ -52,7 +55,7 @@ function switchPlasmidTab(plasmidIndex) {
 
     // Update primers
     const oldPrimers = document.querySelector('.sidebar-content');
-    const sidebar = document.getElementById("sidebar");
+    const sidebarContainer = document.getElementById("sidebar-container");
 
     let newPrimers = null;
     if (plasmidDict[plasmidIndex]["sidebarPrimers"] !== null) {
@@ -62,17 +65,17 @@ function switchPlasmidTab(plasmidIndex) {
         newPrimers.classList.add("sidebar-content");
         newPrimers.innerHTML = `<h2 id="primers-div-headline">Primers will appear here.</h2>`;
     };
-    sidebar.insertBefore(newPrimers, sidebar.firstChild);
-    sidebar.removeChild(oldPrimers);
+    sidebarContainer.insertBefore(newPrimers, sidebarContainer.firstChild);
+    sidebarContainer.removeChild(oldPrimers);
 
     // Save side bar and grid of previous plasmid
     saveSidebarAndGrid();
 
-    // Repopulate sidebar and grid
-    updateSidebarAndGrid(plasmidIndex);
-
     // Update global tracker
     currentlyOpenedPlasmid = plasmidIndex;
+
+    // Repopulate sidebar and grid
+    updateSidebarAndGrid();
 };
 
 
@@ -131,8 +134,8 @@ function closePlasmid(plasmidIndex) {
         // Other wise clear everything
         } else {
             // Clear sidebar
-            const sidebarContainer = document.getElementById('sidebar');
-            sidebarContainer.innerHTML = "";
+            const sidebarContainer = document.getElementById('sidebar-container');
+            sidebarContainer.innerHTML = "<div class=\"sidebar-content\"><h2 id=\"primers-div-headline\">Primers will appear here.</h2></div>";
     
             // Clear content grid
             const contentGridContainer = document.getElementById('file-content');

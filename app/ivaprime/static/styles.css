@@ -924,3 +924,23 @@ header {
   font-size: 24px;
   margin: 10px;
 }
+
+.subcloning-target-cell {
+  background-color: rgba(128, 0, 128, 0.2);
+  border-top: 4px dashed #ae70ae;
+  border-bottom: 4px dashed #ae70ae !important;
+}
+
+.subcloning-target-cell-first {
+  background-color: rgba(128, 0, 128, 0.2);
+  border-top: 4px dashed #ae70ae;
+  border-left: 4px dashed #ae70ae;
+  border-bottom: 4px dashed #ae70ae !important;
+}
+
+.subcloning-target-cell-last {
+  background-color: rgba(128, 0, 128, 0.2);
+  border-top: 4px dashed #ae70ae;
+  border-right: 4px dashed #ae70ae;
+  border-bottom: 4px dashed #ae70ae !important;
+}

@@ -701,6 +701,18 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
 };
 
 
+/**
+ * Mark selection as subcloning target
+ */
+function markSelectionForSubcloning(plasmidIndex, subcloningTargetStartPos, subcloningTargetEndPos) {
+    console.log("markSelectionForSubcloning", plasmidIndex, subcloningTargetStartPos, subcloningTargetEndPos);
+    subcloningOriginPlasmidIndex = plasmidIndex;
+    subcloningOriginSpan = [Math.min(subcloningTargetStartPos, subcloningTargetEndPos), Math.max(subcloningTargetStartPos, subcloningTargetEndPos)];
+    highlightSpan(plasmidIndex, 0, subcloningOriginSpan[0], subcloningOriginSpan[0] + 1, "subcloning-target-cell-first", null, null);
+    highlightSpan(plasmidIndex, 0, subcloningOriginSpan[0] + 1, subcloningOriginSpan[1] - 1, "subcloning-target-cell", null, null);
+    highlightSpan(plasmidIndex, 0, subcloningOriginSpan[1] - 1, subcloningOriginSpan[1], "subcloning-target-cell-last", null, null);
+};
+
 
 /**
  * Creates the subcloning primers. Explanation here.
@@ -736,6 +748,88 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
  * 
  * subcloningStartPos, subcloningEndPos - indices of the segment to be subcloned into the second plasmid
  */
+function createSubcloningPrimersNew(subcloningStartPos, subcloningEndPos, aaSequence5Prime, dnaSequence5Prime, aaSequence3Prime, dnaSequence3Prime, targetOrganism) {
+    let seqToInsert5 = "";
+    if (aaSequence5Prime && aaSequence5Prime !== "") {
+        seqToInsert5 = optimizeAA(seqToInsert5, targetOrganism);
+    } else if (dnaSequence5Prime && dnaSequence5Prime !== "") {
+        seqToInsert5 = dnaSequence5Prime;
+    };
+
+    let seqToInsert3 = "";
+    if (aaSequence3Prime && aaSequence3Prime !== "") {
+        seqToInsert3 = optimizeAA(aaSequence3Prime, targetOrganism);
+    } else if (dnaSequence3Prime && dnaSequence3Prime !== "") {
+        seqToInsert3 = dnaSequence3Prime;
+    };
+
+    let subcloningSequence = seqToInsert5 + repeatingSlice(plasmidDict[subcloningOriginPlasmidIndex]["fileSequence"], subcloningOriginSpan[0], subcloningOriginSpan[1]) + seqToInsert3;
+
+
+    if (!subcloningStartPos) {subcloningStartPos = subcloningEndPos};
+    if (!subcloningEndPos) {subcloningEndPos = subcloningStartPos};
+    const startPos = Math.min(subcloningStartPos, subcloningEndPos);
+    const endPos = Math.max(subcloningStartPos, subcloningEndPos);
+    console.log("createSubcloningPrimersNew", subcloningSequence, subcloningOriginPlasmidIndex, subcloningOriginSpan, startPos, endPos)
+
+    // Origin templatete primers
+    let insertTempFwd = primerExtension(subcloningOriginSpan[0], "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, subcloningOriginPlasmidIndex);
+    let insertTempRev = primerExtension(subcloningOriginSpan[1], "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, subcloningOriginPlasmidIndex);
+
+    // Destination template primers
+    let vecFwd = primerExtension(endPos, "fwdStrand", "forward", homoRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
+    let vecRev = primerExtension(startPos, "fwdStrand", "forward", homoRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
+    
+    // Homologous regions
+    let insertHomoFwd = getComplementaryStrand(vecRev);
+    while (true) {
+        const stillAboveTargetTM = get_tm(insertHomoFwd.slice(1), primerConc, saltConc, "oligoCalc") > homoRegionTm;
+        const slicingGetsUsCloser = Math.abs(homoRegionTm - get_tm(insertHomoFwd.slice(1), primerConc, saltConc, "oligoCalc")) <= Math.abs(homoRegionTm - get_tm(insertHomoFwd, primerConc, saltConc, "oligoCalc"));
+        const minimumLengthNotReached = insertHomoFwd.length > homoRegionMinLength;
+        if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
+            insertHomoFwd = insertHomoFwd.slice(1);
+        } else {break};
+    };
+    let insertHomoRev = getComplementaryStrand(vecFwd);
+    while (true) {
+        const stillAboveTargetTM = get_tm(insertHomoRev.slice(1), primerConc, saltConc, "oligoCalc") > homoRegionTm;
+        const slicingGetsUsCloser = Math.abs(homoRegionTm - get_tm(insertHomoRev.slice(1), primerConc, saltConc, "oligoCalc")) <= Math.abs(homoRegionTm - get_tm(insertHomoRev, primerConc, saltConc, "oligoCalc"));
+        const minimumLengthNotReached = insertHomoRev.length > homoRegionMinLength;
+        if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
+            insertHomoRev = insertHomoRev.slice(1);
+        } else {break};
+    };
+    
+    
+    // Display primers in the sidebar
+    let primersDict = {}
+    const primerInfoFwd = `(Homologous region: ${insertHomoFwd.length} bp, ${Math.round(get_tm(insertHomoFwd, primerConc, saltConc, "oligoCalc"))} °C;
+                            Template binding region: ${insertTempFwd.length} bp, ${Math.round(get_tm(insertTempFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
+                            Total: ${(insertHomoFwd.length + insertTempFwd.length)} bp)`;
+    const primerInfoRev = `(Homologous region: ${insertHomoRev.length} bp, ${Math.round(get_tm(insertHomoRev, primerConc, saltConc, "oligoCalc"))} °C;
+                            Template binding region: ${insertTempRev.length} bp, ${Math.round(get_tm(insertTempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
+                            Total: ${(insertHomoRev.length + insertTempRev.length)} bp)`;
+    const primerInfoVecFwd = `(Template binding region: ${vecFwd.length} bp, ${Math.round(get_tm(vecFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} °C)`;
+    const primerInfoVecRev = `(Template binding region: ${vecRev.length} bp, ${Math.round(get_tm(vecRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C)`;
+    primersDict["Forward Primer"] = {1: {"seq": insertHomoFwd, "color": primerColorCyan},
+                                     2: {"seq": insertTempFwd, "color": primerColorPurple},
+                                    info: primerInfoFwd};
+    primersDict["Reverse Primer"] = {1: {"seq": insertHomoRev, "color": primerColorCyan},
+                                     2: {"seq": insertTempRev, "color": primerColorPurple},
+                                     info: primerInfoRev};
+    primersDict["Vector Forward Primer"] = {1: {"seq": vecFwd, "color": primerColorCyan},
+                                    info: primerInfoVecFwd};
+    primersDict["Vector Reverse Primer"] = {1: {"seq": vecRev, "color": primerColorCyan},
+                                            info: primerInfoVecRev};
+    
+    console.log("Primers Dict:", primersDict)
+    displayPrimers("Subcloning", primersDict);
+
+    // Update stuff
+    const plasmidLengthDiff = subcloningSequence.length - (endPos - startPos);
+    updateFeatures("Subcloning", subcloningSequence, startPos, endPos, plasmidLengthDiff, currentlyOpenedPlasmid);
+};
+
 function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
     // Initialise variables
     let subcloningInsertPositionStart = null;
