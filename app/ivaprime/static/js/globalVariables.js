@@ -160,6 +160,7 @@ let aminoAcidSequenceInput = '';
 /**
  * tableSelection 
  */
+let basePosition = -1;
 let selectedText = ''; // Currently selected sequence in the first grid
 let selectedText2 = ''; // Currently selected sequence in the second grid
 let selectionStartPos = null;

@@ -1,9 +1,8 @@
 /**
  * Enables the sequence cursor as a red border on the nearest side of the hovered cell.
  */
-function addCellBorderOnHover(plasmidIndex) {
+function addCellBorderOnHover(sequenceGridTable, plasmidIndex) {
   // Select the grid table of interest
-  const sequenceGridTable = document.getElementById("sequence-grid-" + plasmidIndex);
 
   plasmidDict[plasmidIndex]["previousCell"] = null;
   // Event listener for mouse movements

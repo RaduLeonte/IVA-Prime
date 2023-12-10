@@ -102,7 +102,7 @@ async function handleFileSelect(event, plasmidIndex=0, serverFile=null) {
       plasmidDict[plasmidIndex]["selectedText"] = "";
       plasmidDict[plasmidIndex]["selectionStartPos"] = null;
       plasmidDict[plasmidIndex]["selectionEndPos"] = null;
-      plasmidDict[plasmidIndex]["basePosition"] = -1;
+      basePosition = -1;
       
 
       // Add plasmid tab

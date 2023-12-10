@@ -28,7 +28,7 @@ function addHoverPopupToTable(plasmidIndex) {
       const cellIndex = event.target.cellIndex;
 
       // Insert the popup text based on the hovered plasmid
-      popup.textContent = plasmidDict[plasmidIndex]["basePosition"] !== -1 ? plasmidDict[plasmidIndex]["basePosition"] + " (" + rowIndex + ", " + cellIndex + ")" : "";
+      popup.textContent = basePosition !== -1 ? basePosition + " (" + rowIndex + ", " + cellIndex + ")" : "";
       
       // Position it accordingly
       positionPopup(popup, event.clientX, event.clientY);
@@ -72,12 +72,12 @@ function addHoverPopupToTable(plasmidIndex) {
 
       // Check which side of the cell we're closer to
       const gridStructureLength = plasmidDict[plasmidIndex]["gridStructure"].length
-      plasmidDict[plasmidIndex]["basePosition"] = ((targetCellRowIndex - targetCellRowIndex % gridStructureLength) / gridStructureLength) * gridWidth + targetCellCellIndex + 1 + basePositionOffset;
+      basePosition = ((targetCellRowIndex - targetCellRowIndex % gridStructureLength) / gridStructureLength) * gridWidth + targetCellCellIndex + 1 + basePositionOffset;
 
       // Update the text content and mvoe the popup into position
       if (popup) {
         if (event.target.id === 'Forward Strand' || event.target.id === 'Complementary Strand') {
-          popup.textContent = plasmidDict[plasmidIndex]["basePosition"] !== -1 ? plasmidDict[plasmidIndex]["basePosition"] + " (" + targetCellRowIndex + ", " + targetCellCellIndex + ")" : "";
+          popup.textContent = basePosition !== -1 ? basePosition + " (" + targetCellRowIndex + ", " + targetCellCellIndex + ")" : "";
           positionPopup(popup, event.clientX, event.clientY);
         } else if (event.target.id === 'Amino Acids' && event.target.getAttribute("aaindex")) {
           popup.textContent = event.target.textContent.replace("-", "X") + event.target.getAttribute("aaindex");
@@ -108,7 +108,7 @@ function addHoverPopupToTable(plasmidIndex) {
         popup.style.display = "none";
       };
 
-      plasmidDict[plasmidIndex]["basePosition"] = -1;
+      basePosition = -1;
     }
   });
 };

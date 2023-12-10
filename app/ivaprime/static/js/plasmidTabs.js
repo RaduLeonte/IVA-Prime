@@ -13,17 +13,12 @@ function updateSidebarAndGrid(plasmidIndex) {
     // Update sidebar table
     const sidebarTableContainer = document.getElementById('sidebar-table');
     sidebarTableContainer.innerHTML = plasmidDict[plasmidIndex]["sidebarTable"].innerHTML;
-
+    enableSidebarEditing()
+    
     // Update content grid
     const contentGridContainer = document.getElementById('file-content');
     contentGridContainer.innerHTML = "";
     contentGridContainer.appendChild(plasmidDict[plasmidIndex]["contentGrid"])
-
-    enableSidebarEditing();
-    addCellSelection(plasmidIndex);
-    addHoverPopupToTable(plasmidIndex);
-    addCellBorderOnHover(plasmidIndex);
-    updateAnnotationTrianglesWidth();
 };
 
 
@@ -46,6 +41,7 @@ function savePrimers() {
 function switchPlasmidTab(plasmidIndex) {
     console.log("Switching from", currentlyOpenedPlasmid, "to", plasmidIndex)
     removeAllPlasmidTabDropdownMenus();
+    
     // Deselect plasmid tab
     const previousPlasmidTab = document.getElementById("plasmid-tab-" + currentlyOpenedPlasmid);
     previousPlasmidTab.classList.remove("plasmid-tab-selected");

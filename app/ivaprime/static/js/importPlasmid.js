@@ -93,7 +93,6 @@ async function handleFileSelect(event, plasmidIndex=0, serverFile=null) {
       plasmidDict[plasmidIndex]["selectedText"] = "";
       plasmidDict[plasmidIndex]["selectionStartPos"] = null;
       plasmidDict[plasmidIndex]["selectionEndPos"] = null;
-      plasmidDict[plasmidIndex]["basePosition"] = -1;
       plasmidDict[plasmidIndex]["sidebarPrimers"] = null;
       
 
@@ -1311,6 +1310,11 @@ function makeContentGrid(plasmidIndex) {
 
   // Clean up cells that are not longer in a tr
   cleanLostCells(sequenceGrid);
+
+
+  addCellSelection(sequenceGrid, plasmidIndex);
+  addHoverPopupToTable(sequenceGrid, plasmidIndex);
+  addCellBorderOnHover(sequenceGrid, plasmidIndex);
 
   return sequenceGrid;
 };

@@ -22,7 +22,7 @@ function addCellSelection(plasmidIndex) {
    * Selection cursor hover
    */
   sequenceGridTable.addEventListener('mousemove', function () {
-    const currBasePosition = plasmidDict[plasmidIndex]["basePosition"];
+    const currBasePosition = basePosition;
     if ((currBasePosition === plasmidDict[plasmidIndex]["selectionStartPos"] || currBasePosition === plasmidDict[plasmidIndex]["selectionEndPos"]) && plasmidDict[plasmidIndex]["selectionEndPos"]) {
         sequenceGridTable.style.cursor = 'ew-resize';
         hoveringOverSelectionCursor = (currBasePosition === plasmidDict[plasmidIndex]["selectionStartPos"]) ? "start": "end";
@@ -63,9 +63,9 @@ function addCellSelection(plasmidIndex) {
           // Clear the previous selection
           if (!isShiftKeyPressed()) {
             clearSelection(plasmidIndex, true);
-            plasmidDict[plasmidIndex]["selectionStartPos"] = plasmidDict[plasmidIndex]["basePosition"];
+            plasmidDict[plasmidIndex]["selectionStartPos"] = basePosition;
           } else {
-            plasmidDict[plasmidIndex]["selectionEndPos"] = plasmidDict[plasmidIndex]["basePosition"];
+            plasmidDict[plasmidIndex]["selectionEndPos"] = basePosition;
           };
 
           if (plasmidDict[plasmidIndex]["selectionEndPos"]) {
@@ -113,12 +113,12 @@ function addCellSelection(plasmidIndex) {
     let closestCell = event.target.closest('td')
     if (isSelecting) { // Make sure we're currently selecting
       if (!hoveringOverSelectionCursor) {
-        plasmidDict[plasmidIndex]["selectionEndPos"] = plasmidDict[plasmidIndex]["basePosition"];
+        plasmidDict[plasmidIndex]["selectionEndPos"] = basePosition;
       } else {
         if (hoveringOverSelectionCursor === "start") {
-          plasmidDict[plasmidIndex]["selectionStartPos"] = plasmidDict[plasmidIndex]["basePosition"];
+          plasmidDict[plasmidIndex]["selectionStartPos"] = basePosition;
         } else {
-          plasmidDict[plasmidIndex]["selectionEndPos"] = plasmidDict[plasmidIndex]["basePosition"];
+          plasmidDict[plasmidIndex]["selectionEndPos"] = basePosition;
         };
       };
       currGridStructure = plasmidDict[plasmidIndex]["gridStructure"];
