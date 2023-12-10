@@ -545,10 +545,10 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
             
             // Display primers in the sidebar
             let primersDict = {}
-            const primerInfoFwd = `(Homologous region: ${homoFwd.length} bp, ${Math.round(get_tm(homoFwd, primerConc, saltConc, "oligoCalc"))} ℃;
-                                    Template binding region: ${tempFwd.length} bp, ${Math.round(get_tm(tempFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} ℃; 
+            const primerInfoFwd = `(Homologous region: ${homoFwd.length} bp, ${Math.round(get_tm(homoFwd, primerConc, saltConc, "oligoCalc"))} °C;
+                                    Template binding region: ${tempFwd.length} bp, ${Math.round(get_tm(tempFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
                                     Total: ${(tempFwd.length + seqToInsert.length + tempFwd.length)} bp)`;
-            const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(get_tm(tempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} ℃; 
+            const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(get_tm(tempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
                                     Total: ${(tempRev.length)} bp)`;
             primersDict["Forward Primer"] = {1: {"seq": homoFwd, "color": primerColorOrange},
                                             2: {"seq": seqToInsert, "color": primerColorRed},
@@ -602,10 +602,10 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
  
             // Display primers in the sidebar
             let primersDict = {}
-            const primerInfoFwd = `(Overlap: ${overlappingSeq.length} bp, ${Math.round(get_tm(overlappingSeq, primerConc, saltConc, "oligoCalc"))} ℃;
-                                    Template binding region: ${tempFwd.length} bp, ${Math.round(get_tm(tempFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} ℃; 
+            const primerInfoFwd = `(Overlap: ${overlappingSeq.length} bp, ${Math.round(get_tm(overlappingSeq, primerConc, saltConc, "oligoCalc"))} °C;
+                                    Template binding region: ${tempFwd.length} bp, ${Math.round(get_tm(tempFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
                                     Total: ${(homoFwd1.length + seqToInsert.length + tempFwd.length)} bp)`;
-            const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(get_tm(tempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} ℃; 
+            const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(get_tm(tempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
                                     Total: ${(homoRev1.length + seqToInsert.length + tempRev.length)} bp)`;
             primersDict["Forward Primer"] = {1: {"seq": homoFwd1, "color": primerColorOrange},
                                             2: {"seq": seqToInsert, "color": primerColorRed},
@@ -679,10 +679,10 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
 
         // Display primers in the sidebar
         let primersDict = {}
-        const primerInfoFwd = `(Overlap: ${overlappingSeq.length} bp, ${Math.round(get_tm(overlappingSeq, primerConc, saltConc, "oligoCalc"))} ℃;
-                                Template binding region: ${tempFwd.length} bp, ${Math.round(get_tm(tempFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} ℃; 
+        const primerInfoFwd = `(Overlap: ${overlappingSeq.length} bp, ${Math.round(get_tm(overlappingSeq, primerConc, saltConc, "oligoCalc"))} °C;
+                                Template binding region: ${tempFwd.length} bp, ${Math.round(get_tm(tempFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
                                 Total: ${(homoFwd.length + tempFwd.length)} bp)`;
-        const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(get_tm(tempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} ℃; 
+        const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(get_tm(tempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
                                 Total: ${(homoRev.length + tempRev.length)} bp)`;
         primersDict["Forward Primer"] = {1: {"seq": homoFwd, "color": primerColorRed},
                                          2: {"seq": tempFwd, "color": primerColorGreen},
@@ -881,14 +881,14 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
 
         // Display primers in the sidebar
         let primersDict = {}
-        const primerInfoFwd = `(Homologous region: ${insertHomoFwd.length} bp, ${Math.round(get_tm(insertHomoFwd, primerConc, saltConc, "oligoCalc"))} ℃;
-                                Template binding region: ${insertTempFwd.length} bp, ${Math.round(get_tm(insertTempFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} ℃; 
+        const primerInfoFwd = `(Homologous region: ${insertHomoFwd.length} bp, ${Math.round(get_tm(insertHomoFwd, primerConc, saltConc, "oligoCalc"))} °C;
+                                Template binding region: ${insertTempFwd.length} bp, ${Math.round(get_tm(insertTempFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
                                 Total: ${(insertHomoFwd.length + insertTempFwd.length)} bp)`;
-        const primerInfoRev = `(Homologous region: ${insertHomoRev.length} bp, ${Math.round(get_tm(insertHomoRev, primerConc, saltConc, "oligoCalc"))} ℃;
-                                Template binding region: ${insertTempRev.length} bp, ${Math.round(get_tm(insertTempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} ℃; 
+        const primerInfoRev = `(Homologous region: ${insertHomoRev.length} bp, ${Math.round(get_tm(insertHomoRev, primerConc, saltConc, "oligoCalc"))} °C;
+                                Template binding region: ${insertTempRev.length} bp, ${Math.round(get_tm(insertTempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
                                 Total: ${(insertHomoRev.length + insertTempRev.length)} bp)`;
-        const primerInfoVecFwd = `(Template binding region: ${vecFwd.length} bp, ${Math.round(get_tm(vecFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} ℃)`;
-        const primerInfoVecRev = `(Template binding region: ${vecRev.length} bp, ${Math.round(get_tm(vecRev, primerConc, saltConc, meltingTempAlgorithmChoice))} ℃)`;
+        const primerInfoVecFwd = `(Template binding region: ${vecFwd.length} bp, ${Math.round(get_tm(vecFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} °C)`;
+        const primerInfoVecRev = `(Template binding region: ${vecRev.length} bp, ${Math.round(get_tm(vecRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C)`;
         primersDict["Forward Primer"] = {1: {"seq": insertHomoFwd, "color": primerColorCyan},
                                          2: {"seq": insertTempFwd, "color": primerColorPurple},
                                         info: primerInfoFwd};
