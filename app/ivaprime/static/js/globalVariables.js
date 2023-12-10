@@ -143,6 +143,7 @@ let defaultGridStructure = ["Forward Strand",
                                 "Annotations",
                                 "Spacer"];
 let gridWidth = (getUserPreference("gridWidth") !== null) ? getUserPreference("gridWidth") : defaultSetingsDict["gridWidth"]; // Amount of cells per row
+const gridWidthMin = 10;
 // Global variable that stores the most recent color used
 let recentColor = '';
 
