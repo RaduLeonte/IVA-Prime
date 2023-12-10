@@ -97,8 +97,6 @@ let tempRegionTm = (getUserPreference("tempRegionTm")  !== null) ? getUserPrefer
 // Insertions with a TM lower than this will be turned into short insertions
 let upperBoundShortInsertions = (getUserPreference("upperBoundShortInsertions")  !== null) ? getUserPreference("upperBoundShortInsertions") : defaultSetingsDict["upperBoundShortInsertions"];
 
-let operationNr = 1; // modification counter
-
 const primerColorRed = "rgb(200, 52, 120)"
 const primerColorGreen = "rgb(68, 143, 71)"
 const primerColorOrange = "rgb(217, 130, 58)"

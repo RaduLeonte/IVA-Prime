@@ -28,8 +28,8 @@ function displayPrimers(primersType, primersDict) {
     h3.classList.add("editable");
     enableElementEditing(h3, 1)
     h3.setAttribute("edited", false);
-    h3.textContent = operationNr + '. ' + primersType;
-    operationNr++;
+    h3.textContent = plasmidDict[currentlyOpenedPlasmid]["operationNr"] + '. ' + primersType;
+    plasmidDict[currentlyOpenedPlasmid]["operationNr"] = parseInt(plasmidDict[currentlyOpenedPlasmid]["operationNr"]) + 1;
     modDiv.appendChild(h3);
 
     for (const [primer, subprimersDict] of Object.entries(primersDict)) {

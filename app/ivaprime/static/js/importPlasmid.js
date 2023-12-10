@@ -94,6 +94,7 @@ async function handleFileSelect(event, plasmidIndex=0, serverFile=null) {
       plasmidDict[plasmidIndex]["selectionStartPos"] = null;
       plasmidDict[plasmidIndex]["selectionEndPos"] = null;
       plasmidDict[plasmidIndex]["sidebarPrimers"] = null;
+      plasmidDict[plasmidIndex]["operationNr"] = 1;
       
 
       // Add plasmid tab
