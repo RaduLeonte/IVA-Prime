@@ -79,6 +79,7 @@ function displayPrimers(primersType, primersDict) {
     console.log("After", plasmidDict[currentlyOpenedPlasmid]["sidebarPrimers"])
     // Reset selection
     plasmidDict[currentlyOpenedPlasmid]["selectedText"] = "";
+    clearSelection(currentlyOpenedPlasmid, true)
 };
 
 
@@ -328,7 +329,7 @@ function removePrimerRegionHighlight() {
  *  
  */
 function primerExtension(startingPos, targetStrand, direction, targetTm, method, minLength, plasmidIndex, mutSeq) {
-    console.log("PE", startingPos, targetStrand, direction, targetTm, minLength, plasmidIndex, mutSeq)
+    console.log("primerExtension", startingPos, targetStrand, direction, targetTm, minLength, plasmidIndex, mutSeq)
     
     let p_start_index = startingPos - 1; // Convert sequence index to string index
     let length = minLength; // initial value for length
@@ -356,6 +357,7 @@ function primerExtension(startingPos, targetStrand, direction, targetTm, method,
     // Main loop for the extension of the primer
     const maxIter = 50; // Maximum amount of iterations in case of errors
     let i = 0;
+    let primer_fwd = "";
     while (i < maxIter) {
         let curr_p = ""; // Reset current primer
         // Set current primer using the current length then get its temperature
@@ -370,10 +372,8 @@ function primerExtension(startingPos, targetStrand, direction, targetTm, method,
          * and return either the current primer or the previous one, whichever is closest to the target temperature*/ 
         if (curr_tm >= targetTm && curr_p.length >= minLength) {
             if (Math.abs(curr_tm - targetTm) <= Math.abs(prev_tm - targetTm)) {
-                primer_fwd_tm = curr_tm;
                 primer_fwd = curr_p;
             } else {
-                primer_fwd_tm = prev_tm;
                 primer_fwd = prev_p;
             };
             break;
@@ -495,14 +495,9 @@ function optimizeAA(inputAA, targetOrganism) {
  * replaceStartPos, replaceEndPos - indices of the segment to be deleted, then filled with the new DNA sequence
  * 
  */
-function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  replaceStartPos, replaceEndPos) {
+function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  replaceStartPos, replaceEndPos, operationType) {
     const currentPlasmidIndex = currentlyOpenedPlasmid;
-    // Define operation type
-    let operationType = "Mutation";
-    if (!replaceEndPos) { // if startPos equals endPos then its just an insertion
-        replaceEndPos = replaceStartPos;
-        operationType = "Insertion"
-    };
+
     console.log("HERE1", operationType, dnaToInsert, aaToInsert, targetOrganism, replaceStartPos, replaceEndPos)
     // Make sure that startPos is the smaller number
     if (replaceStartPos > replaceEndPos) {
@@ -512,14 +507,14 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
     };
 
     // If theres no input, use the default sequence for testing
-    if (!aaToInsert && !dnaToInsert) {
+    if (!aaToInsert && !dnaToInsert && operationType !== "Deletion") {
         aaToInsert = "GGGGS";
     };
 
     // If an animo acid sequence is given, send it for optimization (lowest melting temperature)
     // otherwise use the DNA sequence given.
     let seqToInsert = "";
-    if (aaToInsert) {
+    if (aaToInsert && aaToInsert !== "") {
         seqToInsert = optimizeAA(aaToInsert, targetOrganism);
     } else {
         seqToInsert = dnaToInsert;
@@ -535,7 +530,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
     // If the sequence to be inserted has a melting temperature lower than 49 C, extende the primer backward
     if (get_tm(seqToInsert, primerConc, saltConc, "oligoCalc") < upperBoundShortInsertions) { // Mutation < 49 C, need homolog region
 
-        if (primerDistribution === false) {
+        if (primerDistribution === false || operationType === "Deletion") {
             console.log("Short insertion: DONT DISTRIBUTE")
             // Forward template binding region, extend forward on the forward strand from the end position
             tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentPlasmidIndex);
@@ -705,85 +700,6 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
     updateFeatures(operationType, seqToInsert, replaceStartPos, replaceEndPos, plasmidLengthDiff, currentPlasmidIndex);
 };
 
-
-/**
- * Creates the deletion primers that will delete the segment between the two specified indices.
- * 
- * Examples:
- * Everything between deletion start and deletion end will not be present after recombination.
- * (homologous and template binding regions are extended until they reach their specified melting temperatures)
- * 
- *                      homologous region   deletion end  template binding region
- *                                    |           |          |
- *                       ┏-----------------------┓┏------------------------┓
- *                       TATATGGGGAAAAAAAATTTATATATTTATATATGGGGAAAAAAAATTTA  
- * fwdStrand  -> GGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATAT
- * compStrand -> ATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCC
- *                TATATAAATTTTTTTTCCCCATATA
- *                ┗-----------------------┛   
- *                            |           |
- *         template binding region     deletion start
-
- * 
- * deletionStartPos, deletionEndPos - indices of the segment to be deleted
- */
-function createDeletionPrimers(deletionStartPos, deletionEndPos) {
-    const currentPlasmidIndex = currentlyOpenedPlasmid;
-    // Swap indices so start is always the smaller index
-    if (deletionStartPos > deletionEndPos) {
-        let temp = deletionStartPos;
-        deletionStartPos = deletionEndPos;
-        deletionEndPos = temp;
-    };
-
-    // Forward template binding region, extend forward on the forward strand from the end position
-    let tempFwd = primerExtension(deletionEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentPlasmidIndex);
-
-    // Reverse homologous region, but extend it up to the melting temperature of the template region
-    let tempRev = primerExtension(deletionStartPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentPlasmidIndex);
-
-    // The forward homologous region is the reverse complement of the reverse homologous region
-    let homoFwd = getComplementaryStrand(tempRev);
-
-    // Slice the forward homologous region until target temperature is reached
-    while (get_tm(homoFwd.slice(0, -1), primerConc, saltConc, "oligoCalc") > homoRegionTm && homoFwd.length > homoRegionMinLength) {
-        homoFwd = homoFwd.slice(0, -1);
-    }
-    // Check if slicing one more base would get us closer to the target temp
-    const oldTm = get_tm(homoFwd, primerConc, saltConc, "oligoCalc");
-    const newTm = get_tm(homoFwd.slice(0, -1), primerConc, saltConc, "oligoCalc");
-    if (Math.abs(oldTm - homoRegionTm) >= Math.abs(newTm - homoRegionTm) && homoFwd.slice(0, -1).length >= homoRegionMinLength) {
-        homoFwd = homoFwd.slice(0, -1);
-    };
-    // Flip primer for display
-    homoFwd = homoFwd.split("").reverse().join("");
-
-    /**
-     * const primerColorRed = "rgb(200, 52, 120)"
-     * const primerColorGreen = "rgb(68, 143, 71)"
-     * const primerColorOrange = "rgb(217, 130, 58)"
-     * const primerColorPurple = "rgb(107, 96, 157)"
-     * const primerColorCyan = "rgb(140, 202, 242)"
-     */
-    let primersDict = {};
-    const primerInfoFwd = `(Homologous region: ${homoFwd.length} bp, ${Math.round(get_tm(homoFwd, primerConc, saltConc, "oligoCalc"))} ℃;
-                            Template binding region: ${tempFwd.length} bp, ${Math.round(get_tm(tempFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} ℃; 
-                            Total: ${(homoFwd.length + tempFwd.length)} bp)`;
-    const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(get_tm(tempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} ℃)`;
-    primersDict["Forward Primer"] = {1: {"seq": homoFwd, "color": primerColorOrange},
-                                     2: {"seq": tempFwd, "color": primerColorGreen},
-                                    info: primerInfoFwd};
-    primersDict["Reverse Primer"] = {1: {"seq": tempRev, "color": primerColorGreen},
-                                    info: primerInfoRev};
-    
-    console.log("Primers Dict:", primersDict)
-
-    displayPrimers("Deletion", primersDict);
-
-    // Update the sequence and features
-    const plasmidLengthDiff = 0 - (deletionEndPos - deletionStartPos);
-    updateFeatures("Deletion", "", deletionStartPos, deletionEndPos, plasmidLengthDiff, currentPlasmidIndex);
-};
 
 
 /**
@@ -1171,7 +1087,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
         newFeatureName += i;
         i++;
     };
-
+    console.log("newFeatureName", newFeatureName, newFeatureType)
 
     // Creat the new feature
     if (newFeatureType !== "Deletion") {

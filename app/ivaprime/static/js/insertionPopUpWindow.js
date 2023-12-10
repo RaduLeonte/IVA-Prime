@@ -55,11 +55,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
       // Call the function to create insertion primers or replacement primers if we have text selected
-      if (!selectionEndPos || selectionEndPos === -1) {
-        createReplacementPrimers(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, insertionPosition);
-      } else {
-        createReplacementPrimers(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, selectionStartPos, selectionEndPos);
-      };
+      const operationType = event.target.getAttribute("operation-type");
+      let startPos = plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"];
+      let endPos = plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"];
+      if (!startPos) {startPos = endPos};
+      if (!endPos) {endPos = startPos};
+      createReplacementPrimers(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, startPos, endPos, operationType);
       
       // Clear the text inputs
       document.getElementById('dna-sequence-input').value = '';
@@ -85,12 +86,16 @@ document.addEventListener('DOMContentLoaded', function () {
 /**
  * Display pop up window and change its header.
  */
-function showPopupWindow(headerText) {
+function showPopupWindow(headerText, operationType) {
   const popupWindow = document.querySelector('.popup-window');
   popupWindow.style.display = 'block';
 
   const popupWindowHeader = document.getElementById('popUpWindowHeader');
   popupWindowHeader.innerText = headerText;
+  
+  const createPrimersButton = popupWindow.querySelector('#create-primers-button');
+  console.log("showPopUpWindow", createPrimersButton, operationType)
+  createPrimersButton.setAttribute("operation-type", operationType)
 };
 
 

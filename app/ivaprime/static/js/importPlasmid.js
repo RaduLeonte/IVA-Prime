@@ -126,6 +126,7 @@ async function handleFileSelect(event, plasmidIndex=0, serverFile=null) {
       if (firstImport === true) {
         initiateSearchFunctionality();
         switchPlasmidTab(plasmidIndex);
+        updateAnnotationTrianglesWidth();
       };
     };
 

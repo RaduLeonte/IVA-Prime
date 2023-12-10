@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <li id="insertion">Insert here</li>
         <li id="deletion" disabled>Delete selection</li>
         <li id="mutation" disabled>Mutate selection</li>
+        <li id="replacement" disabled>Replace selection</li>
         <li id="subcloning" disabled>Subclone selection</li>
       </ul>
     </div>  
@@ -78,13 +79,17 @@ document.addEventListener('DOMContentLoaded', function () {
       copySelectionToClipboard(currentlyOpenedPlasmid, "revcomplement");
     } else if (menuItemId === 'insertion') {
       console.log('Insertion selected');
-      showPopupWindow("Insert here:"); // Show the popup window for insertions/replacements
+      showPopupWindow("Insert here:", "Insertion"); // Show the popup window for insertions/replacements
     } else if (menuItemId === 'deletion') {
       console.log('Deletion selected');
-      createDeletionPrimers(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]); // Create deletion primers
+      //createDeletionPrimers(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]); // Create deletion primers
+      createReplacementPrimers("", "", "", plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"], "Deletion");
     } else if (menuItemId === 'mutation') {
       console.log('Mutation selected');
-      showPopupWindow("Replace selection with:"); // Show the popup window for insertions/replacements
+      showPopupWindow("Mutate selection to:", "Mutation"); // Show the popup window for insertions/replacements
+    } else if (menuItemId === 'replacement') {
+      console.log('Mutation selected');
+      showPopupWindow("Replace selection with:", "Replacement"); // Show the popup window for insertions/replacements
     } else if (menuItemId === 'subcloning') {
       console.log('Subcloning selected');
       createSubcloningPrimers(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]); // Start subcloning logic
@@ -124,6 +129,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const insertionMenuItem = document.getElementById('insertion');
     const deletionMenuItem = document.getElementById('deletion');
     const mutationMenuItem = document.getElementById('mutation');
+    const replacementMenuItem = document.getElementById('replacement');
     const subcloningMenuItem = document.getElementById('subcloning');
 
     const beginTranslationMenuItem = document.getElementById('begin-translation');
@@ -140,6 +146,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Re-enable deletions and mutations
       deletionMenuItem.classList.remove('disabled');
       mutationMenuItem.classList.remove('disabled');
+      replacementMenuItem.classList.remove('disabled');
       translateSelectionMenuItem.classList.remove('disabled');
     } else {
       copySelectionMenuItem.classList.add("disabled");
@@ -151,6 +158,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Disable deletions and mutations
       deletionMenuItem.classList.add('disabled');
       mutationMenuItem.classList.add('disabled');
+      replacementMenuItem.classList.add('disabled');
       translateSelectionMenuItem.classList.add('disabled');
     };
 

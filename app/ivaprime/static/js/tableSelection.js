@@ -277,7 +277,7 @@ function getSelectedText(plasmidIndex) {
 * Removes the selected appearance from all the currently selected cells.
 */
 function clearSelection(plasmidIndex, clearingGlobalVars) {
-  console.log("CLEARING SELECTION")
+  //console.log("CLEARING SELECTION", plasmidIndex, clearingGlobalVars, new Date().getSeconds())
   clearSelectionCursors(plasmidIndex);
   // Find all selected cells and iterate over them to remove the selected class
   const selectedCells = document.getElementById("sequence-grid-" + plasmidIndex).querySelectorAll('.selected-cell');
