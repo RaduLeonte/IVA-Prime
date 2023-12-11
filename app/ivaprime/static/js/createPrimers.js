@@ -802,11 +802,11 @@ function createSubcloningPrimersNew(subcloningStartPos, subcloningEndPos, aaSequ
     let insertTempRev = primerExtension(subcloningOriginSpan[1], "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, subcloningOriginPlasmidIndex);
 
     // Destination template primers
-    let vecFwd = primerExtension(endPos, "fwdStrand", "forward", homoRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
-    let vecRev = primerExtension(startPos, "fwdStrand", "forward", homoRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
+    let vecFwd = primerExtension(endPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
+    let vecRev = primerExtension(startPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
     
     // Homologous regions
-    let insertHomoFwd = getComplementaryStrand(vecRev);
+    let insertHomoFwd = getComplementaryStrand(vecRev).split("").reverse().join("");
     while (true) {
         const stillAboveTargetTM = get_tm(insertHomoFwd.slice(1), primerConc, saltConc, "oligoCalc") > homoRegionTm;
         const slicingGetsUsCloser = Math.abs(homoRegionTm - get_tm(insertHomoFwd.slice(1), primerConc, saltConc, "oligoCalc")) <= Math.abs(homoRegionTm - get_tm(insertHomoFwd, primerConc, saltConc, "oligoCalc"));
@@ -815,7 +815,7 @@ function createSubcloningPrimersNew(subcloningStartPos, subcloningEndPos, aaSequ
             insertHomoFwd = insertHomoFwd.slice(1);
         } else {break};
     };
-    let insertHomoRev = getComplementaryStrand(vecFwd);
+    let insertHomoRev = getComplementaryStrand(vecFwd).split("").reverse().join("");
     while (true) {
         const stillAboveTargetTM = get_tm(insertHomoRev.slice(1), primerConc, saltConc, "oligoCalc") > homoRegionTm;
         const slicingGetsUsCloser = Math.abs(homoRegionTm - get_tm(insertHomoRev.slice(1), primerConc, saltConc, "oligoCalc")) <= Math.abs(homoRegionTm - get_tm(insertHomoRev, primerConc, saltConc, "oligoCalc"));
