@@ -24,35 +24,24 @@ window.onload = function() {
 };
 
 
-
 /**
- * Add event listener to the export buttons
+ * 
  */
-function addExportButtonsListeners(pNr) {
-  console.log("Enabling Export Buttons", pNr)
-  let targetDropdown = (pNr === 1) ? '#export-dropdown': '#export-dropdown-second';
-  targetDropdown = document.querySelector(targetDropdown);
-  targetDropdown.style.display = "block";
-
-  let targetButtonLink1 = (pNr === 1) ? '#export-btn-gb': '#export-second-btn-gb';
-  targetButtonLink1 = document.querySelector(targetButtonLink1);
-  let targetButtonLink2 = (pNr === 1) ? '#export-btn-dna': '#export-second-btn-dna';
-  targetButtonLink2 = document.querySelector(targetButtonLink2);
-
-  targetButtonLink1.addEventListener('click', function() {
-    exportGBFile(pNr);
-  });
-  targetButtonLink2.addEventListener('click', function() {
-    exportDNAFile(pNr);
-  });
+function nextFreePlasmidIndex() {
+  const entriesList = Object.keys(plasmidDict);
+  if (entriesList.length !== 0) {
+    return parseInt(entriesList[entriesList.length - 1]) + 1;
+  } else {
+    return 0;
+  };
 };
 
 
 /**
  * 
  */
-function nextFreePlasmidIndex() {
-  return Object.keys(plasmidDict).length;
+function isPlasmidDictEmpty() {
+  return Object.keys(plasmidDict).length === 0;
 };
 
 
@@ -92,6 +81,8 @@ async function handleFileSelect(event, plasmidIndex=0, serverFile=null) {
         parsedFile = parseGBFile(fileContent);
       };
 
+      const firstImport = isPlasmidDictEmpty();
+
       plasmidDict[plasmidIndex] = {};
       plasmidDict[plasmidIndex]["fileName"] = file.name;
       plasmidDict[plasmidIndex]["fileExtension"] = fileExtension;
@@ -102,7 +93,8 @@ async function handleFileSelect(event, plasmidIndex=0, serverFile=null) {
       plasmidDict[plasmidIndex]["selectedText"] = "";
       plasmidDict[plasmidIndex]["selectionStartPos"] = null;
       plasmidDict[plasmidIndex]["selectionEndPos"] = null;
-      basePosition = -1;
+      plasmidDict[plasmidIndex]["sidebarPrimers"] = null;
+      plasmidDict[plasmidIndex]["operationNr"] = 1;
       
 
       // Add plasmid tab
@@ -114,14 +106,19 @@ async function handleFileSelect(event, plasmidIndex=0, serverFile=null) {
         liElement = document.createElement("LI");
         plasmidTabsList.appendChild(liElement);
       };
-      liElement.innerHTML = `<a href="#">${plasmidDict[plasmidIndex]["fileName"]}</a><a class="plasmid-tab-dropdown" href="#">▼</a>`;
+      liElement.id = "plasmid-tab-" + plasmidIndex;
+      liElement.innerHTML = `
+      <a href="#" onclick="switchPlasmidTab(${plasmidIndex})">${plasmidDict[plasmidIndex]["fileName"]}</a>
+      <a class="plasmid-tab-dropdown" href="#"  onclick="togglePlasmidTabDropdownMenu(event, ${plasmidIndex})">▼</a>
+      `;
       liElement.classList.add("plasmid-tab");
       if (firstImport === true) {
         liElement.classList.add("plasmid-tab-selected");
+        currentlyOpenedPlasmid = plasmidIndex;
       };
       
       // Create the sidebar
-      plasmidDict[plasmidIndex]["sidebar"] = createSidebar(plasmidIndex);
+      plasmidDict[plasmidIndex]["sidebarTable"] = createSidebarTable(plasmidIndex);
 
       // Create content grid
       plasmidDict[plasmidIndex]["contentGrid"] = makeContentGrid(plasmidIndex);
@@ -129,8 +126,8 @@ async function handleFileSelect(event, plasmidIndex=0, serverFile=null) {
       // Once the file is loaded, enable search function
       if (firstImport === true) {
         initiateSearchFunctionality();
-        firstImport = false;
         switchPlasmidTab(plasmidIndex);
+        updateAnnotationTrianglesWidth();
       };
     };
 
@@ -457,12 +454,10 @@ function splitStringByMaxLength(inputString, maxLength) {
 /**
  * Get file name from html element
  */
-function getFileName(pNr) {
-  const fileNameElement = document.getElementById("plasmid-file-name" + pNr);
-  const fileExtensionMatch = fileNameElement.innerHTML.match(/\.([0-9a-z]+)(?=[?#])|(\.)(?:[\w]+)$/i);
-  console.log("getFileName", pNr, fileExtensionMatch, fileNameElement.innerHTML)
-  const outputName = (fileExtensionMatch) ? fileNameElement.innerHTML.replace(fileExtensionMatch[0], "") : fileNameElement.innerHTML;
-  console.log("getFileName", pNr, outputName)
+function getFileName(plasmidIndex) {
+  const fileName = plasmidDict[plasmidIndex]["fileName"];
+  const fileExtensionMatch = fileName.match(/\.([0-9a-z]+)(?=[?#])|(\.)(?:[\w]+)$/i);
+  const outputName = (fileExtensionMatch) ? fileName.replace(fileExtensionMatch[0], "") : fileName;
   return outputName;
 };
 
@@ -470,29 +465,27 @@ function getFileName(pNr) {
 /**
  * GB file exporter.
  */
-function exportGBFile(pNr) {
-  console.log("Export GB File")
+function exportGBFile(plasmidIndex) {
   // Output file name
   const outputFileExtension = "gb";
-  const outputFileName = getFileName(pNr);
+  const outputFileName = getFileName(plasmidIndex);
   
   // Init variables
   let outputFileContent = "";
   let currLine = "";
 
   // Select target sequence and features
-  const currSequence = (pNr === 1) ? sequence: sequence2;
-  const currFeatures = (pNr === 1) ? sortBySpan(features): sortBySpan(features2);
+  const currSequence = plasmidDict[plasmidIndex]["fileSequence"];
+  const currFeatures = plasmidDict[plasmidIndex]["fileFeatures"];
 
   /**
    * Fil header
    */
   let currFileHeaderDict = null;
-  const originalFileExtension = (pNr === 1) ? originalFileExtension1: originalFileExtension2;
+  const originalFileExtension = plasmidDict[plasmidIndex]["fileExtension"];
   // GB -> GB
-  console.log(originalFileExtension, outputFileExtension);
   if (originalFileExtension === outputFileExtension) {
-    currFileHeaderDict = (pNr === 1) ? importedFileHeader1: importedFileHeader2;
+    currFileHeaderDict = plasmidDict[plasmidIndex]["fileHeader"];
   // DNA -> GB, make new header
   } else {
     /**
@@ -503,7 +496,6 @@ function exportGBFile(pNr) {
     currFileHeaderDict = {"0": {"name": "LOCUS", "value": outputFileName + "\t" + currSequence.length + " bp"},
                           "1": {"name":"DEFINITION","value":"."}};
   };
-  console.log(JSON.stringify(currFileHeaderDict));
 
   // Apend the header
   const headerNrSpaces = 12; // Descriptor width
@@ -588,15 +580,15 @@ function exportGBFile(pNr) {
 /**
  * DNA file exporter.
  */
-function exportDNAFile(pNr) {
+function exportDNAFile(plasmidIndex) {
   console.log("Export DNA File")
   // Output file name
   const outputFileExtension = "dna"
-  const outputFileName =  getFileName(pNr);;
+  const outputFileName =  getFileName(plasmidIndex);;
 
   // Select target sequence and features
-  const currSequence = (pNr === 1) ? sequence: sequence2;
-  const currFeatures = (pNr === 1) ? sortBySpan(features): sortBySpan(features2);
+  const currSequence = plasmidDict[plasmidIndex]["fileSequence"];
+  const currFeatures = plasmidDict[plasmidIndex]["fileFeatures"];
 
 
   /**
@@ -982,15 +974,9 @@ function downloadFile(downloadFileName, downloadFileContent, downloadFileType) {
 /**
  * Populate the sidebar with the features from the specified plasmid.
  */
-function createSidebar(plasmidIndex) {
+function createSidebarTable(plasmidIndex) {
   let currFeatures = plasmidDict[plasmidIndex]["fileFeatures"];
-  
-  const sidebarElement = document.createElement("div");
 
-  const primersElement = document.createElement("div");
-  primersElement.classList.add("sidebar-content");
-  primersElement.innerHTML = `<h2 id="primers-type">Primers will appear here.</h2>`;
-  sidebarElement.appendChild(primersElement);
 
   // Set table headers
   const sidebarTable = document.createElement("TABLE");
@@ -1063,9 +1049,7 @@ function createSidebar(plasmidIndex) {
     };
   };
 
-  sidebarElement.appendChild(sidebarTable);
-
-  return sidebarElement;
+  return sidebarTable;
 };
 
 
@@ -1329,6 +1313,11 @@ function makeContentGrid(plasmidIndex) {
   // Clean up cells that are not longer in a tr
   cleanLostCells(sequenceGrid);
 
+
+  addCellSelection(sequenceGrid, plasmidIndex);
+  addHoverPopupToTable(sequenceGrid, plasmidIndex);
+  addCellBorderOnHover(sequenceGrid, plasmidIndex);
+
   return sequenceGrid;
 };
 
@@ -1407,7 +1396,7 @@ function makeAnnotation(rStart, rEnd, text, featureId, annotationColor, targetTa
  * 
  */
 function mergeCells(row, col, rowspan, colspan, text, featureId, color, targetTable, currGridStructure) {
-  console.log("Merge cells1: ", row, col, colspan, text)
+  console.log("Merge cells1: ", row, col, colspan, text, targetTable)
 
   // Adjust row and col
   let occupiedCellsList = [];
