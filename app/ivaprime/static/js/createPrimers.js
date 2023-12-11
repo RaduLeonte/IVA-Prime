@@ -704,13 +704,39 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
 /**
  * Mark selection as subcloning target
  */
-function markSelectionForSubcloning(plasmidIndex, subcloningTargetStartPos, subcloningTargetEndPos) {
-    console.log("markSelectionForSubcloning", plasmidIndex, subcloningTargetStartPos, subcloningTargetEndPos);
+function markSelectionForSubcloning(plasmidIndex, inputStartPos, inputEndPos) {
+    console.log("markSelectionForSubcloning", inputStartPos, inputEndPos);
+    clearAllSubcloningSelections();
     subcloningOriginPlasmidIndex = plasmidIndex;
-    subcloningOriginSpan = [Math.min(subcloningTargetStartPos, subcloningTargetEndPos), Math.max(subcloningTargetStartPos, subcloningTargetEndPos)];
-    highlightSpan(plasmidIndex, 0, subcloningOriginSpan[0], subcloningOriginSpan[0] + 1, "subcloning-target-cell-first", null, null);
-    highlightSpan(plasmidIndex, 0, subcloningOriginSpan[0] + 1, subcloningOriginSpan[1] - 1, "subcloning-target-cell", null, null);
-    highlightSpan(plasmidIndex, 0, subcloningOriginSpan[1] - 1, subcloningOriginSpan[1], "subcloning-target-cell-last", null, null);
+    subcloningOriginSpan = [Math.min(inputStartPos, inputEndPos), Math.max(inputStartPos, inputEndPos)];
+    if (currentlyOpenedPlasmid === subcloningOriginPlasmidIndex) {
+        highlightSpan(plasmidIndex, 0, subcloningOriginSpan[0], subcloningOriginSpan[0] + 1, "subcloning-target-cell-first", null, null);
+        highlightSpan(plasmidIndex, 0, subcloningOriginSpan[0] + 1, subcloningOriginSpan[1] - 1, "subcloning-target-cell", null, null);
+        highlightSpan(plasmidIndex, 0, subcloningOriginSpan[1] - 1, subcloningOriginSpan[1], "subcloning-target-cell-last", null, null);
+    };
+};
+
+
+/**
+ * 
+ */
+function clearAllSubcloningSelections(clearVariables = true) {
+    if (clearVariables === true) {
+        subcloningOriginPlasmidIndex = null;
+        subcloningOriginSpan = null;
+    };
+    const selectedCellsFirst = document.querySelectorAll('.subcloning-target-cell-first');
+    const selectedCells = document.querySelectorAll('.subcloning-target-cell');
+    const selectedCellsLast = document.querySelectorAll('.subcloning-target-cell-last');
+    selectedCellsFirst.forEach((cell) => {
+        cell.classList.remove('subcloning-target-cell-first');
+    });
+    selectedCells.forEach((cell) => {
+        cell.classList.remove('subcloning-target-cell');
+    });
+    selectedCellsLast.forEach((cell) => {
+        cell.classList.remove('subcloning-target-cell-last');
+    });
 };
 
 
@@ -828,187 +854,6 @@ function createSubcloningPrimersNew(subcloningStartPos, subcloningEndPos, aaSequ
     // Update stuff
     const plasmidLengthDiff = subcloningSequence.length - (endPos - startPos);
     updateFeatures("Subcloning", subcloningSequence, startPos, endPos, plasmidLengthDiff, currentlyOpenedPlasmid);
-};
-
-function createSubcloningPrimers(subcloningStartPos, subcloningEndPos) {
-    // Initialise variables
-    let subcloningInsertPositionStart = null;
-    let subcloningInsertPositionEnd = null;
-    let selectingSubcloningTarget = false; // Set the state to not currently seleting on the subcloning vector
-    let subcloningInsertionSequence = selectedText; // Capture currently selected text
-    
-    // Switch indices so that the start position is always smaller
-    if (subcloningStartPos > subcloningEndPos) {
-        let temp = subcloningStartPos;
-        subcloningStartPos = subcloningEndPos;
-        subcloningEndPos = temp;
-    };
-
-    // Select the second plasmid's sequence grid
-    const element = document.getElementById('sequence-grid2');
-    // Change the cursor to a pointer when it's over the element
-    element.style.cursor = 'pointer';
-
-    // Listen for click events on the element
-    let startCell = null;
-    let endCell = null;
-    element.addEventListener('mousedown', function(event) {
-        event.stopPropagation(); // Prevent the event from bubbling up to the document
-        // Once the mouse is clicked inside the second sequence grid
-        subcloningInsertPositionStart = basePosition2; // Capture mouse position
-        // Reset selection variables
-        startCell = null;
-        endCell = null;
-        console.log('start: ', subcloningInsertPositionStart);
-        selectingSubcloningTarget = true; // Signal that the selection has started
-    }, { once: true });
-
-    // Listen for mouse movement
-    element.addEventListener('mousemove', function(event) {
-        // Check if we have started a selection, we have a start position for the selection, and the mouse has since moved from the initial position
-        if (selectingSubcloningTarget && subcloningInsertPositionStart && subcloningInsertPositionStart !== basePosition2) {
-            subcloningInsertPositionEnd = basePosition2; // Update the end of the selection to the current mouse position
-            // Initialise variables for table coordinates
-            let startCoords = null;
-            let startRowIndex = null;
-            let startCellIndex = null;
-            let endCoords = null;
-            let endRowIndex = null;
-            let endCellIndex = null;
-
-            // Convert sequence index to table coordinates
-            if (subcloningInsertPositionStart < subcloningInsertPositionEnd) {
-                startCoords = seqIndexToCoords(subcloningInsertPositionStart, 0, gridStructure2);
-                startRowIndex = startCoords[0];
-                startCellIndex = startCoords[1];
-                endCoords = seqIndexToCoords(subcloningInsertPositionEnd, 0, gridStructure2);
-                endRowIndex = endCoords[0];
-                endCellIndex = endCoords[1] - 1;
-            } else {
-                startCoords = seqIndexToCoords(subcloningInsertPositionEnd, 0, gridStructure2);
-                startRowIndex = startCoords[0];
-                startCellIndex = startCoords[1];
-                endCoords = seqIndexToCoords(subcloningInsertPositionStart, 0, gridStructure2);
-                endRowIndex = endCoords[0];
-                endCellIndex = endCoords[1] - 1;
-            };
-
-            // Clears the previous selection in the second sequence grid
-            function clearSelection() {
-                const selectedCells = element.querySelectorAll('.selected-cell-subcloning-target');
-                selectedCells.forEach((cell) => {
-                cell.classList.remove('selected-cell-subcloning-target');
-                });
-                selectedText2 = "";
-            };
-            clearSelection();
-
-            // Iterate over cells between start and end cells and mark them as selected by adding a css class
-            // Iterate over all rows
-            for (let i = startRowIndex; i <= endRowIndex; i++) {
-                const row = element.rows[i]; // Get current row
-                const start = (i === startRowIndex) ? startCellIndex : 0; // If first row, start is the cell's index, otherwise start at the beginnig of the row
-                const end = (i === endRowIndex) ? endCellIndex : row.cells.length - 1; // If in the last row, stop at the selection end, otherwise cover the row
-
-                for (let j = start; j <= end; j++) { // Itterate over cells in row
-                    const selectedCell = row.cells[j]; // Fetch current cell
-                    // Check if the selected cell is in the forward strand row and selected cell is not empty
-                    if (selectedCell.id === "Forward Strand" && selectedCell.innerText.trim() !== "") {
-                        selectedCell.classList.add('selected-cell-subcloning-target');
-                    };
-                };
-            };
-        };
-    });
-
-    // Look for mouse up to end the selection
-    element.addEventListener('mouseup', function(event) {
-        event.stopPropagation(); // Prevent the event from bubbling up to the document
-
-        subcloningInsertPositionEnd = basePosition2; // Fetch the mouse's final position
-        console.log('end: ', subcloningInsertPositionEnd);
-        element.style.cursor = 'default'; // Reset mouse icon
-        selectingSubcloningTarget = false; // Signal that the selection has ended
-
-        // Swap indices if they are ordered wrong
-        if (subcloningInsertPositionStart > subcloningInsertPositionEnd) {
-            let temp = subcloningInsertPositionStart;
-            subcloningInsertPositionStart = subcloningInsertPositionEnd;
-            subcloningInsertPositionEnd = temp;
-        };
-        
-        /**
-         * Make the primers
-         */
-        // Extend the insert template binding regions
-        let insertTempFwd = primerExtension(subcloningStartPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, 1); // 60
-        let insertTempRev = primerExtension(subcloningEndPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, 1); // 60
-
-        // Extend the vector template binding regions
-        let vecFwd = primerExtension(subcloningInsertPositionEnd, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, 2); // 60
-        let vecRev = primerExtension(subcloningInsertPositionStart, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, 2); // 60
-
-        // Creat the insert homologous regions by getting the complementary sequence of the vecor template binding regions
-        // and slicing them until they are the target temperatures for homologous regions
-        let insertHomoFwd = getComplementaryStrand(vecRev);
-        while (get_tm(insertHomoFwd.slice(0, -1), primerConc, saltConc, "oligoCalc") > homoRegionTm && insertHomoFwd.length > homoRegionMinLength) {
-            insertHomoFwd = insertHomoFwd.slice(0, -1);
-        };
-        let oldTm = get_tm(insertHomoFwd, primerConc, saltConc, "oligoCalc");
-        let newTm = get_tm(insertHomoFwd.slice(0, -1), primerConc, saltConc, "oligoCalc");
-        if (Math.abs(oldTm - homoRegionTm) >= Math.abs(newTm - homoRegionTm) && insertHomoFwd.slice(0, -1).length >= homoRegionMinLength) { // Check which is closer to target tm
-            insertHomoFwd = insertHomoFwd.slice(0, -1);
-        };
-        insertHomoFwd = insertHomoFwd.split("").reverse().join("");
-
-        let insertHomoRev = getComplementaryStrand(vecFwd);
-        while (get_tm(insertHomoRev.slice(0, -1), primerConc, saltConc,"oligoCalc") > homoRegionTm && insertHomoRev.length > homoRegionMinLength) { // Check which is closer to target tm
-            insertHomoRev = insertHomoRev.slice(0, -1);
-        };
-        oldTm = get_tm(insertHomoRev, primerConc, saltConc, "oligoCalc");
-        newTm = get_tm(insertHomoRev.slice(0, -1), primerConc, saltConc, "oligoCalc");
-        if (Math.abs(oldTm - homoRegionTm) >= Math.abs(newTm - homoRegionTm)  && insertHomoRev.slice(0, -1).length >= homoRegionMinLength) {
-            insertHomoRev = insertHomoRev.slice(0, -1);
-        };
-        insertHomoRev = insertHomoRev.split("").reverse().join("");
-
-
-        // Display primers in the sidebar
-        let primersDict = {}
-        const primerInfoFwd = `(Homologous region: ${insertHomoFwd.length} bp, ${Math.round(get_tm(insertHomoFwd, primerConc, saltConc, "oligoCalc"))} °C;
-                                Template binding region: ${insertTempFwd.length} bp, ${Math.round(get_tm(insertTempFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
-                                Total: ${(insertHomoFwd.length + insertTempFwd.length)} bp)`;
-        const primerInfoRev = `(Homologous region: ${insertHomoRev.length} bp, ${Math.round(get_tm(insertHomoRev, primerConc, saltConc, "oligoCalc"))} °C;
-                                Template binding region: ${insertTempRev.length} bp, ${Math.round(get_tm(insertTempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
-                                Total: ${(insertHomoRev.length + insertTempRev.length)} bp)`;
-        const primerInfoVecFwd = `(Template binding region: ${vecFwd.length} bp, ${Math.round(get_tm(vecFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} °C)`;
-        const primerInfoVecRev = `(Template binding region: ${vecRev.length} bp, ${Math.round(get_tm(vecRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C)`;
-        primersDict["Forward Primer"] = {1: {"seq": insertHomoFwd, "color": primerColorCyan},
-                                         2: {"seq": insertTempFwd, "color": primerColorPurple},
-                                        info: primerInfoFwd};
-        primersDict["Reverse Primer"] = {1: {"seq": insertHomoRev, "color": primerColorCyan},
-                                         2: {"seq": insertTempRev, "color": primerColorPurple},
-                                         info: primerInfoRev};
-        primersDict["Vector Forward Primer"] = {1: {"seq": vecFwd, "color": primerColorCyan},
-                                        info: primerInfoVecFwd};
-        primersDict["Vector Reverse Primer"] = {1: {"seq": vecRev, "color": primerColorCyan},
-                                                info: primerInfoVecRev};
-        
-        console.log("Primers Dict:", primersDict)
-        displayPrimers("Subcloning", primersDict);
-
-        // Update stuff
-        const plasmidLengthDiff = (subcloningEndPos - subcloningStartPos) - (subcloningInsertPositionEnd - subcloningInsertPositionStart);
-        updateFeatures("Subcloning", subcloningInsertionSequence, subcloningInsertPositionStart, subcloningInsertPositionEnd, plasmidLengthDiff, plasmidIndex);
-    }, { once: true });
-
-    // Listen for click events on the document
-    document.addEventListener('click', function() {
-        // Your code here for what should happen when something outside the element is clicked
-        // Reset the cursor
-        element.style.cursor = 'default';
-        return;
-    }, { once: true });
 };
 
 

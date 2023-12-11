@@ -76,6 +76,16 @@ function switchPlasmidTab(plasmidIndex) {
 
     // Repopulate sidebar and grid
     updateSidebarAndGrid();
+
+    console.log("Subcloning marking", currentlyOpenedPlasmid, subcloningOriginPlasmidIndex, subcloningOriginSpan)
+    console.log("Subcloning marking", currentlyOpenedPlasmid, subcloningOriginPlasmidIndex, subcloningOriginSpan)
+    if (subcloningOriginPlasmidIndex !== null && currentlyOpenedPlasmid === subcloningOriginPlasmidIndex) {
+        console.log("Marked for subcloning on this tab")
+        markSelectionForSubcloning(currentlyOpenedPlasmid, subcloningOriginSpan[0], subcloningOriginSpan[1])
+    } else {
+        console.log("No marked for subcloning on this tab")
+        clearAllSubcloningSelections(clearVariables = false);
+    };
 };
 
 

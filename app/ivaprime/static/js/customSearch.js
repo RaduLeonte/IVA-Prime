@@ -125,6 +125,7 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, w
  * Search for query occurences in sequence then add a class or highlight 
  */
 function highlightSpan(plasmidIndex, targetStrandIndex, spanStart, spanEnd, highlightClass, backgroundColor, textColor) {
+    console.log("highlightSpan", plasmidIndex, targetStrandIndex, spanStart, spanEnd, highlightClass, backgroundColor, textColor)
     startIndex = Math.min(spanStart, spanEnd);
     endIndex = Math.max(spanStart, spanEnd);
     // Select table element
@@ -135,6 +136,7 @@ function highlightSpan(plasmidIndex, targetStrandIndex, spanStart, spanEnd, high
             // Convert sequence index to table coordinates
             const [row, column] = seqIndexToCoords(j, 0, plasmidDict[plasmidIndex]["gridStructure"]);
             // Select and highlight the cell
+            console.log(row + targetStrandIndex, column)
             const cell = table.rows[row + targetStrandIndex].cells[column];
             console.log("highlightSpan", cell)
             if (highlightClass) {

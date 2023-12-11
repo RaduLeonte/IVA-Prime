@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <li id="mutation" disabled>Mutate selection</li>
         <li id="replacement" disabled>Replace selection</li>
         <li id="mark-for-subcloning" disabled>Mark selection for subcloning</li>
-        <li id="subcloning" disabled>Subclone into selection</li>
+        <li id="subcloning" disabled>Subclone into selection <br>(<em>no region marked for subcloning</em>)</li>
         <li id="subcloning-with-insertion" disabled>Subclone with insertion into selection</li>
       </ul>
     </div>  
@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
      * Mark selection as subcloning target
      */
     } else if (menuItemId === 'mark-for-subcloning') {
-      console.log('Marking selection for subcloning');
+      console.log('Marking selection for subcloning', plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]);
       markSelectionForSubcloning(currentlyOpenedPlasmid, plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]);
     
       /**
@@ -189,6 +189,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const markForSubcloningMenuItem = document.getElementById('mark-for-subcloning');
     const subcloningMenuItem = document.getElementById('subcloning');
+    if (subcloningOriginPlasmidIndex !== null) {
+      subcloningMenuItem.innerHTML = subcloningMenuItem.innerHTML.replace(/\(([^)]+)\)/, `(${subcloningOriginSpan[0]}-${subcloningOriginSpan[1]} from ${plasmidDict[subcloningOriginPlasmidIndex]["fileName"]})`);
+    } else {
+      subcloningMenuItem.innerHTML = subcloningMenuItem.innerHTML.replace(/\(([^)]+)\)/, `(<em>no region marked for subcloning</em>)`);
+    };
     const subcloningWithInsertionMenuItem = document.getElementById('subcloning-with-insertion');
 
     const beginTranslationMenuItem = document.getElementById('begin-translation');
