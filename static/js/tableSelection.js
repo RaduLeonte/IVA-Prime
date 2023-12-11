@@ -5,9 +5,8 @@
  * - check if copying is disabled in unintended places
  * - enable selection on the second plasmid at some point
  */
-function addCellSelection(plasmidIndex) {
+function addCellSelection(sequenceGridTable, plasmidIndex) {
   // Select target table and container
-  const sequenceGridTable = document.getElementById("sequence-grid-" + plasmidIndex);
   const fileContentContainer = document.getElementById("file-content");
 
   // Select the current grid structure
@@ -23,12 +22,15 @@ function addCellSelection(plasmidIndex) {
    */
   sequenceGridTable.addEventListener('mousemove', function () {
     const currBasePosition = basePosition;
-    if ((currBasePosition === plasmidDict[plasmidIndex]["selectionStartPos"] || currBasePosition === plasmidDict[plasmidIndex]["selectionEndPos"]) && plasmidDict[plasmidIndex]["selectionEndPos"]) {
-        sequenceGridTable.style.cursor = 'ew-resize';
-        hoveringOverSelectionCursor = (currBasePosition === plasmidDict[plasmidIndex]["selectionStartPos"]) ? "start": "end";
-    } else {
-        sequenceGridTable.style.cursor = 'default';
-        hoveringOverSelectionCursor = null;
+    if (!isSelecting) {
+      if ((currBasePosition === plasmidDict[plasmidIndex]["selectionStartPos"] || currBasePosition === plasmidDict[plasmidIndex]["selectionEndPos"]) && plasmidDict[plasmidIndex]["selectionEndPos"]) {
+          sequenceGridTable.style.cursor = 'ew-resize';
+          hoveringOverSelectionCursor = (currBasePosition === plasmidDict[plasmidIndex]["selectionStartPos"]) ? "start": "end";
+          console.log("hoveringOverSelectionCursor", hoveringOverSelectionCursor, plasmidDict[plasmidIndex]["selectionStartPos"] , plasmidDict[plasmidIndex]["selectionEndPos"])
+      } else {
+          sequenceGridTable.style.cursor = 'default';
+          hoveringOverSelectionCursor = null;
+      };
     };
   });
 
@@ -64,8 +66,11 @@ function addCellSelection(plasmidIndex) {
           if (!isShiftKeyPressed()) {
             clearSelection(plasmidIndex, true);
             plasmidDict[plasmidIndex]["selectionStartPos"] = basePosition;
+            console.log("Shift key NOT pressed", plasmidDict[plasmidIndex]["selectionStartPos"], plasmidDict[plasmidIndex]["selectionEndPos"])
           } else {
             plasmidDict[plasmidIndex]["selectionEndPos"] = basePosition;
+            console.log("Shift key pressed", plasmidDict[plasmidIndex]["selectionStartPos"], plasmidDict[plasmidIndex]["selectionEndPos"])
+
           };
 
           if (plasmidDict[plasmidIndex]["selectionEndPos"]) {
@@ -77,8 +82,8 @@ function addCellSelection(plasmidIndex) {
 
         if (isShiftKeyPressed()) {
           const targetSpanNumbers = removeNonNumeric(targetSpan).split("..").map(str => parseInt(str));
-          const currSelectionStartPos = Math.min(plasmidDict[plasmidIndex]["selectionStartPos"], plasmidDict[plasmidIndex]["selectionEndPos"]);
-          const currSelectionEndPos = Math.max(plasmidDict[plasmidIndex]["selectionStartPos"], plasmidDict[plasmidIndex]["selectionEndPos"]);
+          const currSelectionStartPos = plasmidDict[plasmidIndex]["selectionStartPos"]
+          const currSelectionEndPos = plasmidDict[plasmidIndex]["selectionEndPos"];
           console.log("Shift key", currSelectionStartPos, currSelectionEndPos, targetSpan, targetSpanNumbers)
           console.log(currSelectionStartPos !== Math.min(targetSpanNumbers[0], targetSpanNumbers[1] + 1))
           console.log(currSelectionEndPos !== Math.max(targetSpanNumbers[0], targetSpanNumbers[1] + 1))
@@ -113,15 +118,17 @@ function addCellSelection(plasmidIndex) {
     let closestCell = event.target.closest('td')
     if (isSelecting) { // Make sure we're currently selecting
       if (!hoveringOverSelectionCursor) {
+        console.log("NONE")
         plasmidDict[plasmidIndex]["selectionEndPos"] = basePosition;
       } else {
         if (hoveringOverSelectionCursor === "start") {
+          console.log("START")
           plasmidDict[plasmidIndex]["selectionStartPos"] = basePosition;
         } else {
+          console.log("END")
           plasmidDict[plasmidIndex]["selectionEndPos"] = basePosition;
         };
       };
-      currGridStructure = plasmidDict[plasmidIndex]["gridStructure"];
       
       // Check if the cell exists and if the current position is not the same as the selection start cell
       if (closestCell) {
@@ -134,24 +141,30 @@ function addCellSelection(plasmidIndex) {
           let endRowIndex = null;
           let endCellIndex = null;
           if (plasmidDict[plasmidIndex]["selectionStartPos"] < plasmidDict[plasmidIndex]["selectionEndPos"]) {
+            console.log("TEST1")
             const tableCoordsStartCell = seqIndexToCoords(plasmidDict[plasmidIndex]["selectionStartPos"], 0, currGridStructure);
             startRowIndex = tableCoordsStartCell[0];
             startCellIndex = tableCoordsStartCell[1];
+
             const tableCoordsEndCell = seqIndexToCoords(plasmidDict[plasmidIndex]["selectionEndPos"] - 1, 0, currGridStructure);
             endRowIndex = tableCoordsEndCell[0];
             endCellIndex = tableCoordsEndCell[1];
+
+            clearSelection(plasmidIndex, false);
+            setSelectionCursors(plasmidIndex, plasmidDict[plasmidIndex]["selectionStartPos"], plasmidDict[plasmidIndex]["selectionEndPos"]);
           } else {
+            console.log("TEST2")
             const tableCoordsStartCell = seqIndexToCoords(plasmidDict[plasmidIndex]["selectionEndPos"], 0, currGridStructure);
             startRowIndex = tableCoordsStartCell[0];
             startCellIndex = tableCoordsStartCell[1];
+
             const tableCoordsEndCell = seqIndexToCoords(plasmidDict[plasmidIndex]["selectionStartPos"] - 1, 0, currGridStructure);
             endRowIndex = tableCoordsEndCell[0];
             endCellIndex = tableCoordsEndCell[1];
+
+            clearSelection(plasmidIndex, false);
+            setSelectionCursors(plasmidIndex, plasmidDict[plasmidIndex]["selectionEndPos"], plasmidDict[plasmidIndex]["selectionStartPos"]);
           };
-          
-          // Clear the previous selection
-          clearSelection(plasmidIndex, false);
-          setSelectionCursors(plasmidIndex, plasmidDict[plasmidIndex]["selectionStartPos"], plasmidDict[plasmidIndex]["selectionEndPos"]);
 
           // Iterate over cells between start and end cells and select them
           for (let i = startRowIndex; i <= endRowIndex; i++) {
@@ -196,8 +209,8 @@ function addCellSelection(plasmidIndex) {
    * Check for clicks outside the tables to clear the selection.
    */
   document.addEventListener('click', function (event) {
-    console.log("Table selection mouse click")
-    if (!event.target.closest('#sequence-grid-' + currentlyOpenedPlasmid) && !event.target.closest('.popup-window')) {
+    //console.log("Table selection mouse click", event.target)
+    if (!event.target.closest('#sequence-grid-' + currentlyOpenedPlasmid) && !event.target.closest('.popup-window') && event.target.tagName !== "A") {
       clearSelection(plasmidIndex, true);
       clearSelectionCursors(plasmidIndex);
       isSelecting = false;
@@ -264,7 +277,7 @@ function getSelectedText(plasmidIndex) {
 * Removes the selected appearance from all the currently selected cells.
 */
 function clearSelection(plasmidIndex, clearingGlobalVars) {
-  console.log("CLEARING SELECTION")
+  //console.log("CLEARING SELECTION", plasmidIndex, clearingGlobalVars, new Date().getSeconds())
   clearSelectionCursors(plasmidIndex);
   // Find all selected cells and iterate over them to remove the selected class
   const selectedCells = document.getElementById("sequence-grid-" + plasmidIndex).querySelectorAll('.selected-cell');
@@ -294,15 +307,15 @@ function selectBySpan(inputSpan) {
   const range = spanList.split("..").map(Number);
 
   if (!inputSpan.includes("complement")) {
-    plasmidDict[plasmidIndex]["selectionStartPos"] = range[0];
-    plasmidDict[plasmidIndex]["selectionEndPos"] = range[1] + 1;
+    plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"] = range[0];
+    plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"] = range[1] + 1;
   } else {
-    plasmidDict[plasmidIndex]["selectionEndPos"] = range[0];
-    plasmidDict[plasmidIndex]["selectionStartPos"] = range[1] + 1;
+    plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"] = range[0];
+    plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"] = range[1] + 1;
   };
 
-  clearSelection(plasmidIndex, false);
-  setSelectionCursors(plasmidIndex, plasmidDict[plasmidIndex]["selectionStartPos"], plasmidDict[plasmidIndex]["selectionEndPos"]);
+  clearSelection(currentlyOpenedPlasmid, false);
+  setSelectionCursors(currentlyOpenedPlasmid, plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]);
 
   const starCellCoords = seqIndexToCoords(range[0], 0, currGridStructure);
   const endCellCoords = seqIndexToCoords(range[1], 0, currGridStructure);
@@ -328,7 +341,7 @@ function selectBySpan(inputSpan) {
     };
   };
 
-  plasmidDict[plasmidIndex]["selectedText"] = getSelectedText(currentlyOpenedPlasmid);
+  plasmidDict[currentlyOpenedPlasmid]["selectedText"] = getSelectedText(currentlyOpenedPlasmid);
 };
 
 
@@ -337,11 +350,7 @@ function selectBySpan(inputSpan) {
  */
 function setSelectionCursors(plasmidIndex, cursorStartPos, cursorEndPos) {
   console.log(plasmidIndex, plasmidDict[plasmidIndex]["selectionStartPos"], plasmidDict[plasmidIndex]["selectionEndPos"])
-  if (cursorEndPos) {
-    const tempStartPos = cursorStartPos;
-    cursorStartPos = (cursorStartPos < cursorEndPos) ? cursorStartPos : cursorEndPos;
-    cursorEndPos = (tempStartPos < cursorEndPos) ? cursorEndPos : tempStartPos;
-  };
+
   console.log("setSelectionCursors", cursorStartPos, cursorEndPos)
   clearSelectionCursors(plasmidIndex);
   const currGridStructure = plasmidDict[plasmidIndex]["gridStructure"];
@@ -368,14 +377,19 @@ function setSelectionCursors(plasmidIndex, cursorStartPos, cursorEndPos) {
  * Remove the selection cursor
  */
 function clearSelectionCursors(plasmidIndex) {
+  console.log("clearSelectionCursors", plasmidIndex)
   const cellsLeft = document.getElementById("sequence-grid-" + plasmidIndex).querySelectorAll('.selection-cursor-cell-left');
-  cellsLeft.forEach(cell => {
-      cell.classList.remove('selection-cursor-cell-left');
-  });
+  if (cellsLeft.length !== 0) {
+    cellsLeft.forEach(cell => {
+        cell.classList.remove('selection-cursor-cell-left');
+    });
+  };
   const cellsRight = document.getElementById("sequence-grid-" + plasmidIndex).querySelectorAll('.selection-cursor-cell-right');
-  cellsRight.forEach(cell => {
+  if (cellsRight.length !== 0) {
+    cellsRight.forEach(cell => {
       cell.classList.remove('selection-cursor-cell-right');
-  });
+    });
+  };
 };
 
 

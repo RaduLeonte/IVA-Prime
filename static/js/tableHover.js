@@ -5,10 +5,10 @@
  * - dont create the popup on every mousement
  * - dont delete the popup just hide it
  */
-function addHoverPopupToTable(plasmidIndex) {
+function addHoverPopupToTable(table, plasmidIndex) {
+  removeAllHoverPopups();
   // Select table
   const tableId = "sequence-grid-" + plasmidIndex
-  const table = document.getElementById(tableId);
   // Create popup for this table
   const popup = document.createElement('div');
   popup.id = tableId + "-popup";
@@ -134,4 +134,15 @@ function positionPopup(popup, clientX, clientY) {
   popup.style.top = top + 'px';
   popup.style.zIndex = '3';
   popup.style.display = "block";
+};
+
+
+/**
+ * 
+ */
+function removeAllHoverPopups() {
+  const popups = document.querySelectorAll(".hover-popup");
+  popups.forEach(element => {
+    element.parentNode.removeChild(element);
+});
 };

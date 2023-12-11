@@ -594,7 +594,6 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
             };
             console.log("Short insertion", homoFragmentLength1, homoFragmentLength2)
             homoFwd1 = homoFwd1.slice(homoFragmentLength1, homoFwd1.length);
-
             homoFwd2 = homoFwd2.slice(0, homoFwd2.length - homoFragmentLength2 + 1);
             tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice,  7, currentPlasmidIndex)
 

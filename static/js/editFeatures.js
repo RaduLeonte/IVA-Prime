@@ -104,20 +104,14 @@ function updateElementText(e, newText, originalText) {
  */
 function updateFeaturesDict(cell) {
     const currFeatures = plasmidDict[currentlyOpenedPlasmid]["fileFeatures"];
-    if (cell.id === "Annotations") {
-        const newContent = cell.textContent.replace("...", "")
-        if (currFeatures[cell.getAttribute("feature-id")]["label"] !== newContent) {
-            currFeatures[cell.getAttribute("feature-id")]["label"] = newContent;
-            createSidebar(currentlyOpenedPlasmid);
-            makeContentGrid(currentlyOpenedPlasmid);
-        };
-    } else if (cell.id.includes("sidebar")) {
+    if (cell.id.includes("sidebar")) {
         console.log("Editable cells:", cell, cell.parentElement.children[0].innerText, cell.id.replace("sidebar-"), cell.textContent)
         currFeatures[cell.parentElement.children[0].innerText][cell.id.replace("sidebar-", "")] = cell.textContent;
-        createSidebar(currentlyOpenedPlasmid);
+        plasmidDict[currentlyOpenedPlasmid]["sidebarTable"] = createSidebarTable(currentlyOpenedPlasmid);
         if (cell.id === "sidebar-label") {
-            makeContentGrid(currentlyOpenedPlasmid);
+          plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = makeContentGrid(currentlyOpenedPlasmid);
         };
+        updateSidebarAndGrid(currentlyOpenedPlasmid);
     };
     enableSidebarEditing();
 };
