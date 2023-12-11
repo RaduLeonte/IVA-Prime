@@ -97,7 +97,8 @@ let tempRegionTm = (getUserPreference("tempRegionTm")  !== null) ? getUserPrefer
 // Insertions with a TM lower than this will be turned into short insertions
 let upperBoundShortInsertions = (getUserPreference("upperBoundShortInsertions")  !== null) ? getUserPreference("upperBoundShortInsertions") : defaultSetingsDict["upperBoundShortInsertions"];
 
-let operationNr = 1; // modification counter
+let subcloningOriginPlasmidIndex = null;
+let subcloningOriginSpan = null;
 
 const primerColorRed = "rgb(200, 52, 120)"
 const primerColorGreen = "rgb(68, 143, 71)"
@@ -128,7 +129,6 @@ let saltCorrectionEquation = (getUserPreference("saltCorrectionEquation") !== nu
 // M, DMSO concentration for melting temperatures
 let dmsoConc = (getUserPreference("dmsoConc") !== null) ? getUserPreference("dmsoConc") : defaultSetingsDict["dmsoConc"];
 
-
 let isTmCalcWindowVisible = false;
 
 
@@ -138,34 +138,15 @@ let isTmCalcWindowVisible = false;
 // Grid structure, each entry is a row in the table
 let plasmidDict = {};
 let currentlyOpenedPlasmid = null;
-let defaultGridStructure = [
-    "Forward Strand",
-    "Complementary Strand",
-    "Amino Acids",
-    "Annotations",
-    "Spacer"];
+let defaultGridStructure = ["Forward Strand",
+                                "Complementary Strand",
+                                "Amino Acids",
+                                "Annotations",
+                                "Spacer"];
 let gridWidth = (getUserPreference("gridWidth") !== null) ? getUserPreference("gridWidth") : defaultSetingsDict["gridWidth"]; // Amount of cells per row
-// Store content of imported file
-let originalFileExtension1 = null;
-let originalFileExtension2 = null;
-let importedFileHeader1 = null;
-let importedFileHeader2 = null;
-// Initialise empty sequence and features variables
-let sequence = "";
-let complementaryStrand = "";
-let features = null;
-let sequence2 = "";
-let complementaryStrand2 = "";
-let features2 = null;
+const gridWidthMin = 10;
 // Global variable that stores the most recent color used
 let recentColor = '';
-
-
-/**
- * importSubcloningPlasmid 
- */
-// Keep track if the second plasmid has been imported (to disable the button etc)
-let secondPlasmidImported = false;
 
 
 /**
@@ -178,14 +159,9 @@ let aminoAcidSequenceInput = '';
 
 
 /**
- * tableHover 
- */
-// 
-
-
-/**
  * tableSelection 
  */
+let basePosition = -1;
 let selectedText = ''; // Currently selected sequence in the first grid
 let selectedText2 = ''; // Currently selected sequence in the second grid
 let selectionStartPos = null;

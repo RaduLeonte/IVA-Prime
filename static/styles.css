@@ -410,8 +410,6 @@ body {
   color: #fff;
   border: none;
   position: sticky;
-  top: 10px;
-  right: 10px;
   z-index: 9999;
 }
 
@@ -768,13 +766,19 @@ header {
   display: flex;
   justify-content: flex-start;
   align-items: center;
+  height: 70px;
 }
 
 .nav-left, .nav-right {
   padding: 10px;
 }
 
+.nav-left{
+  min-width: 306px;
+}
+
 .nav-right {
+  min-width: 315px;
   margin-left: auto;
 }
 
@@ -797,39 +801,42 @@ header {
 .nav-tabs {
   display:flex;
   align-items: center;
-  width: auto;
+  flex-grow: 1;
+  justify-content: flex-start;
+  overflow: hidden;
 }
 
 .plasmid-tabs-container {
   display: flex;
+  overflow: hidden;
   overflow-x: hidden;
   white-space: nowrap;
-  justify-content: space-between;
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
+  flex-grow: 1;
 }
 
 .plasmid-tabs-list {
   display: flex;
-  text-align: center;
+  gap: 5px;
   list-style: none;
   margin: 0;
   padding: 0;
   list-style-type: none;
-  border-bottom: 1px solid #DAE0E7;
+}
+
+.plasmid-tabs-list > * {
+  vertical-align:middle;
 }
 
 .plasmid-tab {
-	height: 44px;
-	margin: 0 8px -1px 0;
-	border: 1px solid #DAE0E7;
-  background: #d3d3d3;
-	border-radius: 8px 8px 0 0;
-	overflow: hidden;
+  border-radius: 8px;
+  display: inline-block;
+  position: relative;
 }
 
 .plasmid-tab:hover {
-  background: #fff;
+  background: #646464;
 }
 
 .plasmid-tab, .plasmid-tab a {
@@ -838,8 +845,7 @@ header {
 
 .plasmid-tab a {
   text-decoration: none;
-	color: #333;
-  font-weight: bold;
+	color: white;
   display: inline-block;
 }
 
@@ -849,9 +855,12 @@ header {
 }
 
 .plasmid-tab-selected {
-  height: 45px;
-	border-bottom: none;
-	background: #DAE0E7;
+  font-weight: bold;
+	background-color: #4caf4f81;
+}
+
+.plasmid-tab-selected:hover {
+	background-color: #4CAF50;
 }
 
 .plasmid-tab-dropdown {
@@ -868,8 +877,70 @@ header {
 	background: #DAE0E7;
 }
 
+.plasmid-tab-dropdown-menu {
+  position: fixed;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 5px;
+  margin: 0;
+  max-width: 300px;
+}
+
+.plasmid-tab-dropdown-menu h3 {
+  margin: 0;
+  padding: 5px;
+  background-color: #555;
+  color: #fff;
+  font-size: 16px;
+}
+
+.plasmid-tab-dropdown-menu ul {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.plasmid-tab-dropdown-menu ul li:last-child {
+  border-bottom: 2px solid #b8b8b8;
+}
+
+.plasmid-tab-dropdown-menu ul:last-child li:last-child {
+  border-bottom: 0px solid #b8b8b8;
+}
+
+.plasmid-tab-dropdown-menu ul a {
+  color: black;
+  padding: 10px 20px;
+  text-decoration: none;
+  display: block;
+}
+
+.plasmid-tab-dropdown-menu ul a:hover {
+  background-color: #ddd;
+}
+
 #scroll-left, #scroll-right {
   cursor: pointer;
   font-size: 24px;
   margin: 10px;
+}
+
+.subcloning-target-cell {
+  background-color: rgba(128, 0, 128, 0.2);
+  border-top: 4px dashed #ae70ae;
+  border-bottom: 4px dashed #ae70ae !important;
+}
+
+.subcloning-target-cell-first {
+  background-color: rgba(128, 0, 128, 0.2);
+  border-top: 4px dashed #ae70ae;
+  border-left: 4px dashed #ae70ae;
+  border-bottom: 4px dashed #ae70ae !important;
+}
+
+.subcloning-target-cell-last {
+  background-color: rgba(128, 0, 128, 0.2);
+  border-top: 4px dashed #ae70ae;
+  border-right: 4px dashed #ae70ae;
+  border-bottom: 4px dashed #ae70ae !important;
 }

@@ -31,11 +31,11 @@ function initiateSearchFunctionality() {
 
 
 /**
-     * Reset highlighted cells in the specified grid
-     */
+ * Reset highlighted cells in the specified grid
+ */
 function resetTableCells() {
     // Select table element
-    let table = table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
+    let table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
     
     // Find all cells with the "selected-cell-search" class and remove it
     const cells = table.getElementsByClassName("selected-cell-search");
@@ -88,6 +88,7 @@ function searchOccurrences(customSearchInput) {
  * Search for query occurences in sequence then add a class or highlight 
  */
 function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, workingGridStructure, highlightClass, highlightColor) {
+    console.log("highlightOccurences", targetStrandIndex, workingSequence, workingQuery, workingGridStructure, highlightClass, highlightColor)
     // Get a list of indices for all occurences of the search query
     const indices = [];
     let currentIndex = workingSequence.indexOf(workingQuery);
@@ -99,6 +100,7 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, w
 
     // Select table element
     let table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
+    console.log("highlightOccurences", table, indices)
     
     // Iterate over all cells that contain the search query and highlight them
     for (const index of indices) {
@@ -107,12 +109,41 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, w
             const [row, column] = seqIndexToCoords(index + j, 0, workingGridStructure);
             // Select and highlight the cell
             const cell = table.rows[row + targetStrandIndex].cells[column];
-            //console.log("Custom search:",index + j, cell, row + targetStrandIndex, column);
+            console.log("Custom search:", index + j, cell, row + targetStrandIndex, column);
             if (highlightClass) {
                 cell.classList.add(highlightClass);
             } else if (highlightColor) {
                 cell.style.backgroundColor = highlightColor;
                 cell.style.color = "white";
+            };
+        };
+    };
+};
+
+
+/**
+ * Search for query occurences in sequence then add a class or highlight 
+ */
+function highlightSpan(plasmidIndex, targetStrandIndex, spanStart, spanEnd, highlightClass, backgroundColor, textColor) {
+    console.log("highlightSpan", plasmidIndex, targetStrandIndex, spanStart, spanEnd, highlightClass, backgroundColor, textColor)
+    startIndex = Math.min(spanStart, spanEnd);
+    endIndex = Math.max(spanStart, spanEnd);
+    // Select table element
+    let table = document.getElementById("sequence-grid-" + plasmidIndex);
+    if (table) {
+        // Iterate over all cells that contain the search query and highlight them
+        for (let j = startIndex; j < endIndex; j++) {
+            // Convert sequence index to table coordinates
+            const [row, column] = seqIndexToCoords(j, 0, plasmidDict[plasmidIndex]["gridStructure"]);
+            // Select and highlight the cell
+            console.log(row + targetStrandIndex, column)
+            const cell = table.rows[row + targetStrandIndex].cells[column];
+            console.log("highlightSpan", cell)
+            if (highlightClass) {
+                cell.classList.add(highlightClass);
+            } else if (highlightColor) {
+                cell.style.backgroundColor = backgroundColor;
+                cell.style.color = textColor;
             };
         };
     };

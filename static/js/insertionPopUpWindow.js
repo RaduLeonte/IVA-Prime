@@ -8,14 +8,42 @@ document.addEventListener('DOMContentLoaded', function () {
   popupWindow.className = 'popup-window';
   popupWindow.innerHTML = `
     <h2 id="popUpWindowHeader">Insertion</h2>
-    <div>
-      <label for="dna-sequence-input">DNA Sequence:</label>
-      <input type="text" id="dna-sequence-input" class="popup-window-input">
+    <div id="insertionInput" style="display: block">
+      <div>
+        <label for="dna-sequence-input">DNA Sequence:</label>
+        <input type="text" id="dna-sequence-input" class="popup-window-input">
+      </div>
+      <div>
+        <label for="amino-acid-sequence-input">Amino Acid Sequence:</label>
+        <input type="text" id="amino-acid-sequence-input" class="popup-window-input">
+        <p class="stop-codon-hint">Accepted STOP letter codes: "-", "X", "*".</p>
+      </div>
     </div>
+
+    <div id="subcloningInput" style="display: none">
+      <h3>5' end insertion:</h3>
+        <div>
+          <label for="dna-sequence-input-5">DNA Sequence:</label>
+          <input type="text" id="dna-sequence-input-5" class="popup-window-input">
+        </div>
+        <div>
+          <label for="amino-acid-sequence-input-5">Amino Acid Sequence:</label>
+          <input type="text" id="amino-acid-sequence-input-5" class="popup-window-input">
+          <p class="stop-codon-hint">Accepted STOP letter codes: "-", "X", "*".</p>
+        </div>
+      <h3>3' end insertion:</h3>
+        <div>
+          <label for="dna-sequence-input-3">DNA Sequence:</label>
+          <input type="text" id="dna-sequence-input-3" class="popup-window-input">
+        </div>
+        <div>
+          <label for="amino-acid-sequence-input-3">Amino Acid Sequence:</label>
+          <input type="text" id="amino-acid-sequence-input-3" class="popup-window-input">
+          <p class="stop-codon-hint">Accepted STOP letter codes: "-", "X", "*".</p>
+        </div>
+    </div>
+
     <div>
-      <label for="amino-acid-sequence-input">Amino Acid Sequence:</label>
-      <input type="text" id="amino-acid-sequence-input" class="popup-window-input">
-      <p class="stop-codon-hint">Accepted STOP letter codes: "-", "X", "*".</p>
       <p> Optimize codons for: <select name="targetOrganismSelector" id="targetOrganismSelector">
         <option value="prioLowTM">Prioritize melting temperature</option>
       </select> </p>
@@ -44,30 +72,57 @@ document.addEventListener('DOMContentLoaded', function () {
   popupWindow.addEventListener('click', function (event) {
     // Creat primers button
     if (event.target.id === 'create-primers-button') {
-      // Get the entered values from the text inputs and sanitize them
-      // To uppercase, then remove anything that is not ACTG
-      dnaSequenceInput = document.getElementById('dna-sequence-input').value.toUpperCase().replace(/[^ATCG]/g, '');
-      // To uppercase, replace "-" and "*" with X
-      aminoAcidSequenceInput = document.getElementById('amino-acid-sequence-input').value.toUpperCase().replace(/[-*]/g, 'X');
-      // Only keep allowed amino acid 1 letter codes
-      const allowedLetterCodes = Object.keys(aaToCodon);
-      aminoAcidSequenceInput = aminoAcidSequenceInput.split('').filter(char => allowedLetterCodes.includes(char)).join('');
+      const operationType = event.target.getAttribute("operation-type");
+      if (operationType === "Subcloning") {
+        // Get the entered values from the text inputs and sanitize them
+        // To uppercase, then remove anything that is not ACTG
+        dnaSequenceInput5 = document.getElementById('dna-sequence-input-5').value.toUpperCase().replace(/[^ATCG]/g, '');
+        dnaSequenceInput3 = document.getElementById('dna-sequence-input-3').value.toUpperCase().replace(/[^ATCG]/g, '');
+        // To uppercase, replace "-" and "*" with X
+        aminoAcidSequenceInput5 = document.getElementById('amino-acid-sequence-input-5').value.toUpperCase().replace(/[-*]/g, 'X');
+        aminoAcidSequenceInput3 = document.getElementById('amino-acid-sequence-input-3').value.toUpperCase().replace(/[-*]/g, 'X');
+        // Only keep allowed amino acid 1 letter codes
+        const allowedLetterCodes = Object.keys(aaToCodon);
+        aminoAcidSequenceInput5 = aminoAcidSequenceInput5.split('').filter(char => allowedLetterCodes.includes(char)).join('');
+        aminoAcidSequenceInput3 = aminoAcidSequenceInput3.split('').filter(char => allowedLetterCodes.includes(char)).join('');
 
-      // Get target organism from select object
-      const targetOrganism = "";
+        let startPos = plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"];
+        let endPos = plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"];
+        if (!startPos) {startPos = endPos};
+        if (!endPos) {endPos = startPos};
 
-      //console.log("HERE2", dnaSequenceInput, aminoAcidSequenceInput, insertionPosition, selectionStartPos, selectionEndPos)
-      // Call the function to create insertion primers or replacement primers if we have text selected
-      if (!selectionEndPos || selectionEndPos === -1) {
-        createReplacementPrimers(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, insertionPosition);
+        //createSubcloning(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, startPos, endPos, operationType);
+        createSubcloningPrimersNew(startPos, endPos, aminoAcidSequenceInput5, dnaSequenceInput5, aminoAcidSequenceInput3, dnaSequenceInput3, document.getElementById("targetOrganismSelector").value);
+
+        // Clear the text inputs
+        document.getElementById('dna-sequence-input-5').value = '';
+        document.getElementById('dna-sequence-input-3').value = '';
+        document.getElementById('amino-acid-sequence-input-5').value = '';
+        document.getElementById('amino-acid-sequence-input-3').value = '';
+
       } else {
-        createReplacementPrimers(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, selectionStartPos, selectionEndPos);
+        // Get the entered values from the text inputs and sanitize them
+        // To uppercase, then remove anything that is not ACTG
+        dnaSequenceInput = document.getElementById('dna-sequence-input').value.toUpperCase().replace(/[^ATCG]/g, '');
+        // To uppercase, replace "-" and "*" with X
+        aminoAcidSequenceInput = document.getElementById('amino-acid-sequence-input').value.toUpperCase().replace(/[-*]/g, 'X');
+        // Only keep allowed amino acid 1 letter codes
+        const allowedLetterCodes = Object.keys(aaToCodon);
+        aminoAcidSequenceInput = aminoAcidSequenceInput.split('').filter(char => allowedLetterCodes.includes(char)).join('');
+
+
+        // Call the function to create insertion primers or replacement primers if we have text selected
+        let startPos = plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"];
+        let endPos = plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"];
+        if (!startPos) {startPos = endPos};
+        if (!endPos) {endPos = startPos};
+        createReplacementPrimers(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, startPos, endPos, operationType);
+        
+        // Clear the text inputs
+        document.getElementById('dna-sequence-input').value = '';
+        document.getElementById('amino-acid-sequence-input').value = '';
       };
       
-      // Clear the text inputs
-      document.getElementById('dna-sequence-input').value = '';
-      document.getElementById('amino-acid-sequence-input').value = '';
-
       // Hide the popup window
       hidePopupWindow();
       
@@ -88,12 +143,30 @@ document.addEventListener('DOMContentLoaded', function () {
 /**
  * Display pop up window and change its header.
  */
-function showPopupWindow(headerText) {
+function showPopupWindow(headerText, operationType) {
   const popupWindow = document.querySelector('.popup-window');
   popupWindow.style.display = 'block';
 
   const popupWindowHeader = document.getElementById('popUpWindowHeader');
   popupWindowHeader.innerText = headerText;
+  
+  const createPrimersButton = popupWindow.querySelector('#create-primers-button');
+  console.log("showPopUpWindow", createPrimersButton, operationType);
+  createPrimersButton.setAttribute("operation-type", operationType);
+
+  if (operationType === "Subcloning") {
+    const insertionInput = document.getElementById("insertionInput");
+    insertionInput.style.display = "none";
+
+    const subcloningInput = document.getElementById("subcloningInput");
+    subcloningInput.style.display = "block";
+  } else {
+    const insertionInput = document.getElementById("insertionInput");
+    insertionInput.style.display = "block";
+
+    const subcloningInput = document.getElementById("subcloningInput");
+    subcloningInput.style.display = "none";
+  }
 };
 
 
