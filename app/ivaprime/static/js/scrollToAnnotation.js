@@ -2,28 +2,14 @@
  * Adds a scrolling effect when clicking on a feature in the side bar.
  */
 function addScrollingEffectToFeatureTable() {
-  // Wait for the page to load
-  document.addEventListener('DOMContentLoaded', function () {
-    // Select specified table and content div
-    const sidebarTable = document.getElementById("sidebar-table");
+  const sidebarTable = document.getElementById("sidebar-table");
 
-    // Listeners are added once the sidebar is populated after plasmid import
-    const observer = new MutationObserver(function (mutationsList) {
-      for (const mutation of mutationsList) {
-        if (mutation.type === 'childList') {
-          const addedNodes = mutation.addedNodes;
-          for (const node of addedNodes) {
-            if (node.nodeName === 'TR') {
-              node.addEventListener('click', scrollToCell);
-            };
-          };
-        };
-      };
-    });
-  
-    // Start observing the sidebar table for changes
-    observer.observe(sidebarTable, { childList: true, subtree: true });
-  });
+  // Listeners are added once the sidebar is populated after plasmid import
+  const trList = sidebarTable.querySelectorAll("tr");
+  console.log("addScrollingEffectToFeatureTable", trList)
+  trList.forEach((trElement) => {
+    trElement.addEventListener('click', scrollToCell)
+  });    
 };
 
 
@@ -31,6 +17,7 @@ function addScrollingEffectToFeatureTable() {
  * Scrolls to the annotaton specified by the sidebar row closes to where the user clicked.
  */
 function scrollToCell(event) {
+  console.log("Scrolling to cell", event)
   event.stopPropagation();
   // Closes row to click event
   const clickedRow = event.target.closest('tr');
@@ -68,7 +55,3 @@ function scrollToCell(event) {
   console.log("Scrolling to, selecting:", clickedRow.cells[2].innerText)
   selectBySpan(clickedRow.cells[2].innerText);
 };
-
-
-// Enables the effect for both plasmids
-addScrollingEffectToFeatureTable();
