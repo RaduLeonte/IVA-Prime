@@ -1297,8 +1297,8 @@ function makeContentGrid(plasmidIndex) {
       // Check if feature needs to be translated
       //console.log(currFeatures[key]);
       if ((currFeatures[key]["translation"]) || (currFeatures[key]["note"] && (currFeatures[key]["note"].includes(" translation: ")))) {
-        //console.log("Translating: ", value.label, rangeStart, rangeEnd, pNr)
         const targetStrand = (!value.span.includes("complement")) ? "fwd": "comp";
+        console.log("Translating: ", value.label, rangeStart, rangeEnd, targetStrand)
         translateSpan(targetStrand, rangeStart, rangeEnd, sequenceGrid, currGridStructure, plasmidIndex);
       };
     };
@@ -1670,7 +1670,7 @@ function startTranslation(codonPos) {
 function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGridStructure, plasmidIndex) {
   //console.log("Translating:", targetStrand, rangeStart, rangeEnd, pNr);
   // Select the corresponding features and sequence
-  let currSequence = plasmidDict[plasmidIndex]["fileSequence"];
+  let currSequence = (targetStrand === "fwd") ? plasmidDict[plasmidIndex]["fileSequence"]: plasmidDict[plasmidIndex]["fileComplementarySequence"];
 
   const codonStartPos = (targetStrand === "fwd") ? rangeStart: rangeEnd;
   const codonEndPos = (targetStrand === "fwd") ? rangeEnd + 1: rangeStart;
