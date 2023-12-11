@@ -31,7 +31,8 @@ document.addEventListener('DOMContentLoaded', function () {
       <h3>Translation</h3>
       <ul>
         <li id="begin-translation" disabled>Begin translation at first ATG</li>
-        <li id="translate-selection" disabled>Translate selection</li>
+        <li id="translate-selection" disabled>Translate selection (forward strand)</li>
+        <li id="translate-selection-rev" disabled>Reverse translate selection (reverse strand)</li>
       </ul>
     </div>
   `;
@@ -148,21 +149,33 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (menuItemId === 'begin-translation') {
       console.log('Beginning translation');
       // Start translation logic
-      if (plasmidDict[currentlyOpenedPlasmid]["fileSequence"].slice(insertionPosition - 1, insertionPosition + 2) === "ATG") { // If we clicked on ATG, start translation there
-        startTranslation(insertionPosition, 1);
+      if (plasmidDict[currentlyOpenedPlasmid]["fileSequence"].slice(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"] - 1, plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"] + 2) === "ATG") { // If we clicked on ATG, start translation there
+        startTranslation(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"]);
       } else { // Else search for the first ATG then start there
-        startTranslation(plasmidDict[currentlyOpenedPlasmid]["fileSequence"].indexOf("ATG", insertionPosition) + 1, 1);
+        startTranslation(plasmidDict[currentlyOpenedPlasmid]["fileSequence"].indexOf("ATG", plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"]) + 1);
       };
     
     /**
      * Translate current selection
      */
     } else if (menuItemId === 'translate-selection') {
-      console.log('Translating current selection', plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]);
       const translateSpanStart = Math.min(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]);
       const translateSpanEnd = Math.max(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]) - 3;
-      console.log('Translating current selection', translateSpanStart, translateSpanEnd);
-      translateSpan("fwd", translateSpanStart, translateSpanEnd, currentlyOpenedPlasmid);
+      
+      const targetTable = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
+      const targetGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
+      translateSpan("fwd", translateSpanStart, translateSpanEnd, targetTable, targetGridStructure, currentlyOpenedPlasmid);
+    
+    /**
+     * Reverse ranslate current selection
+     */
+    } else if (menuItemId === 'translate-selection-rev') {
+      const translateSpanStart = Math.min(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]);
+      const translateSpanEnd = Math.max(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]);
+
+      const targetTable = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
+      const targetGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
+      translateSpan("comp", translateSpanStart + 1, translateSpanEnd - 1, targetTable, targetGridStructure, currentlyOpenedPlasmid);
     };
 
     // Hide the menu once done
@@ -198,6 +211,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const beginTranslationMenuItem = document.getElementById('begin-translation');
     const translateSelectionMenuItem = document.getElementById('translate-selection');
+    const translateSelectionRevMenuItem = document.getElementById('translate-selection-rev');
 
     // Enable or disable menu items based on if the user is making a selection
     if (plasmidDict[currentlyOpenedPlasmid]["selectedText"]) {
@@ -214,6 +228,7 @@ document.addEventListener('DOMContentLoaded', function () {
       mutationMenuItem.classList.remove('disabled');
       replacementMenuItem.classList.remove('disabled');
       translateSelectionMenuItem.classList.remove('disabled');
+      translateSelectionRevMenuItem.classList.remove('disabled');
       markForSubcloningMenuItem.classList.remove('disabled');
     } else {
       copySelectionMenuItem.classList.add("disabled");
@@ -229,6 +244,7 @@ document.addEventListener('DOMContentLoaded', function () {
       mutationMenuItem.classList.add('disabled');
       replacementMenuItem.classList.add('disabled');
       translateSelectionMenuItem.classList.add('disabled');
+      translateSelectionRevMenuItem.classList.add('disabled');
       markForSubcloningMenuItem.classList.add('disabled');
     };
 

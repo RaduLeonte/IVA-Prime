@@ -11,11 +11,14 @@ function scrollTabs(direction) {
 
 function updateSidebarAndGrid() {
     // Update sidebar table
-    const sidebarTableContainer = document.querySelector('.sidebar-content');
-    sidebarTableContainer.after(plasmidDict[currentlyOpenedPlasmid]["sidebarTable"]);
-    //console.log("Updating to", currentlyOpenedPlasmid, plasmidDict[currentlyOpenedPlasmid]["sidebarTable"].innerHTML.slice(200, 300))
-    //sidebarTableContainer.appendChild(plasmidDict[currentlyOpenedPlasmid]["sidebarTable"]);
-    enableSidebarEditing()
+    const sidebarContent = document.querySelector('.sidebar-content');
+    const currSidebarTable = document.getElementById("sidebar-table");
+    if (currSidebarTable) {
+        currSidebarTable.parentNode.removeChild(currSidebarTable)
+    };
+    sidebarContent.after(plasmidDict[currentlyOpenedPlasmid]["sidebarTable"]);
+    enableSidebarEditing();
+    addScrollingEffectToFeatureTable();
     
     // Update content grid
     const contentGridContainer = document.getElementById('file-content');
