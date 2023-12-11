@@ -1668,7 +1668,7 @@ function startTranslation(codonPos) {
  * Translate specific span
  */
 function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGridStructure, plasmidIndex) {
-  //console.log("Translating:", targetStrand, rangeStart, rangeEnd, pNr);
+  console.log("Translating:", targetStrand, rangeStart, rangeEnd, targetTable, currGridStructure, plasmidIndex);
   // Select the corresponding features and sequence
   let currSequence = (targetStrand === "fwd") ? plasmidDict[plasmidIndex]["fileSequence"]: plasmidDict[plasmidIndex]["fileComplementarySequence"];
 
@@ -1684,7 +1684,7 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGrid
   // displayed in the middle cell of a group of 3 cells
   let row = tableCoords[0];
   let col = tableCoords[1] + 1*dir;
-  //console.log("Translating, tableCoords:", codonStartPos, tableCoords, row, col, dir)
+  console.log("Translating: tableCoords:", codonStartPos, tableCoords, row, col, dir)
 
   //console.log("Translating:", targetStrand, col, row, codonPos, codonStartPos, codonEndPos)
   // Start translating until a stop codon is encountered
@@ -1727,7 +1727,7 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGrid
  * 
  */
 function fillAACells(row, col, text, targetTable, currGridStructure, aaIndex) {
-  console.log("Translating, filling cells:", row, col, text, targetTable, currGridStructure, aaIndex)
+  //console.log("Translating, filling cells:", row, col, text, targetTable, currGridStructure, aaIndex)
 
   // Select the middle cell
   if (col < 0) {
