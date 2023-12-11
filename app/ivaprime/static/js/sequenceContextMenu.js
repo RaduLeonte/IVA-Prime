@@ -148,10 +148,10 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (menuItemId === 'begin-translation') {
       console.log('Beginning translation');
       // Start translation logic
-      if (plasmidDict[currentlyOpenedPlasmid]["fileSequence"].slice(insertionPosition - 1, insertionPosition + 2) === "ATG") { // If we clicked on ATG, start translation there
-        startTranslation(insertionPosition, 1);
+      if (plasmidDict[currentlyOpenedPlasmid]["fileSequence"].slice(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"] - 1, plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"] + 2) === "ATG") { // If we clicked on ATG, start translation there
+        startTranslation(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"]);
       } else { // Else search for the first ATG then start there
-        startTranslation(plasmidDict[currentlyOpenedPlasmid]["fileSequence"].indexOf("ATG", insertionPosition) + 1, 1);
+        startTranslation(plasmidDict[currentlyOpenedPlasmid]["fileSequence"].indexOf("ATG", plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"]) + 1);
       };
     
     /**

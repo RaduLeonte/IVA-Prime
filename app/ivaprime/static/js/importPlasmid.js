@@ -1305,11 +1305,6 @@ function makeContentGrid(plasmidIndex) {
   });
 
 
-  // Check the sequence for common promotes and start the translation there
-  //promoterTranslation(pNr);
-  // Start the transaltion at the beginning of each feature
-  //featureTranslation(pNr);
-
   // Clean up cells that are not longer in a tr
   cleanLostCells(sequenceGrid);
 
@@ -1564,11 +1559,9 @@ function translateCodon(codon) {
 
 
 /**
- * Searches the specified sequence for the common promotes and starts translation wherever it finds one.
+ * Common promoters
  */
-function promoterTranslation(pNr) {
-  // List of common promoters
-  const promoters = {"CMV": "CGCAAATGGGCGGTAGGCGTG",
+const promoters = {"CMV": "CGCAAATGGGCGGTAGGCGTG",
                       "EF1α": "CCACGGGACACCATCTTTAC",
                       "RSV": "CGCGTGCTAGAACAGATGAGGACCCTGGGAGCTCTCTC",
                       "PGK": "TCCATTTGCCTAGCTGTTTGA",
@@ -1602,66 +1595,6 @@ function promoterTranslation(pNr) {
                       "SalI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
                       "XhoI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
                       "HindIII": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT"};
-  // Function that generates a list of all occurences of the subtring in the input string
-  function findAllOccurrences(string, substring) {
-    const indices = [];
-    let index = string.indexOf(substring);
-  
-    while (index !== -1) {
-      indices.push(index);
-      index = string.indexOf(substring, index + 1);
-    };
-  
-    return indices;
-  };
-
-  // Select the correct sequence to search
-  let currSequence = "";
-  if (pNr === 1) {
-    currSequence = sequence;
-  } else {
-    currSequence = sequence2;
-  };
-
-  // Iterate over the promotes, finds a list of indices for all the positions where it can be found
-  // then starts the translation at the first ATG it finds from there.
-  for (let promoter in promoters) {
-    // Get all occurences of the promoter sequence in the plasmid sequence
-    const occurrences = findAllOccurrences(currSequence, promoters[promoter]);
-    // If any occurences were found, iterate over them and start looking for "ATG" and start translating there
-    if (occurrences.length !== 0) {
-      for (let i = 0; i < occurrences.length; i++) {
-        startTranslation(currSequence.indexOf("ATG", occurrences[i] + promoter.length) + 1, pNr);
-      };
-    };
-  };
-};
-
-
-// Star a translation at the beginning of each feature
-function featureTranslation(pNr) {
-  // Select the corresponding features and sequence
-  let currSequence = "";
-  let currFreatures = [];
-  if (pNr === 1) {
-    currSequence = sequence;
-    currFreatures = features;
-  } else {
-    currSequence = sequence2;
-    currFreatures = features2;
-  };
-
-  // Iterate over features and start the translation at the beginning of its span
-  Object.entries(currFreatures).forEach(([key, value]) => {
-    if (value.span && !key.includes("source")) {
-      const spanList = removeNonNumeric(value.span);
-      const range = spanList.split("..").map(Number);
-      const rangeStart = range[0];
-      const rangeEnd = range[1];
-      startTranslation(rangeStart, pNr);
-    };
-  });
-};
 
 
 /**
@@ -1688,17 +1621,11 @@ function seqIndexToCoords(inputIndex, targetRow, currGridStructure) {
  * TO DO:
  * - add an option to start translating immediately or inside selected text
  */
-function startTranslation(codonPos, pNr) {
+function startTranslation(codonPos) {
   // Select the corresponding features and sequence
-  let currGridStructure = null;
-  let currSequence = "";
-  if (pNr === 1) {
-    currSequence = sequence;
-    currGridStructure = gridStructure;
-  } else {
-    currSequence = sequence2;
-    currGridStructure = gridStructure2;
-  };
+  let currSequence = plasmidDict[currentlyOpenedPlasmid]["fileSequence"];
+  let currGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
+  let currTable = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid)
 
   // Convert to table coordinates based on the row order in the grid structure
   const rowIndexAA = currGridStructure.indexOf("Amino Acids");
@@ -1719,7 +1646,7 @@ function startTranslation(codonPos, pNr) {
     let aminoAcid = translateCodon(codon);
 
     // Fill the cells
-    fillAACells(row, col, aminoAcid, pNr, aaIndex);
+    fillAACells(row, col, aminoAcid, currTable, currGridStructure, aaIndex);
     aaIndex++;
     // Jump to next position
     col += 3;
@@ -1800,7 +1727,7 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGrid
  * 
  */
 function fillAACells(row, col, text, targetTable, currGridStructure, aaIndex) {
-  //console.log("Translating, filling cells:", row, col, text, pNr)
+  console.log("Translating, filling cells:", row, col, text, targetTable, currGridStructure, aaIndex)
 
   // Select the middle cell
   if (col < 0) {
