@@ -184,9 +184,19 @@ function hidePopupWindow() {
  */
 function positionContextMenu(clientX, clientY) {
   const contextMenu = document.querySelector('.custom-context-menu');
-  contextMenu.style.left = clientX + 'px';
-  contextMenu.style.top = clientY + 'px';
-  //contextMenu.style.display = 'block';
+  const maxX = window.innerWidth - contextMenu.offsetWidth;
+  const maxY = window.innerHeight - contextMenu.offsetHeight;
+  console.log("positionContextMenu", clientX, clientY, maxX, maxY, window.innerWidth, window.innerHeight, contextMenu.offsetWidth, contextMenu.offsetHeight);
+  if (clientX > maxX) {
+    contextMenu.style.left = (clientX - contextMenu.offsetWidth) + 'px';
+  } else {
+    contextMenu.style.left = clientX + 'px';
+  };
+  if (clientY > maxY) {
+    contextMenu.style.top = (clientY - contextMenu.offsetHeight) + 'px';
+  } else {
+    contextMenu.style.top = clientY + 'px';
+  };
 };
 
 
