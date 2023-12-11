@@ -270,7 +270,7 @@ function primerRegionHover(event) {
     
     // Highlight hovered sequence in plasmid files
     const currGridstructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
-    let currSequence = (spanDirection === "fwd") ? plasmidDict[currentlyOpenedPlasmid]["fileSequence"]: plasmidDict[currentlyOpenedPlasmid]["fileComplementaryStrand"];
+    let currSequence = (spanDirection === "fwd") ? plasmidDict[currentlyOpenedPlasmid]["fileSequence"]: plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"];
 
     const searchQuery = (spanDirection === "fwd") ? spanSequence: spanSequence.split('').reverse().join('');
     const targetStrand = (spanDirection === "fwd") ? 0: 1;
