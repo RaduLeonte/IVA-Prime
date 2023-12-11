@@ -789,13 +789,12 @@ function createSubcloningPrimersNew(subcloningStartPos, subcloningEndPos, aaSequ
         seqToInsert3 = dnaSequence3Prime;
     };
 
-    let subcloningSequence = seqToInsert5 + repeatingSlice(plasmidDict[subcloningOriginPlasmidIndex]["fileSequence"], subcloningOriginSpan[0], subcloningOriginSpan[1]) + seqToInsert3;
-
-
     if (!subcloningStartPos) {subcloningStartPos = subcloningEndPos};
     if (!subcloningEndPos) {subcloningEndPos = subcloningStartPos};
     const startPos = Math.min(subcloningStartPos, subcloningEndPos);
     const endPos = Math.max(subcloningStartPos, subcloningEndPos);
+    let subcloningSequence = seqToInsert5 + repeatingSlice(plasmidDict[subcloningOriginPlasmidIndex]["fileSequence"], subcloningOriginSpan[0] - 1, subcloningOriginSpan[1]-1) + seqToInsert3;
+
     console.log("createSubcloningPrimersNew", subcloningSequence, subcloningOriginPlasmidIndex, subcloningOriginSpan, startPos, endPos)
 
     // Origin templatete primers
@@ -874,8 +873,10 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
 
 
     // Insertion is added into the main sequence and complementary strand is remade
+    console.log("updateFeatures before", plasmidDict[plasmidIndex]["fileSequence"].length, plasmidDict[plasmidIndex]["fileComplementarySequence"].length)
     plasmidDict[plasmidIndex]["fileSequence"] = plasmidDict[plasmidIndex]["fileSequence"].substring(0, segmentStartPos) + newFeatureSequence + plasmidDict[plasmidIndex]["fileSequence"].substring(segmentEndPos);
-    plasmidDict[plasmidIndex]["fileComplementaryStrand"]  = getComplementaryStrand(plasmidDict[plasmidIndex]["fileSequence"]);
+    plasmidDict[plasmidIndex]["fileComplementarySequence"]  = getComplementaryStrand(plasmidDict[plasmidIndex]["fileSequence"]);
+    console.log("updateFeatures after", plasmidDict[plasmidIndex]["fileSequence"].length, plasmidDict[plasmidIndex]["fileComplementarySequence"].length)
 
     /**
      * Decides if the old feature should be left alone, shifted, or deleted based on the span of the new feature.
