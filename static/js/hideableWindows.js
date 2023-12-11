@@ -109,17 +109,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else if (element.type === "checkbox") {
                     eval(variableName + " = document.getElementById(\"" + variableName + "SettingsElement\"" + ").checked");
                 } else if (element.type === "number") {
+                    console.log("Updating number");
                     if (variableName === "gridWidth") {
-                        if (gridWidth !== parseInt(document.getElementById(variableName + "SettingsElement").value)) {
-                            if (sequence !== "") {
-                                makeContentGrid(1);
-                            };
-                            if (sequence2 !== "") {
-                                makeContentGrid(2);
+                        console.log("Updating gridwith");
+                        if (gridWidth !== parseInt(document.getElementById(variableName + "SettingsElement").value) && gridWidthMin <= parseInt(document.getElementById(variableName + "SettingsElement").value)) {
+                            eval(variableName + " = parseInt(document.getElementById(\"" + variableName + "SettingsElement\"" + ").value)");
+                            console.log("Updating new gridwith [old, new]", gridWidth, parseInt(document.getElementById(variableName + "SettingsElement").value))
+                            if (currentlyOpenedPlasmid) {
+                                console.log("Updating, sequence not empty")
+                                plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = makeContentGrid(currentlyOpenedPlasmid);
+                                updateSidebarAndGrid(currentlyOpenedPlasmid);
                             };
                         };
+                    } else {
+                        eval(variableName + " = parseInt(document.getElementById(\"" + variableName + "SettingsElement\"" + ").value)");
                     };
-                    eval(variableName + " = parseInt(document.getElementById(\"" + variableName + "SettingsElement\"" + ").value)");
                 };
                 saveUserPreference(variableName, eval(variableName), 30, true, true);
             };

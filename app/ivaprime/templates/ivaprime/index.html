@@ -12,7 +12,6 @@
             <link rel="stylesheet" type="text/css" href="{% static 'styles.css' %}">
             <!-- Scripts -->
             <script src="{% static 'js/globalVariables.js' %}"></script>
-            <script src="{% static 'js/plasmidDemoFile.js' %}"></script>
             <script src="{% static 'js/getTM.js' %}"></script>
             <script src="{% static 'js/importPlasmid.js' %}"></script>
             <script src="{% static 'js/sequenceContextMenu.js' %}"></script>
@@ -26,6 +25,7 @@
             <script src="{% static 'js/resizeContents.js' %}"></script>
             <script src="{% static 'js/hideableWindows.js' %}"></script>
             <script src="{% static 'js/editFeatures.js' %}"></script>
+            <script src="{% static 'js/plasmidTabs.js' %}"></script>
             <!-- Libraries -->
             <script src="{% static 'js/html-docx.js' %}"></script>
             <script src="{% static 'js/xlsx.full.min.js' %}"></script>
@@ -33,23 +33,30 @@
         </head>
         <body>
             <header>
-                <nav>
+                <div class="nav-left">
                     <!-- Left side header buttons -->
                     <ul id="header-list"  class="horizontal-list">
                         <li id="import-btn"><a href="#" id="import-btn-a">Import File</a></li>
                         <li id="import-demo-btn"><a href="#">Try Demo File</a></li>
-                        <li id="import-second-btn" style="display: none;"><a href="#">Import Subcloning Target</a></li>
-                        <li id="import-second-demo-btn" style="display: none;"><a href="#" id="import-second-btn-a">Import Demo Subcloning Target</a></li>
-                        <li style="display: flex;align-items: center;text-align: center;"><a id="plasmid-file-name1" class="editable" style="display: none;"></a></li>
-                        <li style="display: flex;align-items: center;text-align: center;"><a id="plasmid-file-name2" class="editable" style="display: none;"></a></li>
-                    </ul>   
+                    </ul>
+                </div>
+                <div class="nav-tabs">
+                    <!-- Plasmid tabs -->
+                    <div id="scroll-left" onclick="scrollTabs('left')">‹</div>
+                    <div id="plasmid-tabs-container" class="plasmid-tabs-container">
+                        <ul id="plasmid-tabs-list" class="plasmid-tabs-list">
+                        </ul>
+                    </div>
+                    <div id="scroll-right" onclick="scrollTabs('right')">›</div>
+                </div>
+                <div class ="nav-right">
                     <!-- Right side header buttons -->
                     <ul id="header-list-right" class="horizontal-list">
                         <li id="tm-calc-btn"><a href="#" disabled>TM Calculator</a></li>
                         <li id="settings-btn" class="svg-icon-btn"><a href="#" disabled style="background-image: url('{% static 'settings_icon.svg' %}')"></a></li>
                         <li id="info-btn" class="svg-icon-btn"><a href="#" disabled style="background-image: url('{% static 'info_icon.svg' %}')"></a></li>
                     </ul>
-                </nav>
+                </div>
             </header>
     
             <!-- Hideable windows -->
@@ -269,45 +276,18 @@
             <div class="parent-container" id="parent-container">
                 <!-- Plasmid nr 1 -->
                 <div class="first-plasmid-container" id="first-plasmid-container">
+                    
                     <!-- Sidebar -->
                     <div id="sidebar" class="sidebar" style="width: 25%;">
-                        <!-- Export buttons -->
-                        <div style="display: flex;">
-                            <div id="export-dropdown" class="dropdown" style="display: none;">
-                                <button class="save-button">Save File</button>
-                                <div class="dropdown-content">
-                                    <a id="export-btn-gb" href="#">GB File</a>
-                                    <a id="export-btn-dna" href="#">DNA File</a>
-                                </div>
+                        <div id="sidebar-container">
+                            <!-- Main sidebar content where primers are appended -->
+                            <div class="sidebar-content">
+                                <h2 id="primers-div-headline">Primers will appear here.</h2>
                             </div>
-            
-                            <div id="export-dropdown-second" class="dropdown" style="display: none;">
-                                <button class="save-button">Save Second File</button>
-                                <div class="dropdown-content">
-                                    <a id="export-second-btn-gb" href="#">GB File</a>
-                                    <a id="export-second-btn-dna" href="#">DNA File</a>
-                                </div>
-                            </div>
-    
-                            <div id="export-primers-dropdown" class="dropdown" style="display: none;">
-                                <button class="save-button">Export Primers</button>
-                                <div class="dropdown-content">
-                                    <a id="export-primers-txt" href="#">Plain Text (.txt)</a>
-                                    <a id="export-primers-doc" href="#">MS Word File (.doc)</a>
-                                    <a id="export-primers-csv" href="#">CSV File (.csv)</a>
-                                    <a id="export-primers-xlsx" href="#">Excel File (.xlsx)</a>
-                                    <a id="export-primers-microsynth" href="#">Microsynth Order Form (.xlsx)</a>
-                                </div>
-                            </div>
+                            <!-- Features table -->
+                            <table id="sidebar-table" class="sidebar-table">
+                            </table>
                         </div>
-                        
-                        <!-- Main sidebar content where primers are appended -->
-                        <div class="sidebar-content">
-                            <h2 id="primers-type">Primers will appear here.</h2>
-                        </div>
-                        <!-- Features table -->
-                        <table id="sidebar-table" class="sidebar-table">
-                        </table>
                     </div>
                     
                     <!-- Plasmid content -->
@@ -316,33 +296,6 @@
                         <input type="text" id="custom-search-input" class="search-bar" placeholder="Search">  
                         <!-- Plasmid sequence grid-->
                         <div id="file-content" class="strands">
-                            <table id="sequence-grid" class="sequence-grid">
-                                <tbody>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-    
-                <!-- Plasdmid nr 2 -->
-                <div class="second-plasmid-container" id="second-plasmid-container" style="display: none;">
-                    <!-- Sidebar -->
-                    <div class="sidebar" id="sidebar2" style="width: 25%;">
-                        <!-- Features table -->
-                        <table class="sidebar-table" id="sidebar-table2">
-                        </table>
-                    </div>
-                    
-                    <!-- Plasmid content -->
-                    <div class="content" id="content2">
-                        <!-- Custom search -->
-                        <input type="text" id="custom-search-input2" class="search-bar" placeholder="Search">  
-                        <!-- Plasmid sequence grid-->
-                        <div id="file-content2" class="strands">
-                            <table id="sequence-grid2" class="sequence-grid">
-                                <tbody>
-                                </tbody>
-                            </table>
                         </div>
                     </div>
                 </div>

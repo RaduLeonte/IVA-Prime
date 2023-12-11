@@ -1,51 +1,29 @@
 /**
  * Add search functionality for the sequence grid.
  */
-function initiateSearchFunctionality(pNr) {
+function initiateSearchFunctionality() {
     // Select the search bar element
-    let customSearchInput = null;
-    if (pNr === 1) {
-        customSearchInput = document.getElementById('custom-search-input');
-    } else {
-        customSearchInput = document.getElementById('custom-search-input2');
-    };  
+    let customSearchInput = document.getElementById('custom-search-input');
 
     // Event listener for ctrl F or cmd F
     document.addEventListener('keydown', function(event) {
         if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
-            let searchEnabled = null;
-            if (pNr === 1) {
-                searchEnabled = customSearchEnabledFirstPlasmid;
-            } else {
-                searchEnabled = customSearchEnabledSecondPlasmid;
-            };
-            
-            if (!searchEnabled) {
+            if (!searchOn) {
                 event.preventDefault(); // Prevent default search functionality
                 // Make search bar visible
                 customSearchInput.style.display = "block";
                 customSearchInput.value = "";
-                //if (customSearchInput.value !== "") {searchOccurrences(pNr)}
-                customSearchInput.focus(); // Set focus to the custom search input field
+                customSearchInput.focus();
                 // Event listener for typing
                 customSearchInput.addEventListener('input', function() {
-                    // Send search query
-                    searchOccurrences(customSearchInput, pNr);
+                    searchOccurrences(customSearchInput);
                 });
-                if (pNr === 1) {
-                    customSearchEnabledFirstPlasmid = true;
-                } else {
-                    customSearchEnabledSecondPlasmid = true;
-                };
+                searchOn = true;
             } else { // Disable
                 event.preventDefault();
-                resetTableCells(pNr);
+                resetTableCells();
                 customSearchInput.style.display = "none";
-                if (pNr === 1) {
-                    customSearchEnabledFirstPlasmid = false;
-                } else {
-                    customSearchEnabledSecondPlasmid = false;
-                };
+                searchOn = false;
             };
         };
     });
@@ -53,16 +31,11 @@ function initiateSearchFunctionality(pNr) {
 
 
 /**
-     * Reset highlighted cells in the specified grid
-     */
-function resetTableCells(pNr) {
+ * Reset highlighted cells in the specified grid
+ */
+function resetTableCells() {
     // Select table element
-    let table = null;
-    if (pNr === 1) {
-        table = document.getElementById("sequence-grid");
-    } else {
-        table = document.getElementById("sequence-grid2");
-    };
+    let table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
     
     // Find all cells with the "selected-cell-search" class and remove it
     const cells = table.getElementsByClassName("selected-cell-search");
@@ -75,9 +48,9 @@ function resetTableCells(pNr) {
 /**
  * Find all occurences of the search query in the sequence, highligh the cells then scroll to the nearest occurence.
  */
-function searchOccurrences(customSearchInput, pNr) {
+function searchOccurrences(customSearchInput) {
     // Reset highlighted cells
-    resetTableCells(pNr);
+    resetTableCells();
 
     // Get search query from the search bar
     const searchQuery = customSearchInput.value;
@@ -85,18 +58,9 @@ function searchOccurrences(customSearchInput, pNr) {
     //console.log("Search:", searchQuery, searchQueryComplement)
 
     // Select the sequence and grid structure of the plasmid of interest
-    let currSequence = null;
-    let currSequenceComp = null;
-    let currGridStructure = null;
-    if (pNr === 1) {
-        currSequence = sequence;
-        currSequenceComp = complementaryStrand;
-        currGridStructure = gridStructure;
-    } else {
-        currSequence = sequence2;
-        currSequenceComp = complementaryStrand2;
-        currGridStructure = gridStructure2;
-    };
+    let currSequence = plasmidDict[currentlyOpenedPlasmid]["fileSequence"];
+    let currSequenceComp = plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"];
+    let currGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
 
     // If the query is not empty
     if (searchQuery) {
@@ -111,11 +75,11 @@ function searchOccurrences(customSearchInput, pNr) {
                 workingQuery = searchQueryComplement;
             };
             // Get a list of indices for all occurences of the search query
-            highlightOccurences(pNr, i, workingSequence, workingQuery, currGridStructure, "selected-cell-search", null);
+            highlightOccurences(i, workingSequence, workingQuery, currGridStructure, "selected-cell-search", null);
         };
 
         // Scroll to the nearest occurence of the search query
-        scrollToNextSelectedCell(pNr);
+        scrollToNextSelectedCell();
     };
 };
 
@@ -123,7 +87,8 @@ function searchOccurrences(customSearchInput, pNr) {
 /**
  * Search for query occurences in sequence then add a class or highlight 
  */
-function highlightOccurences(pNr, targetStrandIndex, workingSequence, workingQuery, workingGridStructure, highlightClass, highlightColor) {
+function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, workingGridStructure, highlightClass, highlightColor) {
+    console.log("highlightOccurences", targetStrandIndex, workingSequence, workingQuery, workingGridStructure, highlightClass, highlightColor)
     // Get a list of indices for all occurences of the search query
     const indices = [];
     let currentIndex = workingSequence.indexOf(workingQuery);
@@ -131,17 +96,11 @@ function highlightOccurences(pNr, targetStrandIndex, workingSequence, workingQue
         indices.push(currentIndex);
         currentIndex = workingSequence.indexOf(workingQuery, currentIndex + 1);
     };
-    if (indices.length !== 0) {
-        console.log("Highlight Occurences:", pNr, targetStrandIndex, workingQuery, highlightClass, highlightColor);
-    };
+
 
     // Select table element
-    let table = null;
-    if (pNr === 1) {
-        table = document.getElementById("sequence-grid");
-    } else {
-        table = document.getElementById("sequence-grid2");
-    };
+    let table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
+    console.log("highlightOccurences", table, indices)
     
     // Iterate over all cells that contain the search query and highlight them
     for (const index of indices) {
@@ -150,7 +109,7 @@ function highlightOccurences(pNr, targetStrandIndex, workingSequence, workingQue
             const [row, column] = seqIndexToCoords(index + j, 0, workingGridStructure);
             // Select and highlight the cell
             const cell = table.rows[row + targetStrandIndex].cells[column];
-            //console.log("Custom search:",index + j, cell, row + targetStrandIndex, column);
+            console.log("Custom search:", index + j, cell, row + targetStrandIndex, column);
             if (highlightClass) {
                 cell.classList.add(highlightClass);
             } else if (highlightColor) {
@@ -163,17 +122,40 @@ function highlightOccurences(pNr, targetStrandIndex, workingSequence, workingQue
 
 
 /**
+ * Search for query occurences in sequence then add a class or highlight 
+ */
+function highlightSpan(plasmidIndex, targetStrandIndex, spanStart, spanEnd, highlightClass, backgroundColor, textColor) {
+    console.log("highlightSpan", plasmidIndex, targetStrandIndex, spanStart, spanEnd, highlightClass, backgroundColor, textColor)
+    startIndex = Math.min(spanStart, spanEnd);
+    endIndex = Math.max(spanStart, spanEnd);
+    // Select table element
+    let table = document.getElementById("sequence-grid-" + plasmidIndex);
+    if (table) {
+        // Iterate over all cells that contain the search query and highlight them
+        for (let j = startIndex; j < endIndex; j++) {
+            // Convert sequence index to table coordinates
+            const [row, column] = seqIndexToCoords(j, 0, plasmidDict[plasmidIndex]["gridStructure"]);
+            // Select and highlight the cell
+            console.log(row + targetStrandIndex, column)
+            const cell = table.rows[row + targetStrandIndex].cells[column];
+            console.log("highlightSpan", cell)
+            if (highlightClass) {
+                cell.classList.add(highlightClass);
+            } else if (highlightColor) {
+                cell.style.backgroundColor = backgroundColor;
+                cell.style.color = textColor;
+            };
+        };
+    };
+};
+
+
+/**
  * Scroll to the next selected cell
  */
-function scrollToNextSelectedCell(pNr) {
-    console.log("scrollToNextSelectedCell, pNr", pNr)
+function scrollToNextSelectedCell() {
     // Select table element
-    let table = null;
-    if (pNr === 1) {
-        table = document.getElementById("sequence-grid");
-    } else {
-        table = document.getElementById("sequence-grid2");
-    };
+    let table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
 
     function isAnyCellInView(cellsList) {
         for (let i = 0; i < cellsList.length; i++) {
@@ -196,11 +178,8 @@ function scrollToNextSelectedCell(pNr) {
     if (selectedCells.length > 0) {
         const anyCellInView = isAnyCellInView(selectedCells);
 
-        console.log("scrollToNextSelectedCell, currentIndex", anyCellInView)
-
         // If theres a next result to scroll to, do it
         if (!anyCellInView) {
-            console.log("scrollToNextSelectedCell, selectedCells[0]", selectedCells[0])
             selectedCells[0].scrollIntoView({
                 behavior: 'smooth',
                 block: 'center',
