@@ -293,7 +293,7 @@ body {
     z-index: 1;
     table-layout: fixed;
     width: 100%;
-    border-collapse: collapse;
+    border-spacing: 0px;
   }
   
   .sequence-grid td {
@@ -305,6 +305,7 @@ body {
     -moz-user-select: none;
     -webkit-user-select: none;
     -ms-user-select: none;
+    overflow: hidden;
   }
 
   td.AminoAcids {
