@@ -5,21 +5,20 @@
  * - dont create the popup on every mousement
  * - dont delete the popup just hide it
  */
-function addHoverPopupToTable(table, plasmidIndex) {
+function addHoverPopupToTable() {
   removeAllHoverPopups();
   // Select table
-  const tableId = "sequence-grid-" + plasmidIndex
+  //const tableId = "sequence-grid-" + currentlyOpenedPlasmid;
+  const tablecontainer = document.getElementById("file-content");
   // Create popup for this table
   const popup = document.createElement('div');
-  popup.id = tableId + "-popup";
+  popup.id = "hover-popup";
   popup.className = 'hover-popup';
   popup.style.display = "none"; // hide immediately
   document.body.appendChild(popup);
 
-  console.log("Adding hover popup:", plasmidIndex, tableId, table, popup)
-
   // Add the hover listener
-  table.addEventListener('mouseover', function(event) {
+  tablecontainer.addEventListener('mouseover', function(event) {
     // Check if we're hovering over a cell
     if (event.target.tagName === 'TD' && (event.target.id === 'Forward Strand' || event.target.id === 'Complementary Strand')) {
       // Get cell coordinates
@@ -33,8 +32,8 @@ function addHoverPopupToTable(table, plasmidIndex) {
       // Position it accordingly
       positionPopup(popup, event.clientX, event.clientY);
     } else if (event.target.tagName === 'td' && event.getAttribute("aaIndex")) {
-      popup.textContent = event.target.innerText + event.getAttribute("aaIndex");
-      positionPopup(popup, event.clientX, event.clientY);
+        popup.textContent = event.target.innerText + event.getAttribute("aaIndex");
+        positionPopup(popup, event.clientX, event.clientY);
     };
   });
 
@@ -42,7 +41,7 @@ function addHoverPopupToTable(table, plasmidIndex) {
   /**
    * Tracks the cursor position and updates the position of the hover popup.
    */
-  table.addEventListener('mousemove', function(event) {
+  tablecontainer.addEventListener('mousemove', function(event) {
     if (event.target.tagName === 'TD' || event.target.tagName === 'DIV') { // Check to see if we're hovering over a cell
 
       // Find cell dimensions
@@ -71,8 +70,8 @@ function addHoverPopupToTable(table, plasmidIndex) {
       //console.log("Table Hover", targetCell, tdCursorCoords, basePositionOffset);
 
       // Check which side of the cell we're closer to
-      const gridStructureLength = plasmidDict[plasmidIndex]["gridStructure"].length
-      basePosition = ((targetCellRowIndex - targetCellRowIndex % gridStructureLength) / gridStructureLength) * gridWidth + targetCellCellIndex + 1 + basePositionOffset;
+      const gridStructureLength = plasmidDict[currentlyOpenedPlasmid]["gridStructure"].length
+      basePosition = Math.floor((targetCellRowIndex + 1) / gridStructureLength) * gridWidth + targetCellCellIndex + 1 + basePositionOffset;
 
       // Update the text content and mvoe the popup into position
       if (popup) {
@@ -91,8 +90,8 @@ function addHoverPopupToTable(table, plasmidIndex) {
 
 
   // Disable the popup if leaving the table and reset the hovering position tracker
-  table.addEventListener('mouseleave', function(event) {
-    const tableRect = table.getBoundingClientRect();
+  tablecontainer.addEventListener('mouseleave', function(event) {
+    const tableRect = tablecontainer.getBoundingClientRect();
     const mouseX = event.clientX;
     const mouseY = event.clientY;
 
@@ -144,5 +143,9 @@ function removeAllHoverPopups() {
   const popups = document.querySelectorAll(".hover-popup");
   popups.forEach(element => {
     element.parentNode.removeChild(element);
-});
+  });
 };
+
+document.addEventListener('DOMContentLoaded', function () {
+  addHoverPopupToTable();
+});

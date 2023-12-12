@@ -1036,7 +1036,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
      * 
     */
 
-    function checkNewFeatureOverlap(elementKey, elementValue, featureStart, featureEnd) {
+    function checkNewFeatureOverlap(elementKey, elementValue, featureStart, featureEnd, operationType) {
         // Adjust indices if we're dealing with a pure insertion and the start and end indices are identical
         if (featureStart === featureEnd) {
             featureStart++;
@@ -1104,6 +1104,12 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
                 * -> do nothing
                 */
 
+                /** Special case: exact deletion */
+                console.log("operationType", operationType)
+                if (operationType === "Deletion" && featureStart === spanStart && featureEnd === spanEnd) {
+                    return "delete";
+                };
+
                 if (featureStart >= spanStart && featureEnd >= spanStart && featureStart <= spanEnd && featureEnd <= spanEnd && featureStart !== featureEnd) {
                     // 0. new feature is inside the old feature, delete
                     console.log("Case Replacement Case 0", featureStart, featureEnd, spanStart, spanEnd)
@@ -1138,7 +1144,8 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
     // Loop over every feature and either shift it if it occurs after the replacement or delete it if it
     // overlapped with the replacemen
     Object.entries(plasmidDict[plasmidIndex]["fileFeatures"]).forEach(([key, value]) => {
-        const decision = checkNewFeatureOverlap(key, value, segmentStartPos, segmentEndPos, featureShift);
+        const decision = checkNewFeatureOverlap(key, value, segmentStartPos, segmentEndPos, newFeatureType);
+        console.log("checkNewFeatureOverlap", key, segmentStartPos, segmentEndPos, decision)
         if (decision === "shift" || decision === "inside") {
             const spanDirection = (!value.span.includes("complement")) ? "fwd": "rev";
             const currSpan = removeNonNumeric(value.span).split("..").map(Number);
@@ -1158,6 +1165,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
                 plasmidDict[plasmidIndex]["fileFeatures"][key].span = "complement(" + newSpanStart + ".." + newSpanEnd + ")";
             }
         } else if (decision === "delete") {
+            console.log("updateFeatures delete", key)
             delete plasmidDict[plasmidIndex]["fileFeatures"][key];
         };
     });

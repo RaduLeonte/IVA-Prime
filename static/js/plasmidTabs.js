@@ -24,6 +24,7 @@ function updateSidebarAndGrid() {
     const contentGridContainer = document.getElementById('file-content');
     contentGridContainer.innerHTML = "";
     contentGridContainer.appendChild(plasmidDict[currentlyOpenedPlasmid]["contentGrid"]);
+    addHoverPopupToTable();
 };
 
 
@@ -80,8 +81,7 @@ function switchPlasmidTab(plasmidIndex) {
     // Repopulate sidebar and grid
     updateSidebarAndGrid();
 
-    console.log("Subcloning marking", currentlyOpenedPlasmid, subcloningOriginPlasmidIndex, subcloningOriginSpan)
-    console.log("Subcloning marking", currentlyOpenedPlasmid, subcloningOriginPlasmidIndex, subcloningOriginSpan)
+
     if (subcloningOriginPlasmidIndex !== null && currentlyOpenedPlasmid === subcloningOriginPlasmidIndex) {
         console.log("Marked for subcloning on this tab")
         markSelectionForSubcloning(currentlyOpenedPlasmid, subcloningOriginSpan[0], subcloningOriginSpan[1])

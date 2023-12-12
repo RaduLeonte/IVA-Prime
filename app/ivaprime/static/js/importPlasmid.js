@@ -1127,11 +1127,23 @@ function checkAnnotationOverlap(inputFeatures, plasmidIndex) {
     
   listInsertPos = currentGridStructure.indexOf("Annotations");
   // If more rows are needed, append them
-  if (count !== maximumOverlap) {
+  if (count < maximumOverlap) {
     for (let i = 0; i < maximumOverlap - count; i++) {
       currentGridStructure.splice(listInsertPos, 0 , "Annotations")
     };
+  } else if (count > maximumOverlap) {
+    let difference = count - maximumOverlap
+    for (let i = currentGridStructure.length - 1; i >= 0; i--) {
+      if (currentGridStructure[i] === "Annotations") {
+          currentGridStructure.splice(i, 1);
+          difference--;
+          if (difference === 0) {
+              break;
+          };
+      };
+    };
   };
+  console.log("checkAnnotationOverlap", maximumOverlap, count, currentGridStructure)
   return currentGridStructure;
 };
 
@@ -1307,10 +1319,7 @@ function makeContentGrid(plasmidIndex) {
 
   // Clean up cells that are not longer in a tr
   cleanLostCells(sequenceGrid);
-
-
   addCellSelection(sequenceGrid, plasmidIndex);
-  addHoverPopupToTable(sequenceGrid, plasmidIndex);
   addCellBorderOnHover(sequenceGrid, plasmidIndex);
 
   return sequenceGrid;
