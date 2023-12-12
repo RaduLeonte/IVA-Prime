@@ -111,11 +111,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else if (element.type === "number") {
                     console.log("Updating number");
                     if (variableName === "gridWidth") {
-                        console.log("Updating gridwith");
                         if (gridWidth !== parseInt(document.getElementById(variableName + "SettingsElement").value) && gridWidthMin <= parseInt(document.getElementById(variableName + "SettingsElement").value)) {
-                            eval(variableName + " = parseInt(document.getElementById(\"" + variableName + "SettingsElement\"" + ").value)");
                             console.log("Updating new gridwith [old, new]", gridWidth, parseInt(document.getElementById(variableName + "SettingsElement").value))
-                            if (currentlyOpenedPlasmid) {
+                            eval(variableName + " = parseInt(document.getElementById(\"" + variableName + "SettingsElement\"" + ").value)");
+                            if (currentlyOpenedPlasmid !== null) {
                                 console.log("Updating, sequence not empty")
                                 plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = makeContentGrid(currentlyOpenedPlasmid);
                                 updateSidebarAndGrid(currentlyOpenedPlasmid);

@@ -25,6 +25,7 @@ function updateSidebarAndGrid() {
     contentGridContainer.innerHTML = "";
     contentGridContainer.appendChild(plasmidDict[currentlyOpenedPlasmid]["contentGrid"]);
     addHoverPopupToTable();
+    updateAnnotationTrianglesWidth();
 };
 
 
@@ -153,6 +154,7 @@ function closePlasmid(plasmidIndex) {
             // Clear content grid
             const contentGridContainer = document.getElementById('file-content');
             contentGridContainer.innerHTML = "";
+            currentlyOpenedPlasmid = null;
         };
     }
     // Delete plasmid info and tab

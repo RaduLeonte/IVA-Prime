@@ -1811,7 +1811,7 @@ function createFilledTriangle(featureID, triangleColor, orientation, row, col, t
     triangle.style.borderLeft = `var(--triangle-width) var(--${triangleColorVariable}) solid`;
   } else {
     triangle.style.borderRight = `var(--triangle-width) var(--${triangleColorVariable}) solid`;
-    triangle.style.position = "absolute";
+    //triangle.style.position = "absolute";
     triangle.style.right = "0px";
     triangle.style.top = "0px";
   };
@@ -1839,7 +1839,7 @@ function createFilledTriangle(featureID, triangleColor, orientation, row, col, t
 function updateAnnotationTrianglesWidth() {
   const randomCell = document.getElementById("Forward Strand");
   if (randomCell) {
-     document.documentElement.style.setProperty('--triangle-width', randomCell.offsetWidth + 'px');
+     document.documentElement.style.setProperty('--triangle-width', (randomCell.offsetWidth - 4) + 'px');
   };
 };
 
