@@ -1224,7 +1224,10 @@ function makeContentGrid(plasmidIndex) {
       const range = spanList.split("..").map(Number);
       const rangeStart = range[0];
       const rangeEnd = range[1];
-      const annotText = (value.label) ? value.label: key;
+      let annotText = (value.label) ? value.label: key;
+      if (Math.abs(rangeEnd - rangeStart) < 3) {
+        annotText = annotText.slice(0, 3)
+      };
       
       // Check if color for this item already exists
       const globalColors = Array.from(window.getComputedStyle(document.documentElement))

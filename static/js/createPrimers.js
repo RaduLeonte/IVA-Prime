@@ -1170,31 +1170,26 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
         };
     });
 
-    // Name of the new feature
-    let newFeatureName = newFeatureType; // Long name
-    if (newFeatureSequence.length < 7) { // If theres no space, abbreviate to first 3 letters
-        newFeatureName = newFeatureName.slice(0, 3)
-    };
-
     // Check if there is a previous insertion and if there is, increment the nr at the end
     let i = 2;
     let targetFeaturesDict = plasmidDict[plasmidIndex]["fileFeatures"];
-    while (newFeatureName in targetFeaturesDict) {
-        newFeatureName =  newFeatureName.replace("" + i-1, "")
-        newFeatureName += i;
+    let newFeatureId = "misc_feature"
+    while (newFeatureId in targetFeaturesDict) {
+        newFeatureId =  newFeatureId.replace("" + i-1, "")
+        newFeatureId += i;
         i++;
     };
-    console.log("newFeatureName", newFeatureName, newFeatureType)
+    console.log("newFeatureName", newFeatureId, newFeatureType)
 
     // Creat the new feature
     if (newFeatureType !== "Deletion") {
         const tempDict = {} // init feature dict
-        tempDict.label = newFeatureName;
+        tempDict.label = newFeatureType;
         const insertStringPositionStart = segmentStartPos + 1;
         const insertStringPositionEnd = segmentStartPos + newFeatureSequence.length;
         tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
         tempDict.note = "";
-        plasmidDict[plasmidIndex]["fileFeatures"][newFeatureName] = tempDict // add feature to features dict
+        plasmidDict[plasmidIndex]["fileFeatures"][newFeatureId] = tempDict // add feature to features dict
         plasmidDict[plasmidIndex]["fileFeatures"] = sortBySpan(plasmidDict[plasmidIndex]["fileFeatures"]) // resort feature dict by their order of appearance in the sequence
 
     };
