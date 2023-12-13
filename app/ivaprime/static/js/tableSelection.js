@@ -47,12 +47,14 @@ function addCellSelection(sequenceGridTable, plasmidIndex) {
         const targetCell = event.target.closest('td');
         const targetRow = targetCell.parentElement
         let targetSpan = null;
-        console.log("Mousedown", targetCell.id )
+        console.log("Mousedown", targetCell.id, targetCell)
         if (targetCell.id === "Annotations") {
           const targetString = targetCell.getAttribute('feature-id');
+          console.log("Mousedown", targetString, plasmidDict[currentlyOpenedPlasmid]["fileFeatures"])
           for (const entryKey in plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]) {
               if (entryKey === targetString) {
                   targetSpan = plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][entryKey]["span"];
+                  console.log("Mousedown", targetString, entryKey, targetSpan)
                   break;
               };
           };

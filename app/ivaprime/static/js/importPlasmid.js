@@ -95,7 +95,6 @@ async function handleFileSelect(event, plasmidIndex=0, serverFile=null) {
       plasmidDict[plasmidIndex]["selectionEndPos"] = null;
       plasmidDict[plasmidIndex]["sidebarPrimers"] = null;
       plasmidDict[plasmidIndex]["operationNr"] = 1;
-      
 
       // Add plasmid tab
       const plasmidTabsList = document.getElementById("plasmid-tabs-list");
@@ -122,6 +121,13 @@ async function handleFileSelect(event, plasmidIndex=0, serverFile=null) {
 
       // Create content grid
       plasmidDict[plasmidIndex]["contentGrid"] = makeContentGrid(plasmidIndex);
+
+      // Create file history
+      plasmidDict[plasmidIndex]["fileHistory"] = [];
+      // [sidebarPrimers, sidebarTable, contentGrid]
+      savePrimers();
+      plasmidDict[plasmidIndex]["fileHistoryTracker"] = 0;
+      saveProgress();
       
       // Once the file is loaded, enable search function
       if (firstImport === true) {
@@ -1067,7 +1073,7 @@ function removeNonNumeric(inputString) {
  * Check the annotation overlap to see how many rows are needed to accomodate all the annotations.
  * Also changes the gridstructure if more rows are needed for annotations.
  */
-function checkAnnotationOverlap(inputFeatures, plasmidIndex) {
+function checkAnnotationOverlap(inputFeatures) {
   let maximumOverlap = 0;
   
   // Iterate over all features and add their spans to a list
@@ -1116,7 +1122,7 @@ function checkAnnotationOverlap(inputFeatures, plasmidIndex) {
   // Adjust the grid structure according to maximumOverlap
   let count = 0;
   let listInsertPos = 0;
-  let currentGridStructure = plasmidDict[plasmidIndex]["gridStructure"];
+  let currentGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
   if (!currentGridStructure) {currentGridStructure = defaultGridStructure}
   // Count how many rows are already dedicated to annotations
   for (let i = 0; i < currentGridStructure.length; i++) {

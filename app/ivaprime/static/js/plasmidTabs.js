@@ -9,9 +9,107 @@ function scrollTabs(direction) {
 };
 
 
+function navigateFileHistory(direction) {
+    console.log("navigateFileHistory", direction);
+    const fileHistory = plasmidDict[currentlyOpenedPlasmid]["fileHistory"];
+    console.log("navigateFileHistory", fileHistory);
+    const currentInstance = plasmidDict[currentlyOpenedPlasmid]["fileHistoryTracker"];
+
+    if (currentInstance + direction <= 0 || currentInstance + direction >= -(fileHistory.length - 1)) {
+        plasmidDict[currentlyOpenedPlasmid]["fileHistoryTracker"] += direction; // Instance tracker
+        plasmidDict[currentlyOpenedPlasmid]["operationNr"] += direction; // Operation tracker
+        const targetInstance = plasmidDict[currentlyOpenedPlasmid]["fileHistoryTracker"]; // domain -(list length - 1)) to 0
+        
+        const instance = fileHistory[fileHistory.length - 1 + targetInstance];
+        plasmidDict[currentlyOpenedPlasmid]["fileSequence"] = instance[0];
+        plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"] = getComplementaryStrand(instance[0]);
+
+        console.log("navigateFileHistory features before", plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]);
+        console.log("navigateFileHistory o be replaced with", plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]);
+        plasmidDict[currentlyOpenedPlasmid]["fileFeatures"] = instance[1];
+        console.log("navigateFileHistory features after", plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]);
+
+        plasmidDict[currentlyOpenedPlasmid]["gridStructure"] = checkAnnotationOverlap(instance[1]);
+        plasmidDict[currentlyOpenedPlasmid]["sidebarPrimers"] = instance[2];
+        plasmidDict[currentlyOpenedPlasmid]["sidebarTable"] = instance[3];
+        plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = instance[4];
+        
+        // Update primers
+        updateSidebarPrimers();
+
+        // Repopulate sidebar and grid
+        updateSidebarAndGrid();
+
+        // Refresh undo redo buttons
+        refreshUndoRedoButtons();
+    };
+};
+
+
+function saveProgress() {
+    const fileSequence = plasmidDict[currentlyOpenedPlasmid]["fileSequence"];
+    const fileFeatures = JSON.parse(JSON.stringify(plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]));
+    const sidebarPrimers = plasmidDict[currentlyOpenedPlasmid]["sidebarPrimers"];
+    const sidebarTable = plasmidDict[currentlyOpenedPlasmid]["sidebarTable"];
+    const contentGrid = plasmidDict[currentlyOpenedPlasmid]["contentGrid"];
+    const listToPush = [fileSequence, fileFeatures, sidebarPrimers, sidebarTable, contentGrid]
+
+    const currentInstance = plasmidDict[currentlyOpenedPlasmid]["fileHistoryTracker"];
+    let currentFileHistory = plasmidDict[currentlyOpenedPlasmid]["fileHistory"]
+    if (currentInstance === 0) {
+        // We're on the newest version, extend the list
+        plasmidDict[currentlyOpenedPlasmid]["fileHistory"].push(listToPush);
+    } else {
+        // We're somewhere in the past, rewrite history
+        let slicedFileHistory = currentFileHistory.slice(0, currentFileHistory.length + currentInstance);
+        slicedFileHistory.push(listToPush)
+        
+        plasmidDict[currentlyOpenedPlasmid]["fileHistory"] = slicedFileHistory;
+    };
+
+    // Once we have 2 instances in the file history, enable the undo button
+    plasmidDict[currentlyOpenedPlasmid]["fileHistoryTracker"] = 0;
+    refreshUndoRedoButtons();
+};
+
+
+function switchUndoRedoButtons(direction, targetState) {
+    const buttonId = (direction === -1) ? "undo-btn": "redo-btn";
+    const targetButton = document.getElementById(buttonId).firstChild;
+
+    console.log("switchUndoRedoButtons", direction, targetState)
+    //targetButton.onclick = (targetState === "off") ? null: navigateFileHistory(direction);
+    targetButton.setAttribute("onClick", (targetState === "off") ? null: "navigateFileHistory(" + direction + ")")
+    console.log("switchUndoRedoButtons", targetButton, targetButton.onclick)
+};
+
+
+function refreshUndoRedoButtons() {
+    const currentInstance = plasmidDict[currentlyOpenedPlasmid]["fileHistoryTracker"];
+    const currentFileHistory = plasmidDict[currentlyOpenedPlasmid]["fileHistory"];
+
+    if (currentInstance === 0) {
+        // We're on the newest version, disable the redo button
+        switchUndoRedoButtons(1, "off");
+    } else {
+        // Else enable redo button
+        switchUndoRedoButtons(1, "on");
+    };
+    
+    if (currentInstance === -(currentFileHistory.length - 1)) {
+        // We're at the beginning, disable undo button and enable redo
+        switchUndoRedoButtons(-1, "off");
+    } else {
+        // Else enable undo button
+        switchUndoRedoButtons(-1, "on");
+    };
+};
+
+
 function updateSidebarAndGrid() {
     // Update sidebar table
     const sidebarContent = document.querySelector('.sidebar-content');
+    console.log("sidebarContent", sidebarContent)
     const currSidebarTable = document.getElementById("sidebar-table");
     if (currSidebarTable) {
         currSidebarTable.parentNode.removeChild(currSidebarTable)
@@ -29,6 +127,25 @@ function updateSidebarAndGrid() {
 };
 
 
+function updateSidebarPrimers() {
+    // Update primers
+    const oldPrimers = document.querySelector('.sidebar-content');
+    const sidebarContainer = document.getElementById("sidebar-container");
+
+    let newPrimers = document.createElement("div");
+    newPrimers.classList.add("sidebar-content");
+    if (plasmidDict[currentlyOpenedPlasmid]["sidebarPrimers"] !== null) {
+        newPrimers.innerHTML = plasmidDict[currentlyOpenedPlasmid]["sidebarPrimers"];
+    } else {
+        newPrimers.innerHTML = `<h2 id="primers-div-headline">Primers will appear here.</h2>`;
+    };
+    sidebarContainer.insertBefore(newPrimers, sidebarContainer.firstChild);
+    sidebarContainer.removeChild(oldPrimers);
+
+    addPrimerRegionHoverEvents();
+};
+
+
 function saveSidebarAndGrid() {
     if (document.getElementById('sidebar-table') && document.getElementById('sequence-grid-' + currentlyOpenedPlasmid)) {
         // Sidebar
@@ -42,7 +159,7 @@ function saveSidebarAndGrid() {
 
 function savePrimers() {
     console.log("Saving primers", document.querySelector('.sidebar-content'))
-    plasmidDict[currentlyOpenedPlasmid]["sidebarPrimers"] = document.querySelector('.sidebar-content');
+    plasmidDict[currentlyOpenedPlasmid]["sidebarPrimers"] = document.querySelector('.sidebar-content').innerHTML;
 };
 
 
@@ -58,21 +175,6 @@ function switchPlasmidTab(plasmidIndex) {
     const newPlasmidTab = document.getElementById("plasmid-tab-" + plasmidIndex);
     newPlasmidTab.classList.add("plasmid-tab-selected");
 
-    // Update primers
-    const oldPrimers = document.querySelector('.sidebar-content');
-    const sidebarContainer = document.getElementById("sidebar-container");
-
-    let newPrimers = null;
-    if (plasmidDict[plasmidIndex]["sidebarPrimers"] !== null) {
-        newPrimers = plasmidDict[plasmidIndex]["sidebarPrimers"];
-    } else {
-        newPrimers = document.createElement("div");
-        newPrimers.classList.add("sidebar-content");
-        newPrimers.innerHTML = `<h2 id="primers-div-headline">Primers will appear here.</h2>`;
-    };
-    sidebarContainer.insertBefore(newPrimers, sidebarContainer.firstChild);
-    sidebarContainer.removeChild(oldPrimers);
-
     // Save side bar and grid of previous plasmid
     saveSidebarAndGrid();
 
@@ -81,6 +183,12 @@ function switchPlasmidTab(plasmidIndex) {
 
     // Repopulate sidebar and grid
     updateSidebarAndGrid();
+
+    // Update primers
+    updateSidebarPrimers();
+
+    // Refresh undo buttons and set disabled/enabled states
+    refreshUndoRedoButtons();
 
 
     if (subcloningOriginPlasmidIndex !== null && currentlyOpenedPlasmid === subcloningOriginPlasmidIndex) {

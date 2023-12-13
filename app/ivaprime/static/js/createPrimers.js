@@ -57,8 +57,6 @@ function displayPrimers(primersType, primersDict) {
                 span.textContent = subprimerProperties["seq"];
                 primerSequence.appendChild(span)
                 primerSequence.appendChild(span)
-                span.addEventListener('mouseover', primerRegionHover);
-                span.addEventListener('mouseout', removePrimerRegionHighlight);
             };
         };
 
@@ -76,6 +74,7 @@ function displayPrimers(primersType, primersDict) {
     console.log("To add", modDiv)
     sidebarContentDiv.appendChild(modDiv);
     savePrimers();
+    addPrimerRegionHoverEvents();
     console.log("After", plasmidDict[currentlyOpenedPlasmid]["sidebarPrimers"])
     // Reset selection
     plasmidDict[currentlyOpenedPlasmid]["selectedText"] = "";
@@ -256,6 +255,18 @@ const exportPrimersDict = {
         }
 };
 
+
+/**
+ * 
+ */
+function addPrimerRegionHoverEvents(){
+    const spansList = document.querySelector(".sidebar-content").getElementsByTagName("SPAN");
+
+    Array.from(spansList).forEach((span) => {
+        span.addEventListener('mouseover', primerRegionHover);
+        span.addEventListener('mouseout', removePrimerRegionHighlight);
+    });
+};
 
 /**
  * Highlights where the primer sequence is in the plasmid sequence.
@@ -496,7 +507,6 @@ function optimizeAA(inputAA, targetOrganism) {
  * 
  */
 function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  replaceStartPos, replaceEndPos, operationType) {
-    const currentPlasmidIndex = currentlyOpenedPlasmid;
 
     console.log("HERE1", operationType, dnaToInsert, aaToInsert, targetOrganism, replaceStartPos, replaceEndPos)
     // Make sure that startPos is the smaller number
@@ -533,12 +543,12 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
         if (primerDistribution === false || operationType === "Deletion") {
             console.log("Short insertion: DONT DISTRIBUTE")
             // Forward template binding region, extend forward on the forward strand from the end position
-            tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentPlasmidIndex);
+            tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
             // Reverse template binding region, extend forward on the complementary strand from the start position
-            tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentPlasmidIndex);
+            tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
 
             // Forward homologous region, extend backwards on the forward strand from the start position
-            homoFwd = primerExtension(replaceStartPos, "fwdStrand", "backward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentPlasmidIndex);
+            homoFwd = primerExtension(replaceStartPos, "fwdStrand", "backward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentlyOpenedPlasmid);
             // There is no need for a homologous region in the reverse primer, the homologous region of the forward primer
             // will bind to the template binding region of the reverse primer instead.
             homoRev = "";
@@ -564,8 +574,8 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
 
             let homoFragmentLength1 = 0;
             let homoFragmentLength2 = 0;
-            let homoFwd1 = primerExtension(replaceStartPos, "fwdStrand", "backward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentPlasmidIndex);
-            let homoFwd2 = primerExtension(replaceEndPos, "fwdStrand", "forward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentPlasmidIndex);
+            let homoFwd1 = primerExtension(replaceStartPos, "fwdStrand", "backward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentlyOpenedPlasmid);
+            let homoFwd2 = primerExtension(replaceEndPos, "fwdStrand", "forward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentlyOpenedPlasmid);
             let overlappingSeq = homoFwd1 + seqToInsert + homoFwd2;
 
             let turn = "homoFwd1";
@@ -595,12 +605,12 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
             console.log("Short insertion", homoFragmentLength1, homoFragmentLength2)
             homoFwd1 = homoFwd1.slice(homoFragmentLength1, homoFwd1.length);
             homoFwd2 = homoFwd2.slice(0, homoFwd2.length - homoFragmentLength2 + 1);
-            tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice,  7, currentPlasmidIndex)
+            tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice,  7, currentlyOpenedPlasmid)
 
             let homoRev1 = getComplementaryStrand(homoFwd2).split('').reverse().join('');
             let homoRev2 = getComplementaryStrand(homoFwd1).split('').reverse().join('');
             console.log("Short insertion", replaceStartPos, replaceStartPos + homoRev2.length)
-            tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentPlasmidIndex)
+            tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid)
  
             // Display primers in the sidebar
             let primersDict = {}
@@ -623,9 +633,9 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
         };
     } else { //  // Mutation > 49 C
         // Forward template bindin region
-        tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentPlasmidIndex);
+        tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
         // Reverse template binding region
-        tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentPlasmidIndex);
+        tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
         
         // Forward homologous region is just the sequence to be inserted
         homoFwd = seqToInsert;
@@ -699,7 +709,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
 
     // Update the sequence and features
     const plasmidLengthDiff = seqToInsert.length - (replaceEndPos - replaceStartPos)
-    updateFeatures(operationType, seqToInsert, replaceStartPos, replaceEndPos, plasmidLengthDiff, currentPlasmidIndex);
+    updateFeatures(operationType, seqToInsert, replaceStartPos, replaceEndPos, plasmidLengthDiff);
 };
 
 
@@ -1001,7 +1011,7 @@ function createSubcloningPrimersNew(subcloningStartPos, subcloningEndPos, aaSequ
 
     // Update stuff
     const plasmidLengthDiff = subcloningSequenceFull.length - (endPos - startPos);
-    updateFeatures("Subcloning", subcloningSequenceFull, startPos, endPos, plasmidLengthDiff, currentlyOpenedPlasmid);
+    updateFeatures("Subcloning", subcloningSequenceFull, startPos, endPos, plasmidLengthDiff);
 };
 
 
@@ -1014,7 +1024,7 @@ function createSubcloningPrimersNew(subcloningStartPos, subcloningEndPos, aaSequ
  * segmentStartPos, segmentEndPos - indices deliminating the span of the new feature (equal in the case of pure insertions)
  * pNr - number of the target plasmid to be updated
  */
-function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, segmentEndPos, featureShift, plasmidIndex) {
+function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, segmentEndPos, featureShift) {
     // Update the sequence and features
     // Convert back from sequence indices to string indices
     segmentStartPos--;
@@ -1022,10 +1032,10 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
 
 
     // Insertion is added into the main sequence and complementary strand is remade
-    console.log("updateFeatures before", plasmidDict[plasmidIndex]["fileSequence"].length, plasmidDict[plasmidIndex]["fileComplementarySequence"].length)
-    plasmidDict[plasmidIndex]["fileSequence"] = plasmidDict[plasmidIndex]["fileSequence"].substring(0, segmentStartPos) + newFeatureSequence + plasmidDict[plasmidIndex]["fileSequence"].substring(segmentEndPos);
-    plasmidDict[plasmidIndex]["fileComplementarySequence"]  = getComplementaryStrand(plasmidDict[plasmidIndex]["fileSequence"]);
-    console.log("updateFeatures after", plasmidDict[plasmidIndex]["fileSequence"].length, plasmidDict[plasmidIndex]["fileComplementarySequence"].length)
+    console.log("updateFeatures before", plasmidDict[currentlyOpenedPlasmid]["fileSequence"].length, plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"].length)
+    plasmidDict[currentlyOpenedPlasmid]["fileSequence"] = plasmidDict[currentlyOpenedPlasmid]["fileSequence"].substring(0, segmentStartPos) + newFeatureSequence + plasmidDict[currentlyOpenedPlasmid]["fileSequence"].substring(segmentEndPos);
+    plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"]  = getComplementaryStrand(plasmidDict[currentlyOpenedPlasmid]["fileSequence"]);
+    console.log("updateFeatures after", plasmidDict[currentlyOpenedPlasmid]["fileSequence"].length, plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"].length)
 
     /**
      * Decides if the old feature should be left alone, shifted, or deleted based on the span of the new feature.
@@ -1143,7 +1153,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
 
     // Loop over every feature and either shift it if it occurs after the replacement or delete it if it
     // overlapped with the replacemen
-    Object.entries(plasmidDict[plasmidIndex]["fileFeatures"]).forEach(([key, value]) => {
+    Object.entries(plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]).forEach(([key, value]) => {
         const decision = checkNewFeatureOverlap(key, value, segmentStartPos, segmentEndPos, newFeatureType);
         console.log("checkNewFeatureOverlap", key, segmentStartPos, segmentEndPos, decision)
         if (decision === "shift" || decision === "inside") {
@@ -1160,13 +1170,13 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
             };
             
             if (spanDirection === "fwd") {
-                plasmidDict[plasmidIndex]["fileFeatures"][key].span = newSpanStart + ".." + newSpanEnd; // Update span of the feature
+                plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][key].span = newSpanStart + ".." + newSpanEnd; // Update span of the feature
             } else {
-                plasmidDict[plasmidIndex]["fileFeatures"][key].span = "complement(" + newSpanStart + ".." + newSpanEnd + ")";
+                plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][key].span = "complement(" + newSpanStart + ".." + newSpanEnd + ")";
             }
         } else if (decision === "delete") {
             console.log("updateFeatures delete", key)
-            delete plasmidDict[plasmidIndex]["fileFeatures"][key];
+            delete plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][key];
         };
     });
 
@@ -1178,7 +1188,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
 
     // Check if there is a previous insertion and if there is, increment the nr at the end
     let i = 2;
-    let targetFeaturesDict = plasmidDict[plasmidIndex]["fileFeatures"];
+    let targetFeaturesDict = plasmidDict[currentlyOpenedPlasmid]["fileFeatures"];
     while (newFeatureName in targetFeaturesDict) {
         newFeatureName =  newFeatureName.replace("" + i-1, "")
         newFeatureName += i;
@@ -1194,14 +1204,17 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
         const insertStringPositionEnd = segmentStartPos + newFeatureSequence.length;
         tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
         tempDict.note = "";
-        plasmidDict[plasmidIndex]["fileFeatures"][newFeatureName] = tempDict // add feature to features dict
-        plasmidDict[plasmidIndex]["fileFeatures"] = sortBySpan(plasmidDict[plasmidIndex]["fileFeatures"]) // resort feature dict by their order of appearance in the sequence
+        plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][newFeatureName] = tempDict // add feature to features dict
+        plasmidDict[currentlyOpenedPlasmid]["fileFeatures"] = sortBySpan(plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]) // resort feature dict by their order of appearance in the sequence
 
     };
     // Remake the sidebar and content grid 
-    plasmidDict[plasmidIndex]["sidebarTable"] = createSidebarTable(plasmidIndex);
-    plasmidDict[plasmidIndex]["contentGrid"] = makeContentGrid(plasmidIndex);
-    updateSidebarAndGrid(plasmidIndex);
+    plasmidDict[currentlyOpenedPlasmid]["sidebarTable"] = createSidebarTable(currentlyOpenedPlasmid);
+    plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = makeContentGrid(currentlyOpenedPlasmid);
+    updateSidebarAndGrid();
+
+    // At the very end, save the progress to file history
+    saveProgress();
 };
 
 
