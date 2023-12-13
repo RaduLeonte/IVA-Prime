@@ -945,3 +945,10 @@ header {
   border-right: 4px dashed #ae70ae;
   border-bottom: 4px dashed #ae70ae !important;
 }
+
+.subcloning-target-cell-info-window {
+  background-color: rgba(128, 0, 128, 0.2);
+  border: 4px dashed #ae70ae;
+  padding: 3px;
+  display: inline-block;
+}
