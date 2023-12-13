@@ -203,9 +203,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const markForSubcloningMenuItem = document.getElementById('mark-for-subcloning');
     const subcloningMenuItem = document.getElementById('subcloning');
     if (subcloningOriginPlasmidIndex !== null) {
-      subcloningMenuItem.innerHTML = subcloningMenuItem.innerHTML.replace(/\(([^)]+)\)/, `(${subcloningOriginSpan[0]}-${subcloningOriginSpan[1]} from ${plasmidDict[subcloningOriginPlasmidIndex]["fileName"]})`);
+      subcloningMenuItem.innerHTML = subcloningMenuItem.innerHTML.replace(/\((.*)\)$/, `(${subcloningOriginSpan[0]}-${subcloningOriginSpan[1]} from ${plasmidDict[subcloningOriginPlasmidIndex]["fileName"]})`);
     } else {
-      subcloningMenuItem.innerHTML = subcloningMenuItem.innerHTML.replace(/\(([^)]+)\)/, `(<em>no region marked for subcloning</em>)`);
+      subcloningMenuItem.innerHTML = subcloningMenuItem.innerHTML.replace(/\((.*)\)$/, `(<em>no region marked for subcloning</em>)`);
     };
     const subcloningWithInsertionMenuItem = document.getElementById('subcloning-with-insertion');
 
