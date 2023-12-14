@@ -69,7 +69,7 @@ function searchOccurrences(customSearchInput) {
             let workingQuery = (i === 0) ? searchQuery: searchQueryComplement;
 
             // Get a list of indices for all occurences of the search query
-            highlightOccurences(i, workingSequence, workingQuery, currGridStructure, "selected-cell-search", null);
+            highlightOccurences(i, workingSequence, workingQuery.toUpperCase(), currGridStructure, "selected-cell-search", null);
         };
 
         // Scroll to the nearest occurence of the search query
@@ -91,9 +91,6 @@ function isAminoAcidSequence(str) {
  * Search for query occurences in sequence then add a class or highlight 
  */
 function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, workingGridStructure, highlightClass, highlightColor) {
-    console.log("highlightOccurences", targetStrandIndex, workingSequence, workingQuery, workingGridStructure, highlightClass, highlightColor);
-
-
     if (isDNASequence(workingQuery)) {
         // Get a list of indices for all occurences of the search query
         let currentIndex = workingSequence.indexOf(workingQuery);
@@ -126,6 +123,7 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, w
     };
     
     if (isAminoAcidSequence(workingQuery)) {
+        workingQuery = workingQuery.replace("X", "-").replace("*", "-")
         const indices = [];
         // Get all cells
         const aaCells = document.querySelectorAll(".AminoAcids:not(:empty)");
@@ -142,22 +140,46 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, w
         };
 
         // Iterate over all cells that contain the search query and highlight them
+        const gridStructureLength = workingGridStructure.length;
         for (const index of indices) {
             let currentCell = aaCells[index];
             for (let j = 1; j < workingQuery.length + 1; j++) {
+                console.log("Highlight", currentCell)
+                let leftCell;
+                if (currentCell.previousElementSibling !== null) {
+                    leftCell = currentCell.previousElementSibling;
+                } else {
+                    let row = currentCell.parentElement;
+                    for (let k = 0; k < gridStructureLength; k++) {
+                        row = row.nextElementSibling;
+                    };
+                    leftCell = row.lastElementChild;
+                };
+
+                let rightCell;
+                if (currentCell.nextElementSibling !== null) {
+                    rightCell = currentCell.nextElementSibling;
+                } else {
+                    let row = currentCell.parentElement;
+                    for (let k = 0; k < gridStructureLength; k++) {
+                        row = row.nextElementSibling;
+                    };
+                    rightCell = row.firstElementChild;
+                };
+
                 if (highlightClass) {
-                    currentCell.previousElementSibling.classList.add(highlightClass);
+                    leftCell.classList.add(highlightClass);
                     currentCell.classList.add(highlightClass);
-                    currentCell.nextElementSibling.classList.add(highlightClass);
+                    rightCell.classList.add(highlightClass);
                 } else if (highlightColor) {
-                    currentCell.previousElementSibling.style.backgroundColor = highlightColor;
-                    currentCell.previousElementSibling.style.color = "white";
+                    leftCell.style.backgroundColor = highlightColor;
+                    leftCell.style.color = "white";
 
                     currentCell.style.backgroundColor = highlightColor;
                     currentCell.style.color = "white";
 
-                    currentCell.nextElementSibling.style.backgroundColor = highlightColor;
-                    currentCell.nextElementSibling.style.color = "white";
+                    rightCell.style.backgroundColor = highlightColor;
+                    rightCell.style.color = "white";
                 };
                 currentCell = aaCells[index + j];
             };
