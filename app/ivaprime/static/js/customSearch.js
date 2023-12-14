@@ -65,15 +65,9 @@ function searchOccurrences(customSearchInput) {
     // If the query is not empty
     if (searchQuery) {
         for (i = 0; i < 2; i++) {
-            let workingSequence = "";
-            let workingQuery = "";
-            if (i === 0) {
-                workingSequence = currSequence;
-                workingQuery = searchQuery;
-            } else {
-                workingSequence = currSequenceComp;
-                workingQuery = searchQueryComplement;
-            };
+            let workingSequence = (i === 0) ? currSequence: currSequenceComp;
+            let workingQuery = (i === 0) ? searchQuery: searchQueryComplement;
+
             // Get a list of indices for all occurences of the search query
             highlightOccurences(i, workingSequence, workingQuery, currGridStructure, "selected-cell-search", null);
         };
@@ -84,40 +78,93 @@ function searchOccurrences(customSearchInput) {
 };
 
 
+function isDNASequence(str) {
+    return /^[ATCG]+$/.test(str);
+};
+
+function isAminoAcidSequence(str) {
+    return /^[ACDEFGHIKLMNPQRSTVWYX*-]+$/i.test(str);
+}
+
+
 /**
  * Search for query occurences in sequence then add a class or highlight 
  */
 function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, workingGridStructure, highlightClass, highlightColor) {
-    console.log("highlightOccurences", targetStrandIndex, workingSequence, workingQuery, workingGridStructure, highlightClass, highlightColor)
-    // Get a list of indices for all occurences of the search query
-    const indices = [];
-    let currentIndex = workingSequence.indexOf(workingQuery);
-    while (currentIndex !== -1) {
-        indices.push(currentIndex);
-        currentIndex = workingSequence.indexOf(workingQuery, currentIndex + 1);
-    };
+    console.log("highlightOccurences", targetStrandIndex, workingSequence, workingQuery, workingGridStructure, highlightClass, highlightColor);
 
 
-    // Select table element
-    let table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
-    console.log("highlightOccurences", table, indices)
-    
-    // Iterate over all cells that contain the search query and highlight them
-    for (const index of indices) {
-        for (let j = 1; j < workingQuery.length + 1; j++) {
-            // Convert sequence index to table coordinates
-            const [row, column] = seqIndexToCoords(index + j, 0, workingGridStructure);
-            // Select and highlight the cell
-            const cell = table.rows[row + targetStrandIndex].cells[column];
-            console.log("Custom search:", index + j, cell, row + targetStrandIndex, column);
-            if (highlightClass) {
-                cell.classList.add(highlightClass);
-            } else if (highlightColor) {
-                cell.style.backgroundColor = highlightColor;
-                cell.style.color = "white";
+    if (isDNASequence(workingQuery)) {
+        // Get a list of indices for all occurences of the search query
+        let currentIndex = workingSequence.indexOf(workingQuery);
+        const indices = [];
+        while (currentIndex !== -1) {
+            indices.push(currentIndex);
+            currentIndex = workingSequence.indexOf(workingQuery, currentIndex + 1);
+        };
+
+        // Select table element
+        let table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
+        console.log("highlightOccurences", table, indices)
+        
+        // Iterate over all cells that contain the search query and highlight them
+        for (const index of indices) {
+            for (let j = 1; j < workingQuery.length + 1; j++) {
+                // Convert sequence index to table coordinates
+                const [row, column] = seqIndexToCoords(index + j, targetStrandIndex, workingGridStructure);
+                // Select and highlight the cell
+                const cell = table.rows[row].cells[column];
+                console.log("Custom search:", index + j, cell, row + targetStrandIndex, column);
+                if (highlightClass) {
+                    cell.classList.add(highlightClass);
+                } else if (highlightColor) {
+                    cell.style.backgroundColor = highlightColor;
+                    cell.style.color = "white";
+                };
             };
         };
     };
+    
+    if (isAminoAcidSequence(workingQuery)) {
+        const indices = [];
+        // Get all cells
+        const aaCells = document.querySelectorAll(".AminoAcids:not(:empty)");
+        
+        let aaSequence = "";
+        aaCells.forEach(cell => {
+            aaSequence += cell.textContent + "";
+        });
+
+        let currentIndex = aaSequence.indexOf(workingQuery);
+        while (currentIndex !== -1) {
+            indices.push(currentIndex);
+            currentIndex = workingSequence.indexOf(workingQuery, currentIndex + 1);
+        };
+
+        // Iterate over all cells that contain the search query and highlight them
+        for (const index of indices) {
+            let currentCell = aaCells[index];
+            for (let j = 1; j < workingQuery.length + 1; j++) {
+                if (highlightClass) {
+                    currentCell.previousElementSibling.classList.add(highlightClass);
+                    currentCell.classList.add(highlightClass);
+                    currentCell.nextElementSibling.classList.add(highlightClass);
+                } else if (highlightColor) {
+                    currentCell.previousElementSibling.style.backgroundColor = highlightColor;
+                    currentCell.previousElementSibling.style.color = "white";
+
+                    currentCell.style.backgroundColor = highlightColor;
+                    currentCell.style.color = "white";
+
+                    currentCell.nextElementSibling.style.backgroundColor = highlightColor;
+                    currentCell.nextElementSibling.style.color = "white";
+                };
+                currentCell = aaCells[index + j];
+            };
+        };
+    };
+
+
 };
 
 
