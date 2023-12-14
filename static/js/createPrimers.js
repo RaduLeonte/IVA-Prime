@@ -57,8 +57,6 @@ function displayPrimers(primersType, primersDict) {
                 span.textContent = subprimerProperties["seq"];
                 primerSequence.appendChild(span)
                 primerSequence.appendChild(span)
-                span.addEventListener('mouseover', primerRegionHover);
-                span.addEventListener('mouseout', removePrimerRegionHighlight);
             };
         };
 
@@ -76,6 +74,7 @@ function displayPrimers(primersType, primersDict) {
     console.log("To add", modDiv)
     sidebarContentDiv.appendChild(modDiv);
     savePrimers();
+    addPrimerRegionHoverEvents();
     console.log("After", plasmidDict[currentlyOpenedPlasmid]["sidebarPrimers"])
     // Reset selection
     plasmidDict[currentlyOpenedPlasmid]["selectedText"] = "";
@@ -87,7 +86,8 @@ function displayPrimers(primersType, primersDict) {
  *  Converts the primers from the sidebar html element into a 2d array.
  */
 function getPrimersAsTable(plasmidIndex, includeColumnNames = false) {
-    const sidebarDiv = plasmidDict[plasmidIndex]["sidebarPrimers"];
+    const sidebarDiv = document.createElement("div");
+    sidebarDiv.innerHTML = plasmidDict[plasmidIndex]["sidebarPrimers"];
     const modDivs = sidebarDiv.querySelectorAll('#mod-div');
 
     let tableData = [];
@@ -95,7 +95,7 @@ function getPrimersAsTable(plasmidIndex, includeColumnNames = false) {
     for (var i = 0; i < modDivs.length; i++) {
         const currentDiv = modDivs[i];
         const h3Div = currentDiv.querySelector("#primers-type");
-        const modType = h3Div.getAttribute("primers-type");
+        const modType = h3Div.getAttribute("primers-type").replace(" ", "_");
         console.log("Mod Type", modType);
         console.log(currentDiv)
         const primerDivs = currentDiv.querySelectorAll("#primer-div");
@@ -139,18 +139,32 @@ const exportPrimersDict = {
     // Plain text
     txt : (plasmidIndex) => {
         const fileName = plasmidDict[plasmidIndex]["fileName"].replace(plasmidDict[plasmidIndex]["fileExtension"], "") + " primers";
-        const htmlTextContent = plasmidDict[plasmidIndex]["sidebarPrimers"].innerText;
-        let lines = htmlTextContent.split("\n");
-        lines = lines.filter(function(item) {
-            return item.trim() !== '';
-        });
+        const containerDiv = document.createElement("div");
+        containerDiv.innerHTML = plasmidDict[plasmidIndex]["sidebarPrimers"];
+        console.log("txt", containerDiv)
+
 
         let textContent = "";
-        for (i = 1; i < lines.length; i += 7) {
-            textContent += i !== 1 ? "\n": "";
-            textContent += lines[i] + "\n";
-            textContent += lines[i + 1] + " " + lines[i + 2] + " " + lines[i + 3] + "\n";
-            textContent += lines[i + 4] + " " + lines[i + 5] + " " + lines[i + 6] + "\n";
+        let counter = 1;
+        for (const childDiv of containerDiv.children) {
+            if (counter !== 1) {textContent += "\n"}
+            counter++;
+            if (childDiv.id === "mod-div") {
+                for (const subDiv of childDiv.children) {
+                    if (subDiv.id === "primers-type") {
+                        textContent += subDiv.innerText + "\n";
+                    } else if (subDiv.id === "primer-div") {
+                        const tempDiv = document.createElement("div");
+                        tempDiv.innerHTML = subDiv.innerHTML;
+                        let tempList = []
+                        for (const subsubDiv of tempDiv.children) {
+                            tempList.push(subsubDiv.innerText);
+                        };
+                        textContent += `${tempList[0]} ${tempList[1]}\n`;
+                        textContent += `${tempList.slice(2, tempList.length).join("").split(";").map((item) => item.trim()).join("; ")}\n\n`;
+                    };
+                };
+            };
         };
 
         const blob = new Blob([textContent], { type: 'text/plain' });
@@ -162,7 +176,7 @@ const exportPrimersDict = {
     // Microsoft Word
     doc : (plasmidIndex) => {
         const fileName = plasmidDict[plasmidIndex]["fileName"].replace(plasmidDict[plasmidIndex]["fileExtension"], "") + " primers";
-        const htmlContent = plasmidDict[plasmidIndex]["sidebarPrimers"].innerHTML;
+        const htmlContent = plasmidDict[plasmidIndex]["sidebarPrimers"];
         
         const docx = window.htmlDocx.asBlob(htmlContent);
         const link = document.createElement('a');
@@ -256,6 +270,18 @@ const exportPrimersDict = {
         }
 };
 
+
+/**
+ * 
+ */
+function addPrimerRegionHoverEvents(){
+    const spansList = document.querySelector(".sidebar-content").getElementsByTagName("SPAN");
+
+    Array.from(spansList).forEach((span) => {
+        span.addEventListener('mouseover', primerRegionHover);
+        span.addEventListener('mouseout', removePrimerRegionHighlight);
+    });
+};
 
 /**
  * Highlights where the primer sequence is in the plasmid sequence.
@@ -496,7 +522,6 @@ function optimizeAA(inputAA, targetOrganism) {
  * 
  */
 function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  replaceStartPos, replaceEndPos, operationType) {
-    const currentPlasmidIndex = currentlyOpenedPlasmid;
 
     console.log("HERE1", operationType, dnaToInsert, aaToInsert, targetOrganism, replaceStartPos, replaceEndPos)
     // Make sure that startPos is the smaller number
@@ -533,12 +558,12 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
         if (primerDistribution === false || operationType === "Deletion") {
             console.log("Short insertion: DONT DISTRIBUTE")
             // Forward template binding region, extend forward on the forward strand from the end position
-            tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentPlasmidIndex);
+            tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
             // Reverse template binding region, extend forward on the complementary strand from the start position
-            tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentPlasmidIndex);
+            tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
 
             // Forward homologous region, extend backwards on the forward strand from the start position
-            homoFwd = primerExtension(replaceStartPos, "fwdStrand", "backward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentPlasmidIndex);
+            homoFwd = primerExtension(replaceStartPos, "fwdStrand", "backward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentlyOpenedPlasmid);
             // There is no need for a homologous region in the reverse primer, the homologous region of the forward primer
             // will bind to the template binding region of the reverse primer instead.
             homoRev = "";
@@ -564,8 +589,8 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
 
             let homoFragmentLength1 = 0;
             let homoFragmentLength2 = 0;
-            let homoFwd1 = primerExtension(replaceStartPos, "fwdStrand", "backward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentPlasmidIndex);
-            let homoFwd2 = primerExtension(replaceEndPos, "fwdStrand", "forward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentPlasmidIndex);
+            let homoFwd1 = primerExtension(replaceStartPos, "fwdStrand", "backward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentlyOpenedPlasmid);
+            let homoFwd2 = primerExtension(replaceEndPos, "fwdStrand", "forward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentlyOpenedPlasmid);
             let overlappingSeq = homoFwd1 + seqToInsert + homoFwd2;
 
             let turn = "homoFwd1";
@@ -595,12 +620,12 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
             console.log("Short insertion", homoFragmentLength1, homoFragmentLength2)
             homoFwd1 = homoFwd1.slice(homoFragmentLength1, homoFwd1.length);
             homoFwd2 = homoFwd2.slice(0, homoFwd2.length - homoFragmentLength2 + 1);
-            tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice,  7, currentPlasmidIndex)
+            tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice,  7, currentlyOpenedPlasmid)
 
             let homoRev1 = getComplementaryStrand(homoFwd2).split('').reverse().join('');
             let homoRev2 = getComplementaryStrand(homoFwd1).split('').reverse().join('');
             console.log("Short insertion", replaceStartPos, replaceStartPos + homoRev2.length)
-            tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentPlasmidIndex)
+            tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid)
  
             // Display primers in the sidebar
             let primersDict = {}
@@ -623,9 +648,9 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
         };
     } else { //  // Mutation > 49 C
         // Forward template bindin region
-        tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentPlasmidIndex);
+        tempFwd = primerExtension(replaceEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
         // Reverse template binding region
-        tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentPlasmidIndex);
+        tempRev = primerExtension(replaceStartPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
         
         // Forward homologous region is just the sequence to be inserted
         homoFwd = seqToInsert;
@@ -699,7 +724,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
 
     // Update the sequence and features
     const plasmidLengthDiff = seqToInsert.length - (replaceEndPos - replaceStartPos)
-    updateFeatures(operationType, seqToInsert, replaceStartPos, replaceEndPos, plasmidLengthDiff, currentPlasmidIndex);
+    updateFeatures(operationType, seqToInsert, replaceStartPos, replaceEndPos, plasmidLengthDiff);
 };
 
 
@@ -1001,7 +1026,7 @@ function createSubcloningPrimersNew(subcloningStartPos, subcloningEndPos, aaSequ
 
     // Update stuff
     const plasmidLengthDiff = subcloningSequenceFull.length - (endPos - startPos);
-    updateFeatures("Subcloning", subcloningSequenceFull, startPos, endPos, plasmidLengthDiff, currentlyOpenedPlasmid);
+    updateFeatures("Subcloning", subcloningSequenceFull, startPos, endPos, plasmidLengthDiff);
 };
 
 
@@ -1014,7 +1039,7 @@ function createSubcloningPrimersNew(subcloningStartPos, subcloningEndPos, aaSequ
  * segmentStartPos, segmentEndPos - indices deliminating the span of the new feature (equal in the case of pure insertions)
  * pNr - number of the target plasmid to be updated
  */
-function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, segmentEndPos, featureShift, plasmidIndex) {
+function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, segmentEndPos, featureShift) {
     // Update the sequence and features
     // Convert back from sequence indices to string indices
     segmentStartPos--;
@@ -1022,10 +1047,10 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
 
 
     // Insertion is added into the main sequence and complementary strand is remade
-    console.log("updateFeatures before", plasmidDict[plasmidIndex]["fileSequence"].length, plasmidDict[plasmidIndex]["fileComplementarySequence"].length)
-    plasmidDict[plasmidIndex]["fileSequence"] = plasmidDict[plasmidIndex]["fileSequence"].substring(0, segmentStartPos) + newFeatureSequence + plasmidDict[plasmidIndex]["fileSequence"].substring(segmentEndPos);
-    plasmidDict[plasmidIndex]["fileComplementarySequence"]  = getComplementaryStrand(plasmidDict[plasmidIndex]["fileSequence"]);
-    console.log("updateFeatures after", plasmidDict[plasmidIndex]["fileSequence"].length, plasmidDict[plasmidIndex]["fileComplementarySequence"].length)
+    console.log("updateFeatures before", plasmidDict[currentlyOpenedPlasmid]["fileSequence"].length, plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"].length)
+    plasmidDict[currentlyOpenedPlasmid]["fileSequence"] = plasmidDict[currentlyOpenedPlasmid]["fileSequence"].substring(0, segmentStartPos) + newFeatureSequence + plasmidDict[currentlyOpenedPlasmid]["fileSequence"].substring(segmentEndPos);
+    plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"]  = getComplementaryStrand(plasmidDict[currentlyOpenedPlasmid]["fileSequence"]);
+    console.log("updateFeatures after", plasmidDict[currentlyOpenedPlasmid]["fileSequence"].length, plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"].length)
 
     /**
      * Decides if the old feature should be left alone, shifted, or deleted based on the span of the new feature.
@@ -1143,7 +1168,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
 
     // Loop over every feature and either shift it if it occurs after the replacement or delete it if it
     // overlapped with the replacemen
-    Object.entries(plasmidDict[plasmidIndex]["fileFeatures"]).forEach(([key, value]) => {
+    Object.entries(plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]).forEach(([key, value]) => {
         const decision = checkNewFeatureOverlap(key, value, segmentStartPos, segmentEndPos, newFeatureType);
         console.log("checkNewFeatureOverlap", key, segmentStartPos, segmentEndPos, decision)
         if (decision === "shift" || decision === "inside") {
@@ -1160,13 +1185,13 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
             };
             
             if (spanDirection === "fwd") {
-                plasmidDict[plasmidIndex]["fileFeatures"][key].span = newSpanStart + ".." + newSpanEnd; // Update span of the feature
+                plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][key].span = newSpanStart + ".." + newSpanEnd; // Update span of the feature
             } else {
-                plasmidDict[plasmidIndex]["fileFeatures"][key].span = "complement(" + newSpanStart + ".." + newSpanEnd + ")";
+                plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][key].span = "complement(" + newSpanStart + ".." + newSpanEnd + ")";
             }
         } else if (decision === "delete") {
             console.log("updateFeatures delete", key)
-            delete plasmidDict[plasmidIndex]["fileFeatures"][key];
+            delete plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][key];
         };
     });
 
@@ -1194,9 +1219,12 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
 
     };
     // Remake the sidebar and content grid 
-    plasmidDict[plasmidIndex]["sidebarTable"] = createSidebarTable(plasmidIndex);
-    plasmidDict[plasmidIndex]["contentGrid"] = makeContentGrid(plasmidIndex);
-    updateSidebarAndGrid(plasmidIndex);
+    plasmidDict[currentlyOpenedPlasmid]["sidebarTable"] = createSidebarTable(currentlyOpenedPlasmid);
+    plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = makeContentGrid(currentlyOpenedPlasmid);
+    updateSidebarAndGrid();
+
+    // At the very end, save the progress to file history
+    saveProgress(currentlyOpenedPlasmid);
 };
 
 

@@ -864,6 +864,8 @@ function exportDNAFile(plasmidIndex) {
   /**
    * NOTES
    */
+  const uuid = crypto.randomUUID();
+  console.log("UUID", uuid)
   const notesXML = "<Notes><UUID>17fd1982-6b89-48df-b1f8-fcd952b74b3f</UUID><Type>Natural</Type><Created UTC=\"21:39:38\">2023.10.19</Created><LastModified UTC=\"21:39:38\">2023.10.19</LastModified><SequenceClass>UNA</SequenceClass><TransformedInto>unspecified</TransformedInto></Notes>";
   // length
   addBytes(inToHexBytes(notesXML.length));
