@@ -1230,15 +1230,33 @@ function makeContentGrid(plasmidIndex) {
       const range = spanList.split("..").map(Number);
       const rangeStart = range[0];
       const rangeEnd = range[1];
-      const annotText = (value.label) ? value.label: key;
-      const annotationColor = generateRandomUniqueColor();
-      if (!value["color"]) {
-        value["color"] = annotationColor;
+      let annotText = (value.label) ? value.label: key;
+      if (Math.abs(rangeEnd - rangeStart) < 3) {
+        annotText = annotText.slice(0, 3)
       };
-      recentColor = annotationColor; // Store the colour history
-      console.log(annotText, rangeStart + ".." + rangeEnd)
+      
+      // Check if color for this item already exists
+      const globalColors = Array.from(window.getComputedStyle(document.documentElement))
+                                .filter(name => name.startsWith('--')) // Filter only variables
+                                .map(name => name.trim()); // Trim any extra whitespace
+      const annotationColorVariable = plasmidIndex + key + "-annotation-color";
+
+      // If color not in list, add generate one and add it
+      let annotColor = generateRandomUniqueColor();
+      recentColor = annotColor; // Store the colour history
+      if (globalColors.indexOf("--" + annotationColorVariable) === -1) {
+        document.documentElement.style.setProperty(`--${annotationColorVariable}`, annotColor);
+      } else {
+        annotColor = window.getComputedStyle(document.documentElement).getPropertyValue(`--${annotationColorVariable}`).trim();;
+      };
+
+      if (!value["color"]) {
+        value["color"] = annotColor;
+      };
+
+      console.log("Make annotation", key, annotText, rangeStart + ".." + rangeEnd)
       // Make the annotation at the specified indices
-      makeAnnotation(rangeStart - 1, rangeEnd - 1, annotText, key, annotationColor, sequenceGrid, currGridStructure);
+      makeAnnotation(rangeStart - 1, rangeEnd - 1, annotText, key, annotationColorVariable, sequenceGrid, currGridStructure);
 
 
       const triangleID = key;
@@ -1290,7 +1308,7 @@ function makeContentGrid(plasmidIndex) {
           } else {
             targetRow.removeChild(targetCell);
           };
-          createFilledTriangle(key, annotationColor, "left", lowestCell.row, lowestCell.col, sequenceGrid, plasmidIndex);
+          createFilledTriangle(key, annotationColorVariable, "left", lowestCell.row, lowestCell.col, sequenceGrid, plasmidIndex);
         } else {
           const targetRow = sequenceGrid.rows[highestCell.row];
           const targetCell = targetRow.cells[highestCell.col];
@@ -1308,7 +1326,7 @@ function makeContentGrid(plasmidIndex) {
           } else {
             targetRow.removeChild(targetCell);
           };
-          createFilledTriangle(key, annotationColor, "right", highestCell.row, highestCell.col + 1, sequenceGrid, plasmidIndex);
+          createFilledTriangle(key, annotationColorVariable, "right", highestCell.row, highestCell.col + 1, sequenceGrid, plasmidIndex);
         };
       };
 
@@ -1340,7 +1358,7 @@ function makeContentGrid(plasmidIndex) {
  * - at the moment it is very slow, maybe find a better way
  * - !!find a way to make this rescale on window resize
  */
-function makeAnnotation(rStart, rEnd, text, featureId, annotationColor, targetTable, currGridStructure) {
+function makeAnnotation(rStart, rEnd, text, featureId, annotationColorVariable, targetTable, currGridStructure) {
 
   // Convert from sequence coords to table coords
   let row = (Math.floor(rStart / gridWidth)) * currGridStructure.length;
@@ -1367,13 +1385,13 @@ function makeAnnotation(rStart, rEnd, text, featureId, annotationColor, targetTa
     if (col + currentSpan >= gridWidth) {
       // If the currenspan would not fit on the line, draw it until we reach the end and
       // put the rest into carry over
-      console.log("MA1:", text, row, col, 1, currentSpan, featureId, annotationColor, targetTable,currGridStructure);
+      console.log("MA1:", text, row, col, 1, currentSpan, featureId, annotationColorVariable, targetTable,currGridStructure);
       // Calculate carry over
       carryOver = col + currentSpan - gridWidth;
       // Calculate length of the current annoation
       currentSpan = gridWidth - col;
       // Merge the corresponding cells and create the annotaion
-      mergeCells(row, col, 1, currentSpan, text + "...", featureId, annotationColor, targetTable,currGridStructure);
+      mergeCells(row, col, 1, currentSpan, text + "...", featureId, annotationColorVariable, targetTable,currGridStructure);
       // Adjust the current span
       currentSpan = carryOver;
       // Increment the row
@@ -1383,15 +1401,15 @@ function makeAnnotation(rStart, rEnd, text, featureId, annotationColor, targetTa
     } else if (currentSpan === gridWidth) {
       // If the currentspan covers exactly the current line there is some weird behaviour
       // so fill in the current line and one additional cell in the the following row
-      console.log("MA2:", text, row, col, 1, currentSpan, featureId, annotationColor, targetTable,currGridStructure);
-      mergeCells(row, col, 1, currentSpan, text, featureId, annotationColor, targetTable,currGridStructure);
-      mergeCells(row + currGridStructure.length, col, 1, 1, text, featureId, annotationColor, targetTable,currGridStructure);
+      console.log("MA2:", text, row, col, 1, currentSpan, featureId, annotationColorVariable, targetTable,currGridStructure);
+      mergeCells(row, col, 1, currentSpan, text, featureId, annotationColorVariable, targetTable,currGridStructure);
+      mergeCells(row + currGridStructure.length, col, 1, 1, text, featureId, annotationColorVariable, targetTable,currGridStructure);
       // Set carry over to 0 to signify that we're done
       carryOver = 0;
     } else {
       // The annotation can be fully drawn on the current row
-      console.log("MA3:", text, row, col, 1, currentSpan, featureId, annotationColor, targetTable,currGridStructure);
-      mergeCells(row, col, 1, currentSpan, text, featureId, annotationColor, targetTable, currGridStructure);
+      console.log("MA3:", text, row, col, 1, currentSpan, featureId, annotationColorVariable, targetTable,currGridStructure);
+      mergeCells(row, col, 1, currentSpan, text, featureId, annotationColorVariable, targetTable, currGridStructure);
       // Set carry over to 0 to signify that we're done
       carryOver = 0;
     };
@@ -1405,7 +1423,7 @@ function makeAnnotation(rStart, rEnd, text, featureId, annotationColor, targetTa
  * Draws the annotation by merging the specified cells, adding th text and adding the color.
  * 
  */
-function mergeCells(row, col, rowspan, colspan, text, featureId, color, targetTable, currGridStructure) {
+function mergeCells(row, col, rowspan, colspan, text, featureId, annotationColorVariable, targetTable, currGridStructure) {
   console.log("Merge cells1: ", row, col, colspan, text, targetTable)
 
   // Adjust row and col
@@ -1494,7 +1512,7 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, color, targetTa
   mainCell.rowSpan = rowspan;
   mainCell.colSpan = colspan;
   //mainCell.classList.add("editable")
-  mainCell.style.backgroundColor = color;
+  mainCell.style.backgroundColor = "var(--" + annotationColorVariable + ")";
   // Add text to the center of the merged cell
   if (text.length > colspan)  {
     if (colspan <= 3) {
@@ -1781,8 +1799,8 @@ function fillAACells(row, col, text, targetTable, currGridStructure, aaIndex) {
 /**
  * 
  */
-function createFilledTriangle(featureID, triangleColor, orientation, row, col, targetTable, plasmidIndex) {
-  console.log("Triangles:", featureID, triangleColor, orientation, row, col)
+function createFilledTriangle(featureID, annotationColorVariable, orientation, row, col, targetTable, plasmidIndex) {
+  console.log("Triangles:", featureID, annotationColorVariable, orientation, row, col)
   // Select the table cell using the row and col indices
   let cell = targetTable.rows[row].cells[col];
   if (!cell) {
@@ -1807,16 +1825,14 @@ function createFilledTriangle(featureID, triangleColor, orientation, row, col, t
   border-left: var(--triangle-size) solid green;
 }
    */
-  const triangleColorVariable = plasmidIndex + triangle.id + "-color";
-  document.documentElement.style.setProperty(`--${triangleColorVariable}`, triangleColor);
   triangle.style.width = 0 + "px";
   triangle.style.height = 0 + "px";
   triangle.style.borderTop = "var(--triangle-height) solid transparent";
   triangle.style.borderBottom = "var(--triangle-height) solid transparent";
   if (orientation === "right") {
-    triangle.style.borderLeft = `var(--triangle-width) var(--${triangleColorVariable}) solid`;
+    triangle.style.borderLeft = `var(--triangle-width) var(--${annotationColorVariable}) solid`;
   } else {
-    triangle.style.borderRight = `var(--triangle-width) var(--${triangleColorVariable}) solid`;
+    triangle.style.borderRight = `var(--triangle-width) var(--${annotationColorVariable}) solid`;
     //triangle.style.position = "absolute";
     triangle.style.right = "0px";
     triangle.style.top = "0px";
@@ -1826,8 +1842,8 @@ function createFilledTriangle(featureID, triangleColor, orientation, row, col, t
   const borderClasName = featureID.replace("/", "-") + "-cell-borders" + plasmidIndex;
   const dynamicCSS = `
     .${borderClasName} {
-      border-right: 3px solid var(--${triangleColorVariable});
-      border-left: 3px solid var(--${triangleColorVariable});
+      border-right: 3px solid var(--${annotationColorVariable});
+      border-left: 3px solid var(--${annotationColorVariable});
     }
   `;
   styleElement.textContent = dynamicCSS;
