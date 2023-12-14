@@ -86,7 +86,8 @@ function displayPrimers(primersType, primersDict) {
  *  Converts the primers from the sidebar html element into a 2d array.
  */
 function getPrimersAsTable(plasmidIndex, includeColumnNames = false) {
-    const sidebarDiv = plasmidDict[plasmidIndex]["sidebarPrimers"];
+    const sidebarDiv = document.createElement("div");
+    sidebarDiv.innerHTML = plasmidDict[plasmidIndex]["sidebarPrimers"];
     const modDivs = sidebarDiv.querySelectorAll('#mod-div');
 
     let tableData = [];
@@ -94,7 +95,7 @@ function getPrimersAsTable(plasmidIndex, includeColumnNames = false) {
     for (var i = 0; i < modDivs.length; i++) {
         const currentDiv = modDivs[i];
         const h3Div = currentDiv.querySelector("#primers-type");
-        const modType = h3Div.getAttribute("primers-type");
+        const modType = h3Div.getAttribute("primers-type").replace(" ", "_");
         console.log("Mod Type", modType);
         console.log(currentDiv)
         const primerDivs = currentDiv.querySelectorAll("#primer-div");
@@ -138,18 +139,32 @@ const exportPrimersDict = {
     // Plain text
     txt : (plasmidIndex) => {
         const fileName = plasmidDict[plasmidIndex]["fileName"].replace(plasmidDict[plasmidIndex]["fileExtension"], "") + " primers";
-        const htmlTextContent = plasmidDict[plasmidIndex]["sidebarPrimers"].innerText;
-        let lines = htmlTextContent.split("\n");
-        lines = lines.filter(function(item) {
-            return item.trim() !== '';
-        });
+        const containerDiv = document.createElement("div");
+        containerDiv.innerHTML = plasmidDict[plasmidIndex]["sidebarPrimers"];
+        console.log("txt", containerDiv)
+
 
         let textContent = "";
-        for (i = 1; i < lines.length; i += 7) {
-            textContent += i !== 1 ? "\n": "";
-            textContent += lines[i] + "\n";
-            textContent += lines[i + 1] + " " + lines[i + 2] + " " + lines[i + 3] + "\n";
-            textContent += lines[i + 4] + " " + lines[i + 5] + " " + lines[i + 6] + "\n";
+        let counter = 1;
+        for (const childDiv of containerDiv.children) {
+            if (counter !== 1) {textContent += "\n"}
+            counter++;
+            if (childDiv.id === "mod-div") {
+                for (const subDiv of childDiv.children) {
+                    if (subDiv.id === "primers-type") {
+                        textContent += subDiv.innerText + "\n";
+                    } else if (subDiv.id === "primer-div") {
+                        const tempDiv = document.createElement("div");
+                        tempDiv.innerHTML = subDiv.innerHTML;
+                        let tempList = []
+                        for (const subsubDiv of tempDiv.children) {
+                            tempList.push(subsubDiv.innerText);
+                        };
+                        textContent += `${tempList[0]} ${tempList[1]}\n`;
+                        textContent += `${tempList.slice(2, tempList.length).join("").split(";").map((item) => item.trim()).join("; ")}\n\n`;
+                    };
+                };
+            };
         };
 
         const blob = new Blob([textContent], { type: 'text/plain' });
@@ -161,7 +176,7 @@ const exportPrimersDict = {
     // Microsoft Word
     doc : (plasmidIndex) => {
         const fileName = plasmidDict[plasmidIndex]["fileName"].replace(plasmidDict[plasmidIndex]["fileExtension"], "") + " primers";
-        const htmlContent = plasmidDict[plasmidIndex]["sidebarPrimers"].innerHTML;
+        const htmlContent = plasmidDict[plasmidIndex]["sidebarPrimers"];
         
         const docx = window.htmlDocx.asBlob(htmlContent);
         const link = document.createElement('a');
