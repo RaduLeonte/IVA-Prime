@@ -864,9 +864,25 @@ function exportDNAFile(plasmidIndex) {
   /**
    * NOTES
    */
-  const uuid = crypto.randomUUID();
-  console.log("UUID", uuid)
-  const notesXML = "<Notes><UUID>17fd1982-6b89-48df-b1f8-fcd952b74b3f</UUID><Type>Natural</Type><Created UTC=\"21:39:38\">2023.10.19</Created><LastModified UTC=\"21:39:38\">2023.10.19</LastModified><SequenceClass>UNA</SequenceClass><TransformedInto>unspecified</TransformedInto></Notes>";
+  // Universally unique identifier
+  let uuid = crypto.randomUUID();
+  if (!uuid) {
+    uuid = "00000000-0000-0000-0000-000000000000"
+  };
+  // Time and date
+  const currentTime = Date.now();
+  const currentDate = new Date(currentTime);
+  const hours = currentDate.getHours().toString().padStart(2, '0');
+  const minutes = currentDate.getMinutes().toString().padStart(2, '0');
+  const seconds  = currentDate.getSeconds().toString().padStart(2, '0');
+  const timeHMS = `${hours}:${minutes}:${seconds}`
+
+  const year = currentDate.getFullYear();
+  const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+  const day = currentDate.getDate().toString().padStart(2, '0');
+  const dateYMD = `${year}.${month}.${day}`;
+
+  const notesXML = `<Notes><UUID>${uuid}</UUID><Type>Natural</Type><Created UTC=\"${timeHMS}\">${dateYMD}</Created><LastModified UTC=\"${timeHMS}\">${dateYMD}</LastModified><SequenceClass>UNA</SequenceClass><TransformedInto>unspecified</TransformedInto></Notes>`;
   // length
   addBytes(inToHexBytes(notesXML.length));
   // content
