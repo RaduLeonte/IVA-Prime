@@ -127,7 +127,7 @@ async function handleFileSelect(event, plasmidIndex=0, serverFile=null) {
       // [sidebarPrimers, sidebarTable, contentGrid]
       savePrimers();
       plasmidDict[plasmidIndex]["fileHistoryTracker"] = 0;
-      saveProgress();
+      saveProgress(plasmidIndex);
       
       // Once the file is loaded, enable search function
       if (firstImport === true) {

@@ -46,47 +46,48 @@ function navigateFileHistory(direction) {
 };
 
 
-function saveProgress() {
-    const fileSequence = plasmidDict[currentlyOpenedPlasmid]["fileSequence"];
-    const fileFeatures = JSON.parse(JSON.stringify(plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]));
-    const sidebarPrimers = plasmidDict[currentlyOpenedPlasmid]["sidebarPrimers"];
-    const sidebarTable = plasmidDict[currentlyOpenedPlasmid]["sidebarTable"];
-    const contentGrid = plasmidDict[currentlyOpenedPlasmid]["contentGrid"];
+function saveProgress(plasmidIndex) {
+    const fileSequence = plasmidDict[plasmidIndex]["fileSequence"];
+    const fileFeatures = JSON.parse(JSON.stringify(plasmidDict[plasmidIndex]["fileFeatures"]));
+    const sidebarPrimers = plasmidDict[plasmidIndex]["sidebarPrimers"];
+    const sidebarTable = plasmidDict[plasmidIndex]["sidebarTable"];
+    const contentGrid = plasmidDict[plasmidIndex]["contentGrid"];
     const listToPush = [fileSequence, fileFeatures, sidebarPrimers, sidebarTable, contentGrid]
 
-    const currentInstance = plasmidDict[currentlyOpenedPlasmid]["fileHistoryTracker"];
-    let currentFileHistory = plasmidDict[currentlyOpenedPlasmid]["fileHistory"]
+    const currentInstance = plasmidDict[plasmidIndex]["fileHistoryTracker"];
+    let currentFileHistory = plasmidDict[plasmidIndex]["fileHistory"]
     if (currentInstance === 0) {
         // We're on the newest version, extend the list
-        plasmidDict[currentlyOpenedPlasmid]["fileHistory"].push(listToPush);
+        plasmidDict[plasmidIndex]["fileHistory"].push(listToPush);
     } else {
         // We're somewhere in the past, rewrite history
         let slicedFileHistory = currentFileHistory.slice(0, currentFileHistory.length + currentInstance);
         slicedFileHistory.push(listToPush)
         
-        plasmidDict[currentlyOpenedPlasmid]["fileHistory"] = slicedFileHistory;
+        plasmidDict[plasmidIndex]["fileHistory"] = slicedFileHistory;
     };
 
     // Once we have 2 instances in the file history, enable the undo button
-    plasmidDict[currentlyOpenedPlasmid]["fileHistoryTracker"] = 0;
-    refreshUndoRedoButtons();
+    plasmidDict[plasmidIndex]["fileHistoryTracker"] = 0;
+    if (plasmidIndex === currentlyOpenedPlasmid) {refreshUndoRedoButtons()};
 };
 
 
 function switchUndoRedoButtons(direction, targetState) {
-    const buttonId = (direction === -1) ? "undo-btn": "redo-btn";
-    const targetButton = document.getElementById(buttonId).firstChild;
-
-    console.log("switchUndoRedoButtons", direction, targetState)
-    //targetButton.onclick = (targetState === "off") ? null: navigateFileHistory(direction);
-    targetButton.setAttribute("onClick", (targetState === "off") ? null: "navigateFileHistory(" + direction + ")")
-    console.log("switchUndoRedoButtons", targetButton, targetButton.onclick)
+    const targetButton = (direction === -1) ? document.getElementById("undo-btns").getElementsByTagName("A")[0] : document.getElementById("undo-btns").getElementsByTagName("A")[1];
+    targetButton.setAttribute("onClick", (targetState === "off") ? null: "navigateFileHistory(" + direction + ")");
+    if (targetState === "on") {
+        targetButton.classList.remove("svg-icon-btn-a-disabled");
+    } else {
+        targetButton.classList.add("svg-icon-btn-a-disabled");
+    };
 };
 
 
 function refreshUndoRedoButtons() {
     const currentInstance = plasmidDict[currentlyOpenedPlasmid]["fileHistoryTracker"];
     const currentFileHistory = plasmidDict[currentlyOpenedPlasmid]["fileHistory"];
+    console.log("refreshUndoRedoButtons", currentlyOpenedPlasmid, currentInstance);
 
     if (currentInstance === 0) {
         // We're on the newest version, disable the redo button

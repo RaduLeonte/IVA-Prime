@@ -1209,7 +1209,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
     updateSidebarAndGrid();
 
     // At the very end, save the progress to file history
-    saveProgress();
+    saveProgress(currentlyOpenedPlasmid);
 };
 
 
