@@ -50,7 +50,7 @@ function addCellSelection(sequenceGridTable, plasmidIndex) {
         console.log("Mousedown", targetCell.id, targetCell)
         if (targetCell.id === "Annotations") {
           const targetString = targetCell.getAttribute('feature-id');
-          console.log("Mousedown", targetString, plasmidDict[currentlyOpenedPlasmid]["fileFeatures"])
+          console.log("Mousedown", targetString, Object.keys(plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]))
           for (const entryKey in plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]) {
               if (entryKey === targetString) {
                   targetSpan = plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][entryKey]["span"];
@@ -222,17 +222,20 @@ function addCellSelection(sequenceGridTable, plasmidIndex) {
   });
 
 
-  /**
-   * Listens for CTRl+C and copies the currently selected text into the clipboard.
-   */
-  document.addEventListener('keydown', function (event) {
-    // Check if we've actually clicked ctrl+c and we have text selected
-    if ((event.ctrlKey || event.metaKey) && event.key === 'c' && plasmidDict[currentlyOpenedPlasmid]["selectedText"] !== '') {
+};
+
+/**
+ * Listens for CTRl+C and copies the currently selected text into the clipboard.
+ */
+document.addEventListener('keydown', function (event) {
+  // Check if we've actually clicked ctrl+c and we have text selected
+  if ((event.ctrlKey || event.metaKey) && event.key === 'c' && plasmidDict[currentlyOpenedPlasmid]["selectedText"] !== '') {
+    if (plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"] !== null && plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"] !== null) {
       event.preventDefault(); // Prevent default copy behavior
       copySelectionToClipboard(currentlyOpenedPlasmid);
     };
-  });
-};
+  };
+});
 
 
 /**
