@@ -183,6 +183,13 @@ function switchPlasmidTab(plasmidIndex) {
     currentlyOpenedPlasmid = plasmidIndex;
 
     // Repopulate sidebar and grid
+    // Check if the grid needs to be redrawn because the gridWidth has changed
+    const newGridWidth = plasmidDict[plasmidIndex]["contentGrid"].rows[0].cells.length;
+    const remakeContentGrid = gridWidth !== newGridWidth;
+    console.log("switchPlasmidTab", gridWidth, newGridWidth, remakeContentGrid);
+    if (remakeContentGrid) {
+        plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = makeContentGrid(currentlyOpenedPlasmid);
+    };
     updateSidebarAndGrid();
 
     // Update primers

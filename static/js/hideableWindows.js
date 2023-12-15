@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (currentlyOpenedPlasmid !== null) {
                                 console.log("Updating, sequence not empty")
                                 plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = makeContentGrid(currentlyOpenedPlasmid);
-                                updateSidebarAndGrid(currentlyOpenedPlasmid);
+                                updateSidebarAndGrid();
                             };
                         };
                     } else {
