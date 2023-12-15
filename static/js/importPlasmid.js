@@ -1290,7 +1290,7 @@ function makeContentGrid(plasmidIndex) {
             };
         };
       } ;
-      console.log("Triangles, found cells:", featureCells)
+      console.log("Triangles, found cells:", triangleID, featureCells)
 
       if (featureCells.length > 0) {
         let lowestCell = featureCells[0];
@@ -1305,9 +1305,9 @@ function makeContentGrid(plasmidIndex) {
             };
         };
     
-        console.log("Triangles, Top-left cell:", lowestCell);
-        console.log("Triangles, Bottom-right cell:", highestCell);
-        console.log("Triangles:", direction)
+        console.log("Triangles, Top-left cell:", triangleID, lowestCell);
+        console.log("Triangles, Bottom-right cell:", triangleID, highestCell);
+        console.log("Triangles:", triangleID, direction)
 
         if (direction === "left") {
           const targetRow = sequenceGrid.rows[lowestCell.row];
@@ -1330,7 +1330,7 @@ function makeContentGrid(plasmidIndex) {
         } else {
           const targetRow = sequenceGrid.rows[highestCell.row];
           const targetCell = targetRow.cells[highestCell.col];
-          console.log("Triangles, target cell:", targetRow, targetCell)
+          console.log("Triangles, target cell:", triangleID, targetRow, targetCell)
           const newCell = document.createElement("td");
           // Copy attributes from targetCell to newCell
           newCell.id = targetCell.id;
@@ -1339,12 +1339,14 @@ function makeContentGrid(plasmidIndex) {
           // Append the new cell right before the target cell
           targetRow.parentNode.insertBefore(newCell, targetRow.nextSibling);
 
+          let colPos = highestCell.col;
           if (targetCell.colSpan > 1) {
             targetCell.colSpan--;
+            colPos++;
           } else {
             targetRow.removeChild(targetCell);
           };
-          createFilledTriangle(key, annotationColorVariable, "right", highestCell.row, highestCell.col + 1, sequenceGrid, plasmidIndex);
+          createFilledTriangle(key, annotationColorVariable, "right", highestCell.row, colPos, sequenceGrid, plasmidIndex);
         };
       };
 
