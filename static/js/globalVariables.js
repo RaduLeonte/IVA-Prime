@@ -72,8 +72,8 @@ const defaultSetingsDict = {
     "saltCorrectionEquation": "SchildkrautLifson",
     "dmsoConc": 0,
     "homoRegionMinLength": 15,
-    "homoRegionTm": 49.5,
-    "primerDistribution": false,
+    "homoRegionTm": 50,
+    "primerDistribution": true,
     "tempRegionTm": 60,
     "upperBoundShortInsertions": 49.5,
     "colorTheme": "lightTheme",
@@ -98,6 +98,7 @@ let tempRegionTm = (getUserPreference("tempRegionTm")  !== null) ? getUserPrefer
 let upperBoundShortInsertions = (getUserPreference("upperBoundShortInsertions")  !== null) ? getUserPreference("upperBoundShortInsertions") : defaultSetingsDict["upperBoundShortInsertions"];
 
 let subcloningOriginPlasmidIndex = null;
+let subcloningOriginPlasmidInstance = null;
 let subcloningOriginSpan = null;
 
 const primerColorRed = "rgb(200, 52, 120)"

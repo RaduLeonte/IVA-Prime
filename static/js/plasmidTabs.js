@@ -42,6 +42,8 @@ function navigateFileHistory(direction) {
 
         // Refresh undo redo buttons
         refreshUndoRedoButtons();
+
+        clearAllSubcloningSelections(clearVariables = true);
     };
 };
 

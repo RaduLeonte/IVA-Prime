@@ -1081,7 +1081,6 @@ function createSidebarTable(plasmidIndex) {
  * Remove everything but numbers and ".." in order to have a clean span
 */
 function removeNonNumeric(inputString) {
-  console.log("removeNonNumeric", inputString)
   const cleanedString = inputString.replace(/[^\d.]/g, '');
   return cleanedString;
 };
