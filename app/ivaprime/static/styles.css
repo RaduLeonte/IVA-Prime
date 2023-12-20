@@ -41,6 +41,7 @@ body {
 
 
 .custom-context-menu {
+  font-family: Arial, sans-serif;
   position: absolute;
   display: none;
   background-color: #333;

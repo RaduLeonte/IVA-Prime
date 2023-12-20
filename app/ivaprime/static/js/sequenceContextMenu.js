@@ -3,43 +3,9 @@
  */
 // Wait for document to load
 document.addEventListener('DOMContentLoaded', function () {
-  // Create the menu and append it to the doc
-  const contextMenu = document.createElement('div');
-  contextMenu.className = 'custom-context-menu';
-  contextMenu.innerHTML = `
-  <div>
-      <h3>IVA Cloning Operations</h3>
-      <ul>
-        <li id="insertion">Insert here</li>
-        <li id="deletion" disabled>Delete selection</li>
-        <li id="mutation" disabled>Mutate selection</li>
-        <li id="replacement" disabled>Replace selection</li>
-        <li id="mark-for-subcloning" disabled>Mark selection for subcloning</li>
-        <li id="subcloning" disabled>Subclone into selection <br>(<em>no region marked for subcloning</em>)</li>
-        <li id="subcloning-with-insertion" disabled>Subclone with insertion into selection</li>
-      </ul>
-    </div>  
-  <div>
-      <h3>Copy</h3>
-      <ul>
-        <li id="copy-selection">Copy selection</li>
-        <li id="copy-complement">Copy complement of selection</li>
-        <li id="copy-rev-complement">Copy reverse complement of selection</li>
-      </ul>
-    </div>
-    <div>
-      <h3>Translation</h3>
-      <ul>
-        <li id="begin-translation" disabled>Begin translation at first ATG</li>
-        <li id="translate-selection" disabled>Translate selection (forward strand)</li>
-        <li id="translate-selection-rev" disabled>Reverse translate selection (reverse strand)</li>
-      </ul>
-    </div>
-  `;
-  document.body.appendChild(contextMenu);
-  contextMenu.style.display = "none";
-
   // Right click context menu logic while clicking on the content grid
+  const contextMenu = document.querySelector(".custom-context-menu");
+
   document.getElementById("content").addEventListener('contextmenu', function (event) {
     event.preventDefault(); // Prevent default right click menu
     if (plasmidDict[currentlyOpenedPlasmid]["fileSequence"] !== "") {
@@ -260,13 +226,39 @@ document.addEventListener('DOMContentLoaded', function () {
     // Reposition the context menu
     positionContextMenu(clientX, clientY);
   };
-  
+});
 
-  /**
+/**
+ * Move context menu to coordinates.
+ */
+function positionContextMenu(clientX, clientY) {
+  const contextMenu = document.querySelector('.custom-context-menu');
+  const sequenceGrid = document.getElementById("content");
+  
+  console.log("positionContextMenu", clientX, clientY, sequenceGrid.scrollLeft, sequenceGrid.scrollTop, sequenceGrid.getBoundingClientRect().left, sequenceGrid.getBoundingClientRect().top);
+  let posX = clientX + sequenceGrid.scrollLeft - sequenceGrid.getBoundingClientRect().left;
+  let posY = clientY + sequenceGrid.scrollTop - sequenceGrid.getBoundingClientRect().top;
+
+  const maxX = sequenceGrid.scrollWidth - contextMenu.offsetWidth;
+  const maxY = sequenceGrid.scrollHeight - contextMenu.offsetHeight;
+  console.log("positionContextMenu", posX, posY, maxX, maxY, posX > maxX, posY > maxY, sequenceGrid.scrollHeight)
+  
+  if (posX > maxX) {
+    contextMenu.style.left = (posX - contextMenu.offsetWidth) + 'px';
+  } else {
+    contextMenu.style.left = posX + 'px';
+  };
+  if (posY > maxY) {
+    contextMenu.style.top = (posY - contextMenu.offsetHeight) + 'px';
+  } else {
+    contextMenu.style.top = posY + 'px';
+  };
+};
+
+/**
    * Hides the context menu.
    */
-  function hideContextMenu() {
-    const contextMenu = document.querySelector('.custom-context-menu');
-    contextMenu.style.display = 'none';
-  }
-});
+function hideContextMenu() {
+  const contextMenu = document.querySelector('.custom-context-menu');
+  contextMenu.style.display = 'none';
+}
