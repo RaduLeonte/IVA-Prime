@@ -582,8 +582,10 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
             primersDict["Reverse Primer"] = {1: {"seq": tempRev, "color": primerColorGreen},
                                             info: primerInfoRev};
             
-            console.log("Primers Dict:", primersDict)
-            displayPrimers("Short " + operationType, primersDict);
+            console.log("Primers Dict:", primersDict);
+            let operationTypeTagline = "Short " + operationType;
+            if (operationType === "Deletion") {operationTypeTagline = operationType}
+            displayPrimers(operationTypeTagline, primersDict);
         } else if (primerDistribution === true) {
             console.log("Short insertion: DISTRIBUTE")
 
@@ -643,8 +645,10 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
                                              3: {"seq": tempRev, "color": primerColorGreen},
                                              info: primerInfoRev};
             
-            console.log("Primers Dict:", primersDict)
-            displayPrimers("Short " + operationType, primersDict);
+            console.log("Primers Dict:", primersDict);
+            let operationTypeTagline = "Short " + operationType;
+            if (operationType === "Deletion") {operationTypeTagline = operationType}
+            displayPrimers(operationTypeTagline, primersDict);
         };
     } else { //  // Mutation > 49 C
         // Forward template bindin region
@@ -719,7 +723,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
                                          info: primerInfoRev};
         
         console.log("Primers Dict:", primersDict)
-        displayPrimers("Medium " + operationType, primersDict);
+        displayPrimers("Long " + operationType, primersDict);
     }
 
     // Update the sequence and features
