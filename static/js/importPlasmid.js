@@ -1553,7 +1553,7 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, annotationColor
   let k = 0;
   colspan--;
   //console.log("Merge cells, to delete: ", row, col, colspan, table.rows[row].cells.length);
-  for (let j = col + 1; j < col + colspan; j++) {
+  for (let j = col + 1; j < col + colspan + 1; j++) {
     const cell = targetTable.rows[row].cells[j - k];
     if (cell) {
       //console.log("Merge cells, deleting: ", row, j-k, table.rows[row].cells.length)
