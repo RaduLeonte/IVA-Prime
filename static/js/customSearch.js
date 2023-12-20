@@ -55,7 +55,6 @@ function searchOccurrences(customSearchInput) {
     // Get search query from the search bar
     const searchQuery = customSearchInput.value;
     const searchQueryComplement = searchQuery.split('').reverse().join('');
-    //console.log("Search:", searchQuery, searchQueryComplement)
 
     // Select the sequence and grid structure of the plasmid of interest
     let currSequence = plasmidDict[currentlyOpenedPlasmid]["fileSequence"];
@@ -102,7 +101,6 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, w
 
         // Select table element
         let table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
-        console.log("highlightOccurences", table, indices)
         
         // Iterate over all cells that contain the search query and highlight them
         for (const index of indices) {
@@ -111,7 +109,6 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, w
                 const [row, column] = seqIndexToCoords(index + j, targetStrandIndex, workingGridStructure);
                 // Select and highlight the cell
                 const cell = table.rows[row].cells[column];
-                console.log("Custom search:", index + j, cell, row + targetStrandIndex, column);
                 if (highlightClass) {
                     cell.classList.add(highlightClass);
                 } else if (highlightColor) {
@@ -144,7 +141,6 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, w
         for (const index of indices) {
             let currentCell = aaCells[index];
             for (let j = 1; j < workingQuery.length + 1; j++) {
-                console.log("Highlight", currentCell)
                 let leftCell;
                 if (currentCell.previousElementSibling !== null) {
                     leftCell = currentCell.previousElementSibling;
@@ -194,7 +190,6 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, w
  * Search for query occurences in sequence then add a class or highlight 
  */
 function highlightSpan(plasmidIndex, targetStrandIndex, spanStart, spanEnd, highlightClass, backgroundColor, textColor) {
-    console.log("highlightSpan", plasmidIndex, targetStrandIndex, spanStart, spanEnd, highlightClass, backgroundColor, textColor)
     startIndex = Math.min(spanStart, spanEnd);
     endIndex = Math.max(spanStart, spanEnd);
     // Select table element
@@ -205,9 +200,7 @@ function highlightSpan(plasmidIndex, targetStrandIndex, spanStart, spanEnd, high
             // Convert sequence index to table coordinates
             const [row, column] = seqIndexToCoords(j, 0, plasmidDict[plasmidIndex]["gridStructure"]);
             // Select and highlight the cell
-            console.log(row + targetStrandIndex, column)
             const cell = table.rows[row + targetStrandIndex].cells[column];
-            console.log("highlightSpan", cell)
             if (highlightClass) {
                 cell.classList.add(highlightClass);
             } else if (highlightColor) {

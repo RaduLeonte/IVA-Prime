@@ -1197,7 +1197,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
 
     // Check if there is a previous insertion and if there is, increment the nr at the end
     let i = 2;
-    let targetFeaturesDict = plasmidDict[plasmidIndex]["fileFeatures"];
+    let targetFeaturesDict = plasmidDict[currentlyOpenedPlasmid]["fileFeatures"];
     let newFeatureId = "misc_feature"
     while (newFeatureId in targetFeaturesDict) {
         newFeatureId =  newFeatureId.replace("" + i-1, "")
@@ -1214,8 +1214,8 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
         const insertStringPositionEnd = segmentStartPos + newFeatureSequence.length;
         tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
         tempDict.note = "";
-        plasmidDict[plasmidIndex]["fileFeatures"][newFeatureId] = tempDict // add feature to features dict
-        plasmidDict[plasmidIndex]["fileFeatures"] = sortBySpan(plasmidDict[plasmidIndex]["fileFeatures"]) // resort feature dict by their order of appearance in the sequence
+        plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][newFeatureId] = tempDict // add feature to features dict
+        plasmidDict[currentlyOpenedPlasmid]["fileFeatures"] = sortBySpan(plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]) // resort feature dict by their order of appearance in the sequence
 
     };
     // Remake the sidebar and content grid 
