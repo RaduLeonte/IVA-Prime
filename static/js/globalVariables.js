@@ -98,7 +98,6 @@ let tempRegionTm = (getUserPreference("tempRegionTm")  !== null) ? getUserPrefer
 let upperBoundShortInsertions = (getUserPreference("upperBoundShortInsertions")  !== null) ? getUserPreference("upperBoundShortInsertions") : defaultSetingsDict["upperBoundShortInsertions"];
 
 let subcloningOriginPlasmidIndex = null;
-let subcloningOriginPlasmidInstance = null;
 let subcloningOriginSpan = null;
 
 const primerColorRed = "rgb(200, 52, 120)"
