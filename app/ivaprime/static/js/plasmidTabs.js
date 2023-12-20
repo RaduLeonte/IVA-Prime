@@ -26,7 +26,7 @@ function navigateFileHistory(direction) {
 
         console.log("navigateFileHistory features before", plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]);
         console.log("navigateFileHistory o be replaced with", plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]);
-        plasmidDict[currentlyOpenedPlasmid]["fileFeatures"] = instance[1];
+        plasmidDict[currentlyOpenedPlasmid]["fileFeatures"] = JSON.parse(JSON.stringify(instance[1]));
         console.log("navigateFileHistory features after", plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]);
 
         plasmidDict[currentlyOpenedPlasmid]["gridStructure"] = checkAnnotationOverlap(instance[1]);
