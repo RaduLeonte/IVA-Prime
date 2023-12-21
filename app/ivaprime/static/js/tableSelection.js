@@ -115,7 +115,7 @@ function addCellSelection(sequenceGridTable, plasmidIndex) {
   /**
    * Update the selection on mouse movement.
    */
-  fileContentContainer.addEventListener('mousemove', function (event) {
+  sequenceGridTable.addEventListener('mousemove', function (event) {
     let closestCell = event.target.closest('td')
     if (isSelecting) { // Make sure we're currently selecting
       if (!hoveringOverSelectionCursor) {

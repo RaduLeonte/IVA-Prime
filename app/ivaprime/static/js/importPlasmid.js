@@ -1171,6 +1171,22 @@ function checkAnnotationOverlap(inputFeatures) {
 };
 
 
+/**
+ * 
+ * 
+ */
+window.addEventListener('resize', function () {
+  let resizeTimeout;
+  clearTimeout(resizeTimeout);
+  document.getElementById("file-content").style.display = "none";
+
+  resizeTimeout = setTimeout(function() {
+    document.getElementById("file-content").style.display = "block";
+    updateAnnotationTrianglesWidth();
+  }, 1000);
+});
+
+
 // Creat the content table grid
 function makeContentGrid(plasmidIndex) {
   // Init variables
@@ -1234,9 +1250,6 @@ function makeContentGrid(plasmidIndex) {
     };
   };
 
-  // Get cell width in current window for annotation triangles
-  window.addEventListener('resize', updateAnnotationTrianglesWidth);
-  updateAnnotationTrianglesWidth();
   
   // Iterate over the features and create the annotatations
   Object.entries(currFeatures).forEach(([key, value]) => {
