@@ -1219,35 +1219,45 @@ function makeContentGrid(plasmidIndex) {
       row = sequenceGrid.insertRow(i);
     } ;
     row.id = currGridStructure[i % currGridStructureLength] + "-row";
-    // Populate the sequence cells with the corresponding base
-    for (let j = 0; j < gridWidth; j++) {
-      const cell = document.createElement('td'); // Create the cell
-      let currentChar = ""
-      let linesCreated = Math.floor(i / currGridStructureLength) // Check how many "lines" have been created so far
 
-      if ((i + 1) % currGridStructureLength === 1) { // If we're on the forward strand
-        currentChar = currSequence[linesCreated*gridWidth + j] // Add the corrseponding char
-      } else if ((i + 1) % currGridStructureLength === 2) {// If we're on the comlpementary strand
-        currentChar = currComplementarySequence[linesCreated*gridWidth + j]
-      };
-      // If we've run out of bases to add add nothing
-      if (!currentChar) {
-        currentChar = ""
-      };
-
-      // Insert the base to the cell's text content
-      cell.textContent = currentChar;
-      // Add a cell id to distinguish the cells
+    if (currGridStructure[i % currGridStructureLength] === "Spacer") {
+      const cell = document.createElement('td');
       cell.id = currGridStructure[i % currGridStructureLength];
-      // Add a cell class
       cell.classList.add(currGridStructure[i % currGridStructureLength].replace(" ", ""));
-      if (cell.id === "Forward Strand" && currentChar !== "") {
-        cell.classList.add("forward-strand-base");
-      };
-
+      cell.colSpan = gridWidth;
       // Append the cell to the row
       row.appendChild(cell);
-    };
+    } else {
+      // Populate the sequence cells with the corresponding base
+      for (let j = 0; j < gridWidth; j++) {
+        const cell = document.createElement('td'); // Create the cell
+        let currentChar = ""
+        let linesCreated = Math.floor(i / currGridStructureLength) // Check how many "lines" have been created so far
+  
+        if ((i + 1) % currGridStructureLength === 1) { // If we're on the forward strand
+          currentChar = currSequence[linesCreated*gridWidth + j] // Add the corrseponding char
+        } else if ((i + 1) % currGridStructureLength === 2) {// If we're on the comlpementary strand
+          currentChar = currComplementarySequence[linesCreated*gridWidth + j]
+        };
+        // If we've run out of bases to add add nothing
+        if (!currentChar) {
+          currentChar = ""
+        };
+  
+        // Insert the base to the cell's text content
+        cell.textContent = currentChar;
+        // Add a cell id to distinguish the cells
+        cell.id = currGridStructure[i % currGridStructureLength];
+        // Add a cell class
+        cell.classList.add(currGridStructure[i % currGridStructureLength].replace(" ", ""));
+        if (cell.id === "Forward Strand" && currentChar !== "") {
+          cell.classList.add("forward-strand-base");
+        };
+  
+        // Append the cell to the row
+        row.appendChild(cell);
+      };
+    }
   };
 
   
