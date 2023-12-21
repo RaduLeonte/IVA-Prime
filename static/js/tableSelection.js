@@ -145,7 +145,6 @@ function addCellSelection(sequenceGridTable, plasmidIndex) {
           let currGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"]
 
           if (plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"] < plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]) {
-            console.log("TEST1")
             const tableCoordsStartCell = seqIndexToCoords(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], 0, currGridStructure);
             startRowIndex = tableCoordsStartCell[0];
             startCellIndex = tableCoordsStartCell[1];
@@ -157,7 +156,6 @@ function addCellSelection(sequenceGridTable, plasmidIndex) {
             clearSelection(currentlyOpenedPlasmid, false);
             setSelectionCursors(currentlyOpenedPlasmid, plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]);
           } else {
-            console.log("TEST2")
             const tableCoordsStartCell = seqIndexToCoords(plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"], 0, currGridStructure);
             startRowIndex = tableCoordsStartCell[0];
             startCellIndex = tableCoordsStartCell[1];

@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const resizableSidebar = document.getElementById('sidebar');
     let isResizingSidebar = false;
     let startX = 0;
-    let startWidth = 0;
     const sidebarMinWidth = 20; // Minimum height in %
     const sidebarMaxWidth = 80; // Maximum height in %
 
@@ -52,14 +51,12 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     document.addEventListener('mousemove', (e) => {
         const resizableSidebar = document.getElementById('sidebar');
-        const sidebarRightX = resizableSidebar.offsetLeft + resizableSidebar.offsetWidth;
-        if (Math.abs(e.pageX - sidebarRightX) <= sidebarHitbox) {
+        if (Math.abs(e.pageX - (resizableSidebar.offsetLeft + resizableSidebar.offsetWidth)) <= sidebarHitbox) {
             hoveringOverSidebarEdge = true;
         } else {
             hoveringOverSidebarEdge = false;
         };
 
-        //console.log("Cursor:", hoveringOverSidebarEdge, hoveringOverContainerEdge)
         if (hoveringOverSidebarEdge) {
             document.documentElement.style.cursor = 'col-resize';
         } else {
