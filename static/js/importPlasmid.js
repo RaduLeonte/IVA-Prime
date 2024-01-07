@@ -1090,7 +1090,7 @@ function removeNonNumeric(inputString) {
  * Check the annotation overlap to see how many rows are needed to accomodate all the annotations.
  * Also changes the gridstructure if more rows are needed for annotations.
  */
-function checkAnnotationOverlap(inputFeatures) {
+function checkAnnotationOverlap(inputFeatures, plasmidIndex) {
   let maximumOverlap = 0;
   
   // Iterate over all features and add their spans to a list
@@ -1139,7 +1139,7 @@ function checkAnnotationOverlap(inputFeatures) {
   // Adjust the grid structure according to maximumOverlap
   let count = 0;
   let listInsertPos = 0;
-  let currentGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
+  let currentGridStructure = plasmidDict[plasmidIndex]["gridStructure"];
   if (!currentGridStructure) {currentGridStructure = defaultGridStructure}
   // Count how many rows are already dedicated to annotations
   for (let i = 0; i < currentGridStructure.length; i++) {
@@ -1200,7 +1200,12 @@ function makeContentGrid(plasmidIndex) {
   sequenceGrid.classList.add("sequence-grid");
 
   let gridHeight = 0;
-  plasmidDict[plasmidIndex]["gridStructure"] = checkAnnotationOverlap(currFeatures, plasmidIndex);
+  console.log("checkAnnotationOverlap", plasmidIndex);
+  for (const key in plasmidDict) {console.log(`checkAnnotationOverlap B4 ${key} ${plasmidDict[key]["gridStructure"] ? plasmidDict[key]["gridStructure"].length : null} ${plasmidDict[key]["gridStructure"]}`)};
+  const newGridStructure = checkAnnotationOverlap(currFeatures, plasmidIndex);
+  console.log("checkAnnotationOverlap newGS", newGridStructure)
+  plasmidDict[plasmidIndex]["gridStructure"] = JSON.parse(JSON.stringify(newGridStructure));
+  for (const key in plasmidDict) {console.log(`checkAnnotationOverlap AF ${key} ${plasmidDict[key]["gridStructure"] ? plasmidDict[key]["gridStructure"].length : null} ${plasmidDict[key]["gridStructure"]}`)};
   let currGridStructure = plasmidDict[plasmidIndex]["gridStructure"];
 
   // Create the grid
@@ -1340,6 +1345,7 @@ function makeContentGrid(plasmidIndex) {
           newCell.id = targetCell.id;
           newCell.class = targetCell.class;
           newCell["feature-id"] = targetCell["feature-id"];
+          newCell.colSpan = 1;
           // Append the new cell right before the target cell
           targetRow.insertBefore(newCell, targetCell);
 
@@ -1352,14 +1358,15 @@ function makeContentGrid(plasmidIndex) {
         } else {
           const targetRow = sequenceGrid.rows[highestCell.row];
           const targetCell = targetRow.cells[highestCell.col];
-          console.log("Triangles, target cell:", triangleID, targetRow, targetCell)
+          console.log("Triangles, target cell:", triangleID, targetRow.cells.length, targetRow, targetCell)
           const newCell = document.createElement("td");
           // Copy attributes from targetCell to newCell
           newCell.id = targetCell.id;
           newCell.class = targetCell.class;
           newCell["feature-id"] = targetCell["feature-id"];
-          // Append the new cell right before the target cell
-          targetRow.parentNode.insertBefore(newCell, targetRow.nextSibling);
+          newCell.colSpan = 1;
+          // Append the new cell right after the target cell
+          targetRow.insertBefore(newCell, targetCell.nextSibling);
 
           let colPos = highestCell.col;
           if (targetCell.colSpan > 1) {
@@ -1368,6 +1375,7 @@ function makeContentGrid(plasmidIndex) {
           } else {
             targetRow.removeChild(targetCell);
           };
+          console.log("Triangles, target cell:", targetRow.cells.length, targetRow)
           createFilledTriangle(key, annotationColorVariable, "right", highestCell.row, colPos, sequenceGrid, plasmidIndex);
         };
       };
@@ -1476,26 +1484,33 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, annotationColor
       // Find already occupied cells
       occupiedCellsList = [];
       occupiedCellsCounter = 0;
-      for (let i = 0; i < targetTable.rows[row].cells.length; i++) {
-        if (targetTable.rows[row].cells[i].attributes.hasOwnProperty('colspan')) {
-          let currColSpan = parseInt(targetTable.rows[row].cells[i].attributes["colspan"].value);
-          console.log("Colspan ", currColSpan);
-          occupiedCellsCounter++;
-          for (let i = 0; i <  currColSpan; i++) {
-            occupiedCellsList.push(true);
-          };
-        } else {
-          occupiedCellsList.push(false);
-        };
-      };
-      
-      console.log(col, col+colspan-1, row, occupiedCellsList);
-      if (occupiedCellsList.slice(col, col + colspan - 1).every(value => value !== true)) {
-        console.log("Go right ahead sir.")
-        break;
-      } else {
+      console.log("occupiedCells", targetTable.rows[row].cells.length, targetTable.rows[row].cells)
+      if (targetTable.rows[row].cells.length === 1) {
         console.log("Try next row.")
         row++;
+      } else {
+        for (let i = 0; i < targetTable.rows[row].cells.length; i++) {
+          console.log("occupiedCell", targetTable.rows[row].cells[i], targetTable.rows[row].cells[i].attributes.hasOwnProperty('feature-id'))
+          if (targetTable.rows[row].cells[i].attributes.hasOwnProperty('feature-id')) {
+            let currColSpan = parseInt(targetTable.rows[row].cells[i].colSpan);
+            console.log("Colspan ", currColSpan);
+            occupiedCellsCounter++;
+            for (let i = 0; i <  currColSpan; i++) {
+              occupiedCellsList.push(true);
+            };
+          } else {
+            occupiedCellsList.push(false);
+          };
+        };
+        
+        console.log(col, col+colspan, row, occupiedCellsList, occupiedCellsList.slice(col, col + colspan));
+        if (occupiedCellsList.slice(col, col + colspan).every(value => value !== true)) {
+          console.log("Go right ahead sir.")
+          break;
+        } else {
+          console.log("Try next row.")
+          row++;
+        };
       };
     };
   };
@@ -1517,9 +1532,9 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, annotationColor
       occupiedCellsList = [];
       occupiedCellsCounter = 0;
       for (let i = 0; i < targetTable.rows[row].cells.length; i++) {
-        if (targetTable.rows[row].cells[i].attributes.hasOwnProperty('colspan')) {
-          let currColSpan = parseInt(targetTable.rows[row].cells[i].attributes["colspan"].value);
-          console.log("Colspan ", currColSpan);
+        if (targetTable.rows[row].cells[i].attributes.hasOwnProperty('feature-id')) {
+          let currColSpan = parseInt(targetTable.rows[row].cells[i].colSpan);
+          console.log("Colspan", currColSpan);
           occupiedCellsCounter++;
           for (let i = 0; i <  currColSpan; i++) {
             occupiedCellsList.push(true);
@@ -1549,7 +1564,7 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, annotationColor
     col -= nrOccupiedCells;
     col += occupiedCellsCounter;
   };
-  console.log("Merge cells2: ", row, col, colspan, text)
+  console.log("Merge cells2: ", row, col, colspan, text, targetTable.rows[row].cells)
   let mainCell = targetTable.rows[row].cells[col];
   mainCell.rowSpan = rowspan;
   mainCell.colSpan = colspan;
@@ -1572,18 +1587,16 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, annotationColor
   mainCell.setAttribute("feature-id", featureId)
 
   // Remove extra cells
-  let k = 0;
   colspan--;
-  //console.log("Merge cells, to delete: ", row, col, colspan, table.rows[row].cells.length);
-  for (let j = col + 1; j < col + colspan + 1; j++) {
-    const cell = targetTable.rows[row].cells[j - k];
+  console.log("Merge cells, to delete: ", row, col, colspan, targetTable.rows[row].cells.length);
+  for (let j = 0; j < colspan; j++) {
+    const cell = targetTable.rows[row].cells[col + 1];
     if (cell) {
-      //console.log("Merge cells, deleting: ", row, j-k, table.rows[row].cells.length)
+      //console.log("Merge cells, deleting: ", row, col + 1, j, targetTable.rows[row].cells.length)
       cell.parentNode.removeChild(cell);
     };
-    k++;
   };
-  //console.log("Merge cells, after del: ",table.rows[row].cells.length)
+  console.log("Merge cells, after del: ",targetTable.rows[row].cells.length)
 };
 
 
@@ -1675,17 +1688,11 @@ const promoters = {"CMV": "CGCAAATGGGCGGTAGGCGTG",
 /**
  * Convert sequence indices to table coordinates
  */
-function seqIndexToCoords(inputIndex, targetRow, currGridStructure) {
-  //console.log("Translating, seqIndexCoords before:", inputIndex, targetRow)
-  let outputRow = (Math.floor(inputIndex / gridWidth))*currGridStructure.length + targetRow;
-  let outputIndex = inputIndex - Math.floor(inputIndex / gridWidth)*gridWidth - 1;
-  if (outputIndex < 0) {
-    outputRow -= currGridStructure.length;
-    outputIndex = gridWidth - 1;
-  } else if (outputIndex >= gridWidth) {
-
-  };
-  //console.log("Translating, seqIndexCoords done:", outputRow, outputIndex)
+function seqIndexToCoords(inputIndex, targetRow, inputGridStructure) {
+  console.log("Translating, seqIndexCoords before:", inputIndex, targetRow, inputGridStructure)
+  let outputRow = (Math.floor((inputIndex - 0.5) / gridWidth))*inputGridStructure.length + targetRow;
+  let outputIndex = inputIndex - Math.floor((inputIndex - 0.5) / gridWidth)*gridWidth - 1;
+  console.log("Translating, seqIndexCoords done:", outputRow, outputIndex, inputGridStructure)
   return [outputRow, outputIndex];
 };
 

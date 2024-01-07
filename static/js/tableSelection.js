@@ -354,13 +354,14 @@ function selectBySpan(inputSpan) {
  *  Set the position of the selection cursor
  */
 function setSelectionCursors(plasmidIndex, cursorStartPos, cursorEndPos) {
-  console.log(plasmidIndex, plasmidDict[plasmidIndex]["selectionStartPos"], plasmidDict[plasmidIndex]["selectionEndPos"])
+  console.log("setSelectionCursors", plasmidIndex, plasmidDict[plasmidIndex]["selectionStartPos"], plasmidDict[plasmidIndex]["selectionEndPos"])
 
   console.log("setSelectionCursors", cursorStartPos, cursorEndPos)
   clearSelectionCursors(plasmidIndex);
   const currGridStructure = plasmidDict[plasmidIndex]["gridStructure"];
   const tableID = "sequence-grid-" + plasmidIndex;
   const tableCoordsStart = seqIndexToCoords(cursorStartPos, 0, currGridStructure);
+  console.log("setSelectionCursors tableCoords", plasmidIndex, currGridStructure)
 
   const targetCell1 = document.getElementById(tableID).rows[tableCoordsStart[0]].cells[tableCoordsStart[1]];
   targetCell1.classList.add("selection-cursor-cell-left");
