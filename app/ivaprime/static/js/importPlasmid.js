@@ -1340,6 +1340,7 @@ function makeContentGrid(plasmidIndex) {
           newCell.id = targetCell.id;
           newCell.class = targetCell.class;
           newCell["feature-id"] = targetCell["feature-id"];
+          newCell.colSpan = 1;
           // Append the new cell right before the target cell
           targetRow.insertBefore(newCell, targetCell);
 
@@ -1352,14 +1353,15 @@ function makeContentGrid(plasmidIndex) {
         } else {
           const targetRow = sequenceGrid.rows[highestCell.row];
           const targetCell = targetRow.cells[highestCell.col];
-          console.log("Triangles, target cell:", triangleID, targetRow, targetCell)
+          console.log("Triangles, target cell:", triangleID, targetRow.cells.length, targetRow, targetCell)
           const newCell = document.createElement("td");
           // Copy attributes from targetCell to newCell
           newCell.id = targetCell.id;
           newCell.class = targetCell.class;
           newCell["feature-id"] = targetCell["feature-id"];
-          // Append the new cell right before the target cell
-          targetRow.parentNode.insertBefore(newCell, targetRow.nextSibling);
+          newCell.colSpan = 1;
+          // Append the new cell right after the target cell
+          targetRow.insertBefore(newCell, targetCell.nextSibling);
 
           let colPos = highestCell.col;
           if (targetCell.colSpan > 1) {
@@ -1368,6 +1370,7 @@ function makeContentGrid(plasmidIndex) {
           } else {
             targetRow.removeChild(targetCell);
           };
+          console.log("Triangles, target cell:", targetRow.cells.length, targetRow)
           createFilledTriangle(key, annotationColorVariable, "right", highestCell.row, colPos, sequenceGrid, plasmidIndex);
         };
       };
@@ -1476,9 +1479,11 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, annotationColor
       // Find already occupied cells
       occupiedCellsList = [];
       occupiedCellsCounter = 0;
+      console.log("occupiedCells", targetTable.rows[row].cells.length, targetTable.rows[row].cells)
       for (let i = 0; i < targetTable.rows[row].cells.length; i++) {
-        if (targetTable.rows[row].cells[i].attributes.hasOwnProperty('colspan')) {
-          let currColSpan = parseInt(targetTable.rows[row].cells[i].attributes["colspan"].value);
+        console.log("occupiedCell", targetTable.rows[row].cells[i], targetTable.rows[row].cells[i].attributes.hasOwnProperty('feature-id'))
+        if (targetTable.rows[row].cells[i].attributes.hasOwnProperty('feature-id')) {
+          let currColSpan = parseInt(targetTable.rows[row].cells[i].colSpan);
           console.log("Colspan ", currColSpan);
           occupiedCellsCounter++;
           for (let i = 0; i <  currColSpan; i++) {
@@ -1517,9 +1522,9 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, annotationColor
       occupiedCellsList = [];
       occupiedCellsCounter = 0;
       for (let i = 0; i < targetTable.rows[row].cells.length; i++) {
-        if (targetTable.rows[row].cells[i].attributes.hasOwnProperty('colspan')) {
-          let currColSpan = parseInt(targetTable.rows[row].cells[i].attributes["colspan"].value);
-          console.log("Colspan ", currColSpan);
+        if (targetTable.rows[row].cells[i].attributes.hasOwnProperty('feature-id')) {
+          let currColSpan = parseInt(targetTable.rows[row].cells[i].colSpan);
+          console.log("Colspan", currColSpan);
           occupiedCellsCounter++;
           for (let i = 0; i <  currColSpan; i++) {
             occupiedCellsList.push(true);
@@ -1572,18 +1577,16 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, annotationColor
   mainCell.setAttribute("feature-id", featureId)
 
   // Remove extra cells
-  let k = 0;
   colspan--;
-  //console.log("Merge cells, to delete: ", row, col, colspan, table.rows[row].cells.length);
-  for (let j = col + 1; j < col + colspan + 1; j++) {
-    const cell = targetTable.rows[row].cells[j - k];
+  console.log("Merge cells, to delete: ", row, col, colspan, targetTable.rows[row].cells.length);
+  for (let j = 0; j < colspan; j++) {
+    const cell = targetTable.rows[row].cells[col + 1];
     if (cell) {
-      //console.log("Merge cells, deleting: ", row, j-k, table.rows[row].cells.length)
+      //console.log("Merge cells, deleting: ", row, col + 1, j, targetTable.rows[row].cells.length)
       cell.parentNode.removeChild(cell);
     };
-    k++;
   };
-  //console.log("Merge cells, after del: ",table.rows[row].cells.length)
+  console.log("Merge cells, after del: ",targetTable.rows[row].cells.length)
 };
 
 
