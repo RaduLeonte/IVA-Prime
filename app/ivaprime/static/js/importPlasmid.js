@@ -1689,10 +1689,10 @@ const promoters = {"CMV": "CGCAAATGGGCGGTAGGCGTG",
  * Convert sequence indices to table coordinates
  */
 function seqIndexToCoords(inputIndex, targetRow, inputGridStructure) {
-  //console.log("Translating, seqIndexCoords before:", inputIndex, targetRow, inputGridStructure)
-  let outputRow = (Math.floor(inputIndex / gridWidth))*inputGridStructure.length + targetRow;
-  let outputIndex = inputIndex - Math.floor(inputIndex / gridWidth)*gridWidth - 1;
-  //console.log("Translating, seqIndexCoords done:", outputRow, outputIndex, inputGridStructure)
+  console.log("Translating, seqIndexCoords before:", inputIndex, targetRow, inputGridStructure)
+  let outputRow = (Math.floor((inputIndex - 0.5) / gridWidth))*inputGridStructure.length + targetRow;
+  let outputIndex = inputIndex - Math.floor((inputIndex - 0.5) / gridWidth)*gridWidth - 1;
+  console.log("Translating, seqIndexCoords done:", outputRow, outputIndex, inputGridStructure)
   return [outputRow, outputIndex];
 };
 
