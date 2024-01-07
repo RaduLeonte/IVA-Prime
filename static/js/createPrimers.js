@@ -232,7 +232,7 @@ const exportPrimersDict = {
             })
             .then((workbook) => {
                 const worksheet = workbook.getWorksheet("DNA Order"); // Assuming the second sheet needs to be modified
-                //worksheet.unprotect();
+                worksheet.unprotect();
                 console.log("Microsynth", worksheet.name, primerList);
 
                 for (let i = 0; i < primerList.length; i++) {
