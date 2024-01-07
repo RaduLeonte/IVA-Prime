@@ -620,11 +620,15 @@ function exportDNAFile(plasmidIndex) {
 
 
   function stringToBytes(inputString) {
+    const encoder = new TextEncoder('utf-8');
+    const bytes = encoder.encode(inputString);
+  
     const byteArray = [];
-    for (let i = 0; i < inputString.length; i++) {
-      const byteHex = inputString.charCodeAt(i).toString(16).padStart(2, '0');
+    for (let i = 0; i < bytes.length; i++) {
+      const byteHex = bytes[i].toString(16).padStart(2, '0');
       byteArray.push(byteHex);
     };
+  
     return byteArray.join(' ');
   };
 
