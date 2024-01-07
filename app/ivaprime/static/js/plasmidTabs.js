@@ -29,7 +29,7 @@ function navigateFileHistory(direction) {
         plasmidDict[currentlyOpenedPlasmid]["fileFeatures"] = JSON.parse(JSON.stringify(instance[1]));
         console.log("navigateFileHistory features after", plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]);
 
-        plasmidDict[currentlyOpenedPlasmid]["gridStructure"] = checkAnnotationOverlap(instance[1]);
+        plasmidDict[currentlyOpenedPlasmid]["gridStructure"] = checkAnnotationOverlap(plasmidDict[currentlyOpenedPlasmid]["fileFeatures"], currentlyOpenedPlasmid);
         plasmidDict[currentlyOpenedPlasmid]["sidebarPrimers"] = instance[2];
         plasmidDict[currentlyOpenedPlasmid]["sidebarTable"] = instance[3];
         plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = instance[4];

@@ -1090,7 +1090,7 @@ function removeNonNumeric(inputString) {
  * Check the annotation overlap to see how many rows are needed to accomodate all the annotations.
  * Also changes the gridstructure if more rows are needed for annotations.
  */
-function checkAnnotationOverlap(inputFeatures) {
+function checkAnnotationOverlap(inputFeatures, plasmidIndex) {
   let maximumOverlap = 0;
   
   // Iterate over all features and add their spans to a list
@@ -1139,7 +1139,7 @@ function checkAnnotationOverlap(inputFeatures) {
   // Adjust the grid structure according to maximumOverlap
   let count = 0;
   let listInsertPos = 0;
-  let currentGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
+  let currentGridStructure = plasmidDict[plasmidIndex]["gridStructure"];
   if (!currentGridStructure) {currentGridStructure = defaultGridStructure}
   // Count how many rows are already dedicated to annotations
   for (let i = 0; i < currentGridStructure.length; i++) {
@@ -1200,7 +1200,12 @@ function makeContentGrid(plasmidIndex) {
   sequenceGrid.classList.add("sequence-grid");
 
   let gridHeight = 0;
-  plasmidDict[plasmidIndex]["gridStructure"] = checkAnnotationOverlap(currFeatures, plasmidIndex);
+  console.log("checkAnnotationOverlap", plasmidIndex);
+  for (const key in plasmidDict) {console.log(`checkAnnotationOverlap B4 ${key} ${plasmidDict[key]["gridStructure"] ? plasmidDict[key]["gridStructure"].length : null} ${plasmidDict[key]["gridStructure"]}`)};
+  const newGridStructure = checkAnnotationOverlap(currFeatures, plasmidIndex);
+  console.log("checkAnnotationOverlap newGS", newGridStructure)
+  plasmidDict[plasmidIndex]["gridStructure"] = JSON.parse(JSON.stringify(newGridStructure));
+  for (const key in plasmidDict) {console.log(`checkAnnotationOverlap AF ${key} ${plasmidDict[key]["gridStructure"] ? plasmidDict[key]["gridStructure"].length : null} ${plasmidDict[key]["gridStructure"]}`)};
   let currGridStructure = plasmidDict[plasmidIndex]["gridStructure"];
 
   // Create the grid
@@ -1683,17 +1688,11 @@ const promoters = {"CMV": "CGCAAATGGGCGGTAGGCGTG",
 /**
  * Convert sequence indices to table coordinates
  */
-function seqIndexToCoords(inputIndex, targetRow, currGridStructure) {
-  //console.log("Translating, seqIndexCoords before:", inputIndex, targetRow)
-  let outputRow = (Math.floor(inputIndex / gridWidth))*currGridStructure.length + targetRow;
+function seqIndexToCoords(inputIndex, targetRow, inputGridStructure) {
+  //console.log("Translating, seqIndexCoords before:", inputIndex, targetRow, inputGridStructure)
+  let outputRow = (Math.floor(inputIndex / gridWidth))*inputGridStructure.length + targetRow;
   let outputIndex = inputIndex - Math.floor(inputIndex / gridWidth)*gridWidth - 1;
-  if (outputIndex < 0) {
-    outputRow -= currGridStructure.length;
-    outputIndex = gridWidth - 1;
-  } else if (outputIndex >= gridWidth) {
-
-  };
-  //console.log("Translating, seqIndexCoords done:", outputRow, outputIndex)
+  //console.log("Translating, seqIndexCoords done:", outputRow, outputIndex, inputGridStructure)
   return [outputRow, outputIndex];
 };
 
