@@ -1480,27 +1480,32 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, annotationColor
       occupiedCellsList = [];
       occupiedCellsCounter = 0;
       console.log("occupiedCells", targetTable.rows[row].cells.length, targetTable.rows[row].cells)
-      for (let i = 0; i < targetTable.rows[row].cells.length; i++) {
-        console.log("occupiedCell", targetTable.rows[row].cells[i], targetTable.rows[row].cells[i].attributes.hasOwnProperty('feature-id'))
-        if (targetTable.rows[row].cells[i].attributes.hasOwnProperty('feature-id')) {
-          let currColSpan = parseInt(targetTable.rows[row].cells[i].colSpan);
-          console.log("Colspan ", currColSpan);
-          occupiedCellsCounter++;
-          for (let i = 0; i <  currColSpan; i++) {
-            occupiedCellsList.push(true);
-          };
-        } else {
-          occupiedCellsList.push(false);
-        };
-      };
-      
-      console.log(col, col+colspan-1, row, occupiedCellsList);
-      if (occupiedCellsList.slice(col, col + colspan - 1).every(value => value !== true)) {
-        console.log("Go right ahead sir.")
-        break;
-      } else {
+      if (targetTable.rows[row].cells.length === 1) {
         console.log("Try next row.")
         row++;
+      } else {
+        for (let i = 0; i < targetTable.rows[row].cells.length; i++) {
+          console.log("occupiedCell", targetTable.rows[row].cells[i], targetTable.rows[row].cells[i].attributes.hasOwnProperty('feature-id'))
+          if (targetTable.rows[row].cells[i].attributes.hasOwnProperty('feature-id')) {
+            let currColSpan = parseInt(targetTable.rows[row].cells[i].colSpan);
+            console.log("Colspan ", currColSpan);
+            occupiedCellsCounter++;
+            for (let i = 0; i <  currColSpan; i++) {
+              occupiedCellsList.push(true);
+            };
+          } else {
+            occupiedCellsList.push(false);
+          };
+        };
+        
+        console.log(col, col+colspan, row, occupiedCellsList, occupiedCellsList.slice(col, col + colspan));
+        if (occupiedCellsList.slice(col, col + colspan).every(value => value !== true)) {
+          console.log("Go right ahead sir.")
+          break;
+        } else {
+          console.log("Try next row.")
+          row++;
+        };
       };
     };
   };
@@ -1554,7 +1559,7 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, annotationColor
     col -= nrOccupiedCells;
     col += occupiedCellsCounter;
   };
-  console.log("Merge cells2: ", row, col, colspan, text)
+  console.log("Merge cells2: ", row, col, colspan, text, targetTable.rows[row].cells)
   let mainCell = targetTable.rows[row].cells[col];
   mainCell.rowSpan = rowspan;
   mainCell.colSpan = colspan;
