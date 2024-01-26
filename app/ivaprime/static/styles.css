@@ -513,6 +513,11 @@ body {
   opacity: 15%;
 }
 
+.svg-icon-btn-a-disabled:hover {
+  cursor: auto;
+  background-color: transparent !important;
+}
+
 .svg-icon-btn-a:hover {
   background-color: #5c5c5c;
 }
