@@ -249,15 +249,23 @@ function copySelectionToClipboard(plasmidIndex, special = null) {
     currSelectedText = getComplementaryStrand(currSelectedText).split("").reverse().join("");
   };
   
+  copyStringToClipboard(currSelectedText);
+};
+
+
+/**
+ * Copy string to clipboard
+ */
+function copyStringToClipboard(inputString) {
   // Create a temporary textarea element to copy text to clipboard
   const tempTextArea = document.createElement('textarea');
-  tempTextArea.value = currSelectedText;
+  tempTextArea.value = inputString;
   document.body.appendChild(tempTextArea);
   tempTextArea.select();
   try {
     // Execute the copy command
     document.execCommand('copy');
-    console.log('Copied to clipboard:', currSelectedText);
+    console.log('Copied to clipboard:', inputString);
   } catch (err) {
     console.error('Unable to copy to clipboard:', err);
   } finally {

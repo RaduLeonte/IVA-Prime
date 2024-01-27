@@ -56,9 +56,16 @@ function displayPrimers(primersType, primersDict) {
                 span.style.fontWeight = 'bold';
                 span.textContent = subprimerProperties["seq"];
                 primerSequence.appendChild(span)
-                primerSequence.appendChild(span)
+                //primerSequence.appendChild(span)
             };
         };
+
+        const copyPrimerSequenceButton = document.createElement("a");
+        copyPrimerSequenceButton.href = "#";
+        copyPrimerSequenceButton.setAttribute("onClick", "copyPrimerSequenceToClipboard(this)");
+        copyPrimerSequenceButton.classList.add("copy-primer-btn");
+        copyPrimerSequenceButton.style.backgroundImage = "url('/static/copy_icon.svg')";
+        primerSequence.appendChild(copyPrimerSequenceButton);
 
         const pPrimerInfo = document.createElement('p')
         const spanPrimerInfo = document.createElement('span');
@@ -1305,4 +1312,13 @@ function getComplementaryStrand(inputSequence) {
 function repeatingSlice(str, startIndex, endIndex) {
     const repeatedStr = str.repeat(3); // Copy the string 3 times: ABC_ABC_ABC
     return repeatedStr.slice(startIndex + str.length, endIndex + str.length); // Remap indices to new string then return
+};
+
+
+/**
+ * Copy primer sequence to clipboard
+ */
+function copyPrimerSequenceToClipboard(sourceBtn) {
+    const buttonParent = sourceBtn.parentElement;
+    copyStringToClipboard(buttonParent.innerText)
 };
