@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
             isResizingSidebar = true;
             startX = e.pageX;
             startWidthPercentage  = (resizableSidebar.offsetWidth / resizableSidebar.parentElement.offsetWidth) * 100;
-
+            console.log("resite", startWidthPercentage)
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', onMouseUp);
         };
@@ -24,18 +24,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!isResizingSidebar) return;
     
         let newWidth = startWidthPercentage + ((e.pageX - startX) / resizableSidebar.parentElement.offsetWidth) * 100;
+        console.log("resite", newWidth)
         if (newWidth < sidebarMinWidth) {
             newWidth = sidebarMinWidth;
         } else if (newWidth > sidebarMaxWidth) {
             newWidth = sidebarMaxWidth;
         };
 
-
         resizableSidebar.style.width = `${newWidth}%`;
-        const resizableSidebar2 = document.getElementById('sidebar2');
-        if (resizableSidebar2) {
-            resizableSidebar2.style.width = `${newWidth}%`;
-        };
         updateAnnotationTrianglesWidth();
     };
     

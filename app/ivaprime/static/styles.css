@@ -966,7 +966,7 @@ header {
 .plasmid-content-container {
   display: flex;
   flex-direction: column;
-  width: 100%;
+  flex: 3;
   height: 100%;
   overflow: hidden;
   align-items: stretch;
@@ -980,9 +980,5 @@ header {
   display: flex;
   justify-content: space-between;
   padding: 5px;
-}
-
-.footer-item {
-  
 }
 
