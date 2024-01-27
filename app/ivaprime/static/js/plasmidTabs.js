@@ -214,6 +214,9 @@ function switchPlasmidTab(plasmidIndex) {
     // Refresh undo buttons and set disabled/enabled states
     refreshUndoRedoButtons();
 
+    // Update selection info in the footer
+    updateFooterSelectionInfo();
+
 
     if (subcloningOriginPlasmidIndex !== null && currentlyOpenedPlasmid === subcloningOriginPlasmidIndex) {
         console.log("Marked for subcloning on this tab")
