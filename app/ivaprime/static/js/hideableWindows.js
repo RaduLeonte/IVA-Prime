@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         updateMeltingTemperatureAlgorithmImageSource();
         updateSaltCorrectionImageSource();
+        updateCSSTheme();
         console.log("Updating settings:", JSON.stringify(JSON.parse(getCookieValue('userPreferences') || '{}'), null, 2));
     };
 
@@ -314,3 +315,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     };
 });
+
+
+/**
+ * Update the CSS theme
+ */
+function updateCSSTheme() {
+    console.log("updateCSSTheme to", colorTheme);
+    if (colorTheme === "darkTheme") {
+        document.querySelector("html").setAttribute("data-theme", "dark");
+    } else if (colorTheme === "lightTheme") {
+        document.querySelector("html").setAttribute("data-theme", "light");
+    };
+};
+updateCSSTheme();

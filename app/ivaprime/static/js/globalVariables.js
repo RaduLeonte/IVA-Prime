@@ -82,7 +82,6 @@ const defaultSetingsDict = {
 };
 let colorTheme = (getUserPreference("colorTheme")  !== null) ? getUserPreference("colorTheme") : defaultSetingsDict["colorTheme"];
 
-
 /**
  * createPrimers
  */
