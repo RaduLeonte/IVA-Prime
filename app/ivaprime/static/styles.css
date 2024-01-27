@@ -406,13 +406,9 @@ body {
 }
 
 .search-bar {
-  display: none;
-  background-color: #333;
-  color: #fff;
-  border: none;
-  position: sticky;
-  top: 0px;
-  z-index: 9999;
+  border: 1px black solid;
+  border-radius: 5px;
+  padding: 5px;
 }
 
 .stop-codon-hint{
@@ -980,5 +976,14 @@ header {
   display: flex;
   justify-content: space-between;
   padding: 5px;
+}
+
+.footer-icon-btn-a {
+  background-color: transparent;
+  padding: 0px !important;
+}
+
+.footer-icon-btn-a:hover {
+  background-color: #cecece;
 }
 

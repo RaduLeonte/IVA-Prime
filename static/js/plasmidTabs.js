@@ -48,6 +48,20 @@ function navigateFileHistory(direction) {
 };
 
 
+/**
+ * CTRL + Z or CTRL + SHIFT + Z key combination listener to undo and redo actions
+ */
+document.addEventListener('keydown', function(event) {
+    if ((event.ctrlKey || event.metaKey) && !event.shiftKey && (event.key === 'Z' || event.key === 'z')) {
+        navigateFileHistory(-1);
+    };
+
+    if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'Z' || event.key === 'z')) {
+        navigateFileHistory(1);
+    };
+});
+
+
 function saveProgress(plasmidIndex) {
     const fileSequence = plasmidDict[plasmidIndex]["fileSequence"];
     const fileFeatures = JSON.parse(JSON.stringify(plasmidDict[plasmidIndex]["fileFeatures"]));

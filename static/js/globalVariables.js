@@ -110,7 +110,7 @@ const primerColorCyan = "rgb(140, 202, 242)"
 /**
  * customSearch
  */
-let searchOn = false;
+let searchOn = true;
 
 
 /**

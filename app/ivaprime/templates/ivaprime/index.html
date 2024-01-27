@@ -308,9 +308,7 @@
                     
                     <div class="plasmid-content-container" id="plasmid-content-container">
                         <!-- Plasmid content -->
-                        <div class="content" id="content">
-                            <!-- Custom search -->
-                            <input type="text" id="custom-search-input" class="search-bar" placeholder="Search">  
+                        <div class="content" id="content"> 
                             <!-- Context menu -->
                             <div class="custom-context-menu" style="display: none;">
                                 <div>
@@ -350,9 +348,13 @@
                         <!-- Footer -->
                         <div class="footer" id="footer">
                             <ul class="footer-item horizontal-list">
-                                <li>Search</li>
-                                <li>Up</li>
-                                <li>Down</li>
+                                <li><input type="text" id="custom-search-input" class="search-bar" placeholder="Search"></li>
+                                <li><a class="svg-icon-btn-a footer-icon-btn-a" href="#" style="background-image: url('/static/close_icon.svg');" onclick="clearCustomSearchInput()"></a></li>
+                                <li><a class="svg-icon-btn-a footer-icon-btn-a" href="#" style="background-image: url('/static/arrow_icon.svg');" onclick="navigateSearchResults(-1)"></a></li>
+                                <li><a class="svg-icon-btn-a footer-icon-btn-a" href="#" style="background-image: url('/static/arrow_icon.svg'); transform: scale(1,-1)" onclick="navigateSearchResults(1)"></a></li>
+                                <li><span id="custom-search-counter"></span></li>
+                                <li><input type="checkbox" id="custom-search-compstrand-check" name="Complementary strand"/><label for="custom-search-aa-check">Search in complementary strand</label></li>
+                                <li><input type="checkbox" id="custom-search-aa-check" name="Amino acids"/><label for="custom-search-aa-check">Search AA</label></li>
                             </ul>
 
                             <ul class="footer-item horizontal-list">
