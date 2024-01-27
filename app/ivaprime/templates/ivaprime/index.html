@@ -306,43 +306,61 @@
                         </div>
                     </div>
                     
-                    <!-- Plasmid content -->
-                    <div class="content" id="content">
-                        <!-- Custom search -->
-                        <input type="text" id="custom-search-input" class="search-bar" placeholder="Search">  
-                        <!-- Context menu -->
-                        <div class="custom-context-menu" style="display: none;">
-                            <div>
-                                <h3>IVA Cloning Operations</h3>
-                                <ul>
-                                  <li id="insertion">Insert here</li>
-                                  <li id="deletion" disabled>Delete selection</li>
-                                  <li id="mutation" disabled>Mutate selection</li>
-                                  <li id="replacement" disabled>Replace selection</li>
-                                  <li id="mark-for-subcloning" disabled>Mark selection for subcloning</li>
-                                  <li id="subcloning" disabled>Subclone into selection <br>(<em>no region marked for subcloning</em>)</li>
-                                  <li id="subcloning-with-insertion" disabled>Subclone with insertion into selection</li>
-                                </ul>
-                              </div>  
-                            <div>
-                                <h3>Copy</h3>
-                                <ul>
-                                  <li id="copy-selection">Copy selection</li>
-                                  <li id="copy-complement">Copy complement of selection</li>
-                                  <li id="copy-rev-complement">Copy reverse complement of selection</li>
-                                </ul>
-                              </div>
-                              <div>
-                                <h3>Translation</h3>
-                                <ul>
-                                  <li id="begin-translation" disabled>Begin translation at first ATG</li>
-                                  <li id="translate-selection" disabled>Translate selection (forward strand)</li>
-                                  <li id="translate-selection-rev" disabled>Reverse translate selection (reverse strand)</li>
-                                </ul>
-                              </div>
+                    <div class="plasmid-content-container" id="plasmid-content-container">
+                        <!-- Plasmid content -->
+                        <div class="content" id="content">
+                            <!-- Custom search -->
+                            <input type="text" id="custom-search-input" class="search-bar" placeholder="Search">  
+                            <!-- Context menu -->
+                            <div class="custom-context-menu" style="display: none;">
+                                <div>
+                                    <h3>IVA Cloning Operations</h3>
+                                    <ul>
+                                      <li id="insertion">Insert here</li>
+                                      <li id="deletion" disabled>Delete selection</li>
+                                      <li id="mutation" disabled>Mutate selection</li>
+                                      <li id="replacement" disabled>Replace selection</li>
+                                      <li id="mark-for-subcloning" disabled>Mark selection for subcloning</li>
+                                      <li id="subcloning" disabled>Subclone into selection <br>(<em>no region marked for subcloning</em>)</li>
+                                      <li id="subcloning-with-insertion" disabled>Subclone with insertion into selection</li>
+                                    </ul>
+                                  </div>  
+                                <div>
+                                    <h3>Copy</h3>
+                                    <ul>
+                                      <li id="copy-selection">Copy selection</li>
+                                      <li id="copy-complement">Copy complement of selection</li>
+                                      <li id="copy-rev-complement">Copy reverse complement of selection</li>
+                                    </ul>
+                                  </div>
+                                  <div>
+                                    <h3>Translation</h3>
+                                    <ul>
+                                      <li id="begin-translation" disabled>Begin translation at first ATG</li>
+                                      <li id="translate-selection" disabled>Translate selection (forward strand)</li>
+                                      <li id="translate-selection-rev" disabled>Reverse translate selection (reverse strand)</li>
+                                    </ul>
+                                  </div>
+                            </div>
+                            <!-- Plasmid sequence grid-->
+                            <div id="file-content" class="strands">
+                            </div>
                         </div>
-                        <!-- Plasmid sequence grid-->
-                        <div id="file-content" class="strands">
+
+                        <!-- Footer -->
+                        <div class="footer" id="footer">
+                            <ul class="footer-item horizontal-list">
+                                <li>Search</li>
+                                <li>Up</li>
+                                <li>Down</li>
+                            </ul>
+
+                            <ul class="footer-item horizontal-list">
+                                <li>Selected:</li>
+                                <li><span id="footer-selection-length">0</span> bp</li>
+                                <li><span id="footer-selection-span"></span></li>
+                                <li>Tm = <span id="footer-selection-tm">--</span> °C</li>
+                            </ul>
                         </div>
                     </div>
                 </div>

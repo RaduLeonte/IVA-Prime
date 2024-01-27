@@ -182,6 +182,8 @@ function addCellSelection(sequenceGridTable, plasmidIndex) {
               };
             };
           };
+
+          updateFooterSelectionInfo();
         };
       };
     };
@@ -298,6 +300,7 @@ function clearSelection(plasmidIndex, clearingGlobalVars) {
     plasmidDict[plasmidIndex]["selectionStartPos"] = null;
     plasmidDict[plasmidIndex]["selectionEndPos"] = null;
   };
+  updateFooterSelectionInfo();
 };
 
 
@@ -347,6 +350,7 @@ function selectBySpan(inputSpan) {
   };
 
   plasmidDict[currentlyOpenedPlasmid]["selectedText"] = getSelectedText(currentlyOpenedPlasmid);
+  updateFooterSelectionInfo()
 };
 
 
@@ -405,4 +409,23 @@ function clearSelectionCursors(plasmidIndex) {
  */
 function isShiftKeyPressed() {
   return window.event ? !!window.event.shiftKey : false;
+};
+
+
+/**
+ * Updates current selection info in the footer
+ */
+function updateFooterSelectionInfo() {
+  // Selection length
+  const selectedText = getSelectedText(currentlyOpenedPlasmid);
+  document.getElementById("footer-selection-length").innerText = selectedText.length;
+  
+  // Selection span
+  const footerSelectionSpanStart = Math.min(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"])
+  const footerSelectionSpanEnd = Math.max(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"])
+  document.getElementById("footer-selection-span").innerText = (selectedText !== "") ? "(" + footerSelectionSpanStart + ".." + footerSelectionSpanEnd + ")" : "";
+  
+  // Melting temp
+  const meltingTemp = get_tm(selectedText, primerConc, saltConc, method=meltingTempAlgorithmChoice);
+  document.getElementById("footer-selection-tm").innerText = (selectedText !== "") ? meltingTemp.toFixed(2): "--";
 };

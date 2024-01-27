@@ -962,3 +962,27 @@ header {
   padding: 3px;
   display: inline-block;
 }
+
+.plasmid-content-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  align-items: stretch;
+}
+
+.footer {
+  height: 30px;
+  background-color: #f0f0f0;
+  border-top: 3px #b8b8b8 solid;
+
+  display: flex;
+  justify-content: space-between;
+  padding: 5px;
+}
+
+.footer-item {
+  
+}
+
