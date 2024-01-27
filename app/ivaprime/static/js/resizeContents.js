@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
             startWidthPercentage  = (resizableSidebar.offsetWidth / resizableSidebar.parentElement.offsetWidth) * 100;
             console.log("resite", startWidthPercentage)
             document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('selectstart', disableTextSelection);
             document.addEventListener('mouseup', onMouseUp);
         };
     });
@@ -34,11 +35,16 @@ document.addEventListener('DOMContentLoaded', function() {
         resizableSidebar.style.width = `${newWidth}%`;
         updateAnnotationTrianglesWidth();
     };
+
+    function disableTextSelection(e) {
+        e.preventDefault();
+    };
     
     function onMouseUp() {
         isResizingSidebar = false;
         document.documentElement.style.cursor = 'auto';
         document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('selectstart', disableTextSelection);
         document.removeEventListener('mouseup', onMouseUp);
     };
 
