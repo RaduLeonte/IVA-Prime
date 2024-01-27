@@ -987,3 +987,25 @@ header {
   background-color: #cecece;
 }
 
+.copy-primer-btn {
+  font-size: 28px;
+  font-weight: bold;
+  background-color: transparent;
+  border-radius: 5px;
+  display: inline-block;
+  text-align: center;
+  height: 20px;
+  width: 20px;
+  padding: 5px !important;
+  vertical-align:middle;
+
+  /* Add the background image properties */
+  background-size: 20px 20px; /* Adjust to the desired size */
+  background-repeat: no-repeat;
+  background-position: center center; /* Center the background image */
+  fill: white;
+}
+
+.copy-primer-btn:hover {
+  background-color: #cecece;
+}
