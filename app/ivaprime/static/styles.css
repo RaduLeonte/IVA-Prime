@@ -2,41 +2,77 @@
   COLOR THEMES
 */
 [data-theme="light"] {
+  /* Theme colors */
   --text-color: #000000;
-  --sequence-grid-color: #fff;
+  --bg-color1: #fff;
+  --bg-color2: #f2f2f2;
+  --bg-color3: #f9f9f9;
+  --bg-hover: #dcdcdc;
+  --footer-icon-hover: #dcdcdc;
+  --header-color: #333333;
+  --header-text-color: #fff;
+  --header-btn-hover:#5c5c5c; 
+  --border-color: #b8b8b8;
 
-  --sidebar-color: #f2f2f2;
-  --sidebar-table-header-color: #f0f0f0;
-  --sidebar-table-alt-color: #f9f9f9;
-  --sidebar-table-hover-color: #dcdcdc;
-
+  /* Context menu */
   --context-menu-bg-color: #333;
   --context-menu-h3-color: #555;
   --context-menu-border-color: #ccc;
   --context-menu-text-color: #fff;
-  --context-menu-text-disabled: gray;
   --context-menu-li-hover: #555;
 
-  --svg-filter: 0;
+  /* SVG invert filter value */
+  --svg-filter: 0%;
 
+  /* Cell hover effects */
   --sequence-grid-cell-hover: #e0e0e0;
   --sequence-grid-cell-selected: rgba(0, 150, 255, 0.2);
   --sequence-grid-cell-selected-search: yellow;
 
+  /* Sequence grid cursors */
   --hover-cursor: red;
   --selection-cursors: purple;
+
+  /* Subcloning */
+  --subcloning-background: rgba(128, 0, 128, 0.2);
+  --subcloning-border: #ae70ae; 
 }
 
 [data-theme="dark"] {
-  --text-color: #ebebeb;
-  --bkg-color: #000000;
+  /* Theme colors */
+  --text-color: #ffffff;
+  --bg-color1: #101217;
+  --bg-color2: #1c2028;
+  --bg-color3: #1a1a20;
+  --bg-hover: #2f394d;
+  --footer-icon-hover: #d0c6b2;
+  --header-color: #171a24;
+  --header-text-color: #ffffff;
+  --header-btn-hover:#374164;
+  --border-color: #34373c;
 
-  --sidebar-color: #000000;
-  --sidebar-table-header-color: #222222;
-  --sidebar-table-alt-color: #0f0f0f;
-  --sidebar-table-hover-color: #292929;
+  /* Context menu */
+  --context-menu-bg-color: #1a1a20;
+  --context-menu-h3-color: #343b55;
+  --context-menu-border-color: #b5bfcc;
+  --context-menu-text-color: #fff;
+  --context-menu-li-hover: #2f394d;
 
+  /* SVG invert filter value */
   --svg-filter: 100%;
+
+  /* Cell hover effects */
+  --sequence-grid-cell-hover: #393939;
+  --sequence-grid-cell-selected: rgba(62, 175, 255, 0.2);
+  --sequence-grid-cell-selected-search: #932b21;
+
+  /* Sequence grid cursors */
+  --hover-cursor: #fb5555;
+  --selection-cursors: #ce59ce;
+
+  /* Subcloning */
+  --subcloning-background: rgba(255, 70, 255, 0.2);
+  --subcloning-border: #a652a6;
 }
 
 /*
@@ -61,8 +97,9 @@ body {
   height: 100vh;
   width: 100vw;
 
-  background-color: var(--bkg-color);
+  background-color: var(--bg-color1);
   color: var(--text-color);
+  transition: background-color 400ms ease-in-out;
 }
 
 /* 
@@ -74,7 +111,7 @@ body {
   display: none;
   background-color: var(--context-menu-bg-color);
   color: var(--context-menu-text-color);
-  border: 1px solid var(--context-menu-border-color);
+  border: 2px solid var(--context-menu-border-color);
   padding: 8px;
   box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
   z-index: 9999;
@@ -96,10 +133,9 @@ body {
 }
 
 .custom-context-menu li.disabled {
-  color: var(--context-menu-text-disabled);
   cursor: not-allowed;
   pointer-events: none;
-  opacity: 0.5;
+  opacity: 0.2;
 }
 
 .custom-context-menu .group {
@@ -142,7 +178,6 @@ body {
 }
   
 #header-list-right #tm-calc-btn a {
-  background-color: #333;
   color: white;
   border-radius: 5px;
   text-align: center;
@@ -150,7 +185,7 @@ body {
 }
 
 #header-list-right #tm-calc-btn a:hover {
-  background-color: #5c5c5c;
+  background-color: var(--header-btn-hover);
 }
 
 #import-btn a {
@@ -177,30 +212,6 @@ body {
   background-color: #FF8000;
 }
 
-#import-second-demo-btn a {
-  background-color:  #FF9900;
-  color: white;
-  border-radius: 5px;
-  display: block;
-  text-align: center;
-}
-
-#import-second-demo-btn a:hover {
-  background-color: #FF8000;
-}
-
-#import-second-btn a {
-  background-color: #9932CC;
-  color: white;
-  border-radius: 5px;
-  display: block;
-  text-align: center;
-}
-
-#import-second-btn a:hover {
-    background-color: #800080;
-}
-
 .info-window-btn {
   text-decoration: none;
   display: inline-block !important;
@@ -209,15 +220,15 @@ body {
 
 .info-window-menu-btn {
   color: white;
-  background-color: #333;
   padding: 6px 12px;
   display: inline-block;
   border: 1px solid #ccc;
   box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+  background-color: var(--context-menu-bg-color);
 }
 
 .info-window-menu-btn:hover {
-  background-color: #555;
+  background-color: var(--context-menu-li-hover);
 }
 
 .info-window-create-primers-btn{
@@ -236,9 +247,9 @@ body {
   SIDEBAR
 */
 .sidebar {
-  background-color: var(--sidebar-color);
+  background-color: var(--bg-color2);
   overflow-y: scroll;
-  border-right: #b8b8b8;
+  border-right: var(--border-color);
   border-right-style: solid;
   display: block;
 }
@@ -252,21 +263,21 @@ body {
 .sidebar-table th,
 .sidebar-table td {
     padding: 12px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
 }
 
 .sidebar-table th {
-    background-color: var(--sidebar-table-header-color);
+    background-color: var(--bg-color2);
     font-weight: bold;
     text-align: left;
 }
 
 .sidebar-table tr:nth-child(even) {
-    background-color: var(--sidebar-table-alt-color);
+    background-color: var(--bg-color3);
 }
 
 .sidebar-table tr:hover {
-  background-color: var(--sidebar-table-hover-color);
+  background-color: var(--bg-hover);
   cursor: pointer;
 }
 
@@ -331,7 +342,8 @@ body {
 }
 
 td.AminoAcids {
-  color: grey;
+  color: var(--text-color);
+  opacity: 0.5;
 }
 
 .Annotations {
@@ -344,7 +356,7 @@ td.AminoAcids {
 }
 
 .forward-strand-base {
-  border-bottom: 3px solid gray !important;
+  border-bottom: 3px solid var(--border-color) !important;
 }
 
 .sequence-grid td.selected-cell {
@@ -360,6 +372,10 @@ td.AminoAcids {
   flex-wrap: wrap;
 }
 
+#Spacer-row {
+  height: 20px;
+}
+
 #sequence-row td, #complementary-row td, #empty-row td {
   width: 20px;
   height: 20px;
@@ -370,13 +386,13 @@ td.AminoAcids {
 */
 .hover-popup {
   position: absolute;
-  background-color: #ffffff;
+  background-color: var(--bg-color1);
   padding: 5px;
-  border: 1px solid #cccccc;
+  border: 2px solid var(--border-color);
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   font-size: 14px;
-  color: #333333;
+  color: var(--text-color);
 }
 
 /*
@@ -387,8 +403,8 @@ td.AminoAcids {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: #f2f2f2;
-  border: 1px solid #ccc;
+  background-color: var(--bg-color2);
+  border: 2px solid var(--border-color);
   padding: 20px;
   box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
   z-index: 9999;
@@ -438,12 +454,13 @@ td.AminoAcids {
   width: fill-available;
   padding: 5px;
   margin-bottom: 10px;
+  color: var(--text-color);
+  background-color: var(--bg-color1);
 }
 
 /* Hint text in popup window */
 .stop-codon-hint{
   margin-top: 0px;
-  color: #555;
   font-size: 14px;
 }
 
@@ -457,6 +474,8 @@ td.AminoAcids {
   border: 1px black solid;
   border-radius: 5px;
   padding: 5px;
+  color: var(--text-color);
+  background-color: var(--bg-color1);
 }
 
 /*
@@ -500,7 +519,6 @@ td.AminoAcids {
 .svg-icon-btn-a {
   font-size: 28px;
   font-weight: bold;
-  background-color: #333;
   color: white;
   border-radius: 5px;
   display: inline-block;
@@ -525,7 +543,7 @@ td.AminoAcids {
 }
 
 .svg-icon-btn-a:hover {
-  background-color: #5c5c5c;
+  background-color: var(--header-btn-hover);
 }
 
 /*
@@ -533,8 +551,8 @@ td.AminoAcids {
 */
 .hideable-window {
   position: fixed;
-  background-color: #f2f2f2;
-  border: 1px solid #ccc;
+  background-color: var(--bg-color2);
+  border: 2px solid var(--border-color);
   padding: 20px;
   box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
   z-index: 9999;
@@ -560,6 +578,10 @@ td.AminoAcids {
   margin-bottom: 10px;
 }
 
+.equation-image {
+  filter: invert(var(--svg-filter))
+}
+
 .settings-window-row {
   margin-bottom: 10px;
 }
@@ -572,26 +594,6 @@ td.AminoAcids {
 .settings-window-row input {
   display: inline-block;
   max-width: 50%;
-}
-
-.tm-calc-window {
-  position: fixed;
-  background-color: #f2f2f2;
-  border: 1px solid #ccc;
-  padding: 20px;
-  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-  z-index: 9999;
-  flex-direction: column;
-  align-items: center;
-}
-
-.tm-calc-window h2 {
-  margin: 0 0 10px;
-}
-
-.tm-calc-window label {
-  display: block;
-  margin-bottom: 5px;
 }
 
 .standard-btn-a {
@@ -669,10 +671,6 @@ td.AminoAcids {
   padding: 0px !important;
 }
 
-#Spacer-row {
-  height: 20px;
-}
-
 .sidebar-table tr td {
   position: relative;
 }
@@ -741,8 +739,8 @@ td.AminoAcids {
 }
 
 header {
-  background-color: #333;
-  color: #fff;
+  background-color: var(--header-color);
+  color: var(--header-text-color);
   top: 0;
   left: 0;
   right: 0;
@@ -821,7 +819,7 @@ header {
 }
 
 .plasmid-tab:hover {
-  background: #646464;
+  background: var(--header-btn-hover);
 }
 
 .plasmid-tab, .plasmid-tab a {
@@ -864,17 +862,18 @@ header {
 
 .plasmid-tab-dropdown-menu {
   position: fixed;
-  background-color: #fff;
+  background-color: var(--bg-color2);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   padding: 5px;
   margin: 0;
   max-width: 300px;
+  border: 2px solid var(--border-color);
 }
 
 .plasmid-tab-dropdown-menu h3 {
   margin: 0;
   padding: 5px;
-  background-color: #555;
+  background-color: var(--context-menu-h3-color);
   color: #fff;
   font-size: 16px;
 }
@@ -885,23 +884,15 @@ header {
   list-style: none;
 }
 
-.plasmid-tab-dropdown-menu ul li:last-child {
-  border-bottom: 2px solid #b8b8b8;
-}
-
-.plasmid-tab-dropdown-menu ul:last-child li:last-child {
-  border-bottom: 0px solid #b8b8b8;
-}
-
 .plasmid-tab-dropdown-menu ul a {
-  color: black;
+  color: var(--text-color);
   padding: 10px 20px;
   text-decoration: none;
   display: block;
 }
 
 .plasmid-tab-dropdown-menu ul a:hover {
-  background-color: #ddd;
+  background-color: var(--bg-hover);
 }
 
 #scroll-left, #scroll-right {
@@ -914,28 +905,28 @@ header {
   SUBCLONING
 */
 .subcloning-target-cell {
-  background-color: rgba(128, 0, 128, 0.2);
-  border-top: 4px dashed #ae70ae;
-  border-bottom: 4px dashed #ae70ae !important;
+  background-color: var(--subcloning-background);
+  border-top: 4px dashed var(--subcloning-border);
+  border-bottom: 4px dashed var(--subcloning-border) !important;
 }
 
 .subcloning-target-cell-first {
-  background-color: rgba(128, 0, 128, 0.2);
-  border-top: 4px dashed #ae70ae;
-  border-left: 4px dashed #ae70ae;
-  border-bottom: 4px dashed #ae70ae !important;
+  background-color: var(--subcloning-background);
+  border-top: 4px dashed var(--subcloning-border);
+  border-left: 4px dashed var(--subcloning-border);
+  border-bottom: 4px dashed var(--subcloning-border) !important;
 }
 
 .subcloning-target-cell-last {
-  background-color: rgba(128, 0, 128, 0.2);
-  border-top: 4px dashed #ae70ae;
-  border-right: 4px dashed #ae70ae;
-  border-bottom: 4px dashed #ae70ae !important;
+  background-color: var(--subcloning-background);
+  border-top: 4px dashed var(--subcloning-border);
+  border-right: 4px dashed var(--subcloning-border);
+  border-bottom: 4px dashed var(--subcloning-border) !important;
 }
 
 .subcloning-target-cell-info-window {
-  background-color: rgba(128, 0, 128, 0.2);
-  border: 4px dashed #ae70ae;
+  background-color: var(--subcloning-background);
+  border: 4px dashed var(--subcloning-border);
   padding: 3px;
   display: inline-block;
 }
@@ -945,8 +936,8 @@ header {
 */
 .footer {
   height: 30px;
-  background-color: var(--sidebar-color);
-  border-top: 3px #b8b8b8 solid;
+  background-color: var(--bg-color2);
+  border-top: 3px var(--border-color) solid;
 
   display: flex;
   justify-content: space-between;
@@ -956,10 +947,11 @@ header {
 .footer-icon-btn-a {
   background-color: transparent;
   padding: 0px !important;
+  filter: invert(var(--svg-filter));
 }
 
 .footer-icon-btn-a:hover {
-  background-color: #cecece;
+  background-color: var(--footer-icon-hover);
 }
 
 /*
@@ -981,8 +973,9 @@ header {
   background-repeat: no-repeat;
   background-position: center center;
   fill: white;
+  filter: invert(var(--svg-filter));
 }
 
 .copy-primer-btn:hover {
-  background-color: #cecece;
+  background-color: var(--footer-icon-hover);
 }
