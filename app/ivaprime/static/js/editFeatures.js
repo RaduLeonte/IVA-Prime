@@ -90,11 +90,41 @@ function updateElementText(e, newText, originalText) {
     e.textContent = (newText !== "") ? newText.replaceAll("...", ""): originalText.replaceAll("...", "");
   } else if (e.tagName === "A") {
     e.textContent = (newText !== "") ? newText: originalText;
-  } else if (e.id === "primers-type" || e.id === "primer-id") {
+  } else if (e.id === "primers-type") {
+    // When editing the primer pair headline, automatically change the individual forward and reverse primer ids
+    e.textContent = (newText !== "") ? newText: originalText; // Change text content to new text
+    // If the text has changed
+    if (originalText !== newText && newText !== "") {
+      e.setAttribute("edited", true)
+      // Update individual primer ids
+      const modDiv = e.parentElement;
+      const primerDivsList = modDiv.querySelectorAll("#primer-div");
+      console.log("Editing", e, modDiv)
+      let primerCounter = 0;
+      primerDivsList.forEach(function(pDiv) {
+        const primerIdElement = pDiv.firstElementChild;
+        console.log(primerIdElement)
+
+        const primerDirection = (primerCounter % 2 === 0) ? "_fwd": "_rev";
+        const vectorPrimerString = (primerCounter > 1) ? "_vec": "";
+        primerIdElement.textContent = newText + vectorPrimerString + primerDirection;
+        primerIdElement.setAttribute("edited", true)
+
+        primerCounter++;
+      });
+    };
+
+  } else if (e.id === "primer-id") {
     e.textContent = (newText !== "") ? newText: originalText;
     if (originalText !== newText && newText !== "") {e.setAttribute("edited", true)};
   } else {
     e.textContent = newText;
+  };
+
+  // Make sure changes get saved
+  if (originalText !== newText && newText !== "") {
+    savePrimers();
+    saveProgress(currentlyOpenedPlasmid);
   };
 };
 

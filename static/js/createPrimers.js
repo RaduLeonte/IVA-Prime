@@ -103,7 +103,7 @@ function getPrimersAsTable(plasmidIndex, includeColumnNames = false) {
         const currentDiv = modDivs[i];
         const h3Div = currentDiv.querySelector("#primers-type");
         const modType = h3Div.getAttribute("primers-type").replace(" ", "_");
-        console.log("Mod Type", modType);
+        console.log("Mod Type2", modType);
         console.log(currentDiv)
         const primerDivs = currentDiv.querySelectorAll("#primer-div");
         console.log(primerDivs)
@@ -122,7 +122,7 @@ function getPrimersAsTable(plasmidIndex, includeColumnNames = false) {
             // id edited -> id
             // h3 edited -> id from h3
             // none edited -> default
-            console.log("Edited", idEdited, idEdited === "true", h3Edited, h3Edited === "true")
+            console.log("Edited2", primerIdDiv, idEdited, idEdited === "true", h3Edited, h3Edited === "true")
             if (idEdited === "true") {
                 primerId = primerIdDiv.innerText;
             } else if (h3Edited === "true") {
