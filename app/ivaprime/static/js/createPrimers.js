@@ -435,6 +435,86 @@ function primerExtension(startingPos, targetStrand, direction, targetTm, method,
 
 
 /**
+ *  Calculates the standard deviation from a list of numbers
+ */
+function standardDeviation(numbers) {
+    const mean = numbers.reduce((acc, val) => acc + val, 0) / numbers.length;
+    const squaredDifferences = numbers.map(num => Math.pow(num - mean, 2));
+    const variance = squaredDifferences.reduce((acc, val) => acc + val, 0) / numbers.length;
+    const stdDev = Math.sqrt(variance);
+    return stdDev;
+};
+
+
+/**
+ * Scales the codon frequencies in the input table to give more weight to more common codons and less to rare codons
+ * Works by exponentiating each frequency by a factor determiend using the standard deviation of the distribution.
+ */
+function scaleCodonFrequencies(inputTable) {
+    //console.log("scaleCodonFrequencies b4", inputTable);
+
+    for (let aa in inputTable) {
+        const aaDict = inputTable[aa];
+        //console.log("scaleCodonFrequencies", aa, aaDict);
+
+        let frequencyData = [];
+        let codons = [];
+        for (let codonFreq in aaDict) {
+            frequencyData.push(parseFloat(codonFreq));
+            codons.push(aaDict[codonFreq]);
+        };
+        //console.log("scaleCodonFrequencies", aa, codons, frequencyData);
+
+        // Don't scale if there is only 1 possible codon
+        if (frequencyData.length > 1) {
+            // Powerfactor is square root of the inverse of the standard deviation
+            // the more extreme the differences, the less the scaling should be
+            // square root also reduced the size of the factor nicely, but was chosen arbitrarily
+            const powerFactor = Math.sqrt(1/standardDeviation(frequencyData));
+            frequencyData = frequencyData.map(freq => Math.pow(freq, powerFactor));
+
+            // Normalise
+            let dataSum = 0;
+            for (let i = 0; i < frequencyData.length; i++) {dataSum += frequencyData[i]}
+            frequencyData = frequencyData.map(freq => freq / dataSum);
+        };
+
+        let newAADict = {};
+        for (let i = 0; i < frequencyData.length; i++) {
+            newAADict[frequencyData[i]] = codons[i]
+        }
+        inputTable[aa] = newAADict;
+    };
+
+    //console.log("scaleCodonFrequencies after", inputTable);
+    return inputTable
+};
+
+
+/**
+ * Weighted random codon selection
+ */
+function weightedCodonRandomSelect(frequenciesDict) {
+    const possibilityArray = Object.entries(frequenciesDict).map(([weight, value]) => ({ weight: parseFloat(weight), value }));
+    const totalWeight = possibilityArray.reduce((acc, possibility) => acc + possibility.weight, 0);
+    
+    const randomNumber = Math.random() * totalWeight;
+    
+    let cumulativeWeight = 0;
+    for (const possibility of possibilityArray) {
+        cumulativeWeight += possibility.weight;
+        if (randomNumber <= cumulativeWeight) {
+            return possibility.value;
+        };
+    };
+};
+
+
+/**
+ * Calculate GC content of a string
+ */
+
+/**
  * Takes in a sequence of amino acids (inputAA) as input and returns the DNA sequence with
  * the lowest melting temperature. This function calls generateDNASequences to create all
  * possible DNA sequences for the specified amino acid sequence.
@@ -455,13 +535,13 @@ function optimizeAA(inputAA, targetOrganism) {
         let tripletToAdd = "";
         for (let i = 0; i < inputAA.length; i++) {
             frequenciesList = Object.keys(organismCodonTable[inputAA[i]])
-            console.log("Optimizer:", frequenciesList)
+            console.log("optimizeAA", frequenciesList)
             tripletToAdd = organismCodonTable[inputAA[i]][frequenciesList[0]]
             
             outputSequence += tripletToAdd
-            console.log("Optimizer:", tripletToAdd)
+            console.log("optimizeAA", tripletToAdd)
         };
-        console.log("Optimizer:", targetOrganism, inputAA, outputSequence)
+        console.log("optimizeAA", targetOrganism, inputAA, outputSequence)
         return outputSequence;
     };
 
@@ -471,16 +551,22 @@ function optimizeAA(inputAA, targetOrganism) {
     let outputSequence = "";
     let organismCodonTable = codonTablesDict[targetOrganism];
 
+    // Scale frequency distribution to give more weight to frequent codons and less to rare ones
+    organismCodonTable = scaleCodonFrequencies(organismCodonTable);
+
     let tripletToAdd = "";
     for (let i = 0; i < inputAA.length; i++) {
         frequenciesList = Object.keys(organismCodonTable[inputAA[i]])
-        console.log("Optimizer:", frequenciesList)
-        tripletToAdd = organismCodonTable[inputAA[i]][frequenciesList[0]]
+        //console.log("optimizeAA", frequenciesList)
+        //tripletToAdd = organismCodonTable[inputAA[i]][frequenciesList[0]]
+        tripletToAdd = weightedCodonRandomSelect(organismCodonTable[inputAA[i]])
+        //console.log("optimizeAA", inputAA[i], tripletToAdd, organismCodonTable[inputAA[i]])
         
         outputSequence += tripletToAdd
-        console.log("Optimizer:", tripletToAdd)
+        //console.log("optimizeAA", tripletToAdd)
     };
-    console.log("Optimizer:", targetOrganism, inputAA, outputSequence)
+
+    console.log("optimizeAA", targetOrganism, inputAA, outputSequence, fractionGC(outputSequence) )
     return outputSequence;
 };
 
