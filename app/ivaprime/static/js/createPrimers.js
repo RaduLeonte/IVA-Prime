@@ -666,7 +666,7 @@ function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  repl
             let primersDict = {}
             const primerInfoFwd = `(Homologous region: ${homoFwd.length} bp, ${Math.round(get_tm(homoFwd, primerConc, saltConc, "oligoCalc"))} °C;
                                     Template binding region: ${tempFwd.length} bp, ${Math.round(get_tm(tempFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
-                                    Total: ${(tempFwd.length + seqToInsert.length + tempFwd.length)} bp)`;
+                                    Total: ${(homoFwd.length + seqToInsert.length + tempFwd.length)} bp)`;
             const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(get_tm(tempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
                                     Total: ${(tempRev.length)} bp)`;
             primersDict["Forward Primer"] = {1: {"seq": homoFwd, "color": primerColorOrange},
