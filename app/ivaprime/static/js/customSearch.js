@@ -12,15 +12,9 @@ function initiateSearchFunctionality() {
     // Event listener for ctrl F or cmd F
     document.addEventListener('keydown', function(event) {
         if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
-            if (!searchOn) {
-                event.preventDefault(); // Prevent default search functionality
-                // Make search bar visible
-                customSearchInput.value = "";
-                customSearchInput.focus();
-            } else { // Disable
-                event.preventDefault();
-                resetTableCells();
-            };
+            event.preventDefault(); // Prevent default search functionality
+            customSearchInput.focus();
+            customSearchInput.select();
         };
     });
 };
