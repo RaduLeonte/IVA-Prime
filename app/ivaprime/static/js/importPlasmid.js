@@ -90,6 +90,7 @@ async function handleFileSelect(event, plasmidIndex=0, serverFile=null) {
       plasmidDict[plasmidIndex]["fileSequence"] = parsedFile.fileSequence;
       plasmidDict[plasmidIndex]["fileComplementarySequence"] = parsedFile.fileComplementarySequence;
       plasmidDict[plasmidIndex]["fileFeatures"] = parsedFile.fileFeatures;
+      plasmidDict[plasmidIndex]["translations"] = {"forward": [], "reverse": []};
       plasmidDict[plasmidIndex]["selectedText"] = "";
       plasmidDict[plasmidIndex]["selectionStartPos"] = null;
       plasmidDict[plasmidIndex]["selectionEndPos"] = null;
@@ -1814,6 +1815,7 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGrid
   // Start translating until a stop codon is encountered
   //console.log("Starting translationa at " + codonPos + "(" + row + ", " + col + ").");
   let aaIndex = 1;
+  let translatedSequence = "";
   while (true) {
     // Select current codon
     let codon = repeatingSlice(currSequence, codonPos - 1, codonPos + 2);
@@ -1823,6 +1825,7 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGrid
     };
     // Get the corresponding amino acid
     let aminoAcid = translateCodon(codon);
+    translatedSequence += aminoAcid;
 
     // Fill the cells
     fillAACells(row, col, aminoAcid, targetTable, currGridStructure, aaIndex);
@@ -1843,6 +1846,11 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGrid
       break;
     };
   };
+
+  const translationSpan = (targetStrand === "fwd") ? [rangeStart, rangeEnd]: [rangeEnd, rangeStart];
+  const translationDict = {"span": translationSpan, "sequence": translatedSequence}
+  const targetDict = (targetStrand === "fwd") ? "forward": "reverse";
+  plasmidDict[plasmidIndex]["translations"][targetDict].push(translationDict);
 };
 
 
