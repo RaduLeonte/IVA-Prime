@@ -669,7 +669,7 @@ function exportDNAFile(plasmidIndex) {
   // File magic bytes (19)
   addBytes("09 00 00 00 0e 53 6e 61 70 47 65 6e 65 00 01 00 0f 00 13");
   // File type designation byte (unknown 00, dna 01, rna 20, prot 15)
-  addBytes("01");
+  addBytes("00");
 
   // sequence length +1 (4 bytes)
   addBytes(inToHexBytes(currSequence.length + 1));
@@ -869,7 +869,7 @@ function exportDNAFile(plasmidIndex) {
 
   // Serialize the XML tree to a string
   const serializer = new XMLSerializer();
-  const xmlString = serializer.serializeToString(xmlDoc).replace(/[\n\r]/g, '');;
+  const xmlString = serializer.serializeToString(xmlDoc).replace(/[\n\r]/g, '').replace(" encoding=\"UTF-8\"", "");
 
   // Now, xmlString contains the XML structure as a string
   //downloadFile('featuresXMLTree', xmlString, 'xml');
