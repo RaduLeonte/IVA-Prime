@@ -751,6 +751,7 @@ function exportDNAFile(plasmidIndex) {
           xmlSegmentElement.setAttribute('color', "#ffffff");
         };
         xmlSegmentElement.setAttribute('type', "standard");
+
         xmlFeatureElement.appendChild(xmlSegmentElement) // Append
 
         // Q mol_type
@@ -785,7 +786,7 @@ function exportDNAFile(plasmidIndex) {
         const xmlFeatureElement = xmlDoc.createElement('Feature');
         xmlFeatureElement.setAttribute('recentID', i + "");
         i++;
-        xmlFeatureElement.setAttribute('name', value["label"].replace(/\d+$/, '').trim());
+        xmlFeatureElement.setAttribute('name', value["label"]);
         xmlFeatureElement.setAttribute('directionality', (!value["span"].includes("complement")) ? "1": "2");
         xmlFeatureElement.setAttribute('type', key.replace(/\d+$/, '').trim());
         xmlFeatureElement.setAttribute('allowSegmentOverlaps', "0");
@@ -801,6 +802,12 @@ function exportDNAFile(plasmidIndex) {
           xmlSegmentElement.setAttribute('color', "#ffffff");
         };
         xmlSegmentElement.setAttribute('type', "standard");
+
+        // If feature is translated, add segment attribute
+        if (value["translation"]) {
+          xmlSegmentElement.setAttribute('translated', "1");
+        };
+
         xmlFeatureElement.appendChild(xmlSegmentElement) // Append
 
         // Q Label
