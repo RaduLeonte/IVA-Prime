@@ -469,6 +469,28 @@ function getFileName(plasmidIndex) {
 
 
 /**
+ * FASTA file exporter.
+ */
+function exportFASTAFile(plasmidIndex) {
+  // Output file name
+  const outputFileExtension = "fasta";
+  const outputFileName = getFileName(plasmidIndex);
+  
+  // Init variables
+  let outputFileContent = "";
+
+  // Select target sequence and features
+  const currSequence = plasmidDict[plasmidIndex]["fileSequence"];
+
+  outputFileContent += ">" + outputFileName + "\n";
+  outputFileContent += "currSequence";
+
+  // Send for download
+  downloadFile(outputFileName, outputFileContent, outputFileExtension);
+};
+
+
+/**
  * GB file exporter.
  * TO DO:
  * - rn scrubs most info in the header
