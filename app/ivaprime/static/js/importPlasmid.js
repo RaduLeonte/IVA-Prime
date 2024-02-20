@@ -470,6 +470,8 @@ function getFileName(plasmidIndex) {
 
 /**
  * GB file exporter.
+ * TO DO:
+ * - rn scrubs most info in the header
  */
 function exportGBFile(plasmidIndex) {
   // Output file name
@@ -485,53 +487,53 @@ function exportGBFile(plasmidIndex) {
   const currFeatures = plasmidDict[plasmidIndex]["fileFeatures"];
 
   /**
-   * Fil header
+   * File header
    */
-  let currFileHeaderDict = null;
-  const originalFileExtension = plasmidDict[plasmidIndex]["fileExtension"];
-  // GB -> GB
-  if (originalFileExtension === outputFileExtension) {
-    currFileHeaderDict = plasmidDict[plasmidIndex]["fileHeader"];
-  // DNA -> GB, make new header
-  } else {
-    /**
-     * dict = {"0": {"name":"LOCUS","value":"[name]\t[seq length] bp"},
-     *         "1": {"name":"DEFINITION","value":"."},
-     *         }
-     */
-    currFileHeaderDict = {"0": {"name": "LOCUS", "value": outputFileName + "\t" + currSequence.length + " bp"},
-                          "1": {"name":"DEFINITION","value":"."}};
-  };
+  //let currFileHeaderDict = null;
+  //const originalFileExtension = plasmidDict[plasmidIndex]["fileExtension"];
+  //// GB -> GB
+  //if (originalFileExtension === outputFileExtension) {
+  //  currFileHeaderDict = plasmidDict[plasmidIndex]["fileHeader"];
+  //// DNA -> GB, make new header
+  //} else {
+  //  /**
+  //   * dict = {"0": {"name":"LOCUS","value":"[name]\t[seq length] bp"},
+  //   *         "1": {"name":"DEFINITION","value":"."},
+  //   *         }
+  //   */
+  //  currFileHeaderDict = {"0": {"name": "LOCUS", "value": outputFileName + "\t" + currSequence.length + " bp"},
+  //              };
+  //};
 
   // Apend the header
   const headerNrSpaces = 12; // Descriptor width
   const headerValueSpaces = 68; // Descriptor value width
   
   // Iterate over entries
-  const fileHeaderEntries = Object.entries(currFileHeaderDict);
-  for (const [pName, pData] of fileHeaderEntries) {
-    if (pData["name"] === "LOCUS") {
-      pData["value"] = pData["value"].replace(/\d+\s*bp/, currSequence.length + " bp");
-    }
-    console.log(`Key: [${pData["name"]}], Value: [${pData["value"]}]`);
-    let test = pData["name"] + " ".repeat(headerNrSpaces - pData["name"].length)
-    console.log("me when2:", test)
-
-    let propertyLineToAppend = splitStringByMaxLength(pData["value"].replace("\r", ""), headerValueSpaces);
-    console.log("Prop", propertyLineToAppend)
-    for (l in propertyLineToAppend) {
-      console.log("line", l, propertyLineToAppend[l])
-      let anyLiners = "";
-      if (l === "0") {
-        anyLiners = test + propertyLineToAppend[l].trim() + "\n";
-        console.log("Any liners", anyLiners)
-        outputFileContent +=  anyLiners;
-      } else {
-        outputFileContent += " ".repeat(headerNrSpaces) + propertyLineToAppend[l].trim() + "\n";
-      };
-    };
+  let truncatedName = outputFileName;
+  const truncatedNameLength = 16;
+  if (truncatedName.length > truncatedNameLength) {
+    // Truncate longer strings
+    truncatedName = truncatedName.substring(0, truncatedNameLength);
+  } else if (truncatedName.length < truncatedNameLength) {
+      // Fill shorter strings with text
+      truncatedName = truncatedName + fillChar.repeat(truncatedNameLength - truncatedName.length);
   };
 
+  const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  const currentDate = new Date();
+  const day = currentDate.getDate().toString().padStart(2, '0');
+  const month = months[currentDate.getMonth()];
+  const year = currentDate.getFullYear();
+  const fileHeaderDate = `${day}-${month}-${year}`;
+  outputFileContent += "LOCUS       " + truncatedName + "        " + currSequence.length + " bp DNA     circular SYN " + fileHeaderDate + "\n";
+
+  /**
+   * File header boilerplate
+   */
+
+  const fileHeaderBoilerplate = "DEFINITION  .\nACCESSION   .\nVERSION     .\nKEYWORDS    .\nSOURCE      .\n  ORGANISM  .\n  REFERENCE   1  (bases 1 to 2686)\n  AUTHORS   .\n  TITLE     Direct Submission\n  JOURNAL   Exported with IVA Prime :)\n            https://www.ivaprime.com\n"
+  outputFileContent += fileHeaderBoilerplate;
 
   /**
    * File features
@@ -548,8 +550,13 @@ function exportGBFile(plasmidIndex) {
       outputFileContent += " ".repeat(featureTitleShift) + featureName + " ".repeat(featureTitleWidth - featureName.length) + value["span"] + "\n";
       const featureInfo = Object.entries(value);
       for (const [propertyName, propertyValue] of featureInfo) {
-        if (propertyName !== "span") {
-          let featureToAppend = "/" + propertyName + "=\"" + propertyValue + "\"";
+        if (propertyName !== "span" && propertyName !== "color") {
+          let featureToAppend;
+          if (propertyName === "label" || propertyName === "codon_start" || propertyName === "direction") {
+            featureToAppend = "/" + propertyName + "=" + propertyValue + "";
+          } else {
+            featureToAppend = "/" + propertyName + "=\"" + propertyValue + "\"";
+          }
           for (let i = 0; i < featureToAppend.length; i += featureValueWidth) {
             outputFileContent += " ".repeat(featureTitleWidth + featureTitleShift) + featureToAppend.slice(i, i + featureValueWidth) + "\n";
           }
@@ -576,7 +583,7 @@ function exportGBFile(plasmidIndex) {
     outputFileContent += currLine + "\n";
     seqIndex += 60;
   };
-  outputFileContent += "//";
+  outputFileContent += "//\n";
 
   // Send for download
   downloadFile(outputFileName, outputFileContent, outputFileExtension);
@@ -847,7 +854,8 @@ function exportDNAFile(plasmidIndex) {
 
   const emptyFeaturesXML = "<?xml version=\"1.0\"?><Features nextValidID=\"1\"><Feature recentID=\"0\" name=\"Feature 1\" type=\"misc_feature\" allowSegmentOverlaps=\"0\" consecutiveTranslationNumbering=\"1\"><Segment range=\"2-3\" color=\"#a6acb3\" type=\"standard\"/></Feature></Features>";
   // length
-  addBytes(inToHexBytes(xmlString.length));
+  // testing adding 1 to the length
+  addBytes(inToHexBytes(xmlString.length + 1));
   // content
   addBytes(stringToBytes(xmlString));
   // stop byte
@@ -858,12 +866,12 @@ function exportDNAFile(plasmidIndex) {
    * Primers
    */
   // length
-  addBytes("00 00 00 d9"); //(default xml length)
-  // content
-  const defaultPrimersXML = "<AdditionalSequenceProperties><UpstreamStickiness>0</UpstreamStickiness><DownstreamStickiness>0</DownstreamStickiness><UpstreamModification>Unmodified</UpstreamModification><DownstreamModification>Unmodified</DownstreamModification></AdditionalSequenceProperties>";
-  addBytes(stringToBytes(defaultPrimersXML));
-  // stop byte
-  addBytes("0a 06");
+  //addBytes("00 00 00 d9"); //(default xml length)
+  //// content
+  //const defaultPrimersXML = "<AdditionalSequenceProperties><UpstreamStickiness>0</UpstreamStickiness><DownstreamStickiness>0</DownstreamStickiness><UpstreamModification>Unmodified</UpstreamModification><DownstreamModification>Unmodified</DownstreamModification></AdditionalSequenceProperties>";
+  //addBytes(stringToBytes(defaultPrimersXML));
+  //// stop byte
+  //addBytes("0a 06");
 
   /**
    * NOTES
@@ -882,11 +890,12 @@ function exportDNAFile(plasmidIndex) {
   const timeHMS = `${hours}:${minutes}:${seconds}`
 
   const year = currentDate.getFullYear();
-  const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-  const day = currentDate.getDate().toString().padStart(2, '0');
+  const month = (currentDate.getMonth() + 1).toString()
+  const day = currentDate.getDate().toString()
   const dateYMD = `${year}.${month}.${day}`;
 
-  const notesXML = `<Notes><UUID>${uuid}</UUID><Type>Natural</Type><Created UTC=\"${timeHMS}\">${dateYMD}</Created><LastModified UTC=\"${timeHMS}\">${dateYMD}</LastModified><SequenceClass>UNA</SequenceClass><TransformedInto>unspecified</TransformedInto></Notes>`;
+  // added line feeds \n
+  const notesXML = `<Notes>\n<UUID>${uuid}</UUID>\n<Type>Natural</Type>\n<Created UTC=\"${timeHMS}\">${dateYMD}</Created>\n<LastModified UTC=\"${timeHMS}\">${dateYMD}</LastModified>\n<SequenceClass>UNA</SequenceClass>\n<TransformedInto>unspecified</TransformedInto>\n</Notes>`;
   // length
   addBytes(inToHexBytes(notesXML.length));
   // content
