@@ -27,8 +27,8 @@
   /* Cell hover effects */
   --sequence-grid-cell-hover: #e0e0e0;
   --sequence-grid-cell-selected: rgba(0, 150, 255, 0.2);
-  --sequence-grid-cell-search-result-highlight: yellow;
-  --sequence-grid-cell-search-result: #932b21;
+  --sequence-grid-cell-search-result-highlight: #df63dd;;
+  --sequence-grid-cell-search-result: yellow;
 
   /* Sequence grid cursors */
   --hover-cursor: red;
