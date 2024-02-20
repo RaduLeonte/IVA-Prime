@@ -751,6 +751,7 @@ function exportDNAFile(plasmidIndex) {
           xmlSegmentElement.setAttribute('color', "#ffffff");
         };
         xmlSegmentElement.setAttribute('type', "standard");
+
         xmlFeatureElement.appendChild(xmlSegmentElement) // Append
 
         // Q mol_type
@@ -801,6 +802,12 @@ function exportDNAFile(plasmidIndex) {
           xmlSegmentElement.setAttribute('color', "#ffffff");
         };
         xmlSegmentElement.setAttribute('type', "standard");
+
+        // If feature is translated, add segment attribute
+        if (value["translation"]) {
+          xmlSegmentElement.setAttribute('translated', "1");
+        };
+
         xmlFeatureElement.appendChild(xmlSegmentElement) // Append
 
         // Q Label
