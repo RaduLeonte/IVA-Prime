@@ -27,7 +27,8 @@
   /* Cell hover effects */
   --sequence-grid-cell-hover: #e0e0e0;
   --sequence-grid-cell-selected: rgba(0, 150, 255, 0.2);
-  --sequence-grid-cell-selected-search: yellow;
+  --sequence-grid-cell-search-result-highlight: yellow;
+  --sequence-grid-cell-search-result: #932b21;
 
   /* Sequence grid cursors */
   --hover-cursor: red;
@@ -64,7 +65,8 @@
   /* Cell hover effects */
   --sequence-grid-cell-hover: #393939;
   --sequence-grid-cell-selected: rgba(62, 175, 255, 0.2);
-  --sequence-grid-cell-selected-search: #932b21;
+  --sequence-grid-cell-search-result-highlight: #932191;
+  --sequence-grid-cell-search-result: #932b21;
 
   /* Sequence grid cursors */
   --hover-cursor: #fb5555;
@@ -363,8 +365,12 @@ td.AminoAcids {
   background-color: var(--sequence-grid-cell-selected);
 }
 
-.sequence-grid td.selected-cell-search {
-  background-color: var(--sequence-grid-cell-selected-search);
+.sequence-grid td.cell-search-result-highlight {
+  background-color: var(--sequence-grid-cell-search-result-highlight);
+}
+
+.sequence-grid td.cell-search-result {
+  background-color: var(--sequence-grid-cell-search-result);
 }
 
 #sequence-row, #complementary-row, #empty-row {

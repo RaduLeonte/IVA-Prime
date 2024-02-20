@@ -11,11 +11,28 @@ document.addEventListener('DOMContentLoaded', function() {
 function initiateSearchFunctionality() {
     // Event listener for ctrl F or cmd F
     document.addEventListener('keydown', function(event) {
+        const altKeyPressed = event.altKey
         if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
-            event.preventDefault(); // Prevent default search functionality
+            event.preventDefault();
+            event.stopPropagation()
+            //document.getElementById("custom-search-aa-check").checked = altKeyPressed;
             customSearchInput.focus();
             customSearchInput.select();
         };
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (customSearchInput === document.activeElement) {
+            if (event.keyCode == "38") {
+                // up arrow
+                event.preventDefault();
+                navigateSearchResults(-1)
+            } else if (event.keyCode == "40") {
+                // down arrow
+                event.preventDefault();
+                navigateSearchResults(1)
+            };
+        }
     });
 };
 
@@ -28,12 +45,16 @@ function resetTableCells() {
     let table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
     
     // Find all cells with the "selected-cell-search" class and remove it
-    const cells = table.getElementsByClassName("selected-cell-search");
-    while (cells.length > 0) {
-        cells[0].classList.remove("selected-cell-search");
+    const cellsHighlighted = table.getElementsByClassName("cell-search-result-highlight");
+    while (cellsHighlighted.length > 0) {
+        cellsHighlighted[0].classList.remove("cell-search-result-highlight");
+    };
+    const cellsResults = table.getElementsByClassName("cell-search-result");
+    while (cellsResults.length > 0) {
+        cellsResults[0].classList.remove("cell-search-result");
     };
 };
-      
+
 
 /**
  * Find all occurences of the search query in the sequence, highligh the cells then scroll to the nearest occurence.
@@ -42,30 +63,37 @@ function searchOccurrences(customSearchInput) {
     // Reset highlighted cells
     resetTableCells();
 
+    
     // Get search query from the search bar
     const searchQuery = customSearchInput.value;
     const searchQueryComplement = searchQuery.split('').reverse().join('');
-
-    // Select the sequence and grid structure of the plasmid of interest
-    let currSequence = plasmidDict[currentlyOpenedPlasmid]["fileSequence"];
-    let currSequenceComp = plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"];
-    let currGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
-
-    // If the query is not empty
-    if (searchQuery) {
-        const compStrandCheckbox = document.getElementById("custom-search-compstrand-check").checked;
-        let workingSequence = (compStrandCheckbox === false) ? currSequence: currSequenceComp;
-        let workingQuery = (compStrandCheckbox === false) ? searchQuery: searchQueryComplement;
-        let targetStrandIndedx = (compStrandCheckbox === false) ? 0: 1;
-
-        // Get a list of indices for all occurences of the search query
-        highlightOccurences(targetStrandIndedx, workingSequence, workingQuery.toUpperCase(), currGridStructure, "selected-cell-search", null);
-
-
-        // Scroll to the nearest occurence of the search query
-        scrollToNextSelectedCell();
-        updateCustomSearchTracker();
+    
+    const aaBoxChecked = document.getElementById("custom-search-aa-check").checked;
+    if ((isDNASequence(searchQuery) === true && aaBoxChecked === false) || (isAminoAcidSequence(searchQuery) === true && aaBoxChecked === true)) {
+        // Select the sequence and grid structure of the plasmid of interest
+        let currSequence = plasmidDict[currentlyOpenedPlasmid]["fileSequence"];
+        let currSequenceComp = plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"];
+        let currGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
+    
+        // If the query is not empty
+        if (searchQuery) {
+            const compStrandCheckbox = document.getElementById("custom-search-compstrand-check").checked;
+            let workingSequence = (compStrandCheckbox === false) ? currSequence: currSequenceComp;
+            let workingQuery = (compStrandCheckbox === false) ? searchQuery: searchQueryComplement;
+            let targetStrandIndedx = (compStrandCheckbox === false) ? 0: 1;
+    
+            // Get a list of indices for all occurences of the search query
+            highlightOccurences(targetStrandIndedx, workingSequence, workingQuery.toUpperCase(), currGridStructure, "cell-search-result", null);
+    
+    
+            // Scroll to the nearest occurence of the search query
+            scrollToNextSelectedCell();
+            updateCustomSearchTracker();
+        };
+    } else {
+        updateCustomSearchTracker(clearTracker=true);
     };
+
 };
 
 
@@ -223,26 +251,25 @@ function scrollToNextSelectedCell() {
                 rect.top <= (window.innerHeight || document.documentElement.clientHeight)
             ) {
                 searchResultCellToTracker(element);
-                return true;
+                return element;
             };
         };
-        return false;
+        return null;
     };
 
     // Make a list of all selected cells
-    const selectedCells = Array.from(table.getElementsByClassName("selected-cell-search"));
+    const selectedCells = Array.from(table.getElementsByClassName("cell-search-result"));
 
     // Make sure there are actually selected cells
     if (selectedCells.length > 0) {
-        const anyCellInView = isAnyCellInView(selectedCells);
+        const firstCellInView = isAnyCellInView(selectedCells);
 
         // If theres a next result to scroll to, do it
-        if (!anyCellInView) {
-            selectedCells[0].scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-            });
+        if (firstCellInView === null) {
+            highlightSearchResult(selectedCells[0])
             searchResultCellToTracker(selectedCells[0]);
+        } else {
+            highlightSearchResult(firstCellInView)
         };
     };
 };
@@ -281,15 +308,12 @@ function navigateSearchResults(direction) {
     const cellSeqIndex = workingList[resultIndex];
 
     const currentGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
-    const tableCoords = seqIndexToCoords(cellSeqIndex, 0, currentGridStructure);
+    const tableCoords = seqIndexToCoords(cellSeqIndex + 1, 0, currentGridStructure);
 
     const table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
     const targetCell = table.rows[tableCoords[0]].cells[tableCoords[1]];
 
-    targetCell.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-    });
+    highlightSearchResult(targetCell);
     console.log("navigateSearchResults", targetCell);
     currentSearchResult = resultIndex + 1;
     updateCustomSearchTracker();
@@ -297,16 +321,55 @@ function navigateSearchResults(direction) {
 
 
 /**
+ * Highlight specific search result
+ */
+function highlightSearchResult(firstCell) {
+    console.log("highlightSearchResult first cell", firstCell)
+    firstCell.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+    });
+
+    const table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
+    const cellsHighlighted = table.getElementsByClassName("cell-search-result-highlight");
+    while (cellsHighlighted.length > 0) {
+        cellsHighlighted[0].classList.add("cell-search-result");
+        cellsHighlighted[0].classList.remove("cell-search-result-highlight");
+    };
+
+    const currentQuery = document.getElementById("custom-search-input").value;
+    console.log("highlightSearchResult", currentQuery)
+    let currentCell = firstCell;
+    for (i = 0; i < currentQuery.length; i++) {
+        console.log("highlightSearchResult", currentCell)
+        currentCell.classList.remove("cell-search-result");
+        currentCell.classList.add("cell-search-result-highlight");
+        if (currentCell.nextElementSibling === null) {
+            let row = currentCell.parentElement;
+            const currGridStructureLength = plasmidDict[currentlyOpenedPlasmid]["gridStructure"].length;
+            for (j = 0; j < currGridStructureLength; j++) {
+                row = row.nextElementSibling;
+            };
+            currentCell = row.firstElementChild;
+        } else {
+            currentCell = currentCell.nextElementSibling
+        }
+    };
+};
+
+
+/**
  * Update search tracker
  */
-function updateCustomSearchTracker() {
-    if (customSearchInput.value === "") {
+function updateCustomSearchTracker(clearTracker=false) {
+    const aaCheckbox = document.getElementById("custom-search-aa-check").checked;
+    const workingList = (aaCheckbox === false) ? indicesResultsDNA: indicesResultsAA;
+    console.log("updateCustomSearchTracker", workingList)
+    const numberResults = workingList.length;
+
+    if (customSearchInput.value === "" || clearTracker === true || numberResults === 0) {
         document.getElementById("custom-search-counter").innerText = "";
     } else {
-        const aaCheckbox = document.getElementById("custom-search-aa-check").checked;
-        const workingList = (aaCheckbox === false) ? indicesResultsDNA: indicesResultsAA;
-        console.log("updateCustomSearchTracker", workingList)
-        const numberResults = workingList.length;
         document.getElementById("custom-search-counter").innerText = currentSearchResult + "/" + numberResults;
     };
 };
