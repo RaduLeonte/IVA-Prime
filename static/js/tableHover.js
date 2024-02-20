@@ -9,7 +9,9 @@ function addHoverPopupToTable() {
   removeAllHoverPopups();
   // Select table
   //const tableId = "sequence-grid-" + currentlyOpenedPlasmid;
-  const tablecontainer = document.getElementById("file-content");
+  const tablecontainer = document.getElementById("content");
+  const fileContent = document.getElementById("file-content");
+  const footerElement = document.getElementById("footer");
   // Create popup for this table
   const popup = document.createElement('div');
   popup.id = "hover-popup";
@@ -18,7 +20,7 @@ function addHoverPopupToTable() {
   document.body.appendChild(popup);
 
   // Add the hover listener
-  tablecontainer.addEventListener('mouseover', function(event) {
+  fileContent.addEventListener('mouseover', function(event) {
     // Check if we're hovering over a cell
     if (event.target.tagName === 'TD' && (event.target.id === 'Forward Strand' || event.target.id === 'Complementary Strand')) {
       // Get cell coordinates
@@ -37,52 +39,62 @@ function addHoverPopupToTable() {
     };
   });
 
+  // Add the hover listener
+  footerElement.addEventListener('mouseover', function(event) {
+    if (popup) {
+      popup.style.display = "none";
+    };
+    basePosition = -1;
+  });
+
 
   /**
    * Tracks the cursor position and updates the position of the hover popup.
    */
-  tablecontainer.addEventListener('mousemove', function(event) {
+  fileContent.addEventListener('mousemove', function(event) {
     if (event.target.tagName === 'TD' || event.target.tagName === 'DIV') { // Check to see if we're hovering over a cell
 
       // Find cell dimensions
       const targetCell = (event.target.tagName === 'TD') ? event.target: event.target.parentNode;
-      const targetCellSpan = targetCell.colSpan;
-      const targetCellRowIndex = targetCell.parentNode.rowIndex;
-
-      let totalColumnSpan = 0;
-      let cellFound = false;
-      for (let i = 0; i < targetCell.parentNode.cells.length; i++) {
-        const currentCell = targetCell.parentNode.cells[i];
-        if (currentCell === targetCell) {
-          cellFound = true;
-          break;
+      if (targetCell) {
+        const targetCellSpan = targetCell.colSpan;
+        const targetCellRowIndex = targetCell.parentNode.rowIndex;
+  
+        let totalColumnSpan = 0;
+        let cellFound = false;
+        for (let i = 0; i < targetCell.parentNode.cells.length; i++) {
+          const currentCell = targetCell.parentNode.cells[i];
+          if (currentCell === targetCell) {
+            cellFound = true;
+            break;
+          };
+          totalColumnSpan += currentCell.colSpan;
         };
-        totalColumnSpan += currentCell.colSpan;
-      };
-      //const targetCellCellIndex = targetCell.cellIndex;
-      const targetCellCellIndex = totalColumnSpan;
-
-      const cellRect = targetCell.getBoundingClientRect();
-      const cursorOffset = event.clientX - cellRect.left; // Cursor position inside the cell
-      const cellWidth = cellRect.width;
-      const tdCursorCoords = Math.min(1, Math.max(0, cursorOffset / cellWidth)) * (targetCellSpan);
-      const basePositionOffset = Math.round(tdCursorCoords);
-      //console.log("Table Hover", targetCell, tdCursorCoords, basePositionOffset);
-
-      // Check which side of the cell we're closer to
-      const gridStructureLength = plasmidDict[currentlyOpenedPlasmid]["gridStructure"].length
-      basePosition = Math.floor((targetCellRowIndex + 1) / gridStructureLength) * gridWidth + targetCellCellIndex + 1 + basePositionOffset;
-
-      // Update the text content and mvoe the popup into position
-      if (popup) {
-        if (event.target.id === 'Forward Strand' || event.target.id === 'Complementary Strand') {
-          popup.textContent = basePosition !== -1 ? basePosition + " (" + targetCellRowIndex + ", " + targetCellCellIndex + ")" : "";
-          positionPopup(popup, event.clientX, event.clientY);
-        } else if (event.target.id === 'Amino Acids' && event.target.getAttribute("aaindex")) {
-          popup.textContent = event.target.textContent.replace("-", "X") + event.target.getAttribute("aaindex");
-          positionPopup(popup, event.clientX, event.clientY);
-        } else {
-          popup.style.display = "none";
+        //const targetCellCellIndex = targetCell.cellIndex;
+        const targetCellCellIndex = totalColumnSpan;
+  
+        const cellRect = targetCell.getBoundingClientRect();
+        const cursorOffset = event.clientX - cellRect.left; // Cursor position inside the cell
+        const cellWidth = cellRect.width;
+        const tdCursorCoords = Math.min(1, Math.max(0, cursorOffset / cellWidth)) * (targetCellSpan);
+        const basePositionOffset = Math.round(tdCursorCoords);
+        //console.log("Table Hover", targetCell, tdCursorCoords, basePositionOffset);
+  
+        // Check which side of the cell we're closer to
+        const gridStructureLength = plasmidDict[currentlyOpenedPlasmid]["gridStructure"].length
+        basePosition = Math.floor((targetCellRowIndex + 1) / gridStructureLength) * gridWidth + targetCellCellIndex + 1 + basePositionOffset;
+  
+        // Update the text content and mvoe the popup into position
+        if (popup) {
+          if ((event.target.id === 'Forward Strand' || event.target.id === 'Complementary Strand') && event.target.textContent.trim() !== '') {
+            popup.textContent = basePosition !== -1 ? basePosition + " (" + targetCellRowIndex + ", " + targetCellCellIndex + ")" : "";
+            positionPopup(popup, event.clientX, event.clientY);
+          } else if (event.target.id === 'Amino Acids' && event.target.getAttribute("aaindex")) {
+            popup.textContent = event.target.textContent.replace("-", "X") + event.target.getAttribute("aaindex");
+            positionPopup(popup, event.clientX, event.clientY);
+          } else {
+            popup.style.display = "none";
+          };
         };
       };
     };

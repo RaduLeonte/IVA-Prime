@@ -22,7 +22,7 @@ function addCellBorderOnHover(sequenceGridTable, plasmidIndex) {
     };
 
     // If the cursor has changed cells
-    if (plasmidDict[plasmidIndex]["previousCell"] && (plasmidDict[plasmidIndex]["previousCell"].id === "Forward Strand" || plasmidDict[plasmidIndex]["previousCell"].id === "Complementary Strand")) {
+    if (plasmidDict[plasmidIndex]["previousCell"] && (plasmidDict[plasmidIndex]["previousCell"].id === "Forward Strand" || plasmidDict[plasmidIndex]["previousCell"].id === "Complementary Strand")  && plasmidDict[plasmidIndex]["previousCell"].textContent.trim() !== '') {
       // Find the area of the cell
       const cellRect = plasmidDict[plasmidIndex]["previousCell"].getBoundingClientRect();
       // Find the borders of the cell

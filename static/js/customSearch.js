@@ -79,7 +79,7 @@ function searchOccurrences(customSearchInput) {
         if (searchQuery) {
             const compStrandCheckbox = document.getElementById("custom-search-compstrand-check").checked;
             let workingSequence = (compStrandCheckbox === false) ? currSequence: currSequenceComp;
-            let workingQuery = (compStrandCheckbox === false) ? searchQuery: searchQueryComplement;
+            let workingQuery = (compStrandCheckbox === false || aaBoxChecked === true) ? searchQuery: searchQueryComplement;
             let targetStrandIndedx = (compStrandCheckbox === false) ? 0: 1;
     
             // Get a list of indices for all occurences of the search query
@@ -122,6 +122,9 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, w
                 indicesResultsDNA.push(currentIndex);
                 currentIndex = workingSequence.indexOf(workingQuery, currentIndex + 1);
             };
+            indicesResultsDNA.sort(function(a, b) {
+                return a - b;
+            });
     
             // Select table element
             let table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
@@ -146,62 +149,55 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, w
         if (isAminoAcidSequence(workingQuery)) {
             workingQuery = workingQuery.replace("X", "-").replace("*", "-")
             indicesResultsAA = [];
-            // Get all cells
-            const aaCells = document.querySelectorAll(".AminoAcids:not(:empty)");
-            
-            let aaSequence = "";
-            aaCells.forEach(cell => {
-                aaSequence += cell.textContent + "";
-            });
-    
-            let currentIndex = aaSequence.indexOf(workingQuery);
-            while (currentIndex !== -1) {
-                indicesResultsAA.push(currentIndex);
-                currentIndex = workingSequence.indexOf(workingQuery, currentIndex + 1);
+            const aaBoxChecked = document.getElementById("custom-search-compstrand-check").checked;
+            const translationDirection = (aaBoxChecked === false) ? "forward": "reverse";
+            const dir = (translationDirection === "forward") ? 1: -1;
+            const listOfTranslationDicts = plasmidDict[currentlyOpenedPlasmid]["translations"][translationDirection];
+            console.log("highlightOccurences AA", workingQuery);
+            console.log("highlightOccurences AA", translationDirection, dir, listOfTranslationDicts);
+            for (let translationDict of listOfTranslationDicts) {
+                console.log("highlightOccurences AA", translationDict, translationDict["span"], translationDict["sequence"]);
+                const translationSpan = translationDict["span"];
+                const translationSequence = translationDict["sequence"];
+
+                let index = translationSequence.indexOf(workingQuery);
+                while (index !== -1) {
+                    indicesResultsAA.push(translationSpan[0] + index*3*dir);
+                    index = translationSequence.indexOf(workingQuery, index + 1);
+                };
             };
+            console.log("highlightOccurences AA", indicesResultsAA);
+            indicesResultsAA.sort(function(a, b) {
+                return a - b;
+            });
+
     
             // Iterate over all cells that contain the search query and highlight them
             const gridStructureLength = workingGridStructure.length;
+            let currentQueryLength = workingQuery.length*3;
+            let table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
             for (const index of indicesResultsAA) {
-                let currentCell = aaCells[index];
-                for (let j = 1; j < workingQuery.length + 1; j++) {
-                    let leftCell;
-                    if (currentCell.previousElementSibling !== null) {
-                        leftCell = currentCell.previousElementSibling;
-                    } else {
-                        let row = currentCell.parentElement;
-                        for (let k = 0; k < gridStructureLength; k++) {
-                            row = row.nextElementSibling;
+                let startCellIndex;
+                if (translationDirection === "forward") {
+                    startCellIndex = index;
+                } else {
+                    startCellIndex = index - currentQueryLength + 1;
+                };
+                const [row, column] = seqIndexToCoords(startCellIndex, 2, workingGridStructure);
+                let currentCell = table.rows[row].cells[column];
+                console.log("highlightOccurences AA currentCell", currentCell);
+                for (let j = 0; j < currentQueryLength; j++) {
+                    currentCell.classList.add("cell-search-result");
+                    if (currentCell.nextElementSibling === null) {
+                        let rowElement = currentCell.parentElement;
+                        const currGridStructureLength = plasmidDict[currentlyOpenedPlasmid]["gridStructure"].length;
+                        for (j = 0; j < currGridStructureLength; j++) {
+                            rowElement = rowElement.nextElementSibling;
                         };
-                        leftCell = row.lastElementChild;
-                    };
-    
-                    let rightCell;
-                    if (currentCell.nextElementSibling !== null) {
-                        rightCell = currentCell.nextElementSibling;
+                        currentCell = rowElement.firstElementChild;
                     } else {
-                        let row = currentCell.parentElement;
-                        for (let k = 0; k < gridStructureLength; k++) {
-                            row = row.nextElementSibling;
-                        };
-                        rightCell = row.firstElementChild;
+                        currentCell = currentCell.nextElementSibling
                     };
-    
-                    if (highlightClass) {
-                        leftCell.classList.add(highlightClass);
-                        currentCell.classList.add(highlightClass);
-                        rightCell.classList.add(highlightClass);
-                    } else if (highlightColor) {
-                        leftCell.style.backgroundColor = highlightColor;
-                        leftCell.style.color = "white";
-    
-                        currentCell.style.backgroundColor = highlightColor;
-                        currentCell.style.color = "white";
-    
-                        rightCell.style.backgroundColor = highlightColor;
-                        rightCell.style.color = "white";
-                    };
-                    currentCell = aaCells[index + j];
                 };
             };
         };
@@ -266,10 +262,11 @@ function scrollToNextSelectedCell() {
 
         // If theres a next result to scroll to, do it
         if (firstCellInView === null) {
-            highlightSearchResult(selectedCells[0])
+            highlightSearchResult(selectedCells[0]);
             searchResultCellToTracker(selectedCells[0]);
         } else {
-            highlightSearchResult(firstCellInView)
+            highlightSearchResult(firstCellInView);
+            searchResultCellToTracker(firstCellInView);
         };
     };
 };
@@ -296,27 +293,42 @@ function clearCustomSearchInput() {
 function navigateSearchResults(direction) {
     console.log("navigateSearchResults", direction);
     const aaCheckbox = document.getElementById("custom-search-aa-check").checked;
+    const compCheckbox = document.getElementById("custom-search-compstrand-check").checked;
     const workingList = (aaCheckbox === false) ? indicesResultsDNA: indicesResultsAA;
+    const workingQuery = document.getElementById("custom-search-input").value;
 
-    let resultIndex = currentSearchResult - 1 + direction;
-    if (resultIndex === -1) {
-        resultIndex = workingList.length - 1;
-    } else if (resultIndex === workingList.length) {
-        resultIndex = 0;
+    if (workingList.length > 1) {
+        let resultIndex = currentSearchResult - 1 + direction;
+        if (resultIndex === -1) {
+            resultIndex = workingList.length - 1;
+        } else if (resultIndex === workingList.length) {
+            resultIndex = 0;
+        };
+        console.log("navigateSearchResults", resultIndex, workingList);
+        const cellSeqIndex = workingList[resultIndex];
+    
+        const currentGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
+        let tarStrand;
+        let tableCoords;
+        let highlightStartIndex;
+        if (aaCheckbox === false) {
+            tarStrand = (compCheckbox === false) ? 0: 1;
+            tableCoords = seqIndexToCoords(cellSeqIndex + 1, tarStrand, currentGridStructure);
+        } else {
+            tarStrand = 2;
+            highlightStartIndex = (compCheckbox === false) ? cellSeqIndex: cellSeqIndex - workingQuery.length*3 + 1;
+            tableCoords = seqIndexToCoords(highlightStartIndex, tarStrand, currentGridStructure);
+            console.log("navigateSearchResults", highlightStartIndex, tableCoords)
+        };
+    
+        const table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
+        const targetCell = table.rows[tableCoords[0]].cells[tableCoords[1]];
+    
+        highlightSearchResult(targetCell);
+        console.log("navigateSearchResults", targetCell);
+        currentSearchResult = resultIndex + 1;
+        updateCustomSearchTracker();
     };
-    console.log("navigateSearchResults", resultIndex, workingList);
-    const cellSeqIndex = workingList[resultIndex];
-
-    const currentGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
-    const tableCoords = seqIndexToCoords(cellSeqIndex + 1, 0, currentGridStructure);
-
-    const table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
-    const targetCell = table.rows[tableCoords[0]].cells[tableCoords[1]];
-
-    highlightSearchResult(targetCell);
-    console.log("navigateSearchResults", targetCell);
-    currentSearchResult = resultIndex + 1;
-    updateCustomSearchTracker();
 };
 
 
@@ -337,10 +349,13 @@ function highlightSearchResult(firstCell) {
         cellsHighlighted[0].classList.remove("cell-search-result-highlight");
     };
 
-    const currentQuery = document.getElementById("custom-search-input").value;
-    console.log("highlightSearchResult", currentQuery)
+    let currentQueryLength = document.getElementById("custom-search-input").value.length;
+    if (document.getElementById("custom-search-aa-check").checked === true) {
+        currentQueryLength *= 3
+    };
+    console.log("highlightSearchResult", currentQueryLength)
     let currentCell = firstCell;
-    for (i = 0; i < currentQuery.length; i++) {
+    for (i = 0; i < currentQueryLength; i++) {
         console.log("highlightSearchResult", currentCell)
         currentCell.classList.remove("cell-search-result");
         currentCell.classList.add("cell-search-result-highlight");
@@ -364,13 +379,17 @@ function highlightSearchResult(firstCell) {
 function updateCustomSearchTracker(clearTracker=false) {
     const aaCheckbox = document.getElementById("custom-search-aa-check").checked;
     const workingList = (aaCheckbox === false) ? indicesResultsDNA: indicesResultsAA;
-    console.log("updateCustomSearchTracker", workingList)
-    const numberResults = workingList.length;
-
-    if (customSearchInput.value === "" || clearTracker === true || numberResults === 0) {
-        document.getElementById("custom-search-counter").innerText = "";
+    console.log("updateCustomSearchTracker", workingList);
+    if (workingList !== null) {
+        const numberResults = workingList.length;
+    
+        if (customSearchInput.value === "" || clearTracker === true || numberResults === 0) {
+            document.getElementById("custom-search-counter").innerText = "";
+        } else {
+            document.getElementById("custom-search-counter").innerText = currentSearchResult + "/" + numberResults;
+        };
     } else {
-        document.getElementById("custom-search-counter").innerText = currentSearchResult + "/" + numberResults;
+        document.getElementById("custom-search-counter").innerText = "";
     };
 };
 
@@ -379,14 +398,19 @@ function updateCustomSearchTracker(clearTracker=false) {
  * Find which search results corresponds to the cell
  */
 function searchResultCellToTracker(inputCell) {
-    // Convert cell coordinates to sequence index
-    const cellRow = inputCell.parentNode.rowIndex;
-    const cellCol = inputCell.cellIndex;
-    const cellSeqIndex = cellRow/plasmidDict[currentlyOpenedPlasmid]["gridStructure"].length*gridWidth + cellCol;
-    
     const aaCheckbox = document.getElementById("custom-search-aa-check").checked;
     const workingList = (aaCheckbox === false) ? indicesResultsDNA: indicesResultsAA;
+    console.log("searchResultCellToTracker", inputCell)
+    // Convert cell coordinates to sequence index
+    let cellRow = inputCell.parentNode.rowIndex;
+    if (aaCheckbox === true) {
+        cellRow -= 2;
+    };
+    const cellCol = inputCell.cellIndex;
+    const cellSeqIndex = cellRow/plasmidDict[currentlyOpenedPlasmid]["gridStructure"].length*gridWidth + cellCol;
+    console.log("searchResultCellToTracker", cellSeqIndex, cellRow, cellCol)
 
+    
     let nearestIndex = 0;
     let nearestDifference = Math.abs(cellSeqIndex - workingList[0]);
     for (let i = 1; i < workingList.length; i++) {
@@ -396,7 +420,8 @@ function searchResultCellToTracker(inputCell) {
             nearestDifference = difference;
         };
     };
-
+    console.log("searchResultCellToTracker", nearestIndex)
+    
     currentSearchResult = nearestIndex + 1;
 };
 
