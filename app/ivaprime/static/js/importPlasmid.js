@@ -786,7 +786,7 @@ function exportDNAFile(plasmidIndex) {
         const xmlFeatureElement = xmlDoc.createElement('Feature');
         xmlFeatureElement.setAttribute('recentID', i + "");
         i++;
-        xmlFeatureElement.setAttribute('name', value["label"].replace(/\d+$/, '').trim());
+        xmlFeatureElement.setAttribute('name', value["label"]);
         xmlFeatureElement.setAttribute('directionality', (!value["span"].includes("complement")) ? "1": "2");
         xmlFeatureElement.setAttribute('type', key.replace(/\d+$/, '').trim());
         xmlFeatureElement.setAttribute('allowSegmentOverlaps', "0");
