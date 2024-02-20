@@ -1,7 +1,7 @@
 /**
  * Add search functionality for the sequence grid.
  */
-let customSearchInput
+let customSearchInput;
 document.addEventListener('DOMContentLoaded', function() {
     customSearchInput = document.getElementById('custom-search-input');
     customSearchInput.addEventListener('input', function() {

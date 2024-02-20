@@ -394,4 +394,16 @@ function positionPlasmidTabDropdownMenu(parentTab, dropdownMenu) {
 function exportPrimers(client, plasmidIndex) {
     console.log(client, plasmidIndex)
     exportPrimersDict[client.getAttribute("fileType")](plasmidIndex);
-}
+};
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    enableTabContainerScrolling();
+})
+function enableTabContainerScrolling() {
+    const tabsContainer = document.getElementById("plasmid-tabs-container");
+    tabsContainer.addEventListener("wheel", function (e) {
+        e.preventDefault();
+        tabsContainer.scrollLeft += e.deltaY*5;
+    });
+};

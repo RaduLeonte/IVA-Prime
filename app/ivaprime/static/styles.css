@@ -175,6 +175,10 @@ body {
   vertical-align: middle;
 }
 
+#undo-btns {
+  display: flex;
+}
+
 #header-list-right {
   margin-left: auto;
 }
@@ -767,7 +771,7 @@ header {
 }
 
 .nav-right {
-  min-width: 315px;
+  /*min-width: 315px;*/
   margin-left: auto;
 }
 
@@ -797,8 +801,10 @@ header {
 
 .plasmid-tabs-container {
   display: flex;
-  overflow: hidden;
-  overflow-x: hidden;
+  /*overflow: hidden;*/
+  overflow-x: scroll;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
   white-space: nowrap;
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
