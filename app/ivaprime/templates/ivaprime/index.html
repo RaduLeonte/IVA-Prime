@@ -3,7 +3,7 @@
     Radu Cristian Leonte
     (raducristian.leonte@gmail.com)
     (raducristian.leonte@unibas.ch) -->
-    <!DOCTYPE html>
+<!DOCTYPE html>
     <html>
         <head>
             <title>IVA Prime</title>
@@ -354,11 +354,11 @@
                                 <li><a class="svg-icon-btn-a footer-icon-btn-a" href="#" style="background-image: url('/static/arrow_icon.svg'); transform: scale(1,-1)" onclick="navigateSearchResults(1)"></a></li>
                                 <li><span id="custom-search-counter"></span></li>
                                 <li>
-                                    <input type="checkbox" id="custom-search-compstrand-check" name="Complementary strand" class="footer-checkbox"/>
+                                    <input type="checkbox" id="custom-search-compstrand-check" name="Complementary strand" class="footer-checkbox" onclick="searchOccurrences(customSearchInput)"/>
                                     <label for="custom-search-aa-check" class="footer-checkbox-label">Search in complementary strand</label>
                                 </li>
                                 <li>
-                                    <input type="checkbox" id="custom-search-aa-check" name="Amino acids" class="footer-checkbox"/>
+                                    <input type="checkbox" id="custom-search-aa-check" name="Amino acids" class="footer-checkbox" onclick="searchOccurrences(customSearchInput)"/>
                                     <label for="custom-search-aa-check" class="footer-checkbox-label">Search AA</label>
                                 </li>
                             </ul>
