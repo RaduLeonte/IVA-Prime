@@ -954,6 +954,16 @@ header {
   background-color: var(--footer-icon-hover);
 }
 
+.footer-checkbox {
+  width: 15px;
+  height: 15px;
+  vertical-align: middle;
+}
+
+.footer-checkbox-label {
+  vertical-align: middle;
+}
+
 /*
   Copy primer sequence buttons
 */
