@@ -964,7 +964,7 @@ function createSubcloningPrimersNew(subcloningStartPos, subcloningEndPos, aaSequ
             return [{1: {"seq": insertHomoFwd, "color": primerColorCyan},
                     2: {"seq": inputTempFwd, "color": primerColorPurple},
                     info: primerInfoFwd},
-                    {1: {"seq": inputVecRev, "color": primerColorCyan},
+                    {1: {"seq": inputVecRev, "color": primerColorPurple},
                     info: primerInfoVecRev}];
         } else {
             console.log("createSubcloningPrimersNew with insertion'", inputSequence, get_tm(inputSequence, primerConc, saltConc, "oligoCalc"))
@@ -989,7 +989,7 @@ function createSubcloningPrimersNew(subcloningStartPos, subcloningEndPos, aaSequ
                             2: {"seq": inputSequence, "color": primerColorRed},
                             3: {"seq": inputTempFwd, "color": primerColorPurple},
                             info: primerInfoFwd},
-                            {1: {"seq": inputVecRev, "color": primerColorCyan},
+                            {1: {"seq": inputVecRev, "color": primerColorPurple},
                             info: primerInfoVecRev}]
                 } else if (primerDistribution === true) {
                     // If distributing
@@ -1039,7 +1039,7 @@ function createSubcloningPrimersNew(subcloningStartPos, subcloningEndPos, aaSequ
                             info: primerInfoFwd},
                             {1: {"seq": homoRev, "color": primerColorOrange},
                             2: {"seq": getComplementaryStrand(inputSequence).split('').reverse().join(''), "color": primerColorRed},
-                            3: {"seq": inputVecRev, "color": primerColorCyan},
+                            3: {"seq": inputVecRev, "color": primerColorPurple},
                             info: primerInfoVecRev}];
                 }
             } else {
@@ -1064,7 +1064,7 @@ function createSubcloningPrimersNew(subcloningStartPos, subcloningEndPos, aaSequ
                             2: {"seq": inputTempFwd, "color": primerColorPurple},
                             info: primerInfoFwd},
                             {1: {"seq": homoRev, "color": primerColorRed},
-                            3: {"seq": inputVecRev, "color": primerColorCyan},
+                            3: {"seq": inputVecRev, "color": primerColorPurple},
                             info: primerInfoVecRev}];
                 } else if (primerDistribution === true) {
                     let homoFwdFragmentLength = 0;
@@ -1104,7 +1104,7 @@ function createSubcloningPrimersNew(subcloningStartPos, subcloningEndPos, aaSequ
                             2: {"seq": inputTempFwd, "color": primerColorPurple},
                             info: primerInfoFwd},
                             {1: {"seq": homoRev, "color": primerColorRed},
-                            3: {"seq": inputVecRev, "color": primerColorCyan},
+                            3: {"seq": inputVecRev, "color": primerColorPurple},
                             info: primerInfoVecRev}];
                 };
             };
