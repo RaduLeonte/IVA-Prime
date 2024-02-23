@@ -221,6 +221,7 @@ const exportPrimersDict = {
     },
     // Microsynth Excel Template
     microsynth: (plasmidIndex) => {
+        const fileName = plasmidDict[plasmidIndex]["fileName"].replace(plasmidDict[plasmidIndex]["fileExtension"], "") + " primers";
         const tableData = getPrimersAsTable(plasmidIndex, includeColumnNames = false);
         let primerList = [];
         for (i = 0; i < tableData.length; i++) {
@@ -269,7 +270,7 @@ const exportPrimersDict = {
                 const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = formName;
+                link.download = fileName + " microsynth order form";
                 link.click();
             })
             .catch((error) => {
