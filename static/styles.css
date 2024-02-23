@@ -371,10 +371,12 @@ td.AminoAcids {
 
 .sequence-grid td.cell-search-result-highlight {
   background-color: var(--sequence-grid-cell-search-result-highlight);
+  opacity: 1;
 }
 
 .sequence-grid td.cell-search-result {
   background-color: var(--sequence-grid-cell-search-result);
+  opacity: 1;
 }
 
 #sequence-row, #complementary-row, #empty-row {

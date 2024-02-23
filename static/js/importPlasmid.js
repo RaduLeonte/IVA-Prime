@@ -540,7 +540,7 @@ function exportGBFile(plasmidIndex) {
     truncatedName = truncatedName.substring(0, truncatedNameLength);
   } else if (truncatedName.length < truncatedNameLength) {
       // Fill shorter strings with text
-      truncatedName = truncatedName + fillChar.repeat(truncatedNameLength - truncatedName.length);
+      truncatedName = truncatedName + " ".repeat(truncatedNameLength - truncatedName.length);
   };
 
   const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
