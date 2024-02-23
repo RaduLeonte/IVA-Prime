@@ -160,6 +160,7 @@ function updateSidebarPrimers() {
     sidebarContainer.removeChild(oldPrimers);
 
     addPrimerRegionHoverEvents();
+    enablePrimerIDEditing();
 };
 
 

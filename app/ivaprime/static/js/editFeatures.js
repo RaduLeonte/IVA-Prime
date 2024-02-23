@@ -6,7 +6,22 @@
 function enableSidebarEditing() {
   const targetSidebar = document.getElementById("sidebar-table");
   const editableElements = targetSidebar.querySelectorAll('.editable');
-  editableElements.forEach(element => {enableElementEditing(element)});
+  editableElements.forEach(element => {
+    enableElementEditing(element);
+    //console.log("enableSidebarEditing", element)
+  });
+};
+
+
+/**
+ * Enable editing functionality only to primer ids
+ * */
+function enablePrimerIDEditing() {
+  const editableElements = document.querySelector('.sidebar-content').querySelectorAll('.editable');
+  editableElements.forEach(element => {
+    enableElementEditing(element);
+    console.log("enablePrimerIDEditing", element)
+  });
 };
 
 
