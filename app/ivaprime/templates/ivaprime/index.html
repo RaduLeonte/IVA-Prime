@@ -32,7 +32,7 @@
             <script src="{% static 'js/xlsx.full.min.js' %}"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.2.1/exceljs.min.js"></script>
         </head>
-        <body>
+        <body ondragover="importDragOver(event)" ondragleave="importDragLeave(event)" ondrop="importDrop(event)">
             <header>
                 <div class="nav-left">
                     <!-- Left side header buttons -->

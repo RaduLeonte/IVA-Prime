@@ -8,6 +8,7 @@ window.onload = function() {
       event.preventDefault();
       const fileInput = document.createElement('input');
       fileInput.type = 'file';
+      fileInput.multiple = true;
       fileInput.style.display = 'none';
       document.body.appendChild(fileInput);
       fileInput.addEventListener('change', function(event) {
@@ -48,100 +49,174 @@ function isPlasmidDictEmpty() {
 /**
  * Handles file selection functionality.
  */
-async function handleFileSelect(event, plasmidIndex=0, serverFile=null) {
-  document.body.classList.add('loading');
-  let file = null;
+async function handleFileSelect(event, plasmidIndex=0, serverFile=null, ) {
   if (serverFile) {
     console.log("Importing demo file:", serverFile);
     const response = await fetch(serverFile);
-
-    const fileContent = await response.text();
-    file = new Blob([fileContent]);
-    file.name = serverFile.match(/[^\\/]*$/)[0];
+    const blob = await response.blob();
+    const file = new File([blob], serverFile.split('\\').pop());
+    console.log("Imported local file:", file.name);
+    importFile(file, plasmidIndex);
   } else {
-    file = event.target.files[0];
+    importQueue(event.target.files)
   };
+};
 
-  console.log(file)
-  const fileExtension =  /\.([0-9a-z]+)(?:[\?#]|$)/i.exec(file.name)[0]; // Fish out file extension of the file
-  // If the file has an acceptable file extension start parsing
-  const acceptedFileExtensions = [".gbk", ".gb", ".dna"]
-  if (acceptedFileExtensions.includes(fileExtension)) {
-    // Initialise file reader
-    const reader = new FileReader();
+/** 
+ * Drag and drop import
+ */
+function importDragOver(event) {
+  event.preventDefault();
+  document.body.classList.add('drag-import-overlay');
+};
 
-    // Define reader
-    reader.onload = function(e) {
-      let fileContent = e.target.result;
-      // Depending on file extension pass the file content to the appropiate parser
-      let parsedFile = null;
-      if (fileExtension === ".dna") {
-        parsedFile = parseDNAFile(fileContent);
-      } else {
-        parsedFile = parseGBFile(fileContent);
-      };
+function importDragLeave(event) {
+  event.preventDefault();
+  document.body.classList.remove('drag-import-overlay');
+};
 
-      const firstImport = isPlasmidDictEmpty();
+async function importDrop(event) {
+  event.preventDefault();
+  document.body.classList.remove('drag-import-overlay');
 
-      plasmidDict[plasmidIndex] = {};
-      plasmidDict[plasmidIndex]["fileName"] = file.name;
-      plasmidDict[plasmidIndex]["fileExtension"] = fileExtension;
-      plasmidDict[plasmidIndex]["fileHeader"] = parsedFile.fileHeader;
-      plasmidDict[plasmidIndex]["fileSequence"] = parsedFile.fileSequence;
-      plasmidDict[plasmidIndex]["fileComplementarySequence"] = parsedFile.fileComplementarySequence;
-      plasmidDict[plasmidIndex]["fileFeatures"] = parsedFile.fileFeatures;
-      plasmidDict[plasmidIndex]["translations"] = {"forward": [], "reverse": []};
-      plasmidDict[plasmidIndex]["selectedText"] = "";
-      plasmidDict[plasmidIndex]["selectionStartPos"] = null;
-      plasmidDict[plasmidIndex]["selectionEndPos"] = null;
-      plasmidDict[plasmidIndex]["sidebarPrimers"] = null;
-      plasmidDict[plasmidIndex]["operationNr"] = 1;
+  importQueue(event.dataTransfer.files);
+};
 
-      // Add plasmid tab
-      const plasmidTabsList = document.getElementById("plasmid-tabs-list");
-      const plasmidTabId = "plasmid-tab-" + plasmidIndex;
-      let liElement = document.getElementById(plasmidTabId);
-      // Check if tab element already exists and
-      if (!liElement) {
-        liElement = document.createElement("LI");
-        plasmidTabsList.appendChild(liElement);
-      };
-      liElement.id = "plasmid-tab-" + plasmidIndex;
-      liElement.innerHTML = `
-      <a href="#" onclick="switchPlasmidTab(${plasmidIndex})">${plasmidDict[plasmidIndex]["fileName"]}</a>
-      <a class="plasmid-tab-dropdown" href="#"  onclick="togglePlasmidTabDropdownMenu(event, ${plasmidIndex})">▼</a>
-      `;
-      liElement.classList.add("plasmid-tab");
-      if (firstImport === true) {
-        liElement.classList.add("plasmid-tab-selected");
-        currentlyOpenedPlasmid = plasmidIndex;
-      };
-      
-      // Create the sidebar
-      plasmidDict[plasmidIndex]["sidebarTable"] = createSidebarTable(plasmidIndex);
 
-      // Create content grid
-      plasmidDict[plasmidIndex]["contentGrid"] = makeContentGrid(plasmidIndex);
+function importQueue(filesList) {
+  const startingPlasmidIndex = nextFreePlasmidIndex();
+  addLoadingCursor();
+  let importTasks = []
+  for (let i = 0; i < filesList.length; i++) {
+    console.log("Dropped file:", filesList[i].name)
+    importTasks.push(importFile(filesList[i], startingPlasmidIndex + i));
+  };
+  
+  Promise.all(importTasks).then(() => removeLoadingCursor())
+};
 
-      // Create file history
-      plasmidDict[plasmidIndex]["fileHistory"] = [];
-      // [sidebarPrimers, sidebarTable, contentGrid]
-      savePrimers();
-      plasmidDict[plasmidIndex]["fileHistoryTracker"] = 0;
-      saveProgress(plasmidIndex);
-      
-      // Once the file is loaded, enable search function
-      if (firstImport === true) {
-        initiateSearchFunctionality();
-        switchPlasmidTab(plasmidIndex);
-        updateAnnotationTrianglesWidth();
-      };
+
+function addLoadingCursor() {
+  console.log("Loading start")
+  const loadingCoveringDiv = document.createElement('div');
+  loadingCoveringDiv.id = "loading-covering-div";
+  loadingCoveringDiv.style.position = 'fixed';
+  loadingCoveringDiv.style.top = '0';
+  loadingCoveringDiv.style.left = '0';
+  loadingCoveringDiv.style.width = '100vw';
+  loadingCoveringDiv.style.height = '100vh';
+  loadingCoveringDiv.style.backgroundColor = 'transparent'; // Make it invisible
+  loadingCoveringDiv.style.zIndex = '9999'; // Set a high z-index to ensure it covers other elements
+  loadingCoveringDiv.style.cursor = 'wait'; // Set cursor to wait icon
+  loadingCoveringDiv.addEventListener('mouseenter', function() {
+      this.style.cursor = 'wait';
+  });
+  document.body.appendChild(loadingCoveringDiv);
+};
+
+
+function removeLoadingCursor() {
+  console.log("Loading done")
+  const loadingCoveringDiv = document.getElementById("loading-covering-div")
+  if (loadingCoveringDiv && loadingCoveringDiv.parentNode) {
+    loadingCoveringDiv.parentNode.removeChild(loadingCoveringDiv);
+  };
+};
+
+
+/**
+ * Imports and parses given file object
+ */
+function importFile(file, plasmidIndex=null) {
+  return new Promise((resolve, reject) => {
+    if (plasmidIndex == null) {
+      plasmidIndex = nextFreePlasmidIndex();
     };
+    console.log(file)
+    file.name = file.name.match(/[^\\/]*$/)[0];
+    const fileExtension =  /\.([0-9a-z]+)(?:[\?#]|$)/i.exec(file.name)[0]; // Fish out file extension of the file
+    // If the file has an acceptable file extension start parsing
+    const acceptedFileExtensions = [".gbk", ".gb", ".dna"]
+    if (acceptedFileExtensions.includes(fileExtension)) {
+      // Initialise file reader
+      const reader = new FileReader();
+  
+      // Define reader
+      reader.onload = function(e) {
+        let fileContent = e.target.result;
+        // Depending on file extension pass the file content to the appropiate parser
+        let parsedFile = null;
+        if (fileExtension === ".dna") {
+          parsedFile = parseDNAFile(fileContent);
+        } else {
+          parsedFile = parseGBFile(fileContent);
+        };
+  
+        const firstImport = isPlasmidDictEmpty();
+  
+        plasmidDict[plasmidIndex] = {};
+        plasmidDict[plasmidIndex]["fileName"] = file.name;
+        plasmidDict[plasmidIndex]["fileExtension"] = fileExtension;
+        plasmidDict[plasmidIndex]["fileHeader"] = parsedFile.fileHeader;
+        plasmidDict[plasmidIndex]["fileSequence"] = parsedFile.fileSequence;
+        plasmidDict[plasmidIndex]["fileComplementarySequence"] = parsedFile.fileComplementarySequence;
+        plasmidDict[plasmidIndex]["fileFeatures"] = parsedFile.fileFeatures;
+        plasmidDict[plasmidIndex]["translations"] = {"forward": [], "reverse": []};
+        plasmidDict[plasmidIndex]["selectedText"] = "";
+        plasmidDict[plasmidIndex]["selectionStartPos"] = null;
+        plasmidDict[plasmidIndex]["selectionEndPos"] = null;
+        plasmidDict[plasmidIndex]["sidebarPrimers"] = null;
+        plasmidDict[plasmidIndex]["operationNr"] = 1;
+  
+        // Add plasmid tab
+        const plasmidTabsList = document.getElementById("plasmid-tabs-list");
+        const plasmidTabId = "plasmid-tab-" + plasmidIndex;
+        let liElement = document.getElementById(plasmidTabId);
+        // Check if tab element already exists and
+        if (!liElement) {
+          liElement = document.createElement("LI");
+          plasmidTabsList.appendChild(liElement);
+        };
+        liElement.id = "plasmid-tab-" + plasmidIndex;
+        liElement.innerHTML = `
+        <a href="#" onclick="switchPlasmidTab(${plasmidIndex})">${plasmidDict[plasmidIndex]["fileName"]}</a>
+        <a class="plasmid-tab-dropdown" href="#"  onclick="togglePlasmidTabDropdownMenu(event, ${plasmidIndex})">▼</a>
+        `;
+        liElement.classList.add("plasmid-tab");
+        if (firstImport === true) {
+          liElement.classList.add("plasmid-tab-selected");
+          currentlyOpenedPlasmid = plasmidIndex;
+        };
+        
+        // Create the sidebar
+        plasmidDict[plasmidIndex]["sidebarTable"] = createSidebarTable(plasmidIndex);
+  
+        // Create content grid
+        plasmidDict[plasmidIndex]["contentGrid"] = makeContentGrid(plasmidIndex);
+  
+        // Create file history
+        plasmidDict[plasmidIndex]["fileHistory"] = [];
+        // [sidebarPrimers, sidebarTable, contentGrid]
+        savePrimers();
+        plasmidDict[plasmidIndex]["fileHistoryTracker"] = 0;
+        saveProgress(plasmidIndex);
+        
+        // Once the file is loaded, enable search function
+        if (firstImport === true) {
+          initiateSearchFunctionality();
+          switchPlasmidTab(plasmidIndex);
+          updateAnnotationTrianglesWidth();
+        };
+      };
+  
+        // Run reader
+        reader.readAsText(file);
+      };
 
-      // Run reader
-      reader.readAsText(file);
-    };
-  document.body.classList.remove('loading');
+      setTimeout(() => {
+        resolve();
+      }, 1); 
+  });
 };
 
 
@@ -1543,13 +1618,13 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, annotationColor
       // Find already occupied cells
       occupiedCellsList = [];
       occupiedCellsCounter = 0;
-      console.log("occupiedCells", targetTable.rows[row].cells.length, targetTable.rows[row].cells)
+      //console.log("occupiedCells", targetTable.rows[row].cells.length, targetTable.rows[row].cells)
       if (targetTable.rows[row].cells.length === 1) {
         console.log("Try next row.")
         row++;
       } else {
         for (let i = 0; i < targetTable.rows[row].cells.length; i++) {
-          console.log("occupiedCell", targetTable.rows[row].cells[i], targetTable.rows[row].cells[i].attributes.hasOwnProperty('feature-id'))
+          //console.log("occupiedCell", targetTable.rows[row].cells[i], targetTable.rows[row].cells[i].attributes.hasOwnProperty('feature-id'))
           if (targetTable.rows[row].cells[i].attributes.hasOwnProperty('feature-id')) {
             let currColSpan = parseInt(targetTable.rows[row].cells[i].colSpan);
             console.log("Colspan ", currColSpan);
