@@ -179,8 +179,8 @@ function importFile(file, plasmidIndex=null) {
         };
         liElement.id = "plasmid-tab-" + plasmidIndex;
         liElement.innerHTML = `
-        <a href="#" onclick="switchPlasmidTab(${plasmidIndex})">${plasmidDict[plasmidIndex]["fileName"]}</a>
-        <a class="plasmid-tab-dropdown" href="#"  onclick="togglePlasmidTabDropdownMenu(event, ${plasmidIndex})">▼</a>
+        <a href="#" onclick="switchPlasmidTab(${plasmidIndex})" oncontextmenu="togglePlasmidTabDropdownMenu(event, ${plasmidIndex})">${plasmidDict[plasmidIndex]["fileName"]}</a>
+        <a class="plasmid-tab-dropdown" href="#"  onclick="togglePlasmidTabDropdownMenu(event, ${plasmidIndex})" oncontextmenu="togglePlasmidTabDropdownMenu(event, ${plasmidIndex})">▼</a>
         `;
         liElement.classList.add("plasmid-tab");
         if (firstImport === true) {
