@@ -114,16 +114,15 @@ const meltingTemperatureAlgorithmDict = {
    * Algorithm from the Oligo Calc online calculator (http://biotools.nubic.northwestern.edu/oligocalc.html)
    */
   oligoCalc : (input_sequence, primerC) => {
-    let nr = {};
-    for (let char of ["A", "T", "G", "C"]) {nr[char] = countSubstringOccurrences(input_sequence, char);};
-
-    let tm;
-    if (input_sequence.length < 14) {
-        tm = 2 * (input_sequence.length - (nr["G"] + nr["C"])) + 4 * (nr["G"] + nr["C"]);
+    if (input_sequence.length > 0 ) {
+      let nr = {};
+      for (let char of ["A", "T", "G", "C"]) {nr[char] = countSubstringOccurrences(input_sequence, char);};
+  
+      let tm = 64.9 + 41 * (((nr["G"] + nr["C"]) - 16.4) / input_sequence.length);
+      return tm;
     } else {
-        tm = 64.9 + 41 * (((nr["G"] + nr["C"]) - 16.4) / input_sequence.length);
-    };
-    return tm;
+      return -273.15;
+    }
   }
 };
 
