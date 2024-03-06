@@ -19,7 +19,8 @@ function get_tm(primer_sequence, c, m, method="nnSantaLucia") {
       tm_corr = (dmsoConc && dmsoConc !== NaN && dmsoConc !== 0) ? tm_corr - 0.6*dmsoConc: tm_corr;
     };
 
-    return tm_corr;
+    // Minimum value of absolute zero
+    return Math.max(tm_corr, -273.15); 
 };
 
 
