@@ -82,13 +82,6 @@ document.addEventListener('DOMContentLoaded', function () {
       showPopupWindow("Mutate selection to:", "Mutation"); // Show the popup window for insertions/replacements
     
     /**
-     * Replace selection
-     */
-    } else if (menuItemId === 'replacement') {
-      console.log('Mutation selected');
-      showPopupWindow("Replace selection with:", "Replacement"); // Show the popup window for insertions/replacements
-    
-    /**
      * Mark selection as subcloning target
      */
     } else if (menuItemId === 'mark-for-subcloning') {
@@ -164,7 +157,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const insertionMenuItem = document.getElementById('insertion');
     const deletionMenuItem = document.getElementById('deletion');
     const mutationMenuItem = document.getElementById('mutation');
-    const replacementMenuItem = document.getElementById('replacement');
 
     const markForSubcloningMenuItem = document.getElementById('mark-for-subcloning');
     const subcloningMenuItem = document.getElementById('subcloning');
@@ -192,7 +184,6 @@ document.addEventListener('DOMContentLoaded', function () {
       // Re-enable deletions and mutations
       deletionMenuItem.classList.remove('disabled');
       mutationMenuItem.classList.remove('disabled');
-      replacementMenuItem.classList.remove('disabled');
       translateSelectionMenuItem.classList.remove('disabled');
       translateSelectionRevMenuItem.classList.remove('disabled');
       markForSubcloningMenuItem.classList.remove('disabled');
@@ -208,7 +199,6 @@ document.addEventListener('DOMContentLoaded', function () {
       // Disable deletions and mutations
       deletionMenuItem.classList.add('disabled');
       mutationMenuItem.classList.add('disabled');
-      replacementMenuItem.classList.add('disabled');
       translateSelectionMenuItem.classList.add('disabled');
       translateSelectionRevMenuItem.classList.add('disabled');
       markForSubcloningMenuItem.classList.add('disabled');
