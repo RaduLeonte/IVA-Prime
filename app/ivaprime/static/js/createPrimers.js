@@ -529,23 +529,6 @@ function optimizeAA(inputAA, targetOrganism) {
     saveUserPreference("preferredOrganism", targetOrganism);
     updateOrganismSelectorDefault();
 
-    if (targetOrganism === "prioLowTM") {
-        let outputSequence = "";
-        let organismCodonTable = lowTMTable;
-
-        let tripletToAdd = "";
-        for (let i = 0; i < inputAA.length; i++) {
-            frequenciesList = Object.keys(organismCodonTable[inputAA[i]])
-            console.log("optimizeAA", frequenciesList)
-            tripletToAdd = organismCodonTable[inputAA[i]][frequenciesList[0]]
-            
-            outputSequence += tripletToAdd
-            console.log("optimizeAA", tripletToAdd)
-        };
-        console.log("optimizeAA", targetOrganism, inputAA, outputSequence)
-        return outputSequence;
-    };
-
     /**
      * Using codon frequency tables
      */

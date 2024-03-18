@@ -44,10 +44,10 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
 
     <div>
-      <p> Optimize codons for: <select name="targetOrganismSelector" id="targetOrganismSelector">
-        <option value="prioLowTM">Prioritize melting temperature</option>
-      </select> </p>
-      <p class="stop-codon-hint">Codon frequency tables from <a href="https://www.genscript.com/tools/codon-frequency-table" target="_blank">GenScript</a>.</p>
+      <p> Optimize codons for:
+        <select name="targetOrganismSelector" id="targetOrganismSelector"></select>
+      </p>
+      <p class="stop-codon-hint">Codon frequency tables from <a href="https://hive.biochemistry.gwu.edu/review/codon2" target="_blank">CoCoPUTs</a> (<a href="https://doi.org/10.1016/j.jmb.2019.04.021" target="_blank">Alexaki et al. 2019</a>).</p>
     </div>
     <div>
       <button id="create-primers-button">Create Primers</button>
