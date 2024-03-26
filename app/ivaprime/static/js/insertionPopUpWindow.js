@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let endPos = plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"];
         if (!startPos) {startPos = endPos};
         if (!endPos) {endPos = startPos};
-        createReplacementPrimers(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, startPos, endPos, operationType);
+        createPrimers(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, startPos, endPos, operationType);
         
         // Clear the text inputs
         document.getElementById('dna-sequence-input').value = '';

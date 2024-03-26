@@ -599,7 +599,7 @@ function optimizeAA(inputAA, targetOrganism) {
  * replaceStartPos, replaceEndPos - indices of the segment to be deleted, then filled with the new DNA sequence
  * 
  */
-function createReplacementPrimers(dnaToInsert, aaToInsert, targetOrganism,  replaceStartPos, replaceEndPos, operationType) {
+function createPrimers(dnaToInsert, aaToInsert, targetOrganism,  replaceStartPos, replaceEndPos, operationType) {
 
     console.log("HERE1", operationType, dnaToInsert, aaToInsert, targetOrganism, replaceStartPos, replaceEndPos)
     // Make sure that startPos is the smaller number
