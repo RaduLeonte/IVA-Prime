@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     } else if (menuItemId === 'subcloning') {
       console.log('Subcloning selected');
-      createSubcloningPrimersNew(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"], "", "", "", "", null);
+      createSubcloningPrimers(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"], "", "", "", "", null);
 
     /**
      * Subclone into selection with insertion

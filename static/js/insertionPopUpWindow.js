@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!endPos) {endPos = startPos};
 
         //createSubcloning(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, startPos, endPos, operationType);
-        createSubcloningPrimersNew(startPos, endPos, aminoAcidSequenceInput5, dnaSequenceInput5, aminoAcidSequenceInput3, dnaSequenceInput3, document.getElementById("targetOrganismSelector").value);
+        createSubcloningPrimers(startPos, endPos, aminoAcidSequenceInput5, dnaSequenceInput5, aminoAcidSequenceInput3, dnaSequenceInput3, document.getElementById("targetOrganismSelector").value);
 
         // Clear the text inputs
         document.getElementById('dna-sequence-input-5').value = '';

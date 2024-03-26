@@ -883,8 +883,8 @@ function clearAllSubcloningSelections(clearVariables = true) {
  * 
  * subcloningStartPos, subcloningEndPos - indices of the segment to be subcloned into the second plasmid
  */
-function createSubcloningPrimersNew(subcloningStartPos, subcloningEndPos, aaSequence5Prime, dnaSequence5Prime, aaSequence3Prime, dnaSequence3Prime, targetOrganism) {
-    console.log("createSubcloningPrimersNew", subcloningStartPos, subcloningEndPos, aaSequence5Prime, dnaSequence5Prime, aaSequence3Prime, dnaSequence3Prime, targetOrganism)
+function createSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5Prime, dnaSequence5Prime, aaSequence3Prime, dnaSequence3Prime, targetOrganism) {
+    console.log("createSubcloningPrimers", subcloningStartPos, subcloningEndPos, aaSequence5Prime, dnaSequence5Prime, aaSequence3Prime, dnaSequence3Prime, targetOrganism)
     let seqToInsert5 = "";
     if (aaSequence5Prime !== null && aaSequence5Prime !== "") {
         seqToInsert5 = optimizeAA(aaSequence5Prime, targetOrganism);
@@ -907,7 +907,7 @@ function createSubcloningPrimersNew(subcloningStartPos, subcloningEndPos, aaSequ
     let subcloningSequenceFull = seqToInsert5 + repeatingSlice(plasmidDict[subcloningOriginPlasmidIndex]["fileSequence"], subcloningOriginSpan[0] - 1, subcloningOriginSpan[1]-1) + seqToInsert3;
 
 
-    console.log("createSubcloningPrimersNew", subcloningSequenceFull, seqToInsert5, seqToInsert3, subcloningOriginPlasmidIndex, subcloningOriginSpan, startPos, endPos)
+    console.log("createSubcloningPrimers", subcloningSequenceFull, seqToInsert5, seqToInsert3, subcloningOriginPlasmidIndex, subcloningOriginSpan, startPos, endPos)
 
     // Origin templatete primers
     let insertTempFwd = primerExtension(subcloningOriginSpan[0], "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, subcloningOriginPlasmidIndex);
@@ -951,7 +951,7 @@ function createSubcloningPrimersNew(subcloningStartPos, subcloningEndPos, aaSequ
                     {1: {"seq": inputVecRev, "color": primerColorPurple},
                     info: primerInfoVecRev}];
         } else {
-            console.log("createSubcloningPrimersNew with insertion'", inputSequence, get_tm(inputSequence, primerConc, saltConc, "oligoCalc"))
+            console.log("createSubcloningPrimers with insertion'", inputSequence, get_tm(inputSequence, primerConc, saltConc, "oligoCalc"))
             if (get_tm(inputSequence, primerConc, saltConc, "oligoCalc") < upperBoundShortInsertions) {
                 // Short insertion 5' end
                 if (primerDistribution === false) {
