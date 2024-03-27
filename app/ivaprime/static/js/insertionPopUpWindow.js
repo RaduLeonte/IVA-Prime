@@ -91,8 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!startPos) {startPos = endPos};
         if (!endPos) {endPos = startPos};
 
-        //createSubcloning(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, startPos, endPos, operationType);
-        createSubcloningPrimers(startPos, endPos, aminoAcidSequenceInput5, dnaSequenceInput5, aminoAcidSequenceInput3, dnaSequenceInput3, document.getElementById("targetOrganismSelector").value);
+        makeSubcloningPrimers(startPos, endPos, aminoAcidSequenceInput5, dnaSequenceInput5, aminoAcidSequenceInput3, dnaSequenceInput3, document.getElementById("targetOrganismSelector").value);
 
         // Clear the text inputs
         document.getElementById('dna-sequence-input-5').value = '';
@@ -116,8 +115,10 @@ document.addEventListener('DOMContentLoaded', function () {
         let endPos = plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"];
         if (!startPos) {startPos = endPos};
         if (!endPos) {endPos = startPos};
-        createPrimers(dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, startPos, endPos, operationType);
+
+        makePrimers(plasmidDict[currentlyOpenedPlasmid]["fileSequence"], dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, startPos, endPos, operationType);
         
+
         // Clear the text inputs
         document.getElementById('dna-sequence-input').value = '';
         document.getElementById('amino-acid-sequence-input').value = '';

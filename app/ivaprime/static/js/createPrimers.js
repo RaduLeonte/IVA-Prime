@@ -363,9 +363,9 @@ function removePrimerRegionHighlight() {
  * mutSeq - sequence that will be inserted and will be the starting sequence for the homologous region of the forward primer
  *  
  */
-function primerExtension(startingPos, targetStrand, direction, targetTm, method, minLength, plasmidIndex, initialSequence="") {
+function primerExtension(plasmidSequence, startingPos, targetStrand, direction, targetTm, method, minLength, plasmidIndex, initialSequence="") {
     console.log("primerExtension", startingPos, targetStrand, direction, targetTm, minLength, plasmidIndex, initialSequence)
-    const currStrand = (targetStrand === 'fwdStrand') ? plasmidDict[plasmidIndex]["fileSequence"] : plasmidDict[plasmidIndex]["fileComplementarySequence"].split("").reverse().join("");
+    const currStrand = (targetStrand === 'fwdStrand') ? plasmidSequence : getComplementaryStrand(plasmidSequence).split("").reverse().join("");
     const startIndex = (targetStrand === 'fwdStrand') ? startingPos - 1: currStrand.length - startingPos + 1; // Convert sequence index to string index
     
 
@@ -567,13 +567,20 @@ function optimizeAA(inputAA, targetOrganism) {
  * replaceStartPos, replaceEndPos - indices of the segment to be deleted, then filled with the new DNA sequence
  * 
  */
-function createPrimers(dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, operationType) {
-    console.log("createPrimers", operationType, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2)
-    
-    // If theres no input, use the default sequence for testing
-    if (!aaToInsert && !dnaToInsert && operationType !== "Deletion") {
-        aaToInsert = "GGGGS";
+function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, operationType) {
+    console.log("generatePrimerSequences", operationType, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2)
+    /**
+     * Set colors
+     */
+    let colorHomo = primerColorOrange;
+    let colorIns = primerColorRed;
+    let colorTBR = primerColorGreen;
+    if (operationType === "Subcloning") {
+        colorHomo = primerColorCyan;
+        colorIns = primerColorRed;
+        colorTBR = primerColorPurple;
     };
+    
     
     // Operation positions
     const operationStartPos = Math.min(pos1, pos2)
@@ -584,23 +591,22 @@ function createPrimers(dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, oper
      */
     let seqToInsert = "";
     // If AA sequence given, optimise it, else use the DNA sequence
-    if (aaToInsert && aaToInsert !== "") {
+    if (aaToInsert && aaToInsert !== "" && targetOrganism !== null) {
         seqToInsert = optimizeAA(aaToInsert, targetOrganism);
     } else {
         seqToInsert = dnaToInsert;
     };
 
     
-
     let primersDict = {};
     let operationTypeTagline = "";
     /**
      * Template binding regions
      */
     // Forward template binding region, extend forward on the forward strand from the end position
-    const tempFwd = primerExtension(operationEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
+    const tempFwd = primerExtension(plasmidSequence, operationEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
     // Reverse template binding region, extend forward on the complementary strand from the start position
-    const tempRev = primerExtension(operationStartPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
+    const tempRev = primerExtension(plasmidSequence, operationStartPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
 
     /**
      * Homologous regions
@@ -608,7 +614,7 @@ function createPrimers(dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, oper
     let homoFwd = "";
     let homoRev = "";
 
-    console.log("createPrimers", operationType, dnaToInsert, aaToInsert, targetOrganism, operationStartPos, operationEndPos)
+    console.log("generatePrimerSequences", operationType, dnaToInsert, aaToInsert, targetOrganism, operationStartPos, operationEndPos)
     // If the sequence to be inserted has a melting temperature lower than 49 C, extende the primer backwards
     if (get_tm(seqToInsert, primerConc, saltConc, "oligoCalc") < upperBoundShortInsertions) { // Mutation < 49 C (or user defined minimum TM), need homolog region
         /**
@@ -619,7 +625,7 @@ function createPrimers(dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, oper
              * Assymmetric primers, add bases to 5' end of sequence to add, or to nothing in case of deletions
              */
             // Forward homologous region, extend backwards on the forward strand from the start position
-            homoFwd = primerExtension(operationStartPos, "fwdStrand", "backward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentlyOpenedPlasmid);
+            homoFwd = primerExtension(plasmidSequence, operationStartPos, "fwdStrand", "backward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentlyOpenedPlasmid);
             homoRev = "";
             
             // Display primers in the sidebar
@@ -628,11 +634,11 @@ function createPrimers(dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, oper
                                     Total: ${(homoFwd.length + seqToInsert.length + tempFwd.length)} bp)`;
             const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(get_tm(tempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
                                     Total: ${(tempRev.length)} bp)`;
-            primersDict["Forward Primer"] = {1: {"seq": homoFwd, "color": primerColorOrange},
-                                            2: {"seq": seqToInsert, "color": primerColorRed},
-                                            3: {"seq": tempFwd, "color": primerColorGreen},
+            primersDict["Forward Primer"] = {1: {"seq": homoFwd, "color": colorHomo},
+                                            2: {"seq": seqToInsert, "color": colorIns},
+                                            3: {"seq": tempFwd, "color": colorTBR},
                                             info: primerInfoFwd};
-            primersDict["Reverse Primer"] = {1: {"seq": tempRev, "color": primerColorGreen},
+            primersDict["Reverse Primer"] = {1: {"seq": tempRev, "color": colorTBR},
                                             info: primerInfoRev};
 
         } else if (primerDistribution === true) {
@@ -641,8 +647,8 @@ function createPrimers(dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, oper
              */
             let homoFragmentLength1 = 0;
             let homoFragmentLength2 = 0;
-            let homoFwd1 = primerExtension(operationStartPos, "fwdStrand", "backward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentlyOpenedPlasmid);
-            let homoFwd2 = primerExtension(operationEndPos, "fwdStrand", "forward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentlyOpenedPlasmid);
+            let homoFwd1 = primerExtension(plasmidSequence, operationStartPos, "fwdStrand", "backward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentlyOpenedPlasmid);
+            let homoFwd2 = primerExtension(plasmidSequence, operationEndPos, "fwdStrand", "forward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentlyOpenedPlasmid);
             let overlappingSeq = homoFwd1 + seqToInsert + homoFwd2;
 
             let turnHomoFwd1 = true;
@@ -673,13 +679,13 @@ function createPrimers(dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, oper
                                     Total: ${(homoFwd1.length + seqToInsert.length + tempFwd.length)} bp)`;
             const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(get_tm(tempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
                                     Total: ${(homoRev1.length + seqToInsert.length + tempRev.length)} bp)`;
-            primersDict["Forward Primer"] = {1: {"seq": homoFwd1, "color": primerColorOrange},
-                                            2: {"seq": seqToInsert, "color": primerColorRed},
-                                            3: {"seq": tempFwd, "color": primerColorGreen},
+            primersDict["Forward Primer"] = {1: {"seq": homoFwd1, "color": colorHomo},
+                                            2: {"seq": seqToInsert, "color": colorIns},
+                                            3: {"seq": tempFwd, "color": colorTBR},
                                             info: primerInfoFwd};
-            primersDict["Reverse Primer"] = {1: {"seq": homoRev1, "color": primerColorOrange},
-                                             2: {"seq": getComplementaryStrand(seqToInsert).split("").reverse().join(""), "color": primerColorRed},
-                                             3: {"seq": tempRev, "color": primerColorGreen},
+            primersDict["Reverse Primer"] = {1: {"seq": homoRev1, "color": colorHomo},
+                                             2: {"seq": getComplementaryStrand(seqToInsert).split("").reverse().join(""), "color": colorIns},
+                                             3: {"seq": tempRev, "color": colorTBR},
                                              info: primerInfoRev};
         };
 
@@ -730,11 +736,11 @@ function createPrimers(dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, oper
                     break;
                 };
             };
-            console.log("createPrimers long symm", homoFragmentLength1, homoFragmentLength2, overlappingSeq)
+            console.log("generatePrimerSequences long symm", homoFragmentLength1, homoFragmentLength2, overlappingSeq)
             homoFwd = seqToInsert.slice(homoFragmentLength1, seqToInsert.length);
             const seqToInsertRevComp = getComplementaryStrand(seqToInsert).split('').reverse().join('');
             homoRev = seqToInsertRevComp.slice(homoFragmentLength2, seqToInsertRevComp.length);
-            console.log("createPrimers long symm", homoFwd, homoRev)
+            console.log("generatePrimerSequences long symm", homoFwd, homoRev)
         };
 
         // Display primers in the sidebar
@@ -743,21 +749,25 @@ function createPrimers(dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, oper
                                 Total: ${(homoFwd.length + tempFwd.length)} bp)`;
         const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(get_tm(tempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
                                 Total: ${(homoRev.length + tempRev.length)} bp)`;
-        primersDict["Forward Primer"] = {1: {"seq": homoFwd, "color": primerColorRed},
-                                         2: {"seq": tempFwd, "color": primerColorGreen},
+        primersDict["Forward Primer"] = {1: {"seq": homoFwd, "color": colorIns},
+                                         2: {"seq": tempFwd, "color": colorTBR},
                                         info: primerInfoFwd};
-        primersDict["Reverse Primer"] = {1: {"seq": homoRev, "color": primerColorRed},
-                                         2: {"seq": tempRev, "color": primerColorGreen},
+        primersDict["Reverse Primer"] = {1: {"seq": homoRev, "color": colorIns},
+                                         2: {"seq": tempRev, "color": colorTBR},
                                          info: primerInfoRev};
         operationTypeTagline = (operationType !== "Deletion") ? "Long " + operationType: operationType;
     };
 
+    return [operationTypeTagline, primersDict, seqToInsert, operationStartPos, operationEndPos];
+};
+
+function makePrimers(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, operationType) {
+    const [operationTypeTagline, primersDict, seqToInsert, operationStartPos, operationEndPos] = generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, operationType);
+
     // Display primers in the sidebar
     displayPrimers(operationTypeTagline, primersDict);
-
     // Update the sequence and features
-    const plasmidLengthDiff = seqToInsert.length - (operationEndPos - operationStartPos)
-    updateFeatures(operationType, seqToInsert, operationStartPos, operationEndPos, plasmidLengthDiff);
+    updateFeatures(operationType, seqToInsert, operationStartPos, operationEndPos, seqToInsert.length - (operationEndPos - operationStartPos));
 };
 
 
@@ -834,8 +844,12 @@ function clearAllSubcloningSelections(clearVariables = true) {
  * 
  * subcloningStartPos, subcloningEndPos - indices of the segment to be subcloned into the second plasmid
  */
-function createSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5Prime, dnaSequence5Prime, aaSequence3Prime, dnaSequence3Prime, targetOrganism) {
-    console.log("createSubcloningPrimers", subcloningStartPos, subcloningEndPos, aaSequence5Prime, dnaSequence5Prime, aaSequence3Prime, dnaSequence3Prime, targetOrganism)
+function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5Prime, dnaSequence5Prime, aaSequence3Prime, dnaSequence3Prime, targetOrganism) {
+    console.log("makeSubcloningPrimers", subcloningStartPos, subcloningEndPos, aaSequence5Prime, dnaSequence5Prime, aaSequence3Prime, dnaSequence3Prime, targetOrganism)
+    
+    /**
+     * Optimise 5' and 3' insertions, otherwise use given DNA sequence
+     */
     let seqToInsert5 = "";
     if (aaSequence5Prime !== null && aaSequence5Prime !== "") {
         seqToInsert5 = optimizeAA(aaSequence5Prime, targetOrganism);
@@ -850,210 +864,36 @@ function createSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequenc
         seqToInsert3 = dnaSequence3Prime;
     };
 
+    // Check indices and reorder if necessary
     if (!subcloningStartPos) {subcloningStartPos = subcloningEndPos};
     if (!subcloningEndPos) {subcloningEndPos = subcloningStartPos};
     const startPos = Math.min(subcloningStartPos, subcloningEndPos);
     const endPos = Math.max(subcloningStartPos, subcloningEndPos);
 
-    let subcloningSequenceFull = seqToInsert5 + repeatingSlice(plasmidDict[subcloningOriginPlasmidIndex]["fileSequence"], subcloningOriginSpan[0] - 1, subcloningOriginSpan[1]-1) + seqToInsert3;
+    // Insertion sequence with insertions added
+    const subcloningTargetSequence = repeatingSlice(plasmidDict[subcloningOriginPlasmidIndex]["fileSequence"], subcloningOriginSpan[0] - 1, subcloningOriginSpan[1]-1)
+    const subcloningSequenceFull = seqToInsert5 + subcloningTargetSequence + seqToInsert3;
 
+    const targetVectorSequence = plasmidDict[currentlyOpenedPlasmid]["fileSequence"];
+    const simulatedPlasmidSequence = targetVectorSequence.slice(0, startPos-1) + subcloningTargetSequence + targetVectorSequence.slice(endPos-1);
+    const [, primersDict5, , , ] = generatePrimerSequences(simulatedPlasmidSequence, seqToInsert5, "", targetOrganism, startPos, startPos, "Subcloning");
 
-    console.log("createSubcloningPrimers", subcloningSequenceFull, seqToInsert5, seqToInsert3, subcloningOriginPlasmidIndex, subcloningOriginSpan, startPos, endPos)
+    const simulatedPlasmidSequenceRevComp = getComplementaryStrand(simulatedPlasmidSequence).split("").reverse().join("");
+    const endPosRevComp = simulatedPlasmidSequenceRevComp.length - endPos - subcloningTargetSequence.length + 2;
+    const seqToInsert3RevComp = getComplementaryStrand(seqToInsert3).split("").reverse().join("");;
+    const [, primersDict3, , , ] = generatePrimerSequences(simulatedPlasmidSequenceRevComp, seqToInsert3RevComp, "", targetOrganism, endPosRevComp, endPosRevComp, "Subcloning");
 
-    // Origin templatete primers
-    let insertTempFwd = primerExtension(subcloningOriginSpan[0], "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, subcloningOriginPlasmidIndex);
-    let insertTempRev = primerExtension(subcloningOriginSpan[1], "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, subcloningOriginPlasmidIndex);
+    console.log("makeSubcloningPrimers", primersDict5)
+    console.log("makeSubcloningPrimers", primersDict3)
 
-    // Destination template primers
-    let vecFwd = primerExtension(endPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
-    let vecRev = primerExtension(startPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
-    
     /**
-     * 
+     * Primers dict
      */
-    function makeInsertionPrimers(inputSequence, inputTempFwd, inputVecRev) {
-        /**
-         * 5' Prime insertions
-         * 
-         *  insertion string -- not empty -->  length?  --  long --> distribute?
-         *          |                             |
-         *        empty                         short
-         *          ↓                             ↓
-         *      standard primers              distribute?
-         */
-        if (inputSequence === "") {
-            let insertHomoFwd = getComplementaryStrand(inputVecRev).split("").reverse().join("");
-            while (true) {
-                const stillAboveTargetTM = get_tm(insertHomoFwd.slice(1), primerConc, saltConc, "oligoCalc") > homoRegionTm;
-                const slicingGetsUsCloser = Math.abs(homoRegionTm - get_tm(insertHomoFwd.slice(1), primerConc, saltConc, "oligoCalc")) <= Math.abs(homoRegionTm - get_tm(insertHomoFwd, primerConc, saltConc, "oligoCalc"));
-                const minimumLengthNotReached = insertHomoFwd.length > homoRegionMinLength;
-                if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
-                    insertHomoFwd = insertHomoFwd.slice(1);
-                } else {break};
-            };
-            // Display primers in the sidebar
-            const primerInfoFwd = `(Homologous region: ${insertHomoFwd.length} bp, ${Math.round(get_tm(insertHomoFwd, primerConc, saltConc, "oligoCalc"))} °C;
-                                    Template binding region: ${inputTempFwd.length} bp, ${Math.round(get_tm(inputTempFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
-                                    Total: ${(insertHomoFwd.length + inputTempFwd.length)} bp)`;
-            const primerInfoVecRev = `(Template binding region: ${inputVecRev.length} bp, ${Math.round(get_tm(inputVecRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C)`;
-            return [{1: {"seq": insertHomoFwd, "color": primerColorCyan},
-                    2: {"seq": inputTempFwd, "color": primerColorPurple},
-                    info: primerInfoFwd},
-                    {1: {"seq": inputVecRev, "color": primerColorPurple},
-                    info: primerInfoVecRev}];
-        } else {
-            console.log("createSubcloningPrimers with insertion'", inputSequence, get_tm(inputSequence, primerConc, saltConc, "oligoCalc"))
-            if (get_tm(inputSequence, primerConc, saltConc, "oligoCalc") < upperBoundShortInsertions) {
-                // Short insertion 5' end
-                if (primerDistribution === false) {
-                    // If short insertion and we are not distributing the insertion, just tack it on there
-                    // Homologous regions
-                    let insertHomoFwd = getComplementaryStrand(inputVecRev).split("").reverse().join("");
-                    while (true) {
-                        const stillAboveTargetTM = get_tm(insertHomoFwd.slice(1), primerConc, saltConc, "oligoCalc") > homoRegionTm;
-                        const slicingGetsUsCloser = Math.abs(homoRegionTm - get_tm(insertHomoFwd.slice(1), primerConc, saltConc, "oligoCalc")) <= Math.abs(homoRegionTm - get_tm(insertHomoFwd, primerConc, saltConc, "oligoCalc"));
-                        const minimumLengthNotReached = insertHomoFwd.length > homoRegionMinLength;
-                        if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
-                            insertHomoFwd = insertHomoFwd.slice(1);
-                        } else {break};
-                    };
-                    // Display primers in the sidebar
-                    const primerInfoFwd = `(Total: ${(insertHomoFwd.length + inputSequence.length + inputTempFwd.length)} bp)`;
-                    const primerInfoVecRev = `(Template binding region: ${inputVecRev.length} bp, ${Math.round(get_tm(inputVecRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C)`;
-                    return [{1: {"seq": insertHomoFwd, "color": primerColorCyan},
-                            2: {"seq": inputSequence, "color": primerColorRed},
-                            3: {"seq": inputTempFwd, "color": primerColorPurple},
-                            info: primerInfoFwd},
-                            {1: {"seq": inputVecRev, "color": primerColorPurple},
-                            info: primerInfoVecRev}]
-                } else if (primerDistribution === true) {
-                    // If distributing
-                    let homoFragmentLength1 = 0;
-                    let homoFragmentLength2 = 0;
-                    let homoFwd1 = getComplementaryStrand(inputVecRev).split("").reverse().join(""); // Cyan left of insertion
-                    let homoFwd2 = inputTempFwd; // Purple template region
-                    let overlappingSeq = homoFwd1 + inputSequence + homoFwd2;
-
-                    let turn = "homoFwd1";
-                    while (true) {
-                        // Remove from left side
-                        console.log("overlappingSeq", overlappingSeq, get_tm(overlappingSeq, primerConc, saltConc, "oligoCalc"), homoFragmentLength1, homoFragmentLength2)
-                        if (turn === "homoFwd1") {
-                            const stillAboveTargetTM = get_tm(overlappingSeq.slice(1), primerConc, saltConc, "oligoCalc") > homoRegionTm;
-                            const slicingGetsUsCloser = Math.abs(homoRegionTm - get_tm(overlappingSeq.slice(1), primerConc, saltConc, "oligoCalc")) <= Math.abs(homoRegionTm - get_tm(overlappingSeq, primerConc, saltConc, "oligoCalc"));
-                            const minimumLengthNotReached = overlappingSeq.length > homoRegionMinLength;
-                            if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
-                                overlappingSeq = overlappingSeq.slice(1);
-                                homoFragmentLength1++;
-                                turn = "homoFwd2";
-                            } else{break};
-                        // Remove from right side
-                        } else if (turn === "homoFwd2") {
-                            const stillAboveTargetTM = get_tm(overlappingSeq.slice(0, -1), primerConc, saltConc, "oligoCalc") > homoRegionTm;
-                            const slicingGetsUsCloser = Math.abs(homoRegionTm - get_tm(overlappingSeq.slice(0, -1), primerConc, saltConc, "oligoCalc")) <= Math.abs(homoRegionTm - get_tm(overlappingSeq, primerConc, saltConc, "oligoCalc"));
-                            const minimumLengthNotReached = overlappingSeq.length > homoRegionMinLength;
-                            if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
-                                overlappingSeq = overlappingSeq.slice(0, -1);
-                                homoFragmentLength2++;
-                                turn = "homoFwd1";
-                            } else{break};
-                        };
-                    };
-
-                    homoFwd1 = homoFwd1.slice(homoFragmentLength1, homoFwd1.length); // Homo part of cyan
-                    homoFwd2 = homoFwd2.slice(0, homoFwd2.length - homoFragmentLength2 + 1); // Homo part of purple template
-                    let homoRev = getComplementaryStrand(homoFwd2).split('').reverse().join('');
-                    console.log("overlappingSeq", homoFwd1, homoFwd2)
-
-                    // Display primers in the sidebar
-                    const primerInfoFwd = `(Total: ${(homoFwd1.length + inputSequence.length + inputTempFwd.length)} bp)`;
-                    const primerInfoVecRev = `(Total: ${homoRev.length + inputSequence.length + inputVecRev.length} bp)`;
-                    return [{1: {"seq": homoFwd1, "color": primerColorCyan},
-                            2: {"seq": inputSequence, "color": primerColorRed},
-                            3: {"seq": inputTempFwd, "color": primerColorPurple},
-                            info: primerInfoFwd},
-                            {1: {"seq": homoRev, "color": primerColorOrange},
-                            2: {"seq": getComplementaryStrand(inputSequence).split('').reverse().join(''), "color": primerColorRed},
-                            3: {"seq": inputVecRev, "color": primerColorPurple},
-                            info: primerInfoVecRev}];
-                }
-            } else {
-                // Long insert 5' end
-                if (primerDistribution === false) {
-                    // Add it whole on the first primer
-                    // add a small overlapping sequence to the other
-                    let homoRev = getComplementaryStrand(inputSequence).split('').reverse().join('');
-                    while (true) {
-                        const stillAboveTargetTM = get_tm(homoRev.slice(1), primerConc, saltConc, "oligoCalc") > homoRegionTm;
-                        const slicingGetsUsCloser = Math.abs(homoRegionTm - get_tm(homoRev.slice(1), primerConc, saltConc, "oligoCalc")) <= Math.abs(homoRegionTm - get_tm(homoRev, primerConc, saltConc, "oligoCalc"));
-                        const minimumLengthNotReached = homoRev.length > homoRegionMinLength;
-                        if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
-                            homoRev = homoRev.slice(1);
-                        } else {break};
-                    };
-                    
-                    // Display primers in the sidebar
-                    const primerInfoFwd = `(Total: ${(inputSequence.length + inputTempFwd.length)} bp)`;
-                    const primerInfoVecRev = `(Total: ${homoRev.length + inputVecRev.length} bp)`;
-                    return[{1: {"seq": inputSequence, "color": primerColorRed},
-                            2: {"seq": inputTempFwd, "color": primerColorPurple},
-                            info: primerInfoFwd},
-                            {1: {"seq": homoRev, "color": primerColorRed},
-                            3: {"seq": inputVecRev, "color": primerColorPurple},
-                            info: primerInfoVecRev}];
-                } else if (primerDistribution === true) {
-                    let homoFwdFragmentLength = 0;
-                    let homoRevFragmentLength = 0;
-                    let overlappingSeq = inputSequence;
-                    let homoFwd = inputSequence;
-                    let homoRev = getComplementaryStrand(homoFwd).split('').reverse().join('');
-
-                    let turn = "fwd";
-                    while (true) {
-                        if (turn === "fwd") {
-                            const stillAboveTargetTM = get_tm(overlappingSeq.slice(1), primerConc, saltConc, "oligoCalc") > homoRegionTm;
-                            const slicingGetsUsCloser = Math.abs(homoRegionTm - get_tm(overlappingSeq.slice(1), primerConc, saltConc, "oligoCalc")) <= Math.abs(homoRegionTm - get_tm(overlappingSeq, primerConc, saltConc, "oligoCalc"));
-                            const minimumLengthNotReached = overlappingSeq.length > homoRegionMinLength;
-                            if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
-                                overlappingSeq = overlappingSeq.slice(1);
-                                homoFwdFragmentLength++;
-                                turn = "rev";
-                            } else{break};
-                        } else if (turn === "rev") {
-                            const stillAboveTargetTM = get_tm(overlappingSeq.slice(0, -1), primerConc, saltConc, "oligoCalc") > homoRegionTm;
-                            const slicingGetsUsCloser = Math.abs(homoRegionTm - get_tm(overlappingSeq.slice(0, -1), primerConc, saltConc, "oligoCalc")) <= Math.abs(homoRegionTm - get_tm(overlappingSeq, primerConc, saltConc, "oligoCalc"));
-                            const minimumLengthNotReached = overlappingSeq.length > homoRegionMinLength;
-                            if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
-                                overlappingSeq = overlappingSeq.slice(0, -1);
-                                homoRevFragmentLength++;
-                                turn = "fwd";
-                            } else{break};
-                        };
-                    };
-
-                    homoFwd = homoFwd.slice(homoFwdFragmentLength, homoFwd.length);
-                    homoRev = homoRev.slice(homoRevFragmentLength, homoRev.length);
-                    const primerInfoFwd = `(Total: ${(homoFwd.length + inputTempFwd.length)} bp)`;
-                    const primerInfoVecRev = `(Total: ${homoRev.length + inputVecRev.length} bp)`;
-                    return [{1: {"seq": homoFwd, "color": primerColorRed},
-                            2: {"seq": inputTempFwd, "color": primerColorPurple},
-                            info: primerInfoFwd},
-                            {1: {"seq": homoRev, "color": primerColorRed},
-                            3: {"seq": inputVecRev, "color": primerColorPurple},
-                            info: primerInfoVecRev}];
-                };
-            };
-        };
-    };
-
-    const [forwardPrimerDict, reverseVectorPrimerDict] = makeInsertionPrimers(seqToInsert5, insertTempFwd, vecRev);
-    const [reversePrimerDict, forwardVectorPrimerDict] = makeInsertionPrimers(getComplementaryStrand(seqToInsert3).split("").reverse().join(""), insertTempRev, vecFwd);
-
     let primersDict = {};
-    primersDict["Forward Primer"] = forwardPrimerDict;
-    primersDict["Reverse Primer"] = reversePrimerDict;
-    primersDict["Vector Forward Primer"] = forwardVectorPrimerDict;
-    primersDict["Vector Reverse Primer"] = reverseVectorPrimerDict;
+    primersDict["Forward Primer"] = primersDict5["Forward Primer"];
+    primersDict["Reverse Primer"] = primersDict3["Forward Primer"];
+    primersDict["Vector Forward Primer"] = primersDict3["Reverse Primer"];
+    primersDict["Vector Reverse Primer"] = primersDict5["Reverse Primer"];
     console.log("Primers Dict:", primersDict)
     displayPrimers("Subcloning", primersDict);
 

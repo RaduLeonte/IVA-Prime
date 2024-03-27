@@ -72,8 +72,9 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (menuItemId === 'deletion') {
       console.log('Deletion selected');
       //createDeletionPrimers(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]); // Create deletion primers
-      createPrimers("", "", "", plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"], "Deletion");
-    
+      makePrimers(plasmidDict[currentlyOpenedPlasmid]["fileSequence"], "", "", "", plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"], "Deletion");
+
+
     /**
      * Mutate selection
      */
@@ -93,7 +94,13 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     } else if (menuItemId === 'subcloning') {
       console.log('Subcloning selected');
-      createSubcloningPrimers(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"], "", "", "", "", null);
+      makeSubcloningPrimers(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"],
+                            plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"],
+                            "",
+                            "",
+                            "",
+                            "",
+                            null);
 
     /**
      * Subclone into selection with insertion
