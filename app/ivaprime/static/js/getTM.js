@@ -12,7 +12,7 @@ function get_tm(primer_sequence, c, m, method="nnSantaLucia") {
     const tm = meltingTemperatureAlgorithmDict[method](primer_sequence, c); 
     
     // Add a salt correction
-    let tm_corr = (method !== "oligoCalc" && saltConc &&  saltConc !== NaN && saltConc !== 0) ? saltCorrectionEquationDict[saltCorrectionEquation](tm, primer_sequence, m): tm;
+    let tm_corr = (saltConc &&  saltConc !== NaN && saltConc !== 0) ? saltCorrectionEquationDict[saltCorrectionEquation](tm, primer_sequence, m): tm;
 
     // Add DMSO correction
     if (method !== "oligoCalc") {
