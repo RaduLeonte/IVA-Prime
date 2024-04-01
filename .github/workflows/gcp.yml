@@ -20,7 +20,4 @@ jobs:
       with:
         credentials_json: ${{ secrets.SERVICE_ACCOUNT_KEY }}
         project_id: ${{ env.PROJECT_ID }}
-        export_default_credentials: true
-
-    - id: 'deploy'
-      uses: 'google-github-actions/deploy-appengine@v1'
+        service_account: 'github-actions@iva-prime.iam.gserviceaccount.com'
