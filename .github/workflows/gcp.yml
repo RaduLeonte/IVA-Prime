@@ -23,7 +23,7 @@ jobs:
         project_id: ${{ env.PROJECT_ID }}
         service_account: 'github-actions@iva-prime.iam.gserviceaccount.com'
 
-    - id: deploy
-      uses: 'google-github-actions/deploy-appengine@v1'
-      with:
-        project_id: ${{ env.PROJECT_ID }}
+    - id: "deploy"
+      run: |
+        gcloud config set project iva-prime
+        gcloud app deploy --format json app.yaml --project iva-prime --promote
