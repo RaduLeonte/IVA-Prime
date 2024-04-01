@@ -876,12 +876,10 @@ function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5
 
     const targetVectorSequence = plasmidDict[currentlyOpenedPlasmid]["fileSequence"];
     const simulatedPlasmidSequence = targetVectorSequence.slice(0, startPos-1) + subcloningTargetSequence + targetVectorSequence.slice(endPos-1);
-    console.log("simulatedPlasmidSequence", simulatedPlasmidSequence, startPos)
     const [, primersDict5, , , ] = generatePrimerSequences(simulatedPlasmidSequence, seqToInsert5, "", targetOrganism, startPos, startPos, "Subcloning");
 
     const simulatedPlasmidSequenceRevComp = getComplementaryStrand(simulatedPlasmidSequence).split("").reverse().join("");
-    const endPosRevComp = simulatedPlasmidSequenceRevComp.length - startPos - subcloningTargetSequence.length + 2;
-    console.log("simulatedPlasmidSequence", simulatedPlasmidSequenceRevComp, endPosRevComp)
+    const endPosRevComp = simulatedPlasmidSequenceRevComp.length - endPos - subcloningTargetSequence.length + 2;
     const seqToInsert3RevComp = getComplementaryStrand(seqToInsert3).split("").reverse().join("");;
     const [, primersDict3, , , ] = generatePrimerSequences(simulatedPlasmidSequenceRevComp, seqToInsert3RevComp, "", targetOrganism, endPosRevComp, endPosRevComp, "Subcloning");
 
