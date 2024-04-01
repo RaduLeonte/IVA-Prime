@@ -49,7 +49,13 @@ document.addEventListener('DOMContentLoaded', function () {
       </p>
       <p class="stop-codon-hint">Codon frequency tables from <a href="https://hive.biochemistry.gwu.edu/review/codon2" target="_blank">CoCoPUTs</a> (<a href="https://doi.org/10.1016/j.jmb.2019.04.021" target="_blank">Alexaki et al. 2019</a>).</p>
     </div>
-    <div>
+
+    <div class="popup-window-vgroup">
+      <input type="checkbox" id="translate-new-feature-checkbox" name="translate-new-feature-checkbox">
+      <label for="translate-new-feature-checkbox">Translate new feature</label>
+    </div>
+
+    <div class="popup-window-vgroup">
       <button id="create-primers-button">Create Primers</button>
       <button id="cancel-button">Cancel</button>
     </div>
@@ -67,6 +73,10 @@ document.addEventListener('DOMContentLoaded', function () {
     };
     select.add(newOption,undefined);
   };
+
+  document.getElementById("amino-acid-sequence-input").addEventListener('input', updateTranslateNewFeatureCheckbox);
+  document.getElementById("amino-acid-sequence-input-5").addEventListener('input', updateTranslateNewFeatureCheckbox);
+  document.getElementById("amino-acid-sequence-input-3").addEventListener('input', updateTranslateNewFeatureCheckbox);
 
   // Button listeners
   popupWindow.addEventListener('click', function (event) {
@@ -91,7 +101,17 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!startPos) {startPos = endPos};
         if (!endPos) {endPos = startPos};
 
-        makeSubcloningPrimers(startPos, endPos, aminoAcidSequenceInput5, dnaSequenceInput5, aminoAcidSequenceInput3, dnaSequenceInput3, document.getElementById("targetOrganismSelector").value);
+        const translateFeature = document.getElementById("translate-new-feature-checkbox").checked;
+
+        makeSubcloningPrimers(
+          startPos,
+          endPos, aminoAcidSequenceInput5,
+          dnaSequenceInput5,
+          aminoAcidSequenceInput3,
+          dnaSequenceInput3,
+          document.getElementById("targetOrganismSelector").value,
+          translateFeature
+        );
 
         // Clear the text inputs
         document.getElementById('dna-sequence-input-5').value = '';
@@ -116,7 +136,18 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!startPos) {startPos = endPos};
         if (!endPos) {endPos = startPos};
 
-        makePrimers(plasmidDict[currentlyOpenedPlasmid]["fileSequence"], dnaSequenceInput, aminoAcidSequenceInput, document.getElementById("targetOrganismSelector").value, startPos, endPos, operationType);
+        const translateFeature = document.getElementById("translate-new-feature-checkbox").checked;;
+
+        makePrimers(
+          plasmidDict[currentlyOpenedPlasmid]["fileSequence"],
+          dnaSequenceInput,
+          aminoAcidSequenceInput,
+          document.getElementById("targetOrganismSelector").value,
+          startPos,
+          endPos,
+          operationType,
+          translateFeature
+        );
         
 
         // Clear the text inputs
@@ -139,6 +170,22 @@ document.addEventListener('DOMContentLoaded', function () {
     positionContextMenu(event.clientX, event.clientY);
   });
 });
+
+
+/**
+ * 
+ */
+function updateTranslateNewFeatureCheckbox(event) {
+  if (document.getElementById("subcloningInput").style.display === "none") {
+    if (isAminoAcidSequence(document.getElementById("amino-acid-sequence-input").value) === true) {
+      document.getElementById("translate-new-feature-checkbox").checked = true;
+    };
+  } else {
+    if (isAminoAcidSequence(document.getElementById("amino-acid-sequence-input-5").value) === true && isAminoAcidSequence(document.getElementById("amino-acid-sequence-input-3").value) === true) {
+      document.getElementById("translate-new-feature-checkbox").checked = true;
+    };
+  };
+};
 
 
 /**
@@ -175,8 +222,9 @@ function showPopupWindow(headerText, operationType) {
  * Hide pop up window.
  */
 function hidePopupWindow() {
-  const popupWindow = document.querySelector('.popup-window');
-  popupWindow.style.display = 'none';
+  document.querySelectorAll('.popup-window').forEach(function(element) {
+    element.style.display = 'none';
+  });
 };
 
 

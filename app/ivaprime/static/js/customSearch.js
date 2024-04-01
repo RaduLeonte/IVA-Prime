@@ -103,7 +103,7 @@ function isDNASequence(str) {
 
 function isAminoAcidSequence(str) {
     return /^[ACDEFGHIKLMNPQRSTVWYX*-]+$/i.test(str);
-}
+};
 
 
 /**

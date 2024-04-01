@@ -761,13 +761,13 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
     return [operationTypeTagline, primersDict, seqToInsert, operationStartPos, operationEndPos];
 };
 
-function makePrimers(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, operationType) {
+function makePrimers(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, operationType, translateFeature) {
     const [operationTypeTagline, primersDict, seqToInsert, operationStartPos, operationEndPos] = generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, operationType);
 
     // Display primers in the sidebar
     displayPrimers(operationTypeTagline, primersDict);
     // Update the sequence and features
-    updateFeatures(operationType, seqToInsert, operationStartPos, operationEndPos, seqToInsert.length - (operationEndPos - operationStartPos));
+    updateFeatures(operationType, translateFeature, seqToInsert, operationStartPos, operationEndPos, seqToInsert.length - (operationEndPos - operationStartPos));
 };
 
 
@@ -844,7 +844,7 @@ function clearAllSubcloningSelections(clearVariables = true) {
  * 
  * subcloningStartPos, subcloningEndPos - indices of the segment to be subcloned into the second plasmid
  */
-function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5Prime, dnaSequence5Prime, aaSequence3Prime, dnaSequence3Prime, targetOrganism) {
+function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5Prime, dnaSequence5Prime, aaSequence3Prime, dnaSequence3Prime, targetOrganism, translateFeature=false) {
     console.log("makeSubcloningPrimers", subcloningStartPos, subcloningEndPos, aaSequence5Prime, dnaSequence5Prime, aaSequence3Prime, dnaSequence3Prime, targetOrganism)
     
     /**
@@ -901,7 +901,7 @@ function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5
 
     // Update stuff
     const plasmidLengthDiff = subcloningSequenceFull.length - (endPos - startPos);
-    updateFeatures("Subcloning", subcloningSequenceFull, startPos, endPos, plasmidLengthDiff);
+    updateFeatures("Subcloning", translateFeature, subcloningSequenceFull, startPos, endPos, plasmidLengthDiff);
 };
 
 
@@ -914,7 +914,7 @@ function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5
  * segmentStartPos, segmentEndPos - indices deliminating the span of the new feature (equal in the case of pure insertions)
  * pNr - number of the target plasmid to be updated
  */
-function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, segmentEndPos, featureShift) {
+function updateFeatures(operationType, translateFeature, newFeatureSequence, segmentStartPos, segmentEndPos, featureShift) {
     // Update the sequence and features
     // Convert back from sequence indices to string indices
     segmentStartPos--;
@@ -936,7 +936,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
      * 
     */
 
-    function checkNewFeatureOverlap(elementKey, elementValue, featureStart, featureEnd, operationType) {
+    function checkNewFeatureOverlap(elementKey, elementValue, featureStart, featureEnd, operationType, newFeatureType) {
         // Adjust indices if we're dealing with a pure insertion and the start and end indices are identical
         if (featureStart === featureEnd) {
             featureStart++;
@@ -1044,7 +1044,7 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
     // Loop over every feature and either shift it if it occurs after the replacement or delete it if it
     // overlapped with the replacemen
     Object.entries(plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]).forEach(([key, value]) => {
-        const decision = checkNewFeatureOverlap(key, value, segmentStartPos, segmentEndPos, newFeatureType);
+        const decision = checkNewFeatureOverlap(key, value, segmentStartPos, segmentEndPos, operationType);
         console.log("checkNewFeatureOverlap", key, segmentStartPos, segmentEndPos, decision)
         if (decision === "shift" || decision === "inside") {
             const spanDirection = (!value.span.includes("complement")) ? "fwd": "rev";
@@ -1070,26 +1070,19 @@ function updateFeatures(newFeatureType, newFeatureSequence, segmentStartPos, seg
         };
     });
 
-    // Check if there is a previous insertion and if there is, increment the nr at the end
-    let i = 2;
-    let targetFeaturesDict = plasmidDict[currentlyOpenedPlasmid]["fileFeatures"];
-    let newFeatureId = "misc_feature"
-    while (newFeatureId in targetFeaturesDict) {
-        newFeatureId =  newFeatureId.replace("" + i-1, "")
-        newFeatureId += i;
-        i++;
-    };
-    console.log("newFeatureName", newFeatureId, newFeatureType)
-
     // Creat the new feature
-    if (newFeatureType !== "Deletion") {
+    if (operationType !== "Deletion") {
         const tempDict = {} // init feature dict
-        tempDict.label = newFeatureType;
+        tempDict.label = operationType;
+        tempDict.type = (translateFeature === true) ? "CDS": "misc_feature";
+        if (translateFeature === true) {
+            tempDict.translation = translateSequence(newFeatureSequence);
+        };
         const insertStringPositionStart = segmentStartPos + 1;
         const insertStringPositionEnd = segmentStartPos + newFeatureSequence.length;
         tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
         tempDict.note = "";
-        plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][newFeatureId] = tempDict // add feature to features dict
+        plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][crypto.randomUUID()] = tempDict // add feature to features dict
         plasmidDict[currentlyOpenedPlasmid]["fileFeatures"] = sortBySpan(plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]) // resort feature dict by their order of appearance in the sequence
 
     };
@@ -1133,22 +1126,33 @@ function sortBySpan(dict) {
 };
 
 
+// Map, IUPAC codes
+const nucleotideComplements = {
+    'A': 'T',
+    'C': 'G',
+    'G': 'C',
+    'T': 'A',
+    'R': 'Y', // A or G -> T or C
+    'Y': 'R', // T or C -> A or G
+    'S': 'S', // G or C -> G or C
+    'W': 'W', // A or T -> A or T
+    'K': 'M', // G or T -> A or C
+    'M': 'K', // A or C -> G or T
+    'B': 'V', // C or G or T -> G or C or A
+    'D': 'H', // A or G or T -> T or C or A
+    'H': 'D', // A or C or T -> T or G or A
+    'V': 'B', // A or C or G -> T or G or C
+    'N': 'N', // any
+    '.': '-', // gap
+    '-': '-'  // gap
+};
 /**
  * Create the complementary strand to a given DNA sequence.
  */
 function getComplementaryStrand(inputSequence) {
-    // Map
-    const nucleotideComplements = {
-        'A': 'T',
-        'T': 'A',
-        'G': 'C',
-        'C': 'G',
-        'N': 'N'
-    };
-
     // Convert to uppercase, make into list, map to complementary base, then turn back into string
     const complementaryStrand = inputSequence.toUpperCase()
-        .replace(/[^ACTNG]+/g, '')
+        .replace(/[^ACGTRYSWKMBDHVN.-]+/g, '')
         .split('')
         .map(nucleotide => nucleotideComplements[nucleotide])
         .join('');

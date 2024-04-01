@@ -238,24 +238,23 @@ function hideAllHideableWindows() {
  * Slide settings tab
  */
 function slideTab(e, direction) {
-    console.log(e)
-    console.log(e.getAttribute("disabled"))
     if (e.getAttribute("disabled") !== "true") {
         const tabsList = document.querySelectorAll(".tab");
         let translate = (direction === "advanced") ? -100 : 100;
-        console.log("Sliding", translate);
-        console.log(tabsList);
+
         tabsList.forEach((tabElement) => {
             const matches = tabElement.style.transform.match(/translateX\(([^)]+)\)/);
             const currTransformValue = matches ? parseFloat(matches[1]) : 0;
             tabElement.style.transform = `translateX(${currTransformValue + translate}%)`;
             tabElement.style.position = (tabElement.style.position !== "absolute") ? "absolute": "static";
         });
+
         const tabBtns = document.querySelectorAll(".settings-tab-button");
         tabBtns.forEach((tabBtn) => {
             tabBtn.setAttribute("disabled", "false");
             tabBtn.classList.remove("settings-tab-button-highlighted");
         });
+
         e.setAttribute("disabled", "true");
         e.classList.add("settings-tab-button-highlighted");
     };

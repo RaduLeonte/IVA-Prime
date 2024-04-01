@@ -72,7 +72,16 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (menuItemId === 'deletion') {
       console.log('Deletion selected');
       //createDeletionPrimers(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]); // Create deletion primers
-      makePrimers(plasmidDict[currentlyOpenedPlasmid]["fileSequence"], "", "", "", plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"], "Deletion");
+      makePrimers(
+        plasmidDict[currentlyOpenedPlasmid]["fileSequence"],
+        "",
+        "",
+        "",
+        plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"],
+        plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"],
+        "Deletion",
+        false
+      );
 
 
     /**

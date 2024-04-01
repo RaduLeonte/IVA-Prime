@@ -2,26 +2,93 @@
  * On window load.
  */
 window.onload = function() {
-    // Create file input element and run the file select on click
-    const targetButton = '#import-btn a';
-    document.querySelector(targetButton).addEventListener('click', function (event) {
-      event.preventDefault();
-      const fileInput = document.createElement('input');
-      fileInput.type = 'file';
-      fileInput.multiple = true;
-      fileInput.style.display = 'none';
-      document.body.appendChild(fileInput);
-      fileInput.addEventListener('change', function(event) {
-        handleFileSelect(event, plasmidIndex=nextFreePlasmidIndex(), serverFile=null);
-      });
-      fileInput.click();
-    });
+  /**
+   * New file
+   */
+  const newFileWindow = document.createElement('div');
+  newFileWindow.id = 'new-file-window';
+  newFileWindow.className = 'popup-window popup-window-new-file';
+  newFileWindow.innerHTML = `
+    <h2 id="popUpWindowHeader">New File</h2>
+    
+    <div class="popup-window-hgroup">
+      <label for="new-file-name-input">File name:</label>
+      <input type="text" id="new-file-name-input" class="popup-window-input" value="untitled">
+    </div>
+    
+    <div class="popup-window-hgroup" style="flex-grow: 1">
+      <label for="new-file-sequence-input">DNA Sequence:</label>
+      <textarea id="new-file-sequence-input" class="popup-window-input popup-window-textarea" spellcheck="false"></textarea>
+    </div>
 
-    // Demo buttoon functionality
-    const demoButton = document.getElementById("import-demo-btn");
-    demoButton.addEventListener('click', function() {
-      handleFileSelect(null, plasmidIndex=nextFreePlasmidIndex(), serverFile="\\static\\plasmids\\pET-28a(+).dna");
+    <div class="popup-window-vgroup">
+      <input type="checkbox" id="annotate-common-features-checkbox" name="annotate-common-features-checkbox" checked="true">
+      <label for="annotate-common-features-checkbox">Annotate common features</label>
+    </div>
+    
+    <div class="popup-window-vgroup">
+      <button id="create-new-file-button">Create File</button>
+      <button id="cancel-button">Cancel</button>
+    </div>
+  `;
+  newFileWindow.style.display = 'none';
+  document.body.appendChild(newFileWindow);
+
+  // Button listeners
+  newFileWindow.addEventListener('click', function (event) {
+    // Creat new file button
+    if (event.target.id === 'create-new-file-button') {
+      // Hide the popup window
+      const newFileName = document.getElementById("new-file-name-input").value;
+      const newFileSequence = document.getElementById("new-file-sequence-input").value;
+      const detectCommonFeatures = document.getElementById("annotate-common-features-checkbox").checked;
+
+      hidePopupWindow();
+      newFileFromSequence(newFileName, newFileSequence, detectCommonFeatures);
+
+      // Cancel button
+    } else if (event.target.id === 'cancel-button') {
+      // Hide the popup window
+      document.getElementById("new-file-name-input").value = "untitled";
+      document.getElementById("new-file-sequence-input").value = "";
+      hidePopupWindow();
+    };
+  });
+
+  const newFileButton = '#new-file-btn a';
+  document.querySelector(newFileButton).addEventListener('click', function (event) {
+    event.preventDefault();
+    const newFileWindow = document.getElementById("new-file-window");
+    newFileWindow.style.display = '';
+    document.getElementById("new-file-sequence-input").focus()
+  });
+
+
+  /**
+  * Import file
+  */
+  const targetButton = '#import-btn a';
+  document.querySelector(targetButton).addEventListener('click', function (event) {
+    event.preventDefault();
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.multiple = true;
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+    fileInput.addEventListener('change', function(event) {
+      handleFileSelect(event, plasmidIndex=nextFreePlasmidIndex(), serverFile=null);
     });
+    fileInput.click();
+  });
+
+
+  /**
+  * Import demo
+  */
+  const demoButton = document.getElementById("import-demo-btn");
+  demoButton.addEventListener('click', function() {
+    handleFileSelect(null, plasmidIndex=nextFreePlasmidIndex(), serverFile="\\static\\plasmids\\pET-28a(+).dna");
+  });
 };
 
 
@@ -125,13 +192,91 @@ function removeLoadingCursor() {
 
 
 /**
+ * Sanitize DNA sequence
+ */
+function sanitizeDNASequence(input) {
+  return input.toUpperCase().trim().replace(/[\r\n\t\s]+/g, "");
+};
+
+
+/**
+ * 
+ */
+function createPlasmidObject(plasmidIndex, fileName, fileExtension, fileHeader, fileSequence, fileComplementarySequence, fileFeatures) {
+  console.log("createPlasmidObject", fileName)
+  console.log("createPlasmidObject", fileExtension)
+  
+  console.log("createPlasmidObject", fileHeader)
+  console.log("createPlasmidObject", fileFeatures)
+  
+  
+  if (plasmidIndex == null) {
+    plasmidIndex = nextFreePlasmidIndex();
+  };
+
+  const firstImport = isPlasmidDictEmpty();
+  
+  plasmidDict[plasmidIndex] = {};
+  plasmidDict[plasmidIndex]["fileName"] = fileName;
+  plasmidDict[plasmidIndex]["fileExtension"] = fileExtension;
+  plasmidDict[plasmidIndex]["fileHeader"] = fileHeader;
+  plasmidDict[plasmidIndex]["fileSequence"] = fileSequence;
+  plasmidDict[plasmidIndex]["fileComplementarySequence"] = fileComplementarySequence;
+  plasmidDict[plasmidIndex]["fileFeatures"] = fileFeatures;
+  plasmidDict[plasmidIndex]["translations"] = {"forward": [], "reverse": []};
+  plasmidDict[plasmidIndex]["selectedText"] = "";
+  plasmidDict[plasmidIndex]["selectionStartPos"] = null;
+  plasmidDict[plasmidIndex]["selectionEndPos"] = null;
+  plasmidDict[plasmidIndex]["sidebarPrimers"] = null;
+  plasmidDict[plasmidIndex]["operationNr"] = 1;
+
+  // Add plasmid tab
+  const plasmidTabsList = document.getElementById("plasmid-tabs-list");
+  const plasmidTabId = "plasmid-tab-" + plasmidIndex;
+  let liElement = document.getElementById(plasmidTabId);
+  // Check if tab element already exists and
+  if (!liElement) {
+    liElement = document.createElement("LI");
+    plasmidTabsList.appendChild(liElement);
+  };
+  liElement.id = "plasmid-tab-" + plasmidIndex;
+  liElement.innerHTML = `
+  <a href="#" onclick="switchPlasmidTab(${plasmidIndex})" oncontextmenu="togglePlasmidTabDropdownMenu(event, ${plasmidIndex})">${plasmidDict[plasmidIndex]["fileName"]}</a>
+  <a class="plasmid-tab-dropdown" href="#"  onclick="togglePlasmidTabDropdownMenu(event, ${plasmidIndex})" oncontextmenu="togglePlasmidTabDropdownMenu(event, ${plasmidIndex})">▼</a>
+  `;
+  liElement.classList.add("plasmid-tab");
+  if (firstImport === true) {
+    liElement.classList.add("plasmid-tab-selected");
+    currentlyOpenedPlasmid = plasmidIndex;
+  };
+  
+  // Create the sidebar
+  plasmidDict[plasmidIndex]["sidebarTable"] = createSidebarTable(plasmidIndex);
+
+  // Create content grid
+  plasmidDict[plasmidIndex]["contentGrid"] = makeContentGrid(plasmidIndex);
+
+  // Create file history
+  plasmidDict[plasmidIndex]["fileHistory"] = [];
+  // [sidebarPrimers, sidebarTable, contentGrid]
+  savePrimers();
+  plasmidDict[plasmidIndex]["fileHistoryTracker"] = 0;
+  saveProgress(plasmidIndex);
+  
+  // Once the file is loaded, enable search function
+  if (firstImport === true) {
+    initiateSearchFunctionality();
+    switchPlasmidTab(plasmidIndex);
+    updateAnnotationTrianglesWidth();
+  };
+};
+
+
+/**
  * Imports and parses given file object
  */
 function importFile(file, plasmidIndex=null) {
   return new Promise((resolve, reject) => {
-    if (plasmidIndex == null) {
-      plasmidIndex = nextFreePlasmidIndex();
-    };
     console.log(file)
     file.name = file.name.match(/[^\\/]*$/)[0];
     const fileExtension =  /\.([0-9a-z]+)(?:[\?#]|$)/i.exec(file.name)[0]; // Fish out file extension of the file
@@ -151,62 +296,17 @@ function importFile(file, plasmidIndex=null) {
         } else {
           parsedFile = parseGBFile(fileContent);
         };
-  
-        const firstImport = isPlasmidDictEmpty();
-  
-        plasmidDict[plasmidIndex] = {};
-        plasmidDict[plasmidIndex]["fileName"] = file.name;
-        plasmidDict[plasmidIndex]["fileExtension"] = fileExtension;
-        plasmidDict[plasmidIndex]["fileHeader"] = parsedFile.fileHeader;
-        plasmidDict[plasmidIndex]["fileSequence"] = parsedFile.fileSequence;
-        plasmidDict[plasmidIndex]["fileComplementarySequence"] = parsedFile.fileComplementarySequence;
-        plasmidDict[plasmidIndex]["fileFeatures"] = parsedFile.fileFeatures;
-        plasmidDict[plasmidIndex]["translations"] = {"forward": [], "reverse": []};
-        plasmidDict[plasmidIndex]["selectedText"] = "";
-        plasmidDict[plasmidIndex]["selectionStartPos"] = null;
-        plasmidDict[plasmidIndex]["selectionEndPos"] = null;
-        plasmidDict[plasmidIndex]["sidebarPrimers"] = null;
-        plasmidDict[plasmidIndex]["operationNr"] = 1;
-  
-        // Add plasmid tab
-        const plasmidTabsList = document.getElementById("plasmid-tabs-list");
-        const plasmidTabId = "plasmid-tab-" + plasmidIndex;
-        let liElement = document.getElementById(plasmidTabId);
-        // Check if tab element already exists and
-        if (!liElement) {
-          liElement = document.createElement("LI");
-          plasmidTabsList.appendChild(liElement);
-        };
-        liElement.id = "plasmid-tab-" + plasmidIndex;
-        liElement.innerHTML = `
-        <a href="#" onclick="switchPlasmidTab(${plasmidIndex})" oncontextmenu="togglePlasmidTabDropdownMenu(event, ${plasmidIndex})">${plasmidDict[plasmidIndex]["fileName"]}</a>
-        <a class="plasmid-tab-dropdown" href="#"  onclick="togglePlasmidTabDropdownMenu(event, ${plasmidIndex})" oncontextmenu="togglePlasmidTabDropdownMenu(event, ${plasmidIndex})">▼</a>
-        `;
-        liElement.classList.add("plasmid-tab");
-        if (firstImport === true) {
-          liElement.classList.add("plasmid-tab-selected");
-          currentlyOpenedPlasmid = plasmidIndex;
-        };
-        
-        // Create the sidebar
-        plasmidDict[plasmidIndex]["sidebarTable"] = createSidebarTable(plasmidIndex);
-  
-        // Create content grid
-        plasmidDict[plasmidIndex]["contentGrid"] = makeContentGrid(plasmidIndex);
-  
-        // Create file history
-        plasmidDict[plasmidIndex]["fileHistory"] = [];
-        // [sidebarPrimers, sidebarTable, contentGrid]
-        savePrimers();
-        plasmidDict[plasmidIndex]["fileHistoryTracker"] = 0;
-        saveProgress(plasmidIndex);
-        
-        // Once the file is loaded, enable search function
-        if (firstImport === true) {
-          initiateSearchFunctionality();
-          switchPlasmidTab(plasmidIndex);
-          updateAnnotationTrianglesWidth();
-        };
+
+        createPlasmidObject(
+          plasmidIndex,
+          file.name,
+          fileExtension,
+          parsedFile.fileHeader,
+          parsedFile.fileSequence,
+          parsedFile.fileComplementarySequence,
+          parsedFile.fileFeatures
+        );
+
       };
   
         // Run reader
@@ -217,6 +317,115 @@ function importFile(file, plasmidIndex=null) {
         resolve();
       }, 1); 
   });
+};
+
+
+/**
+ * Common features
+ */
+const commonFeatures = {
+  commonAffinityTags: {
+    "6xHis": ["AA", "HHHHHH", "CDS"],
+    "7xHis": ["AA", "HHHHHHH", "CDS"],
+    "FLAG": ["AA", "DYKDDDDK", "CDS"],
+    "Myc": ["AA", "EQKLISEEDL", "CDS"],
+    "HA": ["AA", "YPYDVPDYA", "CDS"],
+  },
+  commonPromoters: {
+    "T7": ["DNA", "TAATACGACTCACTATAG", "promoter"],
+    "T3": ["DNA", "AATTAACCCTCACTAAAGG", "promoter"],
+    "CMV": ["DNA", "ACCGTAAACGGTCTGCTAGG", "promoter"],
+    "EF1α": ["DNA", "ATGGATACTGCCGGTGAC", "promoter"],
+    "SV40": ["DNA", "GAGAGTACTGTTTAAACGTAAGCTG", "promoter"]
+  },
+  commonSequencingPrimers: {
+    "M13 Forward": ["DNA", "GTAAAACGACGGCCAGT", "primer_bind"],
+    "M13 Reverse": ["DNA", "CAGGAAACAGCTATGAC", "primer_bind"],
+    "CMV Forward": ["DNA", "CGCAAATGGGCGGTAGGCGTG", "primer_bind"],
+    "T7 Terminal": ["DNA", "GCTAGTTATTGCTCAGCGG", "primer_bind"]
+  },
+  commonCleavingSites: {
+    "TEV": ["AA", "ENLYFQG", "CDS"]
+  }
+};
+
+/**
+ * Create a new plasmid from user input
+ */
+function newFileFromSequence(newFileName, newFileSequence, detectCommonFeatures) {
+  newFileSequence = sanitizeDNASequence(newFileSequence);
+  const newFileComplementarySequence = getComplementaryStrand(newFileSequence);
+
+  let newFileFeatures = {
+    "LOCUS": {
+      label: "",
+      note: "",
+      span: ""
+    }
+  };
+  
+  // Detect common features
+  if (detectCommonFeatures === true) {
+    // Once for forward strand, then complementary strand
+    const foundFeatures = [];
+    for (let i = 0; i < 2; i++) {
+      const currentSequence = (i === 0) ? newFileSequence: newFileComplementarySequence.split("").reverse().join("");
+      const readingFrames = [
+        translateSequence(currentSequence),
+        translateSequence(currentSequence.slice(-1) + currentSequence.slice(0, -1)),
+        translateSequence(currentSequence.slice(-2) + currentSequence.slice(0, -2))
+      ];
+
+      for (const category in commonFeatures) {
+
+        for (const featureLabel in commonFeatures[category]) {
+          const feature = commonFeatures[category][featureLabel];
+
+          const pattern = feature[1];
+          const regex = new RegExp(pattern, 'g');
+          let match;
+
+          if (feature[0] === "AA") {
+            for (let j = 0; j < readingFrames.length; j++) {
+              while ((match = regex.exec(readingFrames[j])) !== null) {
+                const newFeatureId = crypto.randomUUID();
+                const startIndex = match.index * 3 + j + 1;
+                const endIndex = startIndex + pattern.length*3 - 1;
+                const newFeatureSpan = (i === 0) ? startIndex + ".." + endIndex: "complement(" + startIndex + ".." + endIndex + ")";
+                newFileFeatures[newFeatureId] = {
+                  label: featureLabel,
+                  type: feature[2],
+                  span: newFeatureSpan,
+                  translation: pattern,
+                  note: ""
+                };
+              };
+            };
+
+          } else if (feature[0] === "DNA") {
+            while ((match = regex.exec(currentSequence)) !== null) {
+              foundFeatures.push({ feature: featureLabel, index: match.index });
+            };
+          };
+        };
+
+      };
+    };
+
+    newFileFeatures = sortBySpan(newFileFeatures);
+    console.log("detectCommonFeatures", newFileFeatures)
+  };
+
+
+  createPlasmidObject(
+    null,
+    newFileName + ".gb",
+    ".gb",
+    "",
+    newFileSequence,
+    newFileComplementarySequence,
+    newFileFeatures
+  );
 };
 
 
@@ -352,23 +561,14 @@ function extractGBFeatures(input) {
     // Ignore joined features for now
     if (!lines[0].includes("join")) {
       // Get feature name
-      let featureName = lines[0].substring(0, lines[0].indexOf(' '));
-      const oldFeatureName = featureName;
-      // If theres an identical feature in the dict, give it a different name
-      let i = 0;
-      while (featureName in featuresDict) {
-        if (`${featureName}${i}` in featuresDict) {
-          i++;
-        } else {
-          featureName = `${featureName}${i}`;
-          break;
-        };
-      };
+      const featureId = crypto.randomUUID();
+      const featureType = lines[0].substring(0, lines[0].indexOf(' '));
       
       // Start collecting info about the feature, starting with the span
       // Span is always on the first line
       const featureInfo = {
-        span: lines[0].includes('complement') ? lines[0].substring(lines[0].indexOf('complement')) : lines[0].replace(oldFeatureName, '').trim()
+        type: featureType,
+        span: lines[0].includes('complement') ? lines[0].substring(lines[0].indexOf('complement')) : lines[0].replace(featureType, '').trim(),
       };
     
       // Iterate over the rest of the lines and save the properties to the feature info dict
@@ -381,7 +581,7 @@ function extractGBFeatures(input) {
       };
     
       // Add the feature info dict to the features dict
-      featuresDict[featureName] = featureInfo;
+      featuresDict[featureId] = featureInfo;
     };
   };
   
@@ -437,20 +637,11 @@ function parseDNAFile(fileContent) {
   const featuresList = xmlDoc.getElementsByTagName('Feature');
   for (let i = 0; i < featuresList.length; i++) {
       const feature = featuresList[i]; // Current feature
-      let featureName = feature.getAttribute('type'); // Feature id
-
-      let k = 0;
-      while (featureName in featuresDict) {
-        if (`${featureName}${k}` in featuresDict) {
-          k++;
-        } else {
-          featureName = `${featureName}${k}`;
-          break;
-        };
-      };
+      const featureId = crypto.randomUUID();
 
       // All the feature properties
       const featureInfo = {}
+      featureInfo["type"] = feature.getAttribute('type');
       featureInfo["label"] = feature.getAttribute('name'); // Display name
       const spanDirectionality = feature.getAttribute('directionality');
       featureInfo["span"] = "";
@@ -495,7 +686,7 @@ function parseDNAFile(fileContent) {
       featureInfo["note"] = featureInfo["note"].trim();
 
       // Append feature info the corresponding feature in the dict
-      featuresDict[featureName] = featureInfo;
+      featuresDict[featureId] = featureInfo;
   };
 
   const fileFeatures = sortBySpan(featuresDict);
@@ -644,8 +835,8 @@ function exportGBFile(plasmidIndex) {
   for (const [key, value] of entries) {
     if (key !== "LOCUS") {
       console.log(`Key: ${key}, Value: ${value}`);
-      const featureName = key.replace(/\d+$/, '');
-      outputFileContent += " ".repeat(featureTitleShift) + featureName + " ".repeat(featureTitleWidth - featureName.length) + value["span"] + "\n";
+      const featureType = value["type"];
+      outputFileContent += " ".repeat(featureTitleShift) + featureType + " ".repeat(featureTitleWidth - featureType.length) + value["span"] + "\n";
       const featureInfo = Object.entries(value);
       for (const [propertyName, propertyValue] of featureInfo) {
         if (propertyName !== "span" && propertyName !== "color") {
@@ -814,6 +1005,7 @@ async function exportDNAFile(plasmidIndex) {
   // Ensure the "Features" element is correctly added as the root element
   const root = xmlDoc.documentElement;
   let i = 0;
+  console.log("exportDNAFile", currFeatures)
   for (const key in currFeatures) {
     if (key !== "LOCUS") {
       const value = currFeatures[key];
@@ -878,7 +1070,7 @@ async function exportDNAFile(plasmidIndex) {
         i++;
         xmlFeatureElement.setAttribute('name', value["label"]);
         xmlFeatureElement.setAttribute('directionality', (!value["span"].includes("complement")) ? "1": "2");
-        xmlFeatureElement.setAttribute('type', key.replace(/\d+$/, '').trim());
+        xmlFeatureElement.setAttribute('type', value["type"]);
         xmlFeatureElement.setAttribute('allowSegmentOverlaps', "0");
         xmlFeatureElement.setAttribute('consecutiveTranslationNumbering', "1");
 
@@ -1142,27 +1334,26 @@ function createSidebarTable(plasmidIndex) {
   sidebarTable.classList.add("sidebar-table");
   sidebarTable.innerHTML = `
       <tr>
-          <th class = 'wrap-text'>Feature</th>
+          <th class = 'wrap-text'>Type</th>
           <th class = 'wrap-text'>Label</th>
-          <th class = 'wrap-text'>Range</th>
+          <th class = 'wrap-text'>Span</th>
           <th class = 'wrap-text'>Note</th>
       </tr>
   `;
 
   // Iterate over the features and populate the table
-  for (const featureName in currFeatures) {
-    if (!featureName.includes("LOCUS") && !featureName.includes("source")) { // Skip LOCUS and source
-      console.log("Siderbar:", featureName, currFeatures[featureName])
-      const feature = currFeatures[featureName];
+  for (const featureID in currFeatures) {
+    if (!featureID.includes("LOCUS") && !featureID.includes("source")) { // Skip LOCUS and source
+      const feature = currFeatures[featureID];
 
       // Create a new table row
       let row = document.createElement('tr');
   
-      // Add feature name
-      const nameCell = document.createElement('td');
-      nameCell.textContent = featureName;
-      nameCell.className = 'wrap-text';
-      row.appendChild(nameCell);
+      // Add feature type
+      const typeCell = document.createElement('td');
+      typeCell.textContent = feature.type || '';
+      typeCell.className = 'wrap-text';
+      row.appendChild(typeCell);
   
       // Add feature label
       const labelCell = document.createElement('td');
@@ -1781,45 +1972,6 @@ function translateCodon(codon) {
 
 
 /**
- * Common promoters
- */
-const promoters = {"CMV": "CGCAAATGGGCGGTAGGCGTG",
-                      "EF1α": "CCACGGGACACCATCTTTAC",
-                      "RSV": "CGCGTGCTAGAACAGATGAGGACCCTGGGAGCTCTCTC",
-                      "PGK": "TCCATTTGCCTAGCTGTTTGA",
-                      "T7": "TAATACGACTCACTATAGGG",
-                      "Lac": "TTACAGCTCATGCGGCGTTCT",
-                      "Tet": "TATAAATGCTAGATGCTAGTTATCATGCTATACGAAGTTGT",
-                      "Hsp70": "CCACCCACAGCTCAGACGTTGTTGCTGCTGCTGCACGCGTG",
-                      "GAPDH": "CTGACCTGCCGTCTAGAAAA",
-                      "CMV-IE": "CGCAGGGTTTTCCCAGTCACGAC",
-                      "EF1α-HTLV": "CCACGGGACACCATCTTTAC",
-                      "U6": "GACGCTCATGGAAGACGCCAAA",
-                      "CAG": "AGGATCCCCACTGACCGGCCCGGGTTC",
-                      "SV5": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGGTTTTCCCAGTCACGAC",
-                      "CAAG": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGGAATGCCACCGCCGCCG",
-                      "β-actin": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-                      "PGK1": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGATATCATGACAAGAGCA",
-                      "HTLV": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGACTCCGCTTTGCTGAAA",
-                      "EF1": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGCTGGCTGGAGTTCA",
-                      "RR": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGACTAGCCACCATGTTTT",
-                      "SV": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGAGATCCGCCACCATTGG",
-                      "5xGal4AD": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGAGGAGAAGACCACAGCC",
-                      "Rous Sarcoma Virus": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGAGATCCGCCACCATTGG",
-                      "MSCV": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGAGATCCGCCACCATTGG",
-                      "Bsd": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-                      "Kozak": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-                      "FspI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-                      "Sp6": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-                      "SeAP": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-                      "SphI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-                      "BamHI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-                      "SalI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-                      "XhoI": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT",
-                      "HindIII": "AGGATCCCCACTGACCGGCCCGGGTTCGTCAGGCTGGCTCCTAGCACCAT"};
-
-
-/**
  * Convert sequence indices to table coordinates
  */
 function seqIndexToCoords(inputIndex, targetRow, inputGridStructure) {
@@ -1946,6 +2098,19 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGrid
 
 
 /**
+ * 
+ */
+function translateSequence(inputSequence) {
+  let outputSequence = "";
+  for (let i = 0; i < inputSequence.length - (inputSequence.length % 3); i += 3) {
+    outputSequence += translateCodon(inputSequence.slice(i, i+3))
+  };
+
+  return outputSequence;
+};
+
+
+/**
  * Merge 3 cells in the amino acids row in order to display the amino acid.
  * 
  */
@@ -2005,17 +2170,9 @@ function createFilledTriangle(featureID, annotationColorVariable, orientation, r
 
   // Create a div element for the triangle
   const triangle = document.createElement("div");
-  triangle.id = featureID.replace("/", "-") + "-triangle"
-  /**
-   * .triangle-right {
-  width: 0px;
-  height: 0px;
-  border-top: var(--triangle-size) solid transparent;
-  border-bottom: var(--triangle-size) solid transparent;
-  border-left: var(--triangle-size) solid green;
-}
-   */
-  triangle.style.width = 0 + "px";
+  triangle.id = featureID + "-triangle"
+
+  //triangle.style.width = 0 + "px";
   triangle.style.height = 0 + "px";
   triangle.style.borderTop = "var(--triangle-height) solid transparent";
   triangle.style.borderBottom = "var(--triangle-height) solid transparent";
@@ -2029,7 +2186,7 @@ function createFilledTriangle(featureID, annotationColorVariable, orientation, r
   };
 
   const styleElement = document.createElement('style');
-  const borderClasName = featureID.replace("/", "-") + "-cell-borders" + plasmidIndex;
+  const borderClasName = "cell-borders-" + featureID;
   const dynamicCSS = `
     .${borderClasName} {
       border-right: 3px solid var(--${annotationColorVariable});
@@ -2038,6 +2195,7 @@ function createFilledTriangle(featureID, annotationColorVariable, orientation, r
   `;
   styleElement.textContent = dynamicCSS;
   document.head.appendChild(styleElement);
+  console.log("createFilledTriangle", cell, borderClasName)
   cell.classList.add(borderClasName);
 
   // Add the triangle div to the table cell

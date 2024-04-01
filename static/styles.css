@@ -194,6 +194,18 @@ body {
   background-color: var(--header-btn-hover);
 }
 
+#new-file-btn a {
+  background-color: #2E6AAA; /* Blue */
+  color: white;
+  border-radius: 5px;
+  display: block;
+  text-align: center;
+}
+
+#new-file-btn a:hover {
+  background-color: #214d7c; /* Darker shade of blue */
+}
+
 #import-btn a {
   background-color: #4CAF50;
   color: white;
@@ -422,7 +434,24 @@ td.AminoAcids {
   z-index: 9999;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
+}
+
+.popup-window-new-file {
+  min-width: 50vw;
+  min-height: 50vh;
+}
+
+.popup-window-hgroup {
+  margin: 0 0 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.popup-window-vgroup {
+  margin: 0 0 10px;
+  display: flex;
+  flex-direction: row;
 }
 
 .popup-window h2 {
@@ -431,18 +460,30 @@ td.AminoAcids {
 
 .popup-window label {
   display: block;
-  margin-bottom: 5px;
 }
 
 .popup-window button {
   padding: 8px 16px;
   margin-right: 10px;
+  border: none;
+  border-radius: 5px;
+  color: white;
+}
+
+.popup-window button:hover {
+  cursor: pointer;
+}
+
+#create-new-file-button {
+  background-color: #2E6AAA;
+}
+
+#create-new-file-button:hover {
+  background-color: #214d7c;
 }
 
 #create-primers-button {
   background-color: #4CAF50;
-  color: white;
-  border-radius: 5px;
 }
 
 #create-primers-button:hover {
@@ -451,8 +492,6 @@ td.AminoAcids {
 
 .popup-window #cancel-button {
   background-color: #ccc;
-  color: white;
-  border-radius: 5px;
 }
 
 .popup-window #cancel-button:hover {
@@ -469,6 +508,12 @@ td.AminoAcids {
   color: var(--text-color);
   background-color: var(--bg-color1);
 }
+
+.popup-window-textarea {
+  resize: none;
+  flex-grow: 1;
+}
+
 
 /* Hint text in popup window */
 .stop-codon-hint{
@@ -573,7 +618,7 @@ td.AminoAcids {
   min-width: 300px;
   max-width: 625px;
   max-height: 80vh;
-  overflow-y: scroll;
+  overflow-y: auto;
   overflow-x: hidden;
   transition: all 0.7s;
 }
@@ -658,21 +703,28 @@ td.AminoAcids {
 /*
   PLASMID TABS
 */
+#settings-window{
+  overflow-y: hidden;
+}
+
 .tabs{
   display: flex;
   width: 100%;
   box-sizing: border-box;
+  transition: all 0.7s;
+  margin-top: 10px;
 }
 
 .tab{
   width: 100%;
-  height: fit-content;
+  max-height: 75vh;
   display: flex;
   flex-direction: column;
   transition: all 0.7s;
+  overflow-y: auto;
 }
 
-.tabs-btns-list{
+.tabs-btns-list {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -761,7 +813,7 @@ header {
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  height: 70px;
+  min-height: 70px;
 }
 
 .nav-left, .nav-right {
@@ -797,6 +849,7 @@ header {
   display:flex;
   align-items: center;
   flex-grow: 1;
+  flex-basis: 100px;
   justify-content: flex-start;
   overflow: hidden;
 }

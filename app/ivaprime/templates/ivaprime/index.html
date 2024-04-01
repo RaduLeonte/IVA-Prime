@@ -37,6 +37,7 @@
                 <div class="nav-left">
                     <!-- Left side header buttons -->
                     <ul id="header-list"  class="horizontal-list">
+                        <li id="new-file-btn"><a href="#" id="new-file-btn-a">New File</a></li>
                         <li id="import-btn"><a href="#" id="import-btn-a">Import File</a></li>
                         <li id="import-demo-btn"><a href="#">Try Demo File</a></li>
                     </ul>
@@ -80,15 +81,11 @@
                 </div>
                 <!-- Settings window -->
                 <div id="settings-window" class="hideable-window" style="display: none;">
-                    <div class="tabs-btns-list">
-                        <ul class="horizontal-list">
-                            <li><a class="standard-btn-a settings-tab-button settings-tab-button-highlighted" onClick="slideTab(this, 'basic')" href=# disabled="true">Basic</a></li>
-                            <li><a class="standard-btn-a settings-tab-button" onClick="slideTab(this, 'advanced')" href=# disabled="false">Advanced</a></li>
-                        </ul>
-                        <ul class="horizontal-list horizontal-list-right">
-                            <li><a id="reset-default-settings-btn" class="standard-btn-a reset-default-settings-btn" href=#>Reset Default Settings</a></li>
-                            <li><a id="save-settings-btn" class="standard-btn-a save-settings-btn" href=#>Save Settings</a></li>
-                        </ul>
+                    <div class="horizontal-list tabs-btns-list">
+                        <li><a class="standard-btn-a settings-tab-button settings-tab-button-highlighted" onClick="slideTab(this, 'basic')" href=# disabled="true">Basic</a></li>
+                        <li><a class="standard-btn-a settings-tab-button" onClick="slideTab(this, 'advanced')" href=# disabled="false">Advanced</a></li>
+                        <li><a id="reset-default-settings-btn" class="standard-btn-a reset-default-settings-btn" href=#>Reset Default Settings</a></li>
+                        <li><a id="save-settings-btn" class="standard-btn-a save-settings-btn" href=#>Save Settings</a></li>
                     </div>
                     <div class="tabs">
 
