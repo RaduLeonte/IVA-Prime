@@ -1593,7 +1593,7 @@ function makeContentGrid(plasmidIndex) {
   
   // Iterate over the features and create the annotatations
   Object.entries(currFeatures).forEach(([key, value]) => {
-    if (value.span && !key.includes("source")) { // If the feature includes a span and is not "source"
+    if (value.span && !value.label.includes("source")) { // If the feature includes a span and is not "source"
       // Get the current feature's span
       const direction = (value.span.includes("complement")) ? "left": "right";
       const spanList = removeNonNumeric(value.span);
