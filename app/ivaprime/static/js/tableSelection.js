@@ -316,6 +316,7 @@ function clearSelection(plasmidIndex, clearingGlobalVars) {
  * Select text from feature span.
  */
 function selectBySpan(inputSpan) {
+  console.log("Selecting span:", inputSpan)
   let currGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
   const sequenceGridTable = document.getElementById('sequence-grid-' + currentlyOpenedPlasmid);
 
@@ -331,7 +332,16 @@ function selectBySpan(inputSpan) {
   };
 
   clearSelection(currentlyOpenedPlasmid, false);
-  setSelectionCursors(currentlyOpenedPlasmid, plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]);
+  console.log(
+    "Selecting span:",
+    plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"],
+    plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]
+  )
+  setSelectionCursors(
+    currentlyOpenedPlasmid,
+    plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"],
+    plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]
+  );
 
   const starCellCoords = seqIndexToCoords(range[0], 0, currGridStructure);
   const endCellCoords = seqIndexToCoords(range[1], 0, currGridStructure);

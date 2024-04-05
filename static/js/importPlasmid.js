@@ -1348,6 +1348,7 @@ function createSidebarTable(plasmidIndex) {
 
       // Create a new table row
       let row = document.createElement('tr');
+      row.id = featureID;
   
       // Add feature type
       const typeCell = document.createElement('td');
