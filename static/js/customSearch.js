@@ -267,6 +267,7 @@ function highlightSpan(targetStrandIndex, spanStart, spanEnd, highlightClass, di
         for (let j = startIndex; j < endIndex; j++) {
             // Convert sequence index to table coordinates
             const [row, col] = seqIndexToCoords(j, targetStrandIndex, currentGridStructure);
+            console.log("highlightSpan", j, targetStrandIndex, row, col)
             
             // Select and highlight the cell
             const cell = table.rows[row].cells[col];

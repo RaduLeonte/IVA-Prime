@@ -998,11 +998,28 @@ function markSelectionForSubcloning(plasmidIndex, inputStartPos, inputEndPos) {
     // If the plasmid with the subcloning target is open, highlight it
     if (currentlyOpenedPlasmid === subcloningOriginPlasmidIndex) {
         // First cell
-        highlightSpan(plasmidIndex, 0, subcloningOriginSpan[0], subcloningOriginSpan[0] + 1, "subcloning-target-cell-first", null, null);
+        highlightSpan(
+            0,
+            subcloningOriginSpan[0],
+            subcloningOriginSpan[0] + 1,
+            "subcloning-target-cell-first"
+        );
+        
         // Middle cells
-        highlightSpan(plasmidIndex, 0, subcloningOriginSpan[0] + 1, subcloningOriginSpan[1] - 1, "subcloning-target-cell", null, null);
+        highlightSpan(
+            0,
+            subcloningOriginSpan[0] + 1,
+            subcloningOriginSpan[1] - 1,
+            "subcloning-target-cell"
+        );
+
         // Last cell
-        highlightSpan(plasmidIndex, 0, subcloningOriginSpan[1] - 1, subcloningOriginSpan[1], "subcloning-target-cell-last", null, null);
+        highlightSpan(
+            0,
+            subcloningOriginSpan[1] - 1,
+            subcloningOriginSpan[1],
+            "subcloning-target-cell-last"
+        );
     };
 };
 
