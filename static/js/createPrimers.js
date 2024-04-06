@@ -1,44 +1,47 @@
 /**
- * Display the primer pair in the sidebar by appending <p>s
+ * Display the primers for the operation in the sidebar
  * 
- * primersType - time of modification (e.g. insertion, deletion etc)
- * primersList - list of primers [homoFwd, tempFwd, homoRev, tempRev]
- * textColor - color of text, usually white
- * templateColor - background color of template part
- * homoColor - background color of homologous part
- * mutSeq - additional sequence for mutations
+ * @param {string} primersType - "Insertion", "Deletion", "Subcloning with Insertion" etc
+ * @param {Object.<string, Object>} primersDict - Dictionary containing all primer info
  * 
+ * @returns {void} 
  */
+// TO DO: Make and assign classes to the divs instead of setting the styles manually
 function displayPrimers(primersType, primersDict) {
-    console.log("displayPrimers", primersType, primersDict)
-    const sidebarContentDiv = document.querySelector('.sidebar-content'); // Select sidebar
-    console.log(sidebarContentDiv)
+    // Select sidebar element
+    const sidebarContentDiv = document.querySelector('.sidebar-content');
 
-    // Change sidebar headline
+    // Change sidebar headline if it still has the default text
     let element = document.getElementById("primers-div-headline");
-    if (element.textContent === "Primers will appear here.") {element.textContent = "Primers:";}
+    if (element.textContent === "Primers will appear here.") {
+        element.textContent = "Primers:";
+    };
 
-
-    // Display primer pair nr and type of mod
+    // Main div
     const modDiv = document.createElement("div");
     modDiv.id = "mod-div"
+
+    // Headline: operation nr + operation type
     const h3 = document.createElement('h3');
     h3.id = 'primers-type';
     h3.setAttribute("primers-type", primersType.toLowerCase());
     h3.classList.add("editable");
-    enableElementEditing(h3, 1)
+    enableElementEditing(h3, 1);
     h3.setAttribute("edited", false);
     h3.textContent = plasmidDict[currentlyOpenedPlasmid]["operationNr"] + '. ' + primersType;
     plasmidDict[currentlyOpenedPlasmid]["operationNr"] = parseInt(plasmidDict[currentlyOpenedPlasmid]["operationNr"]) + 1;
     modDiv.appendChild(h3);
 
+
+    // Iterate over each primer in the primerDict
     for (const [primer, subprimersDict] of Object.entries(primersDict)) {
-        console.log("Display primers:", primer, subprimersDict);
+        // Main div
         const primerDiv = document.createElement("div");
         primerDiv.id = "primer-div";
         primerDiv.setAttribute("direction", primer.toLowerCase().includes("forward") ? "fwd": "rev");
 
-        const primerName = document.createElement('p'); // Add CSS style for word wrapping
+        // Primer name (forward primer, reverse primer, vector forward etc)
+        const primerName = document.createElement('p');
         primerName.textContent = primer + ":";
         primerName.classList.add("editable")
         primerName.setAttribute("edited", false);
@@ -46,8 +49,11 @@ function displayPrimers(primersType, primersDict) {
         enableElementEditing(primerName, 1)
         primerDiv.appendChild(primerName);
 
+        // Primer sequence
         const primerSequence = document.createElement('p');
         primerSequence.id = 'primer-sequence';
+        // Add spans for each region in the primer sequence
+        // TO DO: Create classes for primer regions instead of adding styles to the element
         for (const [subprimer, subprimerProperties] of Object.entries(subprimersDict)) {
             if (subprimer !== "info") {
                 const span = document.createElement('span');
@@ -56,10 +62,11 @@ function displayPrimers(primersType, primersDict) {
                 span.style.fontWeight = 'bold';
                 span.textContent = subprimerProperties["seq"];
                 primerSequence.appendChild(span)
-                //primerSequence.appendChild(span)
             };
         };
 
+        // Add button that copies the primer sequence to clipboard
+        // TO DO: Copy formatting of the sequence as well (rich text)
         const copyPrimerSequenceButton = document.createElement("a");
         copyPrimerSequenceButton.href = "#";
         copyPrimerSequenceButton.setAttribute("onClick", "copyPrimerSequenceToClipboard(this)");
@@ -67,22 +74,28 @@ function displayPrimers(primersType, primersDict) {
         copyPrimerSequenceButton.style.backgroundImage = "url('/static/copy_icon.svg')";
         primerSequence.appendChild(copyPrimerSequenceButton);
 
+        // Primer info div
         const pPrimerInfo = document.createElement('p')
         const spanPrimerInfo = document.createElement('span');
         spanPrimerInfo.textContent = subprimersDict["info"];
         pPrimerInfo.appendChild(spanPrimerInfo);
 
+        // Append divs
         primerSequence.style.wordBreak = 'break-all';
         primerDiv.appendChild(primerSequence);
         primerDiv.appendChild(pPrimerInfo);
         modDiv.append(primerDiv);
     };
 
-    console.log("To add", modDiv)
+    // Append new div to sidebar
     sidebarContentDiv.appendChild(modDiv);
+    // Update the primers in the plasmidDict
     savePrimers();
+    // Add hover effects to the different regions in the primer sequences
+    // TO DO: Maybe add a click effect that takes you to that position
+    // TO DO: Make sure this doesn't stack event listeners
     addPrimerRegionHoverEvents();
-    console.log("After", plasmidDict[currentlyOpenedPlasmid]["sidebarPrimers"])
+    
     // Reset selection
     plasmidDict[currentlyOpenedPlasmid]["selectedText"] = "";
     clearSelection(currentlyOpenedPlasmid, true)
@@ -90,199 +103,318 @@ function displayPrimers(primersType, primersDict) {
 
 
 /**
- *  Converts the primers from the sidebar html element into a 2d array.
+ * Converts the primers from the sidebar html element into a 2d array.
+ * 
+ * @param {number} plasmidIndex - Index of the target plasmid
+ * @param {boolean} includeColumnNames - Specify wether to include column names in the first row
+ * @returns {Array<Array<any>>} - 2d array of primer id/name and primer sequence
  */
-function getPrimersAsTable(plasmidIndex, includeColumnNames = false) {
+function getPrimersAsTable(plasmidIndex, includeColumnNames=false) {
+    // Create dummy html element and save the target plasmid's primers to it
     const sidebarDiv = document.createElement("div");
     sidebarDiv.innerHTML = plasmidDict[plasmidIndex]["sidebarPrimers"];
+    
+    // Select all mod divs in the dummy element
     const modDivs = sidebarDiv.querySelectorAll('#mod-div');
 
+    // Iterate over primers and add them to the 2d array
     let tableData = [];
-    if (includeColumnNames === true) {tableData.push(["Primer Name", "Primer Sequence"])}
+    if (includeColumnNames === true) {tableData.push(["Primer Name", "Primer Sequence"])};
     for (var i = 0; i < modDivs.length; i++) {
+        // Get current mod div info
         const currentDiv = modDivs[i];
         const h3Div = currentDiv.querySelector("#primers-type");
         const modType = h3Div.getAttribute("primers-type").replace(" ", "_");
-        console.log("Mod Type2", modType);
-        console.log(currentDiv)
         const primerDivs = currentDiv.querySelectorAll("#primer-div");
-        console.log(primerDivs)
+        
+        // Iterate over primers in current div and add the name and sequence
         for (var j = 0; j < primerDivs.length; j++) {
+            // Current primer and info
             const currPrimerDiv = primerDivs[j]
-
             const primerIdDiv = currPrimerDiv.querySelector("#primer-id");
-            let primerId = ""
             const primerDirection = currPrimerDiv.getAttribute("direction");
+            let primerId = ""
 
+            // Check if the name was edited by the user to decide if default nomenclature should be used
             const h3Edited = currentDiv.querySelector("#primers-type").getAttribute("edited");
             const modIndex = (h3Edited === true) ? "": currentDiv.innerText.split(" ")[0].replace(".", "");
             const idEdited = primerIdDiv.getAttribute("edited");
             const subcloningVectorSuffix = (primerIdDiv.innerText.toLowerCase().includes("vector")) ? "_vec": "";
-            // id and h3 edited -> id
-            // id edited -> id
-            // h3 edited -> id from h3
-            // none edited -> default
-            console.log("Edited2", primerIdDiv, idEdited, idEdited === "true", h3Edited, h3Edited === "true")
             if (idEdited === "true") {
+                // id edited -> use individual ids
                 primerId = primerIdDiv.innerText;
             } else if (h3Edited === "true") {
+                // h3 edited but not id -> generate id from use-defined h3
                 primerId = h3Div.innerText + subcloningVectorSuffix + "_" + primerDirection;
             } else {
+                // Not edited -> default naming
                 primerId = modType + modIndex + subcloningVectorSuffix + "_" + primerDirection;
             };
 
+            // Append primer id and sequence to table
             const primerSeq = currPrimerDiv.querySelector("#primer-sequence").innerText;
             tableData.push([primerId, primerSeq])
         };
     };
+
     return tableData;
 };
 
 
 /**
- * Export primers to different files
+ * Compile primers from the sidebar into different formats and download the file
  */
+// TO DO: Pass fileName and html content instead of setting them inside the the functions
 const exportPrimersDict = {
-    // Plain text
+    /**
+     * Export to plain text file
+     * 
+     * @param {number} plasmidIndex 
+     * @returns {void}
+     */
     txt : (plasmidIndex) => {
+        // Get file name and primers from the html element
         const fileName = plasmidDict[plasmidIndex]["fileName"].replace(plasmidDict[plasmidIndex]["fileExtension"], "") + " primers";
         const containerDiv = document.createElement("div");
         containerDiv.innerHTML = plasmidDict[plasmidIndex]["sidebarPrimers"];
-        console.log("txt", containerDiv)
 
-
+        // Iterate over children of the html element and populate the string to be saved to txt
         let textContent = "";
-        let counter = 1;
+        let firstLine = true;
         for (const childDiv of containerDiv.children) {
-            if (counter !== 1) {textContent += "\n"}
-            counter++;
+            // Add new line separator between operations
+            if (firstLine === false) {textContent += "\n"}
+
+            // Iterate over primer sets
             if (childDiv.id === "mod-div") {
+                // Iterate over html elements
                 for (const subDiv of childDiv.children) {
                     if (subDiv.id === "primers-type") {
+                        // Add operation headline
                         textContent += subDiv.innerText + "\n";
                     } else if (subDiv.id === "primer-div") {
+                        // Add primer sequence and primer info
+
+                        // Save current element to dummy div
                         const tempDiv = document.createElement("div");
                         tempDiv.innerHTML = subDiv.innerHTML;
+                        // Combine text contents of dummy div into a list
                         let tempList = []
                         for (const subsubDiv of tempDiv.children) {
                             tempList.push(subsubDiv.innerText);
                         };
+                        
+                        // [primer name]: [primer sequence]
                         textContent += `${tempList[0]} ${tempList[1]}\n`;
+                        // Primer info
                         textContent += `${tempList.slice(2, tempList.length).join("").split(";").map((item) => item.trim()).join("; ")}\n\n`;
                     };
                 };
             };
+
+            firstLine = false;
         };
 
+        // Create blob and download it
         const blob = new Blob([textContent], { type: 'text/plain' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = fileName + '.txt';
         link.click();
     },
-    // Microsoft Word
+    /**
+     * Export to Microsoft Word file
+     * 
+     * @param {number} plasmidIndex 
+     * @returns {void}
+     */
     doc : (plasmidIndex) => {
+        // Get file name and primers from the html element
         const fileName = plasmidDict[plasmidIndex]["fileName"].replace(plasmidDict[plasmidIndex]["fileExtension"], "") + " primers";
         const htmlContent = plasmidDict[plasmidIndex]["sidebarPrimers"];
         
+        // Create blob using html-docx.js and download it
         const docx = window.htmlDocx.asBlob(htmlContent);
         const link = document.createElement('a');
         link.href = URL.createObjectURL(docx);
         link.download = fileName + '.docx';
         link.click();
     },
-    // CSV
+    /**
+     * Export to csv file
+     * 
+     * @param {number} plasmidIndex 
+     * @returns {void}
+     */
     csv : (plasmidIndex) => {
+        // Get file name and primers from the html element as 2d array
         const fileName = plasmidDict[plasmidIndex]["fileName"].replace(plasmidDict[plasmidIndex]["fileExtension"], "") + " primers";
-        const tableData = getPrimersAsTable(plasmidIndex, includeColumnNames = true);
+        const tableData = getPrimersAsTable(plasmidIndex, includeColumnNames=true);
 
+        // Convert 2d array to 1d
         let csvLines = tableData.map(function(row) {
             return row.map(function(cell) {
                 return '"' + String(cell).replace(/"/g, '""') + '"';
             }).join(',');
         });
-    
+        // 1d array to string
         const textContent = csvLines.join('\n');
+
+        // Create blob and download it
         const blob = new Blob([textContent], { type: 'text/plain' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = fileName + '.csv';
         link.click();
     },
-    // Excel file
+    /**
+     * Export to Excel file
+     * 
+     * @param {number} plasmidIndex 
+     * @returns {void}
+     */
     xlsx: (plasmidIndex) => {
+        addLoadingCursor();
+        // Get file name and primers from the html element as 2d array
         const fileName = plasmidDict[plasmidIndex]["fileName"].replace(plasmidDict[plasmidIndex]["fileExtension"], "") + " primers";
-        const tableData = getPrimersAsTable(plasmidIndex, includeColumnNames = true);
+        const tableData = getPrimersAsTable(plasmidIndex, includeColumnNames=true);
 
-        let wb = XLSX.utils.book_new();
-        wb.SheetNames.push("Sheet 1");
-        wb.Sheets["Sheet 1"] = XLSX.utils.aoa_to_sheet(tableData);
-        XLSX.writeFile(wb, fileName + '.xlsx');
+        // Create excel file using xlsx-populate
+        XlsxPopulate.fromBlankAsync()
+        .then((workbook) => {
+            // Iterate over primers and add the entries to the sheet
+            for (let i = 0; i < tableData.length; i++) {
+                const currentRow = tableData[i]
+                for (let j = 0; j < currentRow.length; j++) {
+                    const targetCell = numberToColumn(j + 1) + (i + 1);
+                    workbook.sheet(0).cell(targetCell).value(currentRow[j]);
+                };
+            };
+
+            // Return blob
+            return workbook.outputAsync();
+        })
+        .then((blob) => {
+            // Create blob using html-docx.js and download it
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            link.click();
+            removeLoadingCursor();
+        })
     },
-    // Microsynth Excel Template
+    /**
+     * Export to Microsynth order form
+     * 
+     * @param {number} plasmidIndex 
+     * @returns {void}
+     */
     microsynth: (plasmidIndex) => {
+        addLoadingCursor();
+        // Get file name and primers from the html element as 2d array
         const fileName = plasmidDict[plasmidIndex]["fileName"].replace(plasmidDict[plasmidIndex]["fileExtension"], "") + " primers";
         const tableData = getPrimersAsTable(plasmidIndex, includeColumnNames = false);
+        
+        // Create a list of rows to append to the microsynth form
         let primerList = [];
         for (i = 0; i < tableData.length; i++) {
             const primerId = tableData[i][0];
-            const primerSeq = tableData[i][1]
-            primerList.push([primerId, primerSeq, null, "DES", (primerSeq.length <= 60) ? "GEN": 0.04]);
+            const primerSeq = tableData[i][1];
+            /**
+             * Row to push
+             * Columns:
+             *  A. DNA Oligo Name -> primer id
+             *  B. DNA Sequence (5' -> 3') -> primer sequence
+             *  C. Length -> sequence length
+             *  D. DNA Purification -> "DES"
+             *  E. DNA Scale -> "GEN" for 60 bp or less, otherwise "0.04"
+             *  F. 5' Modification -> _
+             *  G. Inner Modification (5) -> _
+             *  H. Inner Modification (6) -> _
+             *  I. Inner Modification (7) -> _
+             *  J. Inner Modification (8) -> _
+             *  K. 3' Modification -> _
+             *  L. Physical Condition -> "Dried"
+             *  M. Datasheet -> "Standard"
+             *  N. Aliquots -> "No"
+             */
+            primerList.push(
+                [
+                    primerId,
+                    primerSeq,
+                    null,
+                    "DES",
+                    (primerSeq.length <= 60) ? "GEN": 0.04,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    "Dried",
+                    "Standard",
+                    "No"
+                ]
+            );
         };
 
-        const formName = "MicrosynthUploadFormDNA.xlsx";
-        const templatePath = "/static/" + formName;
-        fetch(templatePath)
-            .then((res) => res.arrayBuffer())
-            .then((ab) => {
-                const workbook = new ExcelJS.Workbook();
-                return workbook.xlsx.load(ab);
-            })
-            .then((workbook) => {
-                const worksheet = workbook.getWorksheet("DNA Order"); // Assuming the second sheet needs to be modified
-                worksheet.unprotect();
-                console.log("Microsynth", worksheet.name, primerList);
-
-                for (let i = 0; i < primerList.length; i++) {
-                    const row = primerList[i];
-                    const rowIndex = i + 4;
-                    const cellId = "A" + rowIndex;
-                    console.log("Microsynth", "Adding row at", cellId, "with data", row);
-              
-                    // Create an array representing the entire row with only the specified columns modified
-                    const modifiedRow = Array.from({ length: worksheet.columnCount }, (_, colIndex) => {
-                      if (colIndex !== 2 ) {
-                        return row[colIndex];
-                      } else {
-                        return worksheet.getCell(rowIndex, colIndex + 1).value;
-                      }
-                    });
-              
-                    // Insert the modified row into the worksheet
-                    worksheet.spliceRows(rowIndex, 1, modifiedRow);
+        // Fetch default file and modify using xlsx-populate
+        fetch("/static/MicrosynthUploadFormDNA.xlsx")
+        .then((result) => result.arrayBuffer())
+        .then((arrayBuffer) => {
+            return XlsxPopulate.fromDataAsync(arrayBuffer);
+        })
+        .then((workbook) => {
+            // Iterate over primers and add the entries to the sheet
+            for (let i = 0; i < primerList.length; i++) {
+                const currentRow = primerList[i]
+                for (let j = 0; j < currentRow.length; j++) {
+                    if (currentRow[j] !== null) {
+                        const targetCell = numberToColumn(j + 1) + (i + 2);
+                        workbook.sheet(1).cell(targetCell).value(currentRow[j]);
+                    };
                 };
+            };
 
-                // Save the modified workbook
-                return workbook.xlsx.writeBuffer();
-            })
-            .then((buffer) => {
-                // Create a Blob from the buffer and trigger the download
-                const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = fileName + " microsynth order form";
-                link.click();
-            })
-            .catch((error) => {
-                console.error("Error fetching or reading the file:", error);
-            });
+            // Return blob
+            return workbook.outputAsync();
+        })
+        .then((blob) => {
+            // Create blob using html-docx.js and download it
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName + " microsynth order form";
+            link.click();
+            removeLoadingCursor();
+        })
     } 
 };
 
 
 /**
+ * Converts integer to spreadsheet style column index
+ * 1 -> A
+ * 2 -> B
+ * 27 -> AA etc
  * 
+ * @param {number} index 
+ * @returns {string}
  */
+function numberToColumn(index) {
+    let columnIndex = '';
+    while (index > 0) {
+        let remainder = (index - 1) % 26;
+        columnIndex = String.fromCharCode(65 + remainder) + columnIndex;
+        index = Math.floor((index - remainder) / 26);
+    };
+    return columnIndex;
+};
+
+
+/**
+ * Add hover events for primer regions
+ */
+// TO DO: Add click events that take you to the region
 function addPrimerRegionHoverEvents(){
     const spansList = document.querySelector(".sidebar-content").getElementsByTagName("SPAN");
 
@@ -292,32 +424,43 @@ function addPrimerRegionHoverEvents(){
     });
 };
 
+
 /**
  * Highlights where the primer sequence is in the plasmid sequence.
+ * 
+ * @param {Event} event 
  */
 function primerRegionHover(event) {
-    // Get the inner text of the span
-    const targetSpan = event.target
+    // Get primer span info
+    // Span element
+    const targetSpan = event.target;
+    // Sequence
     const spanSequence = targetSpan.innerText;
+    // Sequence direction
     const spanDirection = (targetSpan.parentElement.parentElement.getAttribute("direction") === "fwd") ? "fwd": "rev";
+    // Color
     const spanColor = window.getComputedStyle(targetSpan).backgroundColor;
-    console.log('Looking for:', spanSequence, spanColor);
     
-    // Highlight hovered sequence in plasmid files
+    // Grid structure and sequence of currently opened plasmid
     const currGridstructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
-    let currSequence = (spanDirection === "fwd") ? plasmidDict[currentlyOpenedPlasmid]["fileSequence"]: plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"];
+    const currSequence = (spanDirection === "fwd") ? plasmidDict[currentlyOpenedPlasmid]["fileSequence"]: plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"];
 
+    // Reverse sequence if direction is reverse
     const searchQuery = (spanDirection === "fwd") ? spanSequence: spanSequence.split('').reverse().join('');
+    // Strand 0 for forward, 1 for reverse
     const targetStrand = (spanDirection === "fwd") ? 0: 1;
     highlightOccurences(targetStrand, currSequence, searchQuery, currGridstructure, null, spanColor);
 };
 
 
 /**
- * Function to remove highlighting
+ * Remove background color from highlighted cells
  */
+// TO DO: Change the function to not iterate over every single cell, make dedicated classes and search for those instead
 function removePrimerRegionHighlight() {
+    // Select currently displayed table
     const targetTable = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
+    
     // Iterate over all cells in the table and remove element styles
     for (let i = 0; i < targetTable.rows.length; i++) {
         for (let j = 0; j < targetTable.rows[i].cells.length; j++) {
@@ -337,48 +480,52 @@ function removePrimerRegionHighlight() {
  *                                     startingPos  
  *                                         |
  *                          <--- backward  ▼  forward  --->
- * fwdStrand  -> GGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATAT
- * compStrand -> ATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCC
+ * fwdStrand  -> 5'-GGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATAT-3'
+ * compStrand -> 3'-ATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCC-5'
  *                          <--- forward   ▲  backward --->
  * 
  * 
- * Backward extension on fwdStrand, ATG as the mutseq:
+ * Backward extension on fwdStrand, ATG as the initialSequence:
  *                                     startingPos  
  *                                         |
  *                                         ▼  
- * fwdStrand  -> GGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATAT
- *                           <-------------
+ * fwdStrand  -> 5'-GGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATAT3'
+ *                           <----------
  *                           TTTATATATGGATG
  *                           ▲
  *                           |
  *                           Melting temperature exceeds targetTm here.
  * 
- * 
- * startingPos - initial position
- * targetStrand - strand where the extension takes place, "fwdStrand" or "compStrand"
- * direction - either "forward" or "backward" (see above, directionality is flipped on the complementary strand)
- * targetTm - the function extends the primer until the primer has a melting temperature above targetTm
- * minLength - a minimum length to make sure the melting temperature calculator does not give NaN
- * pNr - plasmid number, important when the second plasmid is imported for subcloning, 1 or 2
- * mutSeq - sequence that will be inserted and will be the starting sequence for the homologous region of the forward primer
- *  
+ *
+ * @param {string} plasmidSequence - sequence of the plasmid
+ * @param {number} startingPos - initial position from where to start extending the sequence
+ * @param {number} targetStrand - strand onto which "fwdStrand"/"revStrand"
+ * @param {string} direction - extension direction "forward"/"backward"
+ * @param {number} targetTm - melting temperature that should be reached
+ * @param {string} method - melting temperature algorithm
+ * @param {number} minLength - minimum length of the sequence
+ * @param {string} initialSequence - starting sequence for the primer
+ * @returns {string} - output sequence
  */
-function primerExtension(plasmidSequence, startingPos, targetStrand, direction, targetTm, method, minLength, plasmidIndex, initialSequence="") {
-    console.log("primerExtension", startingPos, targetStrand, direction, targetTm, minLength, plasmidIndex, initialSequence)
+function primerExtension(plasmidSequence, startingPos, targetStrand, direction, targetTm, method, minLength, initialSequence="") {
+    // Set working strand sequence
     const currStrand = (targetStrand === 'fwdStrand') ? plasmidSequence : getComplementaryStrand(plasmidSequence).split("").reverse().join("");
+    // Set working start index
     const startIndex = (targetStrand === 'fwdStrand') ? startingPos - 1: currStrand.length - startingPos + 1; // Convert sequence index to string index
     
 
+    // Initial extension length minus the initial sequence
     let extensionLength = minLength - initialSequence.length;
+    // Initial primer sequence, initial sequence + initial extension
     let prevPrimerSequence =  (direction === "forward") ? initialSequence + repeatingSlice(currStrand, startIndex, startIndex + extensionLength - 1): repeatingSlice(currStrand, startIndex - extensionLength + 1, startIndex) + initialSequence;
-    let prevTM = get_tm(prevPrimerSequence, primerConc, saltConc, method); // Get melting temperature of initial primer
-    console.log("primerExtension", targetStrand, direction, startIndex, prevPrimerSequence)
+    // Initial melting temperature
+    let prevTM = getMeltingTemperature(prevPrimerSequence, method);
     
-    // Main loop for the extension of the primer
-    const maxIter = 100; // Maximum amount of iterations in case of errors
+    // Extend primer until target melting temperature is reached, or the maximum amount of iterations is reached
+    const maxIter = 100;
     let i = 0;
-    let outputPrimerSequence = "";
-    let primerSequence = prevPrimerSequence; // Reset current primer
+    // Current primer sequence and melting temperature
+    let primerSequence = prevPrimerSequence;
     let currTM = prevTM;
     while (i < maxIter) {
         /** If the melting temperature of the current primer exceeds the target temperature, break the loop 
@@ -390,14 +537,13 @@ function primerExtension(plasmidSequence, startingPos, targetStrand, direction, 
                 return prevPrimerSequence;
             };
         } else {
-            prevTM = currTM;
+            // Save current sequence and tm, then recalculate current seq and tm
             prevPrimerSequence = primerSequence;
+            prevTM = currTM;
             extensionLength += 1;
-            i++;
-    
-            // Set current primer using the current length then get its temperature
             primerSequence = (direction === "forward") ? initialSequence + repeatingSlice(currStrand, startIndex, startIndex + extensionLength - 1): repeatingSlice(currStrand, startIndex - extensionLength + 1, startIndex) + initialSequence;
-            currTM = get_tm(primerSequence, primerConc, saltConc, method);
+            currTM = getMeltingTemperature(primerSequence, method);
+            i++;
         };
     };
 };
@@ -405,6 +551,9 @@ function primerExtension(plasmidSequence, startingPos, targetStrand, direction, 
 
 /**
  *  Calculates the standard deviation from a list of numbers
+ * 
+ * @param {Array<number>} numbers 
+ * @returns {number}
  */
 function standardDeviation(numbers) {
     const mean = numbers.reduce((acc, val) => acc + val, 0) / numbers.length;
@@ -418,57 +567,67 @@ function standardDeviation(numbers) {
 /**
  * Scales the codon frequencies in the input table to give more weight to more common codons and less to rare codons
  * Works by exponentiating each frequency by a factor determiend using the standard deviation of the distribution.
+ * 
+ * @param {Object.<string, Object.<number, string>>} inputTable - Codon frequency table
+ * @returns {Object.<string, Object.<number, string>>}
  */
 function scaleCodonFrequencies(inputTable) {
-    //console.log("scaleCodonFrequencies b4", inputTable);
-
+    // Iterate over each amino acid
     for (let aa in inputTable) {
+        // Current frequencies dict
         const aaDict = inputTable[aa];
-        //console.log("scaleCodonFrequencies", aa, aaDict);
 
+        // Convert dict to a list of frequencies and a list of codons
         let frequencyData = [];
         let codons = [];
         for (let codonFreq in aaDict) {
             frequencyData.push(parseFloat(codonFreq));
             codons.push(aaDict[codonFreq]);
         };
-        //console.log("scaleCodonFrequencies", aa, codons, frequencyData);
 
-        // Don't scale if there is only 1 possible codon
+        // If there are more than 1 possible codons, scale each frequency
         if (frequencyData.length > 1) {
-            // Powerfactor is square root of the inverse of the standard deviation
-            // the more extreme the differences, the less the scaling should be
-            // square root also reduced the size of the factor nicely, but was chosen arbitrarily
+            /**
+             * Powerfactor is square root of the inverse of the standard deviation
+             * the more extreme the differences, the less the scaling should be
+             */
             const powerFactor = Math.sqrt(1/standardDeviation(frequencyData));
             frequencyData = frequencyData.map(freq => Math.pow(freq, powerFactor));
 
-            // Normalise
+            // Normalise frequencies
             let dataSum = 0;
-            for (let i = 0; i < frequencyData.length; i++) {dataSum += frequencyData[i]}
+            for (let i = 0; i < frequencyData.length; i++) {dataSum += frequencyData[i]};
             frequencyData = frequencyData.map(freq => freq / dataSum);
         };
 
+        // Append scaled frequencies to new dict then update the table
         let newAADict = {};
         for (let i = 0; i < frequencyData.length; i++) {
             newAADict[frequencyData[i]] = codons[i]
-        }
+        };
         inputTable[aa] = newAADict;
     };
 
-    //console.log("scaleCodonFrequencies after", inputTable);
     return inputTable
 };
 
 
 /**
- * Weighted random codon selection
+ * Select a random codon using the given weights
+ * 
+ * @param {Object.<number, string>>} frequenciesDict - Frequency data 
+ * @returns {string} - Randomly selected codon
  */
 function weightedCodonRandomSelect(frequenciesDict) {
+    // Convert dict to array
     const possibilityArray = Object.entries(frequenciesDict).map(([weight, value]) => ({ weight: parseFloat(weight), value }));
+    // Calculate sum of weights
     const totalWeight = possibilityArray.reduce((acc, possibility) => acc + possibility.weight, 0);
     
+    // Generate random number between 0 and total weight
     const randomNumber = Math.random() * totalWeight;
     
+    // Return codon
     let cumulativeWeight = 0;
     for (const possibility of possibilityArray) {
         cumulativeWeight += possibility.weight;
@@ -480,16 +639,11 @@ function weightedCodonRandomSelect(frequenciesDict) {
 
 
 /**
- * Calculate GC content of a string
- */
-
-/**
- * Takes in a sequence of amino acids (inputAA) as input and returns the DNA sequence with
- * the lowest melting temperature. This function calls generateDNASequences to create all
- * possible DNA sequences for the specified amino acid sequence.
+ * Optimise amino acid sequence using codon frequency tables for the specified organism
  * 
- * inputAA - amino acid sequence to optimize
- * 
+ * @param {string} inputAA - Amino acid sequence to optimise
+ * @param {string} targetOrganism - Organism for which the codons should be optimised
+ * @returns {string} - Optimised DNA sequence
  */
 function optimizeAA(inputAA, targetOrganism) {
     // Update last selected organism
@@ -497,80 +651,42 @@ function optimizeAA(inputAA, targetOrganism) {
     saveUserPreference("preferredOrganism", targetOrganism);
     updateOrganismSelectorDefault();
 
-    /**
-     * Using codon frequency tables
-     */
-    let outputSequence = "";
+    // Get codon frequency table for specified organism
     let organismCodonTable = codonTablesDict[targetOrganism];
-
     // Scale frequency distribution to give more weight to frequent codons and less to rare ones
     organismCodonTable = scaleCodonFrequencies(organismCodonTable);
-
-    let tripletToAdd = "";
+    
+    // Iterate over the amino acid sequence and append the randomly selected
+    let outputSequence = "";
     for (let i = 0; i < inputAA.length; i++) {
-        frequenciesList = Object.keys(organismCodonTable[inputAA[i]])
-        //console.log("optimizeAA", frequenciesList)
-        //tripletToAdd = organismCodonTable[inputAA[i]][frequenciesList[0]]
-        tripletToAdd = weightedCodonRandomSelect(organismCodonTable[inputAA[i]])
-        //console.log("optimizeAA", inputAA[i], tripletToAdd, organismCodonTable[inputAA[i]])
-        
-        outputSequence += tripletToAdd
-        //console.log("optimizeAA", tripletToAdd)
+        outputSequence += weightedCodonRandomSelect(organismCodonTable[inputAA[i]])
     };
 
-    console.log("optimizeAA", targetOrganism, inputAA, outputSequence, fractionGC(outputSequence) )
     return outputSequence;
 };
 
 
 /**
- * Creates the replacement primers. Takes in either a DNA sequence or an amino acid sequence and creates primers
- * that will delete the section between the start and end positions specified and then insert the DNA sequence.
- * The melting temperature of the DNA sequence to be inserted determines the amount of overhang in the primers.
+ * Creates primer sequences in the given plasmid sequence.
  * 
- * Examples:
+ * DNA or AA sequences can be specified. AA sequence will be optimised to specified target organism.
+ * If no AA sequence is provided, the DNA sequence will be used.
  * 
- * 1. Same start and end position, inserting ATG:
- * (homologous and template binding regions are extended until they reach their specified melting temperatures)
+ * The resulting DNA sequence will be inserted between pos1 and pos2. If no DNA sequence is
+ * provided, the resulting primers will delete whatever is between pos1 and pos2.
  * 
- *                       homologous region  insertion      template binding region
- *                                    |         |            |
- *                            ┏---------------┓┏-┓┏------------------------┓
- *                            TTATATATGGGGAAAAAATGTTTATATATGGGGAAAAAAAATTTA  
- * fwdStrand  -> GGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATAT
- * compStrand -> ATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCC
- *                       ATTTTTTTTCCCCATATATAAATTT
- *                       ┗-----------------------┛   
- *                                   |
- *                      homologous region
- * 
- * 2. Different start and end positions (3 bp difference), inserting a long sequence (CATCATCATCATCATCATCAT):
- * (template binding regions are extended until their target temperature,
- * the insertion can be as long as it needs to be
- * BUT the reverse complement of the insertion needs to be truncated to only reach the target temperature
- * of the homologous region)
- * 
- *                             insertion in full    template binding region
- *                                      |                     |
- *                           ┏-------------------┓┏------------------------┓
- *                           CATCATCATCATCATCATCATTTTATATATGGGGAAAAAAAATTTA  
- * fwdStrand  -> GGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATATGGGGAAAAAAAATTTATATAT
- * compStrand -> ATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCCATATATAAATTTTTTTTCCCC
- *                    ATTTTTTTTCCCCATATATAAATTTGTAGTAGTAGTAGTAGTAG
- *                    ┗-----------------------┛┗-----------------┛   
- *                                |                      |
- *                   homologous region     reverse complement of insertion
-
- * 
- * dnaToInsert - DNA sequence to be inserted between the specified indices
- * aaToInsert - amino acid sequence to be inserted, it will be converted to the DNA sequence with the lowest possible melting temperature
- * replaceStartPos, replaceEndPos - indices of the segment to be deleted, then filled with the new DNA sequence
- * 
+ * @param {string} plasmidSequence - Sequence of the plasmid
+ * @param {string} dnaToInsert - User specified DNA sequence, used if no AA sequence specified
+ * @param {string} aaToInsert - User specified AA sequence
+ * @param {string} targetOrganism - Organism for AA sequence optimisation
+ * @param {number} pos1 - Operation index 1
+ * @param {number} pos2 - Operation index 2
+ * @param {string} operationType - IVA operation type ("Insetion", "Deletion", etc)
+ * @returns {[string, Object, string, number, number]}
  */
 function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, operationType) {
-    console.log("generatePrimerSequences", operationType, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2)
     /**
-     * Set colors
+     * Set primer colors
      */
     let colorHomo = primerColorOrange;
     let colorIns = primerColorRed;
@@ -581,16 +697,12 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
         colorTBR = primerColorPurple;
     };
     
-    
-    // Operation positions
+    // Get start and end indices
     const operationStartPos = Math.min(pos1, pos2)
     const operationEndPos = Math.max(pos1, pos2)
 
-    /**
-     * Amino acid sequence optimisation
-     */
+    // Optimise AA sequence if one is given, else use DNA sequence
     let seqToInsert = "";
-    // If AA sequence given, optimise it, else use the DNA sequence
     if (aaToInsert && aaToInsert !== "" && targetOrganism !== null) {
         seqToInsert = optimizeAA(aaToInsert, targetOrganism);
     } else {
@@ -598,41 +710,65 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
     };
 
     
-    let primersDict = {};
-    let operationTypeTagline = "";
     /**
      * Template binding regions
      */
     // Forward template binding region, extend forward on the forward strand from the end position
-    const tempFwd = primerExtension(plasmidSequence, operationEndPos, "fwdStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
+    const tempFwd = primerExtension(
+        plasmidSequence,
+        operationEndPos,
+        "fwdStrand",
+        "forward",
+        tempRegionTm,
+        meltingTempAlgorithmChoice,
+        7
+    );
     // Reverse template binding region, extend forward on the complementary strand from the start position
-    const tempRev = primerExtension(plasmidSequence, operationStartPos, "compStrand", "forward", tempRegionTm, meltingTempAlgorithmChoice, 7, currentlyOpenedPlasmid);
-
+    const tempRev = primerExtension(
+        plasmidSequence,
+        operationStartPos,
+        "compStrand",
+        "forward",
+        tempRegionTm,
+        meltingTempAlgorithmChoice,
+        7
+    );
+    
     /**
      * Homologous regions
      */
+    let primersDict = {};
+    let operationTypeTagline = "";
     let homoFwd = "";
     let homoRev = "";
 
-    console.log("generatePrimerSequences", operationType, dnaToInsert, aaToInsert, targetOrganism, operationStartPos, operationEndPos)
     // If the sequence to be inserted has a melting temperature lower than 49 C, extende the primer backwards
-    if (get_tm(seqToInsert, primerConc, saltConc, "oligoCalc") < upperBoundShortInsertions) { // Mutation < 49 C (or user defined minimum TM), need homolog region
+    if (getMeltingTemperature(seqToInsert, "oligoCalc") < upperBoundShortInsertions) {
         /**
-         * Short insertions + deletions
-         */
+         * Short insertions and deletions
+        */
+        operationTypeTagline = (operationType !== "Deletion") ? "Short " + operationType: operationType;
+
         if (primerDistribution === false) {
             /**
              * Assymmetric primers, add bases to 5' end of sequence to add, or to nothing in case of deletions
              */
-            // Forward homologous region, extend backwards on the forward strand from the start position
-            homoFwd = primerExtension(plasmidSequence, operationStartPos, "fwdStrand", "backward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentlyOpenedPlasmid);
+            homoFwd = primerExtension(
+                plasmidSequence,
+                operationStartPos,
+                "fwdStrand",
+                "backward",
+                homoRegionTm,
+                "oligoCalc",
+                homoRegionMinLength
+            );
             homoRev = "";
             
-            // Display primers in the sidebar
-            const primerInfoFwd = `(Homologous region: ${homoFwd.length} bp, ${Math.round(get_tm(homoFwd, primerConc, saltConc, "oligoCalc"))} °C;
-                                    Template binding region: ${tempFwd.length} bp, ${Math.round(get_tm(tempFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
+            // Generate primer dict
+            const primerInfoFwd = `(Homologous region: ${homoFwd.length} bp, ${Math.round(getMeltingTemperature(homoFwd, "oligoCalc"))} °C;
+                                    Template binding region: ${tempFwd.length} bp, ${Math.round(getMeltingTemperature(tempFwd, meltingTempAlgorithmChoice))} °C; 
                                     Total: ${(homoFwd.length + seqToInsert.length + tempFwd.length)} bp)`;
-            const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(get_tm(tempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
+            const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(getMeltingTemperature(tempRev, meltingTempAlgorithmChoice))} °C; 
                                     Total: ${(tempRev.length)} bp)`;
             primersDict["Forward Primer"] = {1: {"seq": homoFwd, "color": colorHomo},
                                             2: {"seq": seqToInsert, "color": colorIns},
@@ -645,39 +781,66 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
             /**
              * Symmetric primers, add bases to 5' and 3' end of sequence to add, or to nothing in case of deletions
              */
+            // Added fragment length trackers
             let homoFragmentLength1 = 0;
             let homoFragmentLength2 = 0;
-            let homoFwd1 = primerExtension(plasmidSequence, operationStartPos, "fwdStrand", "backward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentlyOpenedPlasmid);
-            let homoFwd2 = primerExtension(plasmidSequence, operationEndPos, "fwdStrand", "forward", homoRegionTm, "oligoCalc", homoRegionMinLength, currentlyOpenedPlasmid);
+            // Extend more than we need
+            let homoFwd1 = primerExtension(
+                plasmidSequence,
+                operationStartPos,
+                "fwdStrand",
+                "backward",
+                homoRegionTm,
+                "oligoCalc",
+                homoRegionMinLength,
+            );
+            let homoFwd2 = primerExtension(
+                plasmidSequence,
+                operationEndPos,
+                "fwdStrand",
+                "forward",
+                homoRegionTm,
+                "oligoCalc",
+                homoRegionMinLength,
+            );
             let overlappingSeq = homoFwd1 + seqToInsert + homoFwd2;
 
+            // Take turns deleting bases from each end until the target melting temperature is reached
             let turnHomoFwd1 = true;
             while (true) {
+                // Get slice indices for the current iteration
                 const sliceIndices = (turnHomoFwd1 === true) ?  [1, overlappingSeq.length]: [0, -1]
-                const stillAboveTargetTM = get_tm(overlappingSeq.slice(...sliceIndices), primerConc, saltConc, "oligoCalc") > homoRegionTm;
-                const slicingGetsUsCloser = Math.abs(homoRegionTm - get_tm(overlappingSeq.slice(...sliceIndices), primerConc, saltConc, "oligoCalc")) <= Math.abs(homoRegionTm - get_tm(overlappingSeq, primerConc, saltConc, "oligoCalc"));
+                // Check conditions
+                const stillAboveTargetTM = getMeltingTemperature(overlappingSeq.slice(...sliceIndices), "oligoCalc") > homoRegionTm;
+                const slicingGetsUsCloser = Math.abs(homoRegionTm - getMeltingTemperature(overlappingSeq.slice(...sliceIndices), "oligoCalc")) <= Math.abs(homoRegionTm - getMeltingTemperature(overlappingSeq, "oligoCalc"));
                 const minimumLengthNotReached = overlappingSeq.length > homoRegionMinLength;
+                
                 if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
+                    // If the minimum length has not been reached, and if we are still above the target tm or 
+                    // slicing would get us closer, slice the string
                     overlappingSeq = overlappingSeq.slice(...sliceIndices);
+                    // Increment fragment length tracker
                     if (turnHomoFwd1 === true) {homoFragmentLength1++} else {homoFragmentLength2++};
+                    // Switch turn
                     turnHomoFwd1 = !turnHomoFwd1;
-                } else{
+                } else {
+                    // Otherwise, end the loop
                     break;
                 };
             };
 
+            // Save the fragments that were added on each side
             homoFwd1 = homoFwd1.slice(homoFragmentLength1, homoFwd1.length);
             homoFwd2 = homoFwd2.slice(0, homoFwd2.length - homoFragmentLength2 + 1);
-
+            // Get reverse complementary sequences of the added fragments
             let homoRev1 = getComplementaryStrand(homoFwd2).split('').reverse().join('');
             let homoRev2 = getComplementaryStrand(homoFwd1).split('').reverse().join('');
-            console.log("Short insertion", operationStartPos, operationStartPos + homoRev2.length)
  
-            // Display primers in the sidebar
-            const primerInfoFwd = `(Overlap: ${overlappingSeq.length} bp, ${Math.round(get_tm(overlappingSeq, primerConc, saltConc, "oligoCalc"))} °C;
-                                    Template binding region: ${tempFwd.length} bp, ${Math.round(get_tm(tempFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
+            // Generate primer dict
+            const primerInfoFwd = `(Overlap: ${overlappingSeq.length} bp, ${Math.round(getMeltingTemperature(overlappingSeq, "oligoCalc"))} °C;
+                                    Template binding region: ${tempFwd.length} bp, ${Math.round(getMeltingTemperature(tempFwd, meltingTempAlgorithmChoice))} °C; 
                                     Total: ${(homoFwd1.length + seqToInsert.length + tempFwd.length)} bp)`;
-            const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(get_tm(tempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
+            const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(getMeltingTemperature(tempRev, meltingTempAlgorithmChoice))} °C; 
                                     Total: ${(homoRev1.length + seqToInsert.length + tempRev.length)} bp)`;
             primersDict["Forward Primer"] = {1: {"seq": homoFwd1, "color": colorHomo},
                                             2: {"seq": seqToInsert, "color": colorIns},
@@ -688,22 +851,24 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
                                              3: {"seq": tempRev, "color": colorTBR},
                                              info: primerInfoRev};
         };
-
-        operationTypeTagline = (operationType !== "Deletion") ? "Short " + operationType: operationType;
-
     } else {
         /**
          * Long insertions
          */
+        operationTypeTagline = "Long Insertion";
+
         let overlappingSeq = "";
         if (primerDistribution === false) {
             /**
-             * Asymmetric primers
+             * Asymmetric primers, remove bases from the complementary strand until target tm is reached
              */
+            // Initial overlapping sequence is the entire insertion
             overlappingSeq = getComplementaryStrand(seqToInsert).split('').reverse().join('');
+            
+            // Delete bases until target tm is reached
             while (true) {
-                const stillAboveTargetTM = get_tm(overlappingSeq.slice(1), primerConc, saltConc, "oligoCalc") > homoRegionTm;
-                const slicingGetsUsCloser = Math.abs(homoRegionTm - get_tm(overlappingSeq.slice(1), primerConc, saltConc, "oligoCalc")) <= Math.abs(homoRegionTm - get_tm(overlappingSeq, primerConc, saltConc, "oligoCalc"));
+                const stillAboveTargetTM = getMeltingTemperature(overlappingSeq.slice(1), "oligoCalc") > homoRegionTm;
+                const slicingGetsUsCloser = Math.abs(homoRegionTm - getMeltingTemperature(overlappingSeq.slice(1), "oligoCalc")) <= Math.abs(homoRegionTm - getMeltingTemperature(overlappingSeq, "oligoCalc"));
                 const minimumLengthNotReached = overlappingSeq.length > homoRegionMinLength;
                 if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
                     overlappingSeq = overlappingSeq.slice(1);
@@ -711,22 +876,28 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
                     break;
                 };
             };
+            
+            // Set homologous sequences
             homoFwd = seqToInsert;
             homoRev = overlappingSeq;
 
         } else if (primerDistribution === true) {
             /**
-             * Symmetric primers
+             * Symmetric primers, take turns deleting bases from each end until the target melting temperature is reached
              */
+            // Deleted bases trackers for the fragments
             let homoFragmentLength1 = 0;
             let homoFragmentLength2 = 0;
+
+            // Initial overlapping sequence is the entire insertion
             overlappingSeq = seqToInsert;
 
+            // Take turns deleting bases from each end until the target melting temperature is reached
             let turnHomoFwd1 = true;
             while (true) {
                 const sliceIndices = (turnHomoFwd1 === true) ? [1, overlappingSeq.length]: [0, -1]
-                const stillAboveTargetTM = get_tm(overlappingSeq.slice(...sliceIndices), primerConc, saltConc, "oligoCalc") > homoRegionTm;
-                const slicingGetsUsCloser = Math.abs(homoRegionTm - get_tm(overlappingSeq.slice(...sliceIndices), primerConc, saltConc, "oligoCalc")) <= Math.abs(homoRegionTm - get_tm(overlappingSeq, primerConc, saltConc, "oligoCalc"));
+                const stillAboveTargetTM = getMeltingTemperature(overlappingSeq.slice(...sliceIndices), "oligoCalc") > homoRegionTm;
+                const slicingGetsUsCloser = Math.abs(homoRegionTm - getMeltingTemperature(overlappingSeq.slice(...sliceIndices), "oligoCalc")) <= Math.abs(homoRegionTm - getMeltingTemperature(overlappingSeq, "oligoCalc"));
                 const minimumLengthNotReached = overlappingSeq.length > homoRegionMinLength;
                 if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
                     overlappingSeq = overlappingSeq.slice(...sliceIndices);
@@ -736,18 +907,18 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
                     break;
                 };
             };
-            console.log("generatePrimerSequences long symm", homoFragmentLength1, homoFragmentLength2, overlappingSeq)
+
+            // Set homologous sequences
             homoFwd = seqToInsert.slice(homoFragmentLength1, seqToInsert.length);
             const seqToInsertRevComp = getComplementaryStrand(seqToInsert).split('').reverse().join('');
             homoRev = seqToInsertRevComp.slice(homoFragmentLength2, seqToInsertRevComp.length);
-            console.log("generatePrimerSequences long symm", homoFwd, homoRev)
         };
 
-        // Display primers in the sidebar
-        const primerInfoFwd = `(Overlap: ${overlappingSeq.length} bp, ${Math.round(get_tm(overlappingSeq, primerConc, saltConc, "oligoCalc"))} °C;
-                                Template binding region: ${tempFwd.length} bp, ${Math.round(get_tm(tempFwd, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
+        // Generate primer dict
+        const primerInfoFwd = `(Overlap: ${overlappingSeq.length} bp, ${Math.round(getMeltingTemperature(overlappingSeq, "oligoCalc"))} °C;
+                                Template binding region: ${tempFwd.length} bp, ${Math.round(getMeltingTemperature(tempFwd, meltingTempAlgorithmChoice))} °C; 
                                 Total: ${(homoFwd.length + tempFwd.length)} bp)`;
-        const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(get_tm(tempRev, primerConc, saltConc, meltingTempAlgorithmChoice))} °C; 
+        const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(getMeltingTemperature(tempRev, meltingTempAlgorithmChoice))} °C; 
                                 Total: ${(homoRev.length + tempRev.length)} bp)`;
         primersDict["Forward Primer"] = {1: {"seq": homoFwd, "color": colorIns},
                                          2: {"seq": tempFwd, "color": colorTBR},
@@ -755,49 +926,106 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
         primersDict["Reverse Primer"] = {1: {"seq": homoRev, "color": colorIns},
                                          2: {"seq": tempRev, "color": colorTBR},
                                          info: primerInfoRev};
-        operationTypeTagline = (operationType !== "Deletion") ? "Long " + operationType: operationType;
     };
 
     return [operationTypeTagline, primersDict, seqToInsert, operationStartPos, operationEndPos];
 };
 
-function makePrimers(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, operationType, translateFeature) {
-    const [operationTypeTagline, primersDict, seqToInsert, operationStartPos, operationEndPos] = generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, operationType);
 
+/**
+ * Generate primers and display them in the sidebar, then update features dict to account for
+ * deletion/insertion of base pairs.
+ * 
+ * @param {string} plasmidSequence - Sequence of the plasmid
+ * @param {string} dnaToInsert - User specified DNA sequence, used if no AA sequence specified
+ * @param {string} aaToInsert - User specified AA sequence
+ * @param {string} targetOrganism - Organism for AA sequence optimisation
+ * @param {number} pos1 - Operation index 1
+ * @param {number} pos2 - Operation index 2
+ * @param {string} operationType - IVA operation type ("Insetion", "Deletion", etc)
+ * @param {boolean} translateFeature - Flag to either translate the newly generated feature
+ * @returns {void}
+ */
+function makePrimers(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, operationType, translateFeature) {
+    // Generate primers
+    const [
+        operationTypeTagline,
+        primersDict,
+        seqToInsert,
+        operationStartPos,
+        operationEndPos
+    ] = generatePrimerSequences(
+        plasmidSequence,
+        dnaToInsert,
+        aaToInsert,
+        targetOrganism,
+        pos1,
+        pos2,
+        operationType
+    );
+    
     // Display primers in the sidebar
     displayPrimers(operationTypeTagline, primersDict);
+    
     // Update the sequence and features
-    updateFeatures(operationType, translateFeature, seqToInsert, operationStartPos, operationEndPos, seqToInsert.length - (operationEndPos - operationStartPos));
+    updateFeatures(
+        operationType,
+        translateFeature,
+        seqToInsert,
+        operationStartPos,
+        operationEndPos,
+        seqToInsert.length - (operationEndPos - operationStartPos)
+    );
 };
 
 
 /**
- * Mark selection as subcloning target
+ * Mark selection as subcloning target and highlight bases
+ * 
+ * @param {number} plasmidIndex - Target plasmid index in plasmidDict
+ * @param {number} inputStartPos - Start index
+ * @param {number} inputEndPos - End index
+ * @returns {void}
  */
 function markSelectionForSubcloning(plasmidIndex, inputStartPos, inputEndPos) {
-    console.log("markSelectionForSubcloning", inputStartPos, inputEndPos);
+    // Clear previous subcloning selections
     clearAllSubcloningSelections();
+
+    // Update global trackers of the subcloning target
     subcloningOriginPlasmidIndex = plasmidIndex;
     subcloningOriginSpan = [Math.min(inputStartPos, inputEndPos), Math.max(inputStartPos, inputEndPos)];
+
+    // If the plasmid with the subcloning target is open, highlight it
     if (currentlyOpenedPlasmid === subcloningOriginPlasmidIndex) {
+        // First cell
         highlightSpan(plasmidIndex, 0, subcloningOriginSpan[0], subcloningOriginSpan[0] + 1, "subcloning-target-cell-first", null, null);
+        // Middle cells
         highlightSpan(plasmidIndex, 0, subcloningOriginSpan[0] + 1, subcloningOriginSpan[1] - 1, "subcloning-target-cell", null, null);
+        // Last cell
         highlightSpan(plasmidIndex, 0, subcloningOriginSpan[1] - 1, subcloningOriginSpan[1], "subcloning-target-cell-last", null, null);
     };
 };
 
 
 /**
+ * Remove highlight classes for subcloning target
  * 
+ * @param {boolean} clearVariables - Flag for wether or not to reset global subcloning target trackers
+ * @returns {void}
  */
-function clearAllSubcloningSelections(clearVariables = true) {
+function clearAllSubcloningSelections(clearVariables=true) {
+    // If specified, reset global variables
     if (clearVariables === true) {
         subcloningOriginPlasmidIndex = null;
         subcloningOriginSpan = null;
     };
+
+    // Select all table cells that have the subcloning highlight classes
     const selectedCellsFirst = document.querySelectorAll('.subcloning-target-cell-first');
     const selectedCells = document.querySelectorAll('.subcloning-target-cell');
     const selectedCellsLast = document.querySelectorAll('.subcloning-target-cell-last');
+
+    // Iterate through all cells and remove the class
     selectedCellsFirst.forEach((cell) => {
         cell.classList.remove('subcloning-target-cell-first');
     });
@@ -811,7 +1039,7 @@ function clearAllSubcloningSelections(clearVariables = true) {
 
 
 /**
- * Creates the subcloning primers. Explanation here.
+ * Creates the subcloning primers.
  * 
  * Example:
  * 
@@ -842,11 +1070,18 @@ function clearAllSubcloningSelections(clearVariables = true) {
  *                             |          
  *             reverse vector template binding region
  * 
- * subcloningStartPos, subcloningEndPos - indices of the segment to be subcloned into the second plasmid
+ * 
+ * @param {number} subcloningStartPos - Operation index 1
+ * @param {number} subcloningEndPos - Operation index 2
+ * @param {string} aaSequence5Prime - User specified AA 5' sequence
+ * @param {string} dnaSequence5Prime - User specified DNA  5' sequence, used if no AA sequence specified
+ * @param {string} aaSequence3Prime - User specified AA 3' sequence
+ * @param {string} dnaSequence3Prime - User specified DNA  3' sequence, used if no AA sequence specified
+ * @param {string} targetOrganism - Organism for AA sequence optimisation
+ * @param {boolean} translateFeature -  Flag to either translate the newly generated feature
+ * @returns {void}
  */
 function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5Prime, dnaSequence5Prime, aaSequence3Prime, dnaSequence3Prime, targetOrganism, translateFeature=false) {
-    console.log("makeSubcloningPrimers", subcloningStartPos, subcloningEndPos, aaSequence5Prime, dnaSequence5Prime, aaSequence3Prime, dnaSequence3Prime, targetOrganism)
-    
     /**
      * Optimise 5' and 3' insertions, otherwise use given DNA sequence
      */
@@ -856,7 +1091,6 @@ function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5
     } else if (dnaSequence5Prime !== null && dnaSequence5Prime !== "") {
         seqToInsert5 = dnaSequence5Prime;
     };
-
     let seqToInsert3 = "";
     if (aaSequence3Prime !== null && aaSequence3Prime !== "") {
         seqToInsert3 = optimizeAA(aaSequence3Prime, targetOrganism);
@@ -870,36 +1104,146 @@ function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5
     const startPos = Math.min(subcloningStartPos, subcloningEndPos);
     const endPos = Math.max(subcloningStartPos, subcloningEndPos);
 
-    // Insertion sequence with insertions added
+    // Subcloning target sequence
     const subcloningTargetSequence = repeatingSlice(plasmidDict[subcloningOriginPlasmidIndex]["fileSequence"], subcloningOriginSpan[0] - 1, subcloningOriginSpan[1]-1)
+    // Subcloning target sequence with insertion sequences
     const subcloningSequenceFull = seqToInsert5 + subcloningTargetSequence + seqToInsert3;
 
+    // Plasmid sequence of target vector
     const targetVectorSequence = plasmidDict[currentlyOpenedPlasmid]["fileSequence"];
+    // Create a simulated plasmid sequence where the subcloning target is already inserted
     const simulatedPlasmidSequence = targetVectorSequence.slice(0, startPos-1) + subcloningTargetSequence + targetVectorSequence.slice(endPos-1);
+    // Create insertion primers to insert the 5' insertion on the simulated plasmid sequence
     const [, primersDict5, , , ] = generatePrimerSequences(simulatedPlasmidSequence, seqToInsert5, "", targetOrganism, startPos, startPos, "Subcloning");
 
+    // Create a simulated plasmid reverse complement sequence where the subcloning target is already inserted
     const simulatedPlasmidSequenceRevComp = getComplementaryStrand(simulatedPlasmidSequence).split("").reverse().join("");
+    // Get new insertion position in the new, simulated sequence
     const endPosRevComp = simulatedPlasmidSequenceRevComp.length - endPos - subcloningTargetSequence.length + 2;
-    const seqToInsert3RevComp = getComplementaryStrand(seqToInsert3).split("").reverse().join("");;
+    // Get the reverse complement sequence of the 3' insertion
+    const seqToInsert3RevComp = getComplementaryStrand(seqToInsert3).split("").reverse().join("");
+    // Create insertion primers to insert the 3' insertion on the simulated plasmid sequence
     const [, primersDict3, , , ] = generatePrimerSequences(simulatedPlasmidSequenceRevComp, seqToInsert3RevComp, "", targetOrganism, endPosRevComp, endPosRevComp, "Subcloning");
 
-    console.log("makeSubcloningPrimers", primersDict5)
-    console.log("makeSubcloningPrimers", primersDict3)
 
-    /**
-     * Primers dict
-     */
+    // Generate primer dict
     let primersDict = {};
     primersDict["Forward Primer"] = primersDict5["Forward Primer"];
     primersDict["Reverse Primer"] = primersDict3["Forward Primer"];
     primersDict["Vector Forward Primer"] = primersDict3["Reverse Primer"];
     primersDict["Vector Reverse Primer"] = primersDict5["Reverse Primer"];
-    console.log("Primers Dict:", primersDict)
-    displayPrimers("Subcloning", primersDict);
 
-    // Update stuff
+    // Display primers in the sidebar
+    displayPrimers(operationTypeTagline, primersDict);
+
+    // Update the sequence and features
     const plasmidLengthDiff = subcloningSequenceFull.length - (endPos - startPos);
     updateFeatures("Subcloning", translateFeature, subcloningSequenceFull, startPos, endPos, plasmidLengthDiff);
+};
+
+
+/**
+ * Decides if the old feature should be left alone, shifted, or deleted based on the span of the new feature.
+ * 
+ * @param {Array<number>} featureSpan - Span of feature to compare to
+ * @param {Array<number>} newFeatureSpan - Span of new feature
+ * @returns {string} - Decision: delete, shift, inside, null
+ */
+function checkNewFeatureOverlap(featureSpan, newFeatureSpan) {
+    // Separate start and end
+    const spanStart = featureSpan[0];
+    const spanEnd = featureSpan[1];
+    
+    // Separate start and end
+    let newSpanStart = newFeatureSpan[0];
+    let newSpanEnd = newFeatureSpan[1];
+    // Adjust indices if we're dealing with a pure insertion and the start and end indices are identical
+    if (newSpanStart === newSpanEnd) {
+        newSpanStart++;
+        newSpanEnd++;
+    } else { // Adjust indices from sequence indices to feature indices
+        newSpanStart++;
+    };
+
+    /**
+     * Pure insertions - new feature start and end positions are identical
+     */
+    if (newSpanStart === newSpanEnd) {
+        if (newSpanStart <= spanStart) {
+            /**
+             * Insertion is before old feature
+             * old     [         ]
+             * new  |
+             */
+            return "shift";
+        } else if (newSpanStart < spanEnd) {
+            /**
+             * Insertion is inside old feature
+             * old    [         ]
+             * new         |
+             */
+            return "inside";
+        } else if (newSpanStart > spanEnd) {
+            /**
+             * Insertion is after old feature
+             * old    [         ]
+             * new                   |
+             */
+            return null;
+        };
+    } else {
+        if (newSpanStart === spanStart && newSpanEnd === spanEnd) {
+            /**
+             * Special case: exact deletion/replacement
+             * old    [         ]
+             * new    [         ]
+             */
+            return "delete";
+        } else if (newSpanStart >= spanStart && newSpanEnd >= spanStart && newSpanStart <= spanEnd && newSpanEnd <= spanEnd && newSpanStart !== newSpanEnd) {
+            /**
+             * 0.
+             * old                [         ]
+             * new                 [      ]
+             */
+            return "inside";
+        } else if (newSpanStart < spanStart && newSpanEnd < spanStart && newSpanStart < spanEnd && newSpanEnd < spanEnd) {
+            /**
+             * 1. New feature is before old feature
+             * old                [         ]
+             * new    [        ]
+             */
+            return "shift";
+        } else if (newSpanStart < spanStart && newSpanEnd >= spanStart && newSpanStart < spanEnd && newSpanEnd <= spanEnd) {
+            /**
+             * 2. New feature overlaps old feature
+             * old         [         ]
+             * new    [        ]
+             */
+            return "delete";
+        } else if (newSpanStart < spanStart && newSpanEnd > spanStart && newSpanStart < spanEnd && newSpanEnd > spanEnd) {
+            /**
+             * 3. New feature encompasses old feature
+             * old          [         ]
+             * new    [                 ] 
+             */
+            return "delete";
+        } else if (newSpanStart >= spanStart && newSpanEnd > spanStart && newSpanStart <= spanEnd && newSpanEnd > spanEnd) {
+            /**
+             * 4. New feature overlaps old feature
+             * old          [         ]
+             * new               [                 ] 
+             */
+            return "delete";
+        } else {
+            /**
+             * 5. New feature is after old feature
+             * old          [         ]
+             * new                        [                 ] 
+             */
+            return null;
+        };
+    };
+    return null;
 };
 
 
@@ -907,170 +1251,51 @@ function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5
  * Updates the target plasmid sequence, checks if the insertion/deletion crashes with exsiting features and adjusts accordingly (shift or deletion).
  * Lastly, adds the new feature to the feature dict and rebuilds the plasmid as well as refresh it in the viewer.
  * 
- * newFeatureTyp - name of operation type (insertion, deletion, subcloning)
- * newFeatureSequence - sequence of the new feature to be inserted (or "" in the case of deletions)
- * segmentStartPos, segmentEndPos - indices deliminating the span of the new feature (equal in the case of pure insertions)
- * pNr - number of the target plasmid to be updated
+ * @param {string} operationType - Type of IVA operation (insertion, deletion, etc)
+ * @param {boolean} translateFeature - Flag to translate new feature or not
+ * @param {string} newFeatureSequence - DNA sequence of the new feature
+ * @param {number} segmentStartPos - Start index of new feature
+ * @param {number} segmentEndPos - End index of new feature
+ * @param {number} featureShift - Amount of bases to shift old features
+ * @returns {void}
  */
 function updateFeatures(operationType, translateFeature, newFeatureSequence, segmentStartPos, segmentEndPos, featureShift) {
-    // Update the sequence and features
     // Convert back from sequence indices to string indices
     segmentStartPos--;
     segmentEndPos--;
 
-
     // Insertion is added into the main sequence and complementary strand is remade
-    console.log("updateFeatures before", plasmidDict[currentlyOpenedPlasmid]["fileSequence"].length, plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"].length)
     plasmidDict[currentlyOpenedPlasmid]["fileSequence"] = plasmidDict[currentlyOpenedPlasmid]["fileSequence"].substring(0, segmentStartPos) + newFeatureSequence + plasmidDict[currentlyOpenedPlasmid]["fileSequence"].substring(segmentEndPos);
     plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"]  = getComplementaryStrand(plasmidDict[currentlyOpenedPlasmid]["fileSequence"]);
-    console.log("updateFeatures after", plasmidDict[currentlyOpenedPlasmid]["fileSequence"].length, plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"].length)
 
-    /**
-     * Decides if the old feature should be left alone, shifted, or deleted based on the span of the new feature.
-     * 
-     * elementKey - working key
-     * elementvalue - working value
-     * featureStart, featureEnd - indices of new feature that need to be checked against the span of the key
-     * 
-    */
-
-    function checkNewFeatureOverlap(elementKey, elementValue, featureStart, featureEnd, operationType, newFeatureType) {
-        // Adjust indices if we're dealing with a pure insertion and the start and end indices are identical
-        if (featureStart === featureEnd) {
-            featureStart++;
-            featureEnd++;
-        } else { // Adjust indices from sequence indices to feature indices
-            featureStart++;
-        };
-        if (elementValue.span && !elementKey.includes("source")) { // exclude "source" feature as it spans the entire plasmid
-            // Get span of current feature
-            const currSpan = removeNonNumeric(elementValue.span).split("..").map(Number);
-            const spanStart = currSpan[0];
-            const spanEnd = currSpan[1];
-
-            // Special cases for pure insertions
-            if (featureStart === featureEnd) {
-                if (featureStart < spanStart) {
-                    //way before, just shift
-                    console.log("Case Insertion shift", featureStart, featureEnd, spanStart, spanEnd)
-                    return "shift";
-                } else if (spanStart === featureStart) {
-                    //Insert right before
-                    console.log("Case Insertion right before", featureStart, featureEnd, spanStart, spanEnd)
-                    return "shift";
-                } else if (featureStart < spanEnd) {
-                    //Inside, delete
-                    console.log("Case Insertion inside", featureStart, featureEnd, spanStart, spanEnd)
-                    return "inside";
-                } else if (featureStart > spanEnd) {
-                    //way after, do noghing
-                    console.log("Case Insertion way after", featureStart, featureEnd, spanStart, spanEnd)
-                    return null;
-                };
-            } else {
-                /**
-                 * Scenarios for replacement features:
-                 * 
-                 * 0.
-                 * old                [         ]
-                 * new                 [      ]
-                 * -> shift
-                 * 
-                 * 1.
-                 * old                [         ]
-                 * new    [        ]
-                 * -> shift
-                 * 
-                 * 2.
-                 * old         [         ]
-                 * new    [        ]
-                 * -> deletion
-                 * 
-                 * 3.
-                 * old          [         ]
-                 * new    [                 ] 
-                 * -> deletion
-                 * 
-                 * 4.
-                 * old          [         ]
-                 * new               [                 ] 
-                 * -> deletion
-
-                * 5.
-                * old          [         ]
-                * new                        [                 ] 
-                * -> do nothing
-                */
-
-                /** Special case: exact deletion */
-                console.log("operationType", operationType)
-                if (operationType === "Deletion" && featureStart === spanStart && featureEnd === spanEnd) {
-                    return "delete";
-                };
-
-                if (featureStart >= spanStart && featureEnd >= spanStart && featureStart <= spanEnd && featureEnd <= spanEnd && featureStart !== featureEnd) {
-                    // 0. new feature is inside the old feature, delete
-                    console.log("Case Replacement Case 0", featureStart, featureEnd, spanStart, spanEnd)
-                    return "inside";
-                } else if (featureStart < spanStart && featureEnd < spanStart && featureStart < spanEnd && featureEnd < spanEnd) {
-                    // 1. Find how much t"o shift features after the insertion
-                    console.log("Case Replacement Case 1", featureStart, featureEnd, spanStart, spanEnd)
-                    return "shift";
-                } else if (featureStart < spanStart && featureEnd >= spanStart && featureStart < spanEnd && featureEnd <= spanEnd) {
-                    // 2.
-                    console.log("Case Replacement Case 2", featureStart, featureEnd, spanStart, spanEnd)
-                    return "delete";
-                } else if (featureStart < spanStart && featureEnd > spanStart && featureStart < spanEnd && featureEnd > spanEnd) {
-                    // 3.
-                    console.log("Case Replacement Case 3", featureStart, featureEnd, spanStart, spanEnd)
-                    return "delete";
-                } else if (featureStart >= spanStart && featureEnd > spanStart && featureStart <= spanEnd && featureEnd > spanEnd) {
-                    // 4.
-                    console.log("Case Replacement Case 4", featureStart, featureEnd, spanStart, spanEnd)
-                    return "delete";
-                } else if (featureStart === featureEnd && featureStart <= spanEnd) {
-                    return "shift";
-                } else {
-                    console.log("Case Replacement Case 5", featureStart, featureEnd, spanStart, spanEnd)
-                    return null;
-                };
-            };
-            return null;
-        };
-    };
-
-    // Loop over every feature and either shift it if it occurs after the replacement or delete it if it
-    // overlapped with the replacemen
+    // Loop over all features and decided wether to shift, modify, delete or do nothing
     Object.entries(plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]).forEach(([key, value]) => {
-        const decision = checkNewFeatureOverlap(key, value, segmentStartPos, segmentEndPos, operationType);
-        console.log("checkNewFeatureOverlap", key, segmentStartPos, segmentEndPos, decision)
-        if (decision === "shift" || decision === "inside") {
-            const spanDirection = (!value.span.includes("complement")) ? "fwd": "rev";
-            const currSpan = removeNonNumeric(value.span).split("..").map(Number);
-            let newSpanStart = null;
-            let newSpanEnd = null;
-            if (decision === "inside") {
-                newSpanStart = currSpan[0];
-                newSpanEnd = currSpan[1] + featureShift;
-            } else {
-                newSpanStart = currSpan[0] + featureShift;
-                newSpanEnd = currSpan[1] + featureShift;
-            };
-            
-            if (spanDirection === "fwd") {
-                plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][key].span = newSpanStart + ".." + newSpanEnd; // Update span of the feature
-            } else {
-                plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][key].span = "complement(" + newSpanStart + ".." + newSpanEnd + ")";
-            }
+        // Pass old feature span and new feature span and decide what to do
+        const currSpanString = value.span;
+        const currSpan = removeNonNumeric(currSpanString).split("..").map(Number);
+        const decision = checkNewFeatureOverlap(
+            currSpan,
+            [segmentStartPos, segmentEndPos],
+        );
+        if (decision === "shift") {
+            // Shift feature
+            const adjustedSpan = [currSpan[0] + featureShift, currSpan[1] + featureShift];
+            const spanStringMatches = currSpanString.match(/\d+/g);
+            plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][key].span = currSpanString.replace(spanStringMatches[0], adjustedSpan[0]).replace(spanStringMatches[1], adjustedSpan[1]);
+        } else if (decision === "inside") {
+            // Inside, only shift span end
+            const adjustedSpan = [currSpan[0], currSpan[1] + featureShift];
+            const spanStringMatches = currSpanString.match(/\d+/g);
+            plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][key].span = currSpanString.replace(spanStringMatches[0], adjustedSpan[0]).replace(spanStringMatches[1], adjustedSpan[1]);
         } else if (decision === "delete") {
-            console.log("updateFeatures delete", key)
+            // Delete old feature
             delete plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][key];
         };
     });
 
-    // Creat the new feature
+    // Creat the new feature entry in feature dict
     if (operationType !== "Deletion") {
-        const tempDict = {} // init feature dict
+        const tempDict = {};
         tempDict.label = operationType;
         tempDict.type = (translateFeature === true) ? "CDS": "misc_feature";
         if (translateFeature === true) {
@@ -1080,10 +1305,12 @@ function updateFeatures(operationType, translateFeature, newFeatureSequence, seg
         const insertStringPositionEnd = segmentStartPos + newFeatureSequence.length;
         tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
         tempDict.note = "";
-        plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][crypto.randomUUID()] = tempDict // add feature to features dict
-        plasmidDict[currentlyOpenedPlasmid]["fileFeatures"] = sortBySpan(plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]) // resort feature dict by their order of appearance in the sequence
+        plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][crypto.randomUUID()] = tempDict;
 
+        // Sort feature dict by span
+        plasmidDict[currentlyOpenedPlasmid]["fileFeatures"] = sortBySpan(plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]);
     };
+
     // Remake the sidebar and content grid 
     plasmidDict[currentlyOpenedPlasmid]["sidebarTable"] = createSidebarTable(currentlyOpenedPlasmid);
     plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = makeContentGrid(currentlyOpenedPlasmid);
@@ -1095,8 +1322,11 @@ function updateFeatures(operationType, translateFeature, newFeatureSequence, seg
 
 
 /**
-* Sort the features dict by span so that the features appear in order in the sidebar.
-*/
+ * Sort the features dict by span so that the features appear in order in the sidebar.
+ * 
+ * @param {Object} dict - Dictionary to be sorted
+ * @returns {Object}
+ */
 function sortBySpan(dict) {
     // Convert the dictionary to an array of key-value pairs
     const valueKey = "span";
@@ -1112,19 +1342,17 @@ function sortBySpan(dict) {
         const rangeB = spanListB.split("..").map(Number);
         const rangeStartB = rangeB[0];
 
-        //const aValue = Number(a[1][valueKey].split('..')[0]);
-        //const bValue = Number(b[1][valueKey].split('..')[0]);
         return rangeStartA - rangeStartB;
     });
 
-    // Convert the sorted array back to a dictionary
-    const sortedDict = Object.fromEntries(entries);
-
-    return sortedDict;
+    // Convert the sorted array back to a dictionary and return
+    return Object.fromEntries(entries);
 };
 
 
-// Map, IUPAC codes
+/**
+ * MAP of complementary single letter codes.
+ */
 const nucleotideComplements = {
     'A': 'T',
     'C': 'G',
@@ -1144,8 +1372,13 @@ const nucleotideComplements = {
     '.': '-', // gap
     '-': '-'  // gap
 };
+
+
 /**
  * Create the complementary strand to a given DNA sequence.
+ * 
+ * @param {string} inputSequence - Template sequence for the complementary strand
+ * @returns 
  */
 function getComplementaryStrand(inputSequence) {
     // Convert to uppercase, make into list, map to complementary base, then turn back into string
@@ -1160,30 +1393,36 @@ function getComplementaryStrand(inputSequence) {
 
 
 /**
- * Improved slice() function that allows for negative indices or indices longer than the string length by assuming
+ * Modified slice() function that allows for negative indices or indices longer than the string length by assuming
  * the string loops.
  * 
  * Example:
  *         startIndex            endIndex
  *             ▼                    ▼
  *         -3 -2 -1 0 1 2 3 4 5 6 7 8 9
- * str ->   _  _  _ A B C D E F G _ _ _
+ * str ->    _  _  _ A B C D E F G _ _ _
  * 
- * Result -> FGABCDEFGAB
+ * Result -> FGABCDEFGA
  * 
- * str - string to be sliced
- * startIndex, endIndex - slice indices
+ * @param {string} str - String to be sliced
+ * @param {number} startIndex - Start index
+ * @param {number} endIndex - End index
+ * @returns {string}
  */
 function repeatingSlice(str, startIndex, endIndex) {
     const repeatedStr = str.repeat(3); // Copy the string 3 times: ABC_ABC_ABC
-    return repeatedStr.slice(startIndex + str.length, endIndex + str.length); // Remap indices to new string then return
+    // Remap indices to new string then return
+    return repeatedStr.slice(startIndex + str.length, endIndex + str.length);
 };
 
 
 /**
  * Copy primer sequence to clipboard
+ * 
+ * @param {Object} sourceBtn - Button element
+ * @returns {void}
  */
 function copyPrimerSequenceToClipboard(sourceBtn) {
-    const buttonParent = sourceBtn.parentElement;
-    copyStringToClipboard(buttonParent.innerText)
+    // Copy source button html to clipboard
+    copyStringToClipboard(sourceBtn.parentElement.innerHTML)
 };

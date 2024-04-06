@@ -239,9 +239,9 @@ document.addEventListener('keydown', function (event) {
 
 
 /**
-   * Copy selection to cliboard.
-   */
-function copySelectionToClipboard(plasmidIndex, special = null) {
+ * Copy selection to cliboard.
+ */
+function copySelectionToClipboard(plasmidIndex, special=null) {
   let currSelectedText = plasmidDict[plasmidIndex]["selectedText"];
   if (special === "complement") {
     currSelectedText = getComplementaryStrand(currSelectedText);
@@ -255,23 +255,19 @@ function copySelectionToClipboard(plasmidIndex, special = null) {
 
 /**
  * Copy string to clipboard
+ * 
+ * @param {string} inputString 
  */
 function copyStringToClipboard(inputString) {
-  // Create a temporary textarea element to copy text to clipboard
-  const tempTextArea = document.createElement('textarea');
-  tempTextArea.value = inputString;
-  document.body.appendChild(tempTextArea);
-  tempTextArea.select();
-  try {
-    // Execute the copy command
-    document.execCommand('copy');
-    console.log('Copied to clipboard:', inputString);
-  } catch (err) {
-    console.error('Unable to copy to clipboard:', err);
-  } finally {
-    // Remove the temporary textarea element
-    document.body.removeChild(tempTextArea);
+  function dummyCopyListener(event) {
+    event.clipboardData.setData("text/html", inputString);
+    event.clipboardData.setData("text/plain", inputString);
+    event.preventDefault();
   };
+
+  document.addEventListener("copy", dummyCopyListener);
+  document.execCommand("copy");
+  document.removeEventListener("copy", dummyCopyListener);
 };
 
 
@@ -444,6 +440,6 @@ function updateFooterSelectionInfo() {
   document.getElementById("footer-selection-span").innerText = (selectedText !== "") ? "(" + footerSelectionSpanStart + ".." + footerSelectionSpanEnd + ")" : "";
   
   // Melting temp
-  const meltingTemp = get_tm(selectedText, primerConc, saltConc, method=meltingTempAlgorithmChoice);
+  const meltingTemp = getMeltingTemperature(selectedText, method=meltingTempAlgorithmChoice);
   document.getElementById("footer-selection-tm").innerText = (selectedText !== "") ? meltingTemp.toFixed(2): "--";
 };

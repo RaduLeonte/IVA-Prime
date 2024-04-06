@@ -110,6 +110,9 @@ const primerColorCyan = "rgb(140, 202, 242)"
  * customSearch
  */
 let searchOn = true;
+let currentSearchResult = null;
+let indicesResultsDNA = null;
+let indicesResultsAA = null;
 
 
 /**

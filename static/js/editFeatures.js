@@ -1,33 +1,32 @@
 
-
 /**
- * Enable editing functionality only to sidebar elements
- * */
+ * Enable editing functionality to all editable sidebar elements
+ */
 function enableSidebarEditing() {
   const targetSidebar = document.getElementById("sidebar-table");
   const editableElements = targetSidebar.querySelectorAll('.editable');
   editableElements.forEach(element => {
     enableElementEditing(element);
-    //console.log("enableSidebarEditing", element)
   });
 };
 
 
 /**
- * Enable editing functionality only to primer ids
- * */
+ * Enable editing functionality only to primer id elements
+ */
 function enablePrimerIDEditing() {
   const editableElements = document.querySelector('.sidebar-content').querySelectorAll('.editable');
   editableElements.forEach(element => {
     enableElementEditing(element);
-    console.log("enablePrimerIDEditing", element)
   });
 };
 
 
-
 /**
- * Find if element has a before or after element
+ * Find if element has a before or after pseduoelement.
+ * 
+ * @param {Object} element
+ * @returns {string} - "::after", "::before", or null
  */
 function getAfterOrBeforeElement(element) {
   const afterElement = window.getComputedStyle(element, '::after');
@@ -44,28 +43,37 @@ function getAfterOrBeforeElement(element) {
 
 
 /**
- * Add event listener for editing
+ * Add event listener for editing to the specified element
+ * 
+ * @param {Object} element 
  */
 function enableElementEditing(element) {
-  // Add click event listener to ::after element
+  // Add click event listener to ::after or ::before element
   const afterOrBefore = getAfterOrBeforeElement(element);
   const pseudoElement = afterOrBefore ? element : element.querySelector(afterOrBefore);
+
+  // If pseudo element exists, add listeners
   if (pseudoElement) {
+    // Click to activate
     pseudoElement.addEventListener('click', () => {
+      // Save original text
       const originalText = element.textContent;
-      console.log("Editable elements:", element, element.tagName, originalText)
+      
+      // Create and display input element
       const input = document.createElement('input');
       input.classList.add("editable-input");
       input.classList.add("wrap-text");
       input.type = 'text';
       let fileExtension = null;
+
       if (element.tagName === "TD" && element.id === "Annotations") {
+        // When editing annotation ribbon, remove dots
         input.value = originalText.replaceAll("...", "");
       } else if (element.tagName === "TD") {
         input.value = originalText
       } else if (element.tagName === "A") {
+        // When editing plasmid name, hide the file extension
         fileExtension = /(?:\.([^.]+))?$/.exec(originalText)[1];
-        console.log(fileExtension)
         input.value = originalText.replace("." + fileExtension, "");
       } else {
         input.value = originalText;
@@ -75,18 +83,37 @@ function enableElementEditing(element) {
       // Save the edited content when Enter is pressed
       input.addEventListener('keyup', (event) => {
         if (event.key === 'Enter') {
-          if (element.tagName === "A") {input.value = input.value + "." + fileExtension}
+          // If editing plasmid name, add the file extension back
+          if (element.tagName === "A") {
+            input.value = input.value + "." + fileExtension
+          };
+
+          // Modify inner text of the element
           updateElementText(element, input.value, originalText);
-          if (element.tagName === "TD") {updateFeaturesDict(element)};
+
+          // If sidebar table cell was edited, refresh features dict
+          if (element.tagName === "TD") {
+            updateFeaturesDict(element)
+          };
         };
       });
   
       input.addEventListener('blur', () => {
-        if (element.tagName === "A") {input.value = input.value + "." + fileExtension}
-        updateElementText(element, input.value, originalText);       
-        if (element.tagName === "TD") {updateFeaturesDict(element)};
+        // If editing plasmid name, add the file extension back
+        if (element.tagName === "A") {
+          input.value = input.value + "." + fileExtension
+        };
+
+        // Modify inner text of the element
+        updateElementText(element, input.value, originalText); 
+
+        // If sidebar table cell was edited, refresh features dict
+        if (element.tagName === "TD") {
+          updateFeaturesDict(element)
+        };
       });
       
+      // Display temporary input element and focus it
       element.textContent = '';
       element.appendChild(input);
       input.focus();
@@ -96,47 +123,58 @@ function enableElementEditing(element) {
 
 
 /**
- * Update the target element's text 
+ * Update the target element's inner text.
+ * 
+ * @param {Object} e - Event 
+ * @param {string} newText - New text to be added
+ * @param {string} originalText - Original text of the element
  */
 function updateElementText(e, newText, originalText) {
   if (e.tagName === "TD" && e.id !== "Annotations") {
+    // If the element is a sidebar table cell
     e.textContent = newText;
   } else if (e.tagName === "TD" && e.id === "Annotations") {
+    // If the element is an annotation ribbon cell
     e.textContent = (newText !== "") ? newText.replaceAll("...", ""): originalText.replaceAll("...", "");
   } else if (e.tagName === "A") {
+    // If the element is a link
     e.textContent = (newText !== "") ? newText: originalText;
   } else if (e.id === "primers-type") {
-    // When editing the primer pair headline, automatically change the individual forward and reverse primer ids
-    e.textContent = (newText !== "") ? newText: originalText; // Change text content to new text
+    // When editing the primer pair headline, automatically change the individual forward and reverse
+    // primer ids
+    // Change text content to new text
+    e.textContent = (newText !== "") ? newText: originalText;
+    
     // If the text has changed
     if (originalText !== newText && newText !== "") {
+      // Mark element as previously edited
       e.setAttribute("edited", true)
-      // Update individual primer ids
+      
+      // Update individual primer ids with ids generated using the headline
       const modDiv = e.parentElement;
       const primerDivsList = modDiv.querySelectorAll("#primer-div");
-      console.log("Editing", e, modDiv)
       let primerCounter = 0;
       primerDivsList.forEach(function(pDiv) {
         const primerIdElement = pDiv.firstElementChild;
-        console.log(primerIdElement)
-
         const primerDirection = (primerCounter % 2 === 0) ? "_fwd": "_rev";
         const vectorPrimerString = (primerCounter > 1) ? "_vec": "";
         primerIdElement.textContent = newText + vectorPrimerString + primerDirection;
         primerIdElement.setAttribute("edited", true)
-
         primerCounter++;
       });
     };
 
   } else if (e.id === "primer-id") {
+    // Mark primer ids as edited after editing
     e.textContent = (newText !== "") ? newText: originalText;
-    if (originalText !== newText && newText !== "") {e.setAttribute("edited", true)};
+    if (originalText !== newText && newText !== "") {
+      e.setAttribute("edited", true)
+    };
   } else {
     e.textContent = newText;
   };
 
-  // Make sure changes get saved
+  // If something has changed, create checkpoint
   if (originalText !== newText && newText !== "") {
     savePrimers();
     saveProgress(currentlyOpenedPlasmid);
@@ -146,17 +184,27 @@ function updateElementText(e, newText, originalText) {
 
 /**
  *  Update the features dict with the data currently in the sidebar table or in the annotations
+ * 
+ * @param {Object} cell 
  */
 function updateFeaturesDict(cell) {
-    const currFeatures = plasmidDict[currentlyOpenedPlasmid]["fileFeatures"];
-    if (cell.id.includes("sidebar")) {
-        console.log("Editable cells:", cell, cell.parentElement.children[0].innerText, cell.id.replace("sidebar-"), cell.textContent)
-        currFeatures[cell.parentElement.children[0].innerText][cell.id.replace("sidebar-", "")] = cell.textContent;
-        plasmidDict[currentlyOpenedPlasmid]["sidebarTable"] = createSidebarTable(currentlyOpenedPlasmid);
-        if (cell.id === "sidebar-label") {
-          plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = makeContentGrid(currentlyOpenedPlasmid);
-        };
-        updateSidebarAndGrid(currentlyOpenedPlasmid);
-    };
-    enableSidebarEditing();
+  // Current file features
+  const currFeatures = plasmidDict[currentlyOpenedPlasmid]["fileFeatures"];
+  
+  // If the cell stems from the sidebar, update that specific entry in the fileFeatures dict
+  if (cell.id.includes("sidebar")) {
+      currFeatures[cell.parentElement.children[0].innerText][cell.id.replace("sidebar-", "")] = cell.textContent;
+      
+      // Refresh sidebar table
+      plasmidDict[currentlyOpenedPlasmid]["sidebarTable"] = createSidebarTable(currentlyOpenedPlasmid);
+      
+      // If a feature label was changed, also redraw the content grid
+      if (cell.id === "sidebar-label") {
+        plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = makeContentGrid(currentlyOpenedPlasmid);
+      };
+      updateSidebarAndGrid(currentlyOpenedPlasmid);
+  };
+
+  // Reenable sidebar editing after redrawing
+  enableSidebarEditing();
 };
