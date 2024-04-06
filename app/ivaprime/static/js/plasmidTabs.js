@@ -211,6 +211,7 @@ function switchPlasmidTab(plasmidIndex) {
 
     // Update primers
     updateSidebarPrimers();
+    addPrimerRegionHoverEvents();
 
     // Refresh undo buttons and set disabled/enabled states
     refreshUndoRedoButtons();

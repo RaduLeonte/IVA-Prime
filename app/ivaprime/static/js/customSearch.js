@@ -102,7 +102,6 @@ function searchOccurrences(customSearchInput) {
                 targetStrandIndedx,
                 workingSequence,
                 workingQuery.toUpperCase(),
-                currGridStructure,
                 "cell-search-result",
                 null
             );
@@ -151,7 +150,7 @@ function isAminoAcidSequence(str) {
  * @param {number} highlightColor
  * @returns {void}
  */
-function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, workingGridStructure, highlightClass, highlightColor) {
+function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, highlightClass, highlightColor) {
     // Search for amino acid sequence checkbox
     const searchForAACheckbox = document.getElementById("custom-search-aa-check").checked;
 
@@ -180,7 +179,8 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, w
                     targetStrandIndex,
                     index + 1,
                     index + workingQuery.length + 1,
-                    highlightClass
+                    highlightClass,
+                    highlightColor
                 );
             };
         };
@@ -236,7 +236,8 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, w
                     2,
                     index,
                     index + dir*currentQueryLength,
-                    highlightClass
+                    highlightClass,
+                    highlightColor
                 );
             };
         };
@@ -253,11 +254,10 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, w
  * @param {string} highlightClass - Class to add to each cell in the span
  * @returns {void}
  */
-function highlightSpan(targetStrandIndex, spanStart, spanEnd, highlightClass, direction="forward") {
+function highlightSpan(targetStrandIndex, spanStart, spanEnd, highlightClass, backgroundColor=null, direction="forward") {
     // Reorder indices
     startIndex = Math.min(spanStart, spanEnd);
     endIndex = Math.max(spanStart, spanEnd);
-    console.log("highlightSpan", targetStrandIndex, startIndex, endIndex, highlightClass)
 
     // Select table element
     let table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
@@ -267,11 +267,15 @@ function highlightSpan(targetStrandIndex, spanStart, spanEnd, highlightClass, di
         for (let j = startIndex; j < endIndex; j++) {
             // Convert sequence index to table coordinates
             const [row, col] = seqIndexToCoords(j, targetStrandIndex, currentGridStructure);
-            console.log("highlightSpan", j, targetStrandIndex, row, col)
             
             // Select and highlight the cell
             const cell = table.rows[row].cells[col];
-            cell.classList.add(highlightClass);
+            if (highlightClass && highlightClass !== null) {
+                cell.classList.add(highlightClass);
+            } else {
+                cell.style.color = "white";
+                cell.style.backgroundColor = backgroundColor;
+            };
         };
     };
 };
@@ -418,7 +422,6 @@ function highlightSearchResult(firstCell) {
     // Starting from firstcell, iterate over its siblings and give them the active search result class
     let currentCell = firstCell;
     for (i = 0; i < currentQueryLength; i++) {
-        console.log("highlightSearchResult", currentCell)
         currentCell.classList.remove("cell-search-result");
         currentCell.classList.add("cell-search-result-highlight");
         if (currentCell.nextElementSibling === null) {

@@ -449,7 +449,13 @@ function primerRegionHover(event) {
     const searchQuery = (spanDirection === "fwd") ? spanSequence: spanSequence.split('').reverse().join('');
     // Strand 0 for forward, 1 for reverse
     const targetStrand = (spanDirection === "fwd") ? 0: 1;
-    highlightOccurences(targetStrand, currSequence, searchQuery, currGridstructure, null, spanColor);
+    highlightOccurences(
+        targetStrand,
+        currSequence,
+        searchQuery,
+        null,
+        spanColor
+    );
 };
 
 
@@ -685,6 +691,7 @@ function optimizeAA(inputAA, targetOrganism) {
  * @returns {[string, Object, string, number, number]}
  */
 function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, operationType) {
+    console.log("generatePrimerSequences", plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, operationType)
     /**
      * Set primer colors
      */
@@ -1004,7 +1011,7 @@ function markSelectionForSubcloning(plasmidIndex, inputStartPos, inputEndPos) {
             subcloningOriginSpan[0] + 1,
             "subcloning-target-cell-first"
         );
-        
+
         // Middle cells
         highlightSpan(
             0,
@@ -1099,6 +1106,18 @@ function clearAllSubcloningSelections(clearVariables=true) {
  * @returns {void}
  */
 function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5Prime, dnaSequence5Prime, aaSequence3Prime, dnaSequence3Prime, targetOrganism, translateFeature=false) {
+    console.log(
+        "makeSubcloningPrimers",
+        subcloningStartPos,
+        subcloningEndPos,
+        aaSequence5Prime,
+        dnaSequence5Prime,
+        aaSequence3Prime,
+        dnaSequence3Prime,
+        targetOrganism,
+        translateFeature
+    );
+    
     /**
      * Optimise 5' and 3' insertions, otherwise use given DNA sequence
      */
@@ -1136,7 +1155,7 @@ function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5
     // Create a simulated plasmid reverse complement sequence where the subcloning target is already inserted
     const simulatedPlasmidSequenceRevComp = getComplementaryStrand(simulatedPlasmidSequence).split("").reverse().join("");
     // Get new insertion position in the new, simulated sequence
-    const endPosRevComp = simulatedPlasmidSequenceRevComp.length - endPos - subcloningTargetSequence.length + 2;
+    const endPosRevComp = simulatedPlasmidSequenceRevComp.length - startPos - subcloningTargetSequence.length + 2;
     // Get the reverse complement sequence of the 3' insertion
     const seqToInsert3RevComp = getComplementaryStrand(seqToInsert3).split("").reverse().join("");
     // Create insertion primers to insert the 3' insertion on the simulated plasmid sequence
@@ -1151,7 +1170,7 @@ function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5
     primersDict["Vector Reverse Primer"] = primersDict5["Reverse Primer"];
 
     // Display primers in the sidebar
-    displayPrimers(operationTypeTagline, primersDict);
+    displayPrimers("Subcloning", primersDict);
 
     // Update the sequence and features
     const plasmidLengthDiff = subcloningSequenceFull.length - (endPos - startPos);
