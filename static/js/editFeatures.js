@@ -57,7 +57,8 @@ function enableElementEditing(element) {
     // Click to activate
     pseudoElement.addEventListener('click', () => {
       // Save original text
-      const originalText = element.textContent;
+      let originalText = element.innerText;
+      console.log("Hey paulie", originalText, element.innerText)
       
       // Create and display input element
       const input = document.createElement('input');
@@ -68,15 +69,15 @@ function enableElementEditing(element) {
 
       if (element.tagName === "TD" && element.id === "Annotations") {
         // When editing annotation ribbon, remove dots
-        input.value = originalText.replaceAll("...", "");
+        input.value = originalText.replaceAll("...", "")  + "";
       } else if (element.tagName === "TD") {
-        input.value = originalText
+        input.value = originalText + "";
       } else if (element.tagName === "A") {
         // When editing plasmid name, hide the file extension
         fileExtension = /(?:\.([^.]+))?$/.exec(originalText)[1];
-        input.value = originalText.replace("." + fileExtension, "");
+        input.value = originalText.replace("." + fileExtension, "") + "";
       } else {
-        input.value = originalText;
+        input.value = originalText + "";
       };
       
       
@@ -103,10 +104,10 @@ function enableElementEditing(element) {
         if (element.tagName === "A") {
           input.value = input.value + "." + fileExtension
         };
-
+      
         // Modify inner text of the element
         updateElementText(element, input.value, originalText); 
-
+      
         // If sidebar table cell was edited, refresh features dict
         if (element.tagName === "TD") {
           updateFeaturesDict(element)
@@ -114,7 +115,7 @@ function enableElementEditing(element) {
       });
       
       // Display temporary input element and focus it
-      element.textContent = '';
+      element.innerText = '';
       element.appendChild(input);
       input.focus();
     });
@@ -130,55 +131,60 @@ function enableElementEditing(element) {
  * @param {string} originalText - Original text of the element
  */
 function updateElementText(e, newText, originalText) {
-  if (e.tagName === "TD" && e.id !== "Annotations") {
-    // If the element is a sidebar table cell
-    e.textContent = newText;
-  } else if (e.tagName === "TD" && e.id === "Annotations") {
-    // If the element is an annotation ribbon cell
-    e.textContent = (newText !== "") ? newText.replaceAll("...", ""): originalText.replaceAll("...", "");
-  } else if (e.tagName === "A") {
-    // If the element is a link
-    e.textContent = (newText !== "") ? newText: originalText;
-  } else if (e.id === "primers-type") {
-    // When editing the primer pair headline, automatically change the individual forward and reverse
-    // primer ids
-    // Change text content to new text
-    e.textContent = (newText !== "") ? newText: originalText;
-    
-    // If the text has changed
-    if (originalText !== newText && newText !== "") {
-      // Mark element as previously edited
-      e.setAttribute("edited", true)
+  if (newText !== "" && newText !== originalText) {
+    if (e.tagName === "TD" && e.id !== "Annotations") {
+      // If the element is a sidebar table cell
+      e.innerText = newText;
+    } else if (e.tagName === "TD" && e.id === "Annotations") {
+      // If the element is an annotation ribbon cell
+      e.innerText = (newText !== "") ? newText.replaceAll("...", ""): originalText.replaceAll("...", "");
+    } else if (e.tagName === "A") {
+      // If the element is a link
+      e.innerText = (newText !== "") ? newText: originalText;
+    } else if (e.id === "primers-type") {
+      // When editing the primer pair headline, automatically change the individual forward and reverse
+      // primer ids
+      // Change text content to new text
+      e.innerText = (newText !== "") ? newText: originalText;
       
-      // Update individual primer ids with ids generated using the headline
-      const modDiv = e.parentElement;
-      const primerDivsList = modDiv.querySelectorAll("#primer-div");
-      let primerCounter = 0;
-      primerDivsList.forEach(function(pDiv) {
-        const primerIdElement = pDiv.firstElementChild;
-        const primerDirection = (primerCounter % 2 === 0) ? "_fwd": "_rev";
-        const vectorPrimerString = (primerCounter > 1) ? "_vec": "";
-        primerIdElement.textContent = newText + vectorPrimerString + primerDirection;
-        primerIdElement.setAttribute("edited", true)
-        primerCounter++;
-      });
+      // If the text has changed
+      if (originalText !== newText) {
+        // Mark element as previously edited
+        e.setAttribute("edited", true)
+        
+        // Update individual primer ids with ids generated using the headline
+        const modDiv = e.parentElement;
+        const primerDivsList = modDiv.querySelectorAll("#primer-div");
+        let primerCounter = 0;
+        primerDivsList.forEach(function(pDiv) {
+          const primerIdElement = pDiv.firstElementChild;
+          const primerDirection = (primerCounter % 2 === 0) ? "_fwd": "_rev";
+          const vectorPrimerString = (primerCounter > 1) ? "_vec": "";
+          primerIdElement.innerText = newText + vectorPrimerString + primerDirection;
+          primerIdElement.setAttribute("edited", true)
+          primerCounter++;
+        });
+      };
+  
+    } else if (e.id === "primer-id") {
+      // Mark primer ids as edited after editing
+      e.innerText = (newText !== "") ? newText: originalText;
+      if (originalText !== newText) {
+        e.setAttribute("edited", true)
+      };
+    } else {
+      e.innerText = originalText;
     };
-
-  } else if (e.id === "primer-id") {
-    // Mark primer ids as edited after editing
-    e.textContent = (newText !== "") ? newText: originalText;
+  
+    // If something has changed, create checkpoint
     if (originalText !== newText && newText !== "") {
-      e.setAttribute("edited", true)
+      savePrimers();
+      saveProgress(currentlyOpenedPlasmid);
     };
   } else {
-    e.textContent = newText;
-  };
-
-  // If something has changed, create checkpoint
-  if (originalText !== newText && newText !== "") {
-    savePrimers();
-    saveProgress(currentlyOpenedPlasmid);
-  };
+    console.log("Didn mean nuthin by it")
+    e.innerText = originalText;
+  }
 };
 
 
@@ -192,8 +198,9 @@ function updateFeaturesDict(cell) {
   const currFeatures = plasmidDict[currentlyOpenedPlasmid]["fileFeatures"];
   
   // If the cell stems from the sidebar, update that specific entry in the fileFeatures dict
+  console.log("updateFeaturesDict", cell, cell.id)
   if (cell.id.includes("sidebar")) {
-      currFeatures[cell.parentElement.children[0].innerText][cell.id.replace("sidebar-", "")] = cell.textContent;
+      currFeatures[cell.parentElement.id][cell.id.replace("sidebar-", "")] = cell.textContent;
       
       // Refresh sidebar table
       plasmidDict[currentlyOpenedPlasmid]["sidebarTable"] = createSidebarTable(currentlyOpenedPlasmid);

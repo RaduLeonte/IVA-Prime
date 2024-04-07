@@ -372,9 +372,10 @@ function newFileFromSequence(newFileName, newFileSequence, detectCommonFeatures)
       const currentSequence = (i === 0) ? newFileSequence: newFileComplementarySequence.split("").reverse().join("");
       const readingFrames = [
         translateSequence(currentSequence),
-        translateSequence(currentSequence.slice(-1) + currentSequence.slice(0, -1)),
-        translateSequence(currentSequence.slice(-2) + currentSequence.slice(0, -2))
+        translateSequence(currentSequence.slice(1) + currentSequence.slice(0, 1)),
+        translateSequence(currentSequence.slice(2) + currentSequence.slice(0, 2))
       ];
+      console.log("newFileFromSequence", readingFrames)
 
       for (const category in commonFeatures) {
 
@@ -389,7 +390,7 @@ function newFileFromSequence(newFileName, newFileSequence, detectCommonFeatures)
             for (let j = 0; j < readingFrames.length; j++) {
               while ((match = regex.exec(readingFrames[j])) !== null) {
                 const newFeatureId = crypto.randomUUID();
-                const startIndex = match.index * 3 + j + 1;
+                const startIndex = (i === 0) ? match.index*3 + j + 1: currentSequence.length - j - match.index*3 - pattern.length*3 + 1;
                 const endIndex = startIndex + pattern.length*3 - 1;
                 const newFeatureSpan = (i === 0) ? startIndex + ".." + endIndex: "complement(" + startIndex + ".." + endIndex + ")";
                 newFileFeatures[newFeatureId] = {
@@ -399,12 +400,23 @@ function newFileFromSequence(newFileName, newFileSequence, detectCommonFeatures)
                   translation: pattern,
                   note: ""
                 };
+                console.log("newFileFromSequence", featureLabel, newFeatureSpan, match.index, j)
               };
             };
 
           } else if (feature[0] === "DNA") {
             while ((match = regex.exec(currentSequence)) !== null) {
-              foundFeatures.push({ feature: featureLabel, index: match.index });
+              const newFeatureId = crypto.randomUUID();
+              const startIndex = (i === 0) ? match.index + 1: currentSequence.length - match.index - pattern.length + 1;
+              const endIndex = startIndex + pattern.length - 1;
+              const newFeatureSpan = (i === 0) ? startIndex + ".." + endIndex: "complement(" + startIndex + ".." + endIndex + ")";
+              newFileFeatures[newFeatureId] = {
+                label: featureLabel,
+                type: feature[2],
+                span: newFeatureSpan,
+                note: ""
+              };
+              console.log("newFileFromSequence", featureLabel, feature[2], newFeatureSpan, match.index)
             };
           };
         };
@@ -1343,8 +1355,8 @@ function createSidebarTable(plasmidIndex) {
 
   // Iterate over the features and populate the table
   for (const featureID in currFeatures) {
-    if (!featureID.includes("LOCUS") && !featureID.includes("source")) { // Skip LOCUS and source
-      const feature = currFeatures[featureID];
+    const feature = currFeatures[featureID];
+    if (!featureID.includes("LOCUS") && !feature.type.includes("source")) { // Skip LOCUS and source
 
       // Create a new table row
       let row = document.createElement('tr');
@@ -1594,7 +1606,7 @@ function makeContentGrid(plasmidIndex) {
   
   // Iterate over the features and create the annotatations
   Object.entries(currFeatures).forEach(([key, value]) => {
-    if (value.span && !value.label.includes("source")) { // If the feature includes a span and is not "source"
+    if (value.span && !value.type.includes("source")) { // If the feature includes a span and is not "source"
       // Get the current feature's span
       const direction = (value.span.includes("complement")) ? "left": "right";
       const spanList = removeNonNumeric(value.span);
