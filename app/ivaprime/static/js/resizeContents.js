@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let startX = 0;
     const sidebarMinWidth = 20; // Minimum height in %
     const sidebarMaxWidth = 80; // Maximum height in %
+    const sidebarHitbox = 5;
 
     document.addEventListener('mousedown', (e) => {
         const sidebarRightX = resizableSidebar.offsetLeft + resizableSidebar.offsetWidth;
@@ -53,13 +54,8 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     document.addEventListener('mousemove', (e) => {
         const resizableSidebar = document.getElementById('sidebar');
-        if (Math.abs(e.pageX - (resizableSidebar.offsetLeft + resizableSidebar.offsetWidth)) <= sidebarHitbox) {
-            hoveringOverSidebarEdge = true;
-        } else {
-            hoveringOverSidebarEdge = false;
-        };
 
-        if (hoveringOverSidebarEdge) {
+        if (Math.abs(e.pageX - (resizableSidebar.offsetLeft + resizableSidebar.offsetWidth)) <= sidebarHitbox) {
             document.documentElement.style.cursor = 'col-resize';
         } else {
             document.documentElement.style.cursor = 'auto';

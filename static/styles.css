@@ -1087,3 +1087,31 @@ header {
   font-weight: bold;
   box-shadow: 0px 0px 20px #626262;
 }
+
+/* 
+  Primer spans
+*/
+.primer-span {
+  color:white;
+  font-weight: bold;
+}
+
+.primer-span-red {
+  background-color: rgb(200, 52, 120);
+}
+
+.primer-span-green {
+  background-color: rgb(68, 143, 71);
+}
+
+.primer-span-orange {
+  background-color: rgb(217, 130, 58);
+}
+
+.primer-span-purple {
+  background-color: rgb(107, 96, 157);
+}
+
+.primer-span-cyan {
+  background-color: rgb(140, 202, 242);
+}

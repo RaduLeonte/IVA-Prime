@@ -1,4 +1,16 @@
 /**
+ * Class storing search results
+ */
+const SearchResults = new class {
+    constructor() {
+        this.current = null; // Currently active search result
+        this.dna = null; // List of indices 
+        this.aa = null; // List of indices
+    };
+};
+
+
+/**
  * Once the page has loaded, add input listener to the search bar
  */
 let customSearchInput;
@@ -162,7 +174,7 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, h
         if (isDNASequence(workingQuery)) {
             // Get a list of indices for all occurences of the search query
             let currentIndex = workingSequence.indexOf(workingQuery);
-            indicesResultsDNA = [];
+            let indicesResultsDNA = [];
             while (currentIndex !== -1) {
                 indicesResultsDNA.push(currentIndex);
                 currentIndex = workingSequence.indexOf(workingQuery, currentIndex + 1);
@@ -172,6 +184,8 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, h
             indicesResultsDNA.sort(function(a, b) {
                 return a - b;
             });
+            
+            SearchResults.dna = indicesResultsDNA;
 
             // Iterate over all found indices and highlight the cells
             for (const index of indicesResultsDNA) {
@@ -199,12 +213,11 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, h
             const listOfTranslationDicts = plasmidDict[currentlyOpenedPlasmid]["translations"][translationDirection];
 
             // Iterate over the list of translation dicts and search for occurences of the search query
-            indicesResultsAA = [];
+            let indicesResultsAA = [];
             for (let translationDict of listOfTranslationDicts) {
                 // Current translation span and sequence
                 const translationSpan = translationDict["span"];
                 const translationSequence = translationDict["sequence"];
-                console.log("highlightOccurences", dir, translationSpan, translationSequence)
 
                 // Search for all occurences of the search query in the current translation sequence
                 // and add the cell indices to the results list
@@ -226,12 +239,11 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, h
                 return a - b;
             });
 
+            SearchResults.aa = indicesResultsAA;
     
             // Iterate over all cells that contain the search query and highlight them
             let currentQueryLength = workingQuery.length*3;
-            console.log("indicesResultsAA", indicesResultsAA)
             for (const index of indicesResultsAA) {
-                console.log("indicesResultsAA", index, index + dir*currentQueryLength)
                 highlightSpan(
                     2,
                     index,
@@ -335,9 +347,9 @@ function scrollToNearestSearchResult() {
 function clearCustomSearchInput() {
     customSearchInput.value = "";
     resetTableCells();
-    currentSearchResult = null;
-    indicesResultsDNA = null;
-    indicesResultsAA = null;
+    SearchResults.current = null;
+    SearchResults.dna = null;
+    SearchResults.aa = null;
     updateCustomSearchTracker();
 };
 
@@ -350,12 +362,12 @@ function clearCustomSearchInput() {
 function navigateSearchResults(direction) {
     const aaCheckbox = document.getElementById("custom-search-aa-check").checked;
     const compCheckbox = document.getElementById("custom-search-compstrand-check").checked;
-    const workingList = (aaCheckbox === false) ? indicesResultsDNA: indicesResultsAA;
+    const workingList = (aaCheckbox === false) ? SearchResults.dna: SearchResults.aa;
     const workingQuery = document.getElementById("custom-search-input").value;
 
     if (workingList.length > 1) {
         // Convert displayed index to list index
-        let resultIndex = currentSearchResult - 1 + direction;
+        let resultIndex = SearchResults.current - 1 + direction;
         // Roll over index if necessary
         if (resultIndex === -1) {
             resultIndex = workingList.length - 1;
@@ -385,7 +397,7 @@ function navigateSearchResults(direction) {
         // Highlight search result that has targeCell
         highlightSearchResult(targetCell);
         // Convert back to display index
-        currentSearchResult = resultIndex + 1;
+        SearchResults.current = resultIndex + 1;
         updateCustomSearchTracker();
     };
 };
@@ -445,13 +457,13 @@ function highlightSearchResult(firstCell) {
  */
 function updateCustomSearchTracker(clearTracker=false) {
     const aaCheckbox = document.getElementById("custom-search-aa-check").checked;
-    const workingList = (aaCheckbox === false) ? indicesResultsDNA: indicesResultsAA;
+    const workingList = (aaCheckbox === false) ? SearchResults.dna: SearchResults.aa;
     if (workingList !== null) {
         const numberResults = workingList.length;
         if (customSearchInput.value === "" || clearTracker === true || numberResults === 0) {
             document.getElementById("custom-search-counter").innerText = "";
         } else {
-            document.getElementById("custom-search-counter").innerText = currentSearchResult + "/" + numberResults;
+            document.getElementById("custom-search-counter").innerText = SearchResults.current + "/" + numberResults;
         };
     } else {
         document.getElementById("custom-search-counter").innerText = "";
@@ -466,7 +478,7 @@ function updateCustomSearchTracker(clearTracker=false) {
  */
 function searchResultCellToTracker(inputCell) {
     const aaCheckbox = document.getElementById("custom-search-aa-check").checked;
-    const workingList = (aaCheckbox === false) ? indicesResultsDNA: indicesResultsAA;
+    const workingList = (aaCheckbox === false) ? SearchResults.dna: SearchResults.aa;
 
     // Convert cell coordinates to sequence index
     let cellRow = inputCell.parentNode.rowIndex;
@@ -487,5 +499,5 @@ function searchResultCellToTracker(inputCell) {
             nearestDifference = difference;
         };
     };
-    currentSearchResult = nearestIndex + 1;
+    SearchResults.current = nearestIndex + 1;
 };

@@ -57,9 +57,8 @@ function displayPrimers(primersType, primersDict) {
         for (const [subprimer, subprimerProperties] of Object.entries(subprimersDict)) {
             if (subprimer !== "info") {
                 const span = document.createElement('span');
-                span.style.color = "white";
-                span.style.backgroundColor = subprimerProperties["color"];
-                span.style.fontWeight = 'bold';
+                span.classList.add("primer-span")
+                span.classList.add(subprimerProperties["bg-class"]);
                 span.textContent = subprimerProperties["seq"];
                 primerSequence.appendChild(span)
             };
@@ -556,69 +555,6 @@ function primerExtension(plasmidSequence, startingPos, targetStrand, direction, 
 
 
 /**
- *  Calculates the standard deviation from a list of numbers
- * 
- * @param {Array<number>} numbers 
- * @returns {number}
- */
-function standardDeviation(numbers) {
-    const mean = numbers.reduce((acc, val) => acc + val, 0) / numbers.length;
-    const squaredDifferences = numbers.map(num => Math.pow(num - mean, 2));
-    const variance = squaredDifferences.reduce((acc, val) => acc + val, 0) / numbers.length;
-    const stdDev = Math.sqrt(variance);
-    return stdDev;
-};
-
-
-/**
- * Scales the codon frequencies in the input table to give more weight to more common codons and less to rare codons
- * Works by exponentiating each frequency by a factor determiend using the standard deviation of the distribution.
- * 
- * @param {Object.<string, Object.<number, string>>} inputTable - Codon frequency table
- * @returns {Object.<string, Object.<number, string>>}
- */
-function scaleCodonFrequencies(inputTable) {
-    // Iterate over each amino acid
-    for (let aa in inputTable) {
-        // Current frequencies dict
-        const aaDict = inputTable[aa];
-
-        // Convert dict to a list of frequencies and a list of codons
-        let frequencyData = [];
-        let codons = [];
-        for (let codonFreq in aaDict) {
-            frequencyData.push(parseFloat(codonFreq));
-            codons.push(aaDict[codonFreq]);
-        };
-
-        // If there are more than 1 possible codons, scale each frequency
-        if (frequencyData.length > 1) {
-            /**
-             * Powerfactor is square root of the inverse of the standard deviation
-             * the more extreme the differences, the less the scaling should be
-             */
-            const powerFactor = Math.sqrt(1/standardDeviation(frequencyData));
-            frequencyData = frequencyData.map(freq => Math.pow(freq, powerFactor));
-
-            // Normalise frequencies
-            let dataSum = 0;
-            for (let i = 0; i < frequencyData.length; i++) {dataSum += frequencyData[i]};
-            frequencyData = frequencyData.map(freq => freq / dataSum);
-        };
-
-        // Append scaled frequencies to new dict then update the table
-        let newAADict = {};
-        for (let i = 0; i < frequencyData.length; i++) {
-            newAADict[frequencyData[i]] = codons[i]
-        };
-        inputTable[aa] = newAADict;
-    };
-
-    return inputTable
-};
-
-
-/**
  * Select a random codon using the given weights
  * 
  * @param {Object.<number, string>>} frequenciesDict - Frequency data 
@@ -626,7 +562,7 @@ function scaleCodonFrequencies(inputTable) {
  */
 function weightedCodonRandomSelect(frequenciesDict) {
     // Convert dict to array
-    const possibilityArray = Object.entries(frequenciesDict).map(([weight, value]) => ({ weight: parseFloat(weight), value }));
+    const possibilityArray = Object.entries(frequenciesDict).map(([value, weight]) => ({ weight: parseFloat(weight), value }));
     // Calculate sum of weights
     const totalWeight = possibilityArray.reduce((acc, possibility) => acc + possibility.weight, 0);
     
@@ -645,6 +581,61 @@ function weightedCodonRandomSelect(frequenciesDict) {
 
 
 /**
+ * Amino acid to codon map.
+ */
+const aaToCodon = {
+    A: ['GCT', 'GCC', 'GCA', 'GCG'],
+    R: ['CGT', 'CGC', 'CGA', 'CGG', 'AGA', 'AGG'],
+    N: ['AAT', 'AAC'],
+    D: ['GAT', 'GAC'],
+    C: ['TGT', 'TGC'],
+    E: ['GAA', 'GAG'],
+    Q: ['CAA', 'CAG'],
+    G: ['GGT', 'GGC', 'GGA', 'GGG'],
+    H: ['CAT', 'CAC'],
+    I: ['ATT', 'ATC', 'ATA'],
+    L: ['TTA', 'TTG', 'CTT', 'CTC', 'CTA', 'CTG'],
+    K: ['AAA', 'AAG'],
+    M: ['ATG'],
+    F: ['TTT', 'TTC'],
+    P: ['CCT', 'CCC', 'CCA', 'CCG'],
+    S: ['TCT', 'TCC', 'TCA', 'TCG', 'AGT', 'AGC'],
+    T: ['ACT', 'ACC', 'ACA', 'ACG'],
+    W: ['TGG'],
+    Y: ['TAT', 'TAC'],
+    V: ['GTT', 'GTC', 'GTA', 'GTG'],
+    X: ['TAA', 'TAG', 'TGA']
+};
+
+
+/**
+ * Load codon weight tables.
+ * Codon frequency tables from CoCoPUTs (Alexaki et al. 2019, https://doi.org/10.1016/j.jmb.2019.04.021).
+ */
+let codonWeights;
+fetch('static/codonWeights.json')
+.then(response => response.json())
+.then(json => {
+    codonWeights = json;
+    populateOrganismDropdown()
+});
+/**
+ * Populate aa optimisation dropdown menu with all organism choices
+ */
+function populateOrganismDropdown() {
+  const organismsList = Object.keys(codonWeights);
+  const select = document.getElementById('targetOrganismSelector'); 
+  for (let i = 0; i < organismsList.length; i++) {
+    let newOption = new Option(organismsList[i],organismsList[i]);
+    if (organismsList[i] === preferredOrganism) {
+      newOption.setAttribute('selected','selected');
+    };
+    select.add(newOption,undefined);
+  };
+};
+
+
+/**
  * Optimise amino acid sequence using codon frequency tables for the specified organism
  * 
  * @param {string} inputAA - Amino acid sequence to optimise
@@ -658,9 +649,7 @@ function optimizeAA(inputAA, targetOrganism) {
     updateOrganismSelectorDefault();
 
     // Get codon frequency table for specified organism
-    let organismCodonTable = codonTablesDict[targetOrganism];
-    // Scale frequency distribution to give more weight to frequent codons and less to rare ones
-    organismCodonTable = scaleCodonFrequencies(organismCodonTable);
+    let organismCodonTable = codonWeights[targetOrganism];
     
     // Iterate over the amino acid sequence and append the randomly selected
     let outputSequence = "";
@@ -695,13 +684,12 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
     /**
      * Set primer colors
      */
-    let colorHomo = primerColorOrange;
-    let colorIns = primerColorRed;
-    let colorTBR = primerColorGreen;
+    let bgClassIns = "primer-span-red";
+    let bgClassHomo = "primer-span-orange";
+    let bgClassTBR = "primer-span-green";
     if (operationType === "Subcloning") {
-        colorHomo = primerColorCyan;
-        colorIns = primerColorRed;
-        colorTBR = primerColorPurple;
+        bgClassHomo = "primer-span-cyan";
+        bgClassTBR = "primer-span-purple";
     };
     
     // Get start and end indices
@@ -777,11 +765,11 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
                                     Total: ${(homoFwd.length + seqToInsert.length + tempFwd.length)} bp)`;
             const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(getMeltingTemperature(tempRev, meltingTempAlgorithmChoice))} °C; 
                                     Total: ${(tempRev.length)} bp)`;
-            primersDict["Forward Primer"] = {1: {"seq": homoFwd, "color": colorHomo},
-                                            2: {"seq": seqToInsert, "color": colorIns},
-                                            3: {"seq": tempFwd, "color": colorTBR},
+            primersDict["Forward Primer"] = {1: {"seq": homoFwd, "bg-class": bgClassHomo},
+                                            2: {"seq": seqToInsert, "bg-class": bgClassIns},
+                                            3: {"seq": tempFwd, "bg-class": bgClassTBR},
                                             info: primerInfoFwd};
-            primersDict["Reverse Primer"] = {1: {"seq": tempRev, "color": colorTBR},
+            primersDict["Reverse Primer"] = {1: {"seq": tempRev, "bg-class": bgClassTBR},
                                             info: primerInfoRev};
 
         } else if (primerDistribution === true) {
@@ -849,13 +837,13 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
                                     Total: ${(homoFwd1.length + seqToInsert.length + tempFwd.length)} bp)`;
             const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(getMeltingTemperature(tempRev, meltingTempAlgorithmChoice))} °C; 
                                     Total: ${(homoRev1.length + seqToInsert.length + tempRev.length)} bp)`;
-            primersDict["Forward Primer"] = {1: {"seq": homoFwd1, "color": colorHomo},
-                                            2: {"seq": seqToInsert, "color": colorIns},
-                                            3: {"seq": tempFwd, "color": colorTBR},
+            primersDict["Forward Primer"] = {1: {"seq": homoFwd1, "bg-class": bgClassHomo},
+                                            2: {"seq": seqToInsert, "bg-class": bgClassIns},
+                                            3: {"seq": tempFwd, "bg-class": bgClassTBR},
                                             info: primerInfoFwd};
-            primersDict["Reverse Primer"] = {1: {"seq": homoRev1, "color": colorHomo},
-                                             2: {"seq": getComplementaryStrand(seqToInsert).split("").reverse().join(""), "color": colorIns},
-                                             3: {"seq": tempRev, "color": colorTBR},
+            primersDict["Reverse Primer"] = {1: {"seq": homoRev1, "bg-class": bgClassHomo},
+                                             2: {"seq": getComplementaryStrand(seqToInsert).split("").reverse().join(""), "bg-class": bgClassIns},
+                                             3: {"seq": tempRev, "bg-class": bgClassTBR},
                                              info: primerInfoRev};
         };
     } else {
@@ -927,11 +915,11 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
                                 Total: ${(homoFwd.length + tempFwd.length)} bp)`;
         const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(getMeltingTemperature(tempRev, meltingTempAlgorithmChoice))} °C; 
                                 Total: ${(homoRev.length + tempRev.length)} bp)`;
-        primersDict["Forward Primer"] = {1: {"seq": homoFwd, "color": colorIns},
-                                         2: {"seq": tempFwd, "color": colorTBR},
+        primersDict["Forward Primer"] = {1: {"seq": homoFwd, "bg-class": bgClassIns},
+                                         2: {"seq": tempFwd, "bg-class": bgClassTBR},
                                         info: primerInfoFwd};
-        primersDict["Reverse Primer"] = {1: {"seq": homoRev, "color": colorIns},
-                                         2: {"seq": tempRev, "color": colorTBR},
+        primersDict["Reverse Primer"] = {1: {"seq": homoRev, "bg-class": bgClassIns},
+                                         2: {"seq": tempRev, "bg-class": bgClassTBR},
                                          info: primerInfoRev};
     };
 
@@ -972,7 +960,10 @@ function makePrimers(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, p
     );
     
     // Display primers in the sidebar
-    displayPrimers(operationTypeTagline, primersDict);
+    displayPrimers(
+        operationTypeTagline,
+        primersDict
+    );
     
     // Update the sequence and features
     updateFeatures(

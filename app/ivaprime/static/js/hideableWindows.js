@@ -48,7 +48,6 @@ document.addEventListener('DOMContentLoaded', function () {
             // Check if the variable exists
             if (eval(variableName) !== undefined) {
                 // Set the element's value to the variable's value
-                console.log(eval(variableName))
                 element.value = eval(variableName);
                 if (element.type === "text") {
                     element.value = eval(variableName);
@@ -111,6 +110,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else if (element.type === "number") {
                     console.log("Updating number");
                     if (variableName === "gridWidth") {
+                        const gridWidthMin = 10;
                         if (gridWidth !== parseInt(document.getElementById(variableName + "SettingsElement").value) && gridWidthMin <= parseInt(document.getElementById(variableName + "SettingsElement").value)) {
                             console.log("Updating new gridwith [old, new]", gridWidth, parseInt(document.getElementById(variableName + "SettingsElement").value))
                             eval(variableName + " = parseInt(document.getElementById(\"" + variableName + "SettingsElement\"" + ").value)");
@@ -133,10 +133,6 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log("Updating settings:", JSON.stringify(JSON.parse(getCookieValue('userPreferences') || '{}'), null, 2));
     };
 
-    // Event listener for input changes
-    //document.getElementById("settings-window").addEventListener("input", function (event) {
-    //    updateGlobalVariables();
-    //});
 
     document.getElementById("reset-default-settings-btn").addEventListener("click", function (event) {
         resetDefaultSettings();
@@ -162,7 +158,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const meltingTempAlgorithmEquationImage = document.getElementById("meltingTempAlgorithmEquationImage");
 
         const newPath = "/static/" + meltingTempAlgorithmSelect.value + "%20equation.png"
-        console.log("Change", meltingTempAlgorithmSelect.value, newPath)
         meltingTempAlgorithmEquationImage.src = newPath;
         saveUserPreference("meltingTempAlgorithmChoice", meltingTempAlgorithmSelect.value, 30, true, true);
         meltingTempAlgorithmChoice = meltingTempAlgorithmSelect.value;
@@ -180,7 +175,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const saltCorrectionEquationImage = document.getElementById("saltCorrectionEquationImage");
 
         const newPath = "/static/" + saltCorrectionSelect.value + "%20equation.png"
-        console.log("Change", saltCorrectionSelect.value, newPath)
         saltCorrectionEquationImage.src = newPath;
         saveUserPreference("saltCorrectionEquation", saltCorrectionSelect.value, 30, true, true);
         saltCorrectionEquation = saltCorrectionSelect.value;
@@ -320,7 +314,6 @@ document.addEventListener('DOMContentLoaded', function () {
  * Update the CSS theme
  */
 function updateCSSTheme() {
-    console.log("updateCSSTheme to", colorTheme);
     if (colorTheme === "darkTheme") {
         document.querySelector("html").setAttribute("data-theme", "dark");
     } else if (colorTheme === "lightTheme") {

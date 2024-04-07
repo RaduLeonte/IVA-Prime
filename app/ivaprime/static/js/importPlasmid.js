@@ -1,4 +1,36 @@
 /**
+ * Project class.
+ */
+const Project = new class {
+  constructor() {
+      this.plasmids = {}; // Dictionary of imported plasmid files
+
+      this.activePlasmidIndex = null; // Currently active plasmid file
+
+      this.subcloningOriginIndex = null; // Index of plasmid from where the subcloning originates
+      this.subcloningOriginSpan = null; // Span of subcloning target in origin plasmid
+  };
+
+  addPlasmid() {
+
+  };
+
+  // Return index of active plasmid
+  activePlasmidIndex() {
+    return this.activePlasmidIndex;
+  };
+
+  // Return active plasmid object
+  activePlasmid() {
+    return this.plasmids[this.activePlasmidIndex];
+  };
+};
+//// Cursor trackers
+//let basePosition = -1;
+//let hoveringOverSelectionCursor = null;
+
+
+/**
  * On window load.
  */
 window.onload = function() {
@@ -1478,7 +1510,17 @@ function checkAnnotationOverlap(inputFeatures, plasmidIndex) {
   let count = 0;
   let listInsertPos = 0;
   let currentGridStructure = plasmidDict[plasmidIndex]["gridStructure"];
-  if (!currentGridStructure) {currentGridStructure = defaultGridStructure}
+  if (!currentGridStructure) {
+    // Default grid structure
+    // TO DO: Add an amino acids row for each row of annotations
+    currentGridStructure = [
+      "Forward Strand",
+      "Complementary Strand",
+      "Amino Acids",
+      "Annotations",
+      "Spacer"
+    ];
+  };
   // Count how many rows are already dedicated to annotations
   for (let i = 0; i < currentGridStructure.length; i++) {
     if (currentGridStructure[i] === "Annotations") {
@@ -1604,6 +1646,9 @@ function makeContentGrid(plasmidIndex) {
   };
 
   
+  let recentColor = ""
+  // Delete previous translations
+  plasmidDict[plasmidIndex]["translations"] = {"forward": [], "reverse": []};
   // Iterate over the features and create the annotatations
   Object.entries(currFeatures).forEach(([key, value]) => {
     if (value.span && !value.type.includes("source")) { // If the feature includes a span and is not "source"
@@ -1625,7 +1670,7 @@ function makeContentGrid(plasmidIndex) {
       const annotationColorVariable = plasmidIndex + key + "-annotation-color";
 
       // If color not in list, add generate one and add it
-      let annotColor = generateRandomUniqueColor();
+      let annotColor = generateRandomUniqueColor(recentColor);
       recentColor = annotColor; // Store the colour history
       if (globalColors.indexOf("--" + annotationColorVariable) === -1) {
         document.documentElement.style.setProperty(`--${annotationColorVariable}`, annotColor);
@@ -1941,7 +1986,7 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, annotationColor
 /**
  * Generates a random color that was not used recently.
  */
-function generateRandomUniqueColor() {
+function generateRandomUniqueColor(recentColor="") {
   const baseColors = ["#FFB6C1", "#FFDAB9", "#FFA07A", "#FFC0CB", "#87CEFA", "#98FB98", "#FF69B4", "#90EE90"];
 
   const remainingColors = baseColors.filter(color => color !== recentColor);

@@ -25,7 +25,6 @@ function addCellSelection(sequenceGridTable, plasmidIndex) {
       if ((currBasePosition === plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"] || currBasePosition === plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]) && plasmidDict[plasmidIndex]["selectionEndPos"]) {
           sequenceGridTable.style.cursor = 'ew-resize';
           hoveringOverSelectionCursor = (currBasePosition === plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"]) ? "start": "end";
-          console.log("hoveringOverSelectionCursor", hoveringOverSelectionCursor, plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"] , plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"])
       } else {
           sequenceGridTable.style.cursor = 'auto';
           hoveringOverSelectionCursor = null;

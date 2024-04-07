@@ -63,17 +63,6 @@ document.addEventListener('DOMContentLoaded', function () {
   popupWindow.style.display = 'none';
   document.body.appendChild(popupWindow);
 
-  // Add all supported organisms
-  const organismsList = Object.keys(codonTablesDict);
-  const select = document.getElementById('targetOrganismSelector'); 
-  for (let i = 0; i < organismsList.length; i++) {
-    let newOption = new Option(organismsList[i],organismsList[i]);
-    if (organismsList[i] === preferredOrganism) {
-      newOption.setAttribute('selected','selected');
-    };
-    select.add(newOption,undefined);
-  };
-
   document.getElementById("amino-acid-sequence-input").addEventListener('input', updateTranslateNewFeatureCheckbox);
   document.getElementById("amino-acid-sequence-input-5").addEventListener('input', updateTranslateNewFeatureCheckbox);
   document.getElementById("amino-acid-sequence-input-3").addEventListener('input', updateTranslateNewFeatureCheckbox);
@@ -122,9 +111,9 @@ document.addEventListener('DOMContentLoaded', function () {
       } else {
         // Get the entered values from the text inputs and sanitize them
         // To uppercase, then remove anything that is not ACTG
-        dnaSequenceInput = document.getElementById('dna-sequence-input').value.toUpperCase().replace(/[^ATCG]/g, '');
+        const dnaSequenceInput = document.getElementById('dna-sequence-input').value.toUpperCase().replace(/[^ATCG]/g, '');
         // To uppercase, replace "-" and "*" with X
-        aminoAcidSequenceInput = document.getElementById('amino-acid-sequence-input').value.toUpperCase().replace(/[-*]/g, 'X');
+        let aminoAcidSequenceInput = document.getElementById('amino-acid-sequence-input').value.toUpperCase().replace(/[-*]/g, 'X');
         // Only keep allowed amino acid 1 letter codes
         const allowedLetterCodes = Object.keys(aaToCodon);
         aminoAcidSequenceInput = aminoAcidSequenceInput.split('').filter(char => allowedLetterCodes.includes(char)).join('');
