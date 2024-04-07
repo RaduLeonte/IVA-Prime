@@ -58,7 +58,6 @@ function enableElementEditing(element) {
     pseudoElement.addEventListener('click', () => {
       // Save original text
       let originalText = element.innerText;
-      console.log("Hey paulie", originalText, element.innerText)
       
       // Create and display input element
       const input = document.createElement('input');
@@ -178,11 +177,10 @@ function updateElementText(e, newText, originalText) {
   
     // If something has changed, create checkpoint
     if (originalText !== newText && newText !== "") {
-      savePrimers();
-      saveProgress(currentlyOpenedPlasmid);
+      Project.activePlasmid().savePrimers();
+      Project.activePlasmid().saveProgress();
     };
   } else {
-    console.log("Didn mean nuthin by it")
     e.innerText = originalText;
   }
 };
@@ -195,21 +193,21 @@ function updateElementText(e, newText, originalText) {
  */
 function updateFeaturesDict(cell) {
   // Current file features
-  const currFeatures = plasmidDict[currentlyOpenedPlasmid]["fileFeatures"];
+  const currPlasmid = Project.activePlasmid();
+  const currFeatures = currPlasmid.features;
   
   // If the cell stems from the sidebar, update that specific entry in the fileFeatures dict
-  console.log("updateFeaturesDict", cell, cell.id)
   if (cell.id.includes("sidebar")) {
       currFeatures[cell.parentElement.id][cell.id.replace("sidebar-", "")] = cell.textContent;
       
       // Refresh sidebar table
-      plasmidDict[currentlyOpenedPlasmid]["sidebarTable"] = createSidebarTable(currentlyOpenedPlasmid);
+      currPlasmid.createSidebarTable();
       
       // If a feature label was changed, also redraw the content grid
       if (cell.id === "sidebar-label") {
-        plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = makeContentGrid(currentlyOpenedPlasmid);
+        currPlasmid.makeContentGrid();
       };
-      updateSidebarAndGrid(currentlyOpenedPlasmid);
+      updateSidebarAndGrid();
   };
 
   // Reenable sidebar editing after redrawing

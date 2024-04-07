@@ -4,27 +4,34 @@
 function addCellBorderOnHover(sequenceGridTable, plasmidIndex) {
   // Select the grid table of interest
 
-  plasmidDict[plasmidIndex]["previousCell"] = null;
+  Project.getPlasmid(plasmidIndex).previousCell = null;
   // Event listener for mouse movements
   sequenceGridTable.addEventListener('mousemove', function(event) {
     // Get the closest cell to the cursor
     const cell = event.target.closest('td');
 
     // If the cell exists and its not the same as the previous one, i.e. the cursor has moved to a new one
-    if (cell && cell !== plasmidDict[plasmidIndex]["previousCell"]) {
+    if (cell && cell !== Project.getPlasmid(plasmidIndex).previousCell) {
       // Reset previous cell border styles
-      if (plasmidDict[plasmidIndex]["previousCell"]) {
-        plasmidDict[plasmidIndex]["previousCell"].classList.remove("sequence-cursor-cell-left")
-        plasmidDict[plasmidIndex]["previousCell"].classList.remove("sequence-cursor-cell-right")
+      if (Project.getPlasmid(plasmidIndex).previousCell) {
+        Project.getPlasmid(plasmidIndex).previousCell.classList.remove("sequence-cursor-cell-left")
+        Project.getPlasmid(plasmidIndex).previousCell.classList.remove("sequence-cursor-cell-right")
       };
       // Update the cell tracker
-      plasmidDict[plasmidIndex]["previousCell"] = cell;
+      Project.getPlasmid(plasmidIndex).previousCell = cell;
     };
 
     // If the cursor has changed cells
-    if (plasmidDict[plasmidIndex]["previousCell"] && (plasmidDict[plasmidIndex]["previousCell"].id === "Forward Strand" || plasmidDict[plasmidIndex]["previousCell"].id === "Complementary Strand")  && plasmidDict[plasmidIndex]["previousCell"].textContent.trim() !== '') {
+    if (
+      Project.getPlasmid(plasmidIndex).previousCell
+      && (
+        Project.getPlasmid(plasmidIndex).previousCell.id === "Forward Strand"
+        || Project.getPlasmid(plasmidIndex).previousCell.id === "Complementary Strand"
+      )
+      && Project.getPlasmid(plasmidIndex).previousCell.textContent.trim() !== ''
+    ) {
       // Find the area of the cell
-      const cellRect = plasmidDict[plasmidIndex]["previousCell"].getBoundingClientRect();
+      const cellRect = Project.getPlasmid(plasmidIndex).previousCell.getBoundingClientRect();
       // Find the borders of the cell
       const cellLeft = cellRect.left;
       const cellRight = cellRect.right;
@@ -37,11 +44,11 @@ function addCellBorderOnHover(sequenceGridTable, plasmidIndex) {
 
       // Apply border style to the side closest to the cursor
       if (distanceToLeft < distanceToRight) {
-        plasmidDict[plasmidIndex]["previousCell"].classList.add("sequence-cursor-cell-left")
-        plasmidDict[plasmidIndex]["previousCell"].classList.remove("sequence-cursor-cell-right")
+        Project.getPlasmid(plasmidIndex).previousCell.classList.add("sequence-cursor-cell-left")
+        Project.getPlasmid(plasmidIndex).previousCell.classList.remove("sequence-cursor-cell-right")
       } else {
-        plasmidDict[plasmidIndex]["previousCell"].classList.remove("sequence-cursor-cell-left")
-        plasmidDict[plasmidIndex]["previousCell"].classList.add("sequence-cursor-cell-right")
+        Project.getPlasmid(plasmidIndex).previousCell.classList.remove("sequence-cursor-cell-left")
+        Project.getPlasmid(plasmidIndex).previousCell.classList.add("sequence-cursor-cell-right")
       };
     };
   });
@@ -49,10 +56,10 @@ function addCellBorderOnHover(sequenceGridTable, plasmidIndex) {
   // If the mouse leaves the table, deselect
   sequenceGridTable.addEventListener('mouseleave', function() {
     // Reset cell border styles when leaving the table
-    if (plasmidDict[plasmidIndex]["previousCell"]) {
-      plasmidDict[plasmidIndex]["previousCell"].classList.remove("sequence-cursor-cell-left")
-      plasmidDict[plasmidIndex]["previousCell"].classList.remove("sequence-cursor-cell-right")
-      plasmidDict[plasmidIndex]["previousCell"] = null;
+    if (Project.getPlasmid(plasmidIndex).previousCell) {
+      Project.getPlasmid(plasmidIndex).previousCell.classList.remove("sequence-cursor-cell-left")
+      Project.getPlasmid(plasmidIndex).previousCell.classList.remove("sequence-cursor-cell-right")
+      Project.getPlasmid(plasmidIndex).previousCell = null;
     };
   });
 };

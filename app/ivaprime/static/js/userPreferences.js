@@ -106,8 +106,3 @@ const defaultSetingsDict = {
 for (let setting in defaultSetingsDict) {
     window[setting] = (getUserPreference(setting) !== null) ? getUserPreference(setting) : defaultSetingsDict[setting];
 };
-
-
-// Cursor trackers
-let basePosition = -1;
-let hoveringOverSelectionCursor = null;

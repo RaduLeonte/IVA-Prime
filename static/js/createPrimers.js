@@ -28,8 +28,8 @@ function displayPrimers(primersType, primersDict) {
     h3.classList.add("editable");
     enableElementEditing(h3, 1);
     h3.setAttribute("edited", false);
-    h3.textContent = plasmidDict[currentlyOpenedPlasmid]["operationNr"] + '. ' + primersType;
-    plasmidDict[currentlyOpenedPlasmid]["operationNr"] = parseInt(plasmidDict[currentlyOpenedPlasmid]["operationNr"]) + 1;
+    h3.textContent = Project.activePlasmid().operationNr + '. ' + primersType;
+    Project.activePlasmid().operationNr = parseInt(Project.activePlasmid().operationNr) + 1;
     modDiv.appendChild(h3);
 
 
@@ -88,16 +88,16 @@ function displayPrimers(primersType, primersDict) {
 
     // Append new div to sidebar
     sidebarContentDiv.appendChild(modDiv);
-    // Update the primers in the plasmidDict
-    savePrimers();
+    // Update the primers
+    Project.activePlasmid().savePrimers();
     // Add hover effects to the different regions in the primer sequences
     // TO DO: Maybe add a click effect that takes you to that position
     // TO DO: Make sure this doesn't stack event listeners
     addPrimerRegionHoverEvents();
     
     // Reset selection
-    plasmidDict[currentlyOpenedPlasmid]["selectedText"] = "";
-    clearSelection(currentlyOpenedPlasmid, true)
+    Project.activePlasmid().selectedText = "";
+    clearSelection(Project.activePlasmidIndex, true)
 };
 
 
@@ -111,7 +111,7 @@ function displayPrimers(primersType, primersDict) {
 function getPrimersAsTable(plasmidIndex, includeColumnNames=false) {
     // Create dummy html element and save the target plasmid's primers to it
     const sidebarDiv = document.createElement("div");
-    sidebarDiv.innerHTML = plasmidDict[plasmidIndex]["sidebarPrimers"];
+    sidebarDiv.innerHTML = Project.getPlasmid(plasmidIndex).primers;
     
     // Select all mod divs in the dummy element
     const modDivs = sidebarDiv.querySelectorAll('#mod-div');
@@ -173,9 +173,10 @@ const exportPrimersDict = {
      */
     txt : (plasmidIndex) => {
         // Get file name and primers from the html element
-        const fileName = plasmidDict[plasmidIndex]["fileName"].replace(plasmidDict[plasmidIndex]["fileExtension"], "") + " primers";
+        const currPlasmid = Project.getPlasmid(plasmidIndex);
+        const fileName = currPlasmid.name.replace(currPlasmid.extension, "") + " primers";
         const containerDiv = document.createElement("div");
-        containerDiv.innerHTML = plasmidDict[plasmidIndex]["sidebarPrimers"];
+        containerDiv.innerHTML = currPlasmid.primers;
 
         // Iterate over children of the html element and populate the string to be saved to txt
         let textContent = "";
@@ -229,8 +230,9 @@ const exportPrimersDict = {
      */
     doc : (plasmidIndex) => {
         // Get file name and primers from the html element
-        const fileName = plasmidDict[plasmidIndex]["fileName"].replace(plasmidDict[plasmidIndex]["fileExtension"], "") + " primers";
-        const htmlContent = plasmidDict[plasmidIndex]["sidebarPrimers"];
+        const currPlasmid = Project.getPlasmid(plasmidIndex);
+        const fileName = currPlasmid.name.replace(currPlasmid.extension, "") + " primers";
+        const htmlContent = currPlasmid.primers;
         
         // Create blob using html-docx.js and download it
         const docx = window.htmlDocx.asBlob(htmlContent);
@@ -247,7 +249,8 @@ const exportPrimersDict = {
      */
     csv : (plasmidIndex) => {
         // Get file name and primers from the html element as 2d array
-        const fileName = plasmidDict[plasmidIndex]["fileName"].replace(plasmidDict[plasmidIndex]["fileExtension"], "") + " primers";
+        const currPlasmid = Project.getPlasmid(plasmidIndex);
+        const fileName = currPlasmid.name.replace(currPlasmid.extension, "") + " primers";
         const tableData = getPrimersAsTable(plasmidIndex, includeColumnNames=true);
 
         // Convert 2d array to 1d
@@ -275,7 +278,8 @@ const exportPrimersDict = {
     xlsx: (plasmidIndex) => {
         addLoadingCursor();
         // Get file name and primers from the html element as 2d array
-        const fileName = plasmidDict[plasmidIndex]["fileName"].replace(plasmidDict[plasmidIndex]["fileExtension"], "") + " primers";
+        const currPlasmid = Project.getPlasmid(plasmidIndex);
+        const fileName = currPlasmid.name.replace(currPlasmid.extension, "") + " primers";
         const tableData = getPrimersAsTable(plasmidIndex, includeColumnNames=true);
 
         // Create excel file using xlsx-populate
@@ -311,7 +315,8 @@ const exportPrimersDict = {
     microsynth: (plasmidIndex) => {
         addLoadingCursor();
         // Get file name and primers from the html element as 2d array
-        const fileName = plasmidDict[plasmidIndex]["fileName"].replace(plasmidDict[plasmidIndex]["fileExtension"], "") + " primers";
+        const currPlasmid = Project.getPlasmid(plasmidIndex);
+        const fileName = currPlasmid.name.replace(currPlasmid.extension, "") + " primers";
         const tableData = getPrimersAsTable(plasmidIndex, includeColumnNames = false);
         
         // Create a list of rows to append to the microsynth form
@@ -441,8 +446,8 @@ function primerRegionHover(event) {
     const spanColor = window.getComputedStyle(targetSpan).backgroundColor;
     
     // Grid structure and sequence of currently opened plasmid
-    const currGridstructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
-    const currSequence = (spanDirection === "fwd") ? plasmidDict[currentlyOpenedPlasmid]["fileSequence"]: plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"];
+    const currPlasmid = Project.activePlasmid();
+    const currSequence = (spanDirection === "fwd") ? currPlasmid.sequence: currPlasmid.complementarySequence;
 
     // Reverse sequence if direction is reverse
     const searchQuery = (spanDirection === "fwd") ? spanSequence: spanSequence.split('').reverse().join('');
@@ -464,7 +469,7 @@ function primerRegionHover(event) {
 // TO DO: Change the function to not iterate over every single cell, make dedicated classes and search for those instead
 function removePrimerRegionHighlight() {
     // Select currently displayed table
-    const targetTable = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
+    const targetTable = document.getElementById("sequence-grid-" + Project.activePlasmidIndex);
     
     // Iterate over all cells in the table and remove element styles
     for (let i = 0; i < targetTable.rows.length; i++) {
@@ -612,27 +617,29 @@ const aaToCodon = {
  * Load codon weight tables.
  * Codon frequency tables from CoCoPUTs (Alexaki et al. 2019, https://doi.org/10.1016/j.jmb.2019.04.021).
  */
-let codonWeights;
-fetch('static/codonWeights.json')
-.then(response => response.json())
-.then(json => {
-    codonWeights = json;
-    populateOrganismDropdown()
-});
-/**
- * Populate aa optimisation dropdown menu with all organism choices
- */
-function populateOrganismDropdown() {
-  const organismsList = Object.keys(codonWeights);
-  const select = document.getElementById('targetOrganismSelector'); 
-  for (let i = 0; i < organismsList.length; i++) {
-    let newOption = new Option(organismsList[i],organismsList[i]);
-    if (organismsList[i] === preferredOrganism) {
-      newOption.setAttribute('selected','selected');
+document.addEventListener('DOMContentLoaded', function() {
+    let codonWeights;
+    fetch('static/codonWeights.json')
+    .then(response => response.json())
+    .then(json => {
+        codonWeights = json;
+        populateOrganismDropdown();
+    });
+    /**
+     * Populate aa optimisation dropdown menu with all organism choices
+     */
+    function populateOrganismDropdown() {
+      const organismsList = Object.keys(codonWeights);
+      const select = document.getElementById('targetOrganismSelector'); 
+      for (let i = 0; i < organismsList.length; i++) {
+        let newOption = new Option(organismsList[i],organismsList[i]);
+        if (organismsList[i] === preferredOrganism) {
+          newOption.setAttribute('selected','selected');
+        };
+        select.add(newOption,undefined);
+      };
     };
-    select.add(newOption,undefined);
-  };
-};
+});
 
 
 /**
@@ -680,7 +687,6 @@ function optimizeAA(inputAA, targetOrganism) {
  * @returns {[string, Object, string, number, number]}
  */
 function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, operationType) {
-    console.log("generatePrimerSequences", plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, operationType)
     /**
      * Set primer colors
      */
@@ -980,7 +986,7 @@ function makePrimers(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, p
 /**
  * Mark selection as subcloning target and highlight bases
  * 
- * @param {number} plasmidIndex - Target plasmid index in plasmidDict
+ * @param {number} plasmidIndex - Target plasmid index
  * @param {number} inputStartPos - Start index
  * @param {number} inputEndPos - End index
  * @returns {void}
@@ -990,32 +996,32 @@ function markSelectionForSubcloning(plasmidIndex, inputStartPos, inputEndPos) {
     clearAllSubcloningSelections();
 
     // Update global trackers of the subcloning target
-    subcloningOriginPlasmidIndex = plasmidIndex;
-    subcloningOriginSpan = [Math.min(inputStartPos, inputEndPos), Math.max(inputStartPos, inputEndPos)];
+    Project.subcloningOriginIndex = plasmidIndex;
+    Project.subcloningOriginSpan = [Math.min(inputStartPos, inputEndPos), Math.max(inputStartPos, inputEndPos)];
 
     // If the plasmid with the subcloning target is open, highlight it
-    if (currentlyOpenedPlasmid === subcloningOriginPlasmidIndex) {
+    if (Project.activePlasmidIndex === Project.subcloningOriginIndex) {
         // First cell
         highlightSpan(
             0,
-            subcloningOriginSpan[0],
-            subcloningOriginSpan[0] + 1,
+            Project.subcloningOriginSpan[0],
+            Project.subcloningOriginSpan[0] + 1,
             "subcloning-target-cell-first"
         );
 
         // Middle cells
         highlightSpan(
             0,
-            subcloningOriginSpan[0] + 1,
-            subcloningOriginSpan[1] - 1,
+            Project.subcloningOriginSpan[0] + 1,
+            Project.subcloningOriginSpan[1] - 1,
             "subcloning-target-cell"
         );
 
         // Last cell
         highlightSpan(
             0,
-            subcloningOriginSpan[1] - 1,
-            subcloningOriginSpan[1],
+            Project.subcloningOriginSpan[1] - 1,
+            Project.subcloningOriginSpan[1],
             "subcloning-target-cell-last"
         );
     };
@@ -1031,8 +1037,8 @@ function markSelectionForSubcloning(plasmidIndex, inputStartPos, inputEndPos) {
 function clearAllSubcloningSelections(clearVariables=true) {
     // If specified, reset global variables
     if (clearVariables === true) {
-        subcloningOriginPlasmidIndex = null;
-        subcloningOriginSpan = null;
+        Project.subcloningOriginIndex = null;
+        Project.subcloningOriginSpan = null;
     };
 
     // Select all table cells that have the subcloning highlight classes
@@ -1097,18 +1103,6 @@ function clearAllSubcloningSelections(clearVariables=true) {
  * @returns {void}
  */
 function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5Prime, dnaSequence5Prime, aaSequence3Prime, dnaSequence3Prime, targetOrganism, translateFeature=false) {
-    console.log(
-        "makeSubcloningPrimers",
-        subcloningStartPos,
-        subcloningEndPos,
-        aaSequence5Prime,
-        dnaSequence5Prime,
-        aaSequence3Prime,
-        dnaSequence3Prime,
-        targetOrganism,
-        translateFeature
-    );
-    
     /**
      * Optimise 5' and 3' insertions, otherwise use given DNA sequence
      */
@@ -1132,16 +1126,29 @@ function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5
     const endPos = Math.max(subcloningStartPos, subcloningEndPos);
 
     // Subcloning target sequence
-    const subcloningTargetSequence = repeatingSlice(plasmidDict[subcloningOriginPlasmidIndex]["fileSequence"], subcloningOriginSpan[0] - 1, subcloningOriginSpan[1]-1)
+    const subcloningOriginSpan = Project.subcloningOriginSpan
+    const subcloningTargetSequence = repeatingSlice(
+        Project.getPlasmid(Project.subcloningOriginIndex).sequence,
+        subcloningOriginSpan[0] - 1,
+        subcloningOriginSpan[1]-1
+    )
     // Subcloning target sequence with insertion sequences
     const subcloningSequenceFull = seqToInsert5 + subcloningTargetSequence + seqToInsert3;
 
     // Plasmid sequence of target vector
-    const targetVectorSequence = plasmidDict[currentlyOpenedPlasmid]["fileSequence"];
+    const targetVectorSequence = Project.activePlasmid().sequence;
     // Create a simulated plasmid sequence where the subcloning target is already inserted
     const simulatedPlasmidSequence = targetVectorSequence.slice(0, startPos-1) + subcloningTargetSequence + targetVectorSequence.slice(endPos-1);
     // Create insertion primers to insert the 5' insertion on the simulated plasmid sequence
-    const [, primersDict5, , , ] = generatePrimerSequences(simulatedPlasmidSequence, seqToInsert5, "", targetOrganism, startPos, startPos, "Subcloning");
+    const [, primersDict5, , , ] = generatePrimerSequences(
+        simulatedPlasmidSequence,
+        seqToInsert5,
+        "",
+        targetOrganism,
+        startPos,
+        startPos,
+        "Subcloning"
+    );
 
     // Create a simulated plasmid reverse complement sequence where the subcloning target is already inserted
     const simulatedPlasmidSequenceRevComp = getComplementaryStrand(simulatedPlasmidSequence).split("").reverse().join("");
@@ -1150,7 +1157,15 @@ function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5
     // Get the reverse complement sequence of the 3' insertion
     const seqToInsert3RevComp = getComplementaryStrand(seqToInsert3).split("").reverse().join("");
     // Create insertion primers to insert the 3' insertion on the simulated plasmid sequence
-    const [, primersDict3, , , ] = generatePrimerSequences(simulatedPlasmidSequenceRevComp, seqToInsert3RevComp, "", targetOrganism, endPosRevComp, endPosRevComp, "Subcloning");
+    const [, primersDict3, , , ] = generatePrimerSequences(
+        simulatedPlasmidSequenceRevComp,
+        seqToInsert3RevComp,
+        "",
+        targetOrganism,
+        endPosRevComp,
+        endPosRevComp,
+        "Subcloning"
+    );
 
 
     // Generate primer dict
@@ -1165,7 +1180,14 @@ function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5
 
     // Update the sequence and features
     const plasmidLengthDiff = subcloningSequenceFull.length - (endPos - startPos);
-    updateFeatures("Subcloning", translateFeature, subcloningSequenceFull, startPos, endPos, plasmidLengthDiff);
+    updateFeatures(
+        "Subcloning",
+        translateFeature,
+        subcloningSequenceFull,
+        startPos,
+        endPos,
+        plasmidLengthDiff
+    );
 };
 
 
@@ -1292,11 +1314,12 @@ function updateFeatures(operationType, translateFeature, newFeatureSequence, seg
     segmentEndPos--;
 
     // Insertion is added into the main sequence and complementary strand is remade
-    plasmidDict[currentlyOpenedPlasmid]["fileSequence"] = plasmidDict[currentlyOpenedPlasmid]["fileSequence"].substring(0, segmentStartPos) + newFeatureSequence + plasmidDict[currentlyOpenedPlasmid]["fileSequence"].substring(segmentEndPos);
-    plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"]  = getComplementaryStrand(plasmidDict[currentlyOpenedPlasmid]["fileSequence"]);
+    const currPlasmid = Project.activePlasmid();
+    Project.activePlasmid().sequence = currPlasmid.sequence.substring(0, segmentStartPos) + newFeatureSequence + currPlasmid.sequence.substring(segmentEndPos);
+    Project.activePlasmid().complementarySequence  = getComplementaryStrand(currPlasmid.sequence);
 
     // Loop over all features and decided wether to shift, modify, delete or do nothing
-    Object.entries(plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]).forEach(([key, value]) => {
+    Object.entries(currPlasmid.features).forEach(([key, value]) => {
         // Pass old feature span and new feature span and decide what to do
         const currSpanString = value.span;
         const currSpan = removeNonNumeric(currSpanString).split("..").map(Number);
@@ -1308,15 +1331,15 @@ function updateFeatures(operationType, translateFeature, newFeatureSequence, seg
             // Shift feature
             const adjustedSpan = [currSpan[0] + featureShift, currSpan[1] + featureShift];
             const spanStringMatches = currSpanString.match(/\d+/g);
-            plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][key].span = currSpanString.replace(spanStringMatches[0], adjustedSpan[0]).replace(spanStringMatches[1], adjustedSpan[1]);
+            Project.activePlasmid().features[key].span = currSpanString.replace(spanStringMatches[0], adjustedSpan[0]).replace(spanStringMatches[1], adjustedSpan[1]);
         } else if (decision === "inside") {
             // Inside, only shift span end
             const adjustedSpan = [currSpan[0], currSpan[1] + featureShift];
             const spanStringMatches = currSpanString.match(/\d+/g);
-            plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][key].span = currSpanString.replace(spanStringMatches[0], adjustedSpan[0]).replace(spanStringMatches[1], adjustedSpan[1]);
+            Project.activePlasmid().features[key].span = currSpanString.replace(spanStringMatches[0], adjustedSpan[0]).replace(spanStringMatches[1], adjustedSpan[1]);
         } else if (decision === "delete") {
             // Delete old feature
-            delete plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][key];
+            delete Project.activePlasmid().features[key];
         };
     });
 
@@ -1332,19 +1355,19 @@ function updateFeatures(operationType, translateFeature, newFeatureSequence, seg
         const insertStringPositionEnd = segmentStartPos + newFeatureSequence.length;
         tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
         tempDict.note = "";
-        plasmidDict[currentlyOpenedPlasmid]["fileFeatures"][crypto.randomUUID()] = tempDict;
+        Project.activePlasmid().features[crypto.randomUUID()] = tempDict;
 
         // Sort feature dict by span
-        plasmidDict[currentlyOpenedPlasmid]["fileFeatures"] = sortBySpan(plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]);
+        Project.activePlasmid().features = sortBySpan(Project.activePlasmid().features);
     };
 
     // Remake the sidebar and content grid 
-    plasmidDict[currentlyOpenedPlasmid]["sidebarTable"] = createSidebarTable(currentlyOpenedPlasmid);
-    plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = makeContentGrid(currentlyOpenedPlasmid);
+    Project.activePlasmid().createSidebarTable();
+    Project.activePlasmid().makeContentGrid();
     updateSidebarAndGrid();
 
     // At the very end, save the progress to file history
-    saveProgress(currentlyOpenedPlasmid);
+    Project.activePlasmid().saveProgress();
 };
 
 
@@ -1451,5 +1474,20 @@ function repeatingSlice(str, startIndex, endIndex) {
  */
 function copyPrimerSequenceToClipboard(sourceBtn) {
     // Copy source button html to clipboard
-    copyStringToClipboard(sourceBtn.parentElement.innerHTML)
+    const dummyElement = document.createElement("div");
+    dummyElement.innerHTML = sourceBtn.parentElement.innerHTML;
+    dummyElement.removeChild(dummyElement.lastChild);
+
+    for (let i = 0; i < dummyElement.children.length; i++) {
+        const child = dummyElement.children[i];
+        const styles = window.getComputedStyle(sourceBtn.parentElement.children[i])
+        for (let key in styles) {
+            if (["color", "background-color", "font-weight", "font-family"].includes(key)){
+                let prop = key.replace(/\-([a-z])/g, v => v[1].toUpperCase());
+                child.style[prop] = styles[key];
+            };
+        };
+    };
+
+    copyStringToClipboard(dummyElement.innerHTML)
 };

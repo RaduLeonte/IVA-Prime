@@ -10,29 +10,25 @@ function scrollTabs(direction) {
 
 
 function navigateFileHistory(direction) {
-    console.log("navigateFileHistory", direction);
-    const fileHistory = plasmidDict[currentlyOpenedPlasmid]["fileHistory"];
-    console.log("navigateFileHistory", fileHistory);
-    const currentInstance = plasmidDict[currentlyOpenedPlasmid]["fileHistoryTracker"];
+    const currPlasmid = Project.activePlasmid();
+    const fileHistory = currPlasmid.history;
+    const currentInstance = currPlasmid.historyTracker;
 
     if (currentInstance + direction <= 0 || currentInstance + direction >= -(fileHistory.length - 1)) {
-        plasmidDict[currentlyOpenedPlasmid]["fileHistoryTracker"] += direction; // Instance tracker
-        plasmidDict[currentlyOpenedPlasmid]["operationNr"] += direction; // Operation tracker
-        const targetInstance = plasmidDict[currentlyOpenedPlasmid]["fileHistoryTracker"]; // domain -(list length - 1)) to 0
+        Project.activePlasmid().historyTracker += direction; // Instance tracker
+        Project.activePlasmid().operationNr += direction; // Operation tracker
+        const targetInstance = Project.activePlasmid().historyTracker; // domain -(list length - 1)) to 0
         
         const instance = fileHistory[fileHistory.length - 1 + targetInstance];
-        plasmidDict[currentlyOpenedPlasmid]["fileSequence"] = instance[0];
-        plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"] = getComplementaryStrand(instance[0]);
+        Project.activePlasmid().sequence = instance[0];
+        Project.activePlasmid().complementarySequence = getComplementaryStrand(instance[0]);
 
-        console.log("navigateFileHistory features before", plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]);
-        console.log("navigateFileHistory o be replaced with", plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]);
-        plasmidDict[currentlyOpenedPlasmid]["fileFeatures"] = JSON.parse(JSON.stringify(instance[1]));
-        console.log("navigateFileHistory features after", plasmidDict[currentlyOpenedPlasmid]["fileFeatures"]);
-
-        plasmidDict[currentlyOpenedPlasmid]["gridStructure"] = checkAnnotationOverlap(plasmidDict[currentlyOpenedPlasmid]["fileFeatures"], currentlyOpenedPlasmid);
-        plasmidDict[currentlyOpenedPlasmid]["sidebarPrimers"] = instance[2];
-        plasmidDict[currentlyOpenedPlasmid]["sidebarTable"] = instance[3];
-        plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = instance[4];
+        Project.activePlasmid().features = JSON.parse(JSON.stringify(instance[1]));
+        
+        Project.activePlasmid().gridStructure = Project.activePlasmid().checkAnnotationOverlap();
+        Project.activePlasmid().primers = instance[2];
+        Project.activePlasmid().sidebarTable = instance[3];
+        Project.activePlasmid().contentGrid = instance[4];
         
         // Update primers
         updateSidebarPrimers();
@@ -62,33 +58,6 @@ document.addEventListener('keydown', function(event) {
 });
 
 
-function saveProgress(plasmidIndex) {
-    const fileSequence = plasmidDict[plasmidIndex]["fileSequence"];
-    const fileFeatures = JSON.parse(JSON.stringify(plasmidDict[plasmidIndex]["fileFeatures"]));
-    const sidebarPrimers = plasmidDict[plasmidIndex]["sidebarPrimers"];
-    const sidebarTable = plasmidDict[plasmidIndex]["sidebarTable"];
-    const contentGrid = plasmidDict[plasmidIndex]["contentGrid"];
-    const listToPush = [fileSequence, fileFeatures, sidebarPrimers, sidebarTable, contentGrid]
-
-    const currentInstance = plasmidDict[plasmidIndex]["fileHistoryTracker"];
-    let currentFileHistory = plasmidDict[plasmidIndex]["fileHistory"]
-    if (currentInstance === 0) {
-        // We're on the newest version, extend the list
-        plasmidDict[plasmidIndex]["fileHistory"].push(listToPush);
-    } else {
-        // We're somewhere in the past, rewrite history
-        let slicedFileHistory = currentFileHistory.slice(0, currentFileHistory.length + currentInstance);
-        slicedFileHistory.push(listToPush)
-        
-        plasmidDict[plasmidIndex]["fileHistory"] = slicedFileHistory;
-    };
-
-    // Once we have 2 instances in the file history, enable the undo button
-    plasmidDict[plasmidIndex]["fileHistoryTracker"] = 0;
-    if (plasmidIndex === currentlyOpenedPlasmid) {refreshUndoRedoButtons()};
-};
-
-
 function switchUndoRedoButtons(direction, targetState) {
     const targetButton = (direction === -1) ? document.getElementById("undo-btns").getElementsByTagName("A")[0] : document.getElementById("undo-btns").getElementsByTagName("A")[1];
     targetButton.setAttribute("onClick", (targetState === "off") ? null: "navigateFileHistory(" + direction + ")");
@@ -101,9 +70,9 @@ function switchUndoRedoButtons(direction, targetState) {
 
 
 function refreshUndoRedoButtons() {
-    const currentInstance = plasmidDict[currentlyOpenedPlasmid]["fileHistoryTracker"];
-    const currentFileHistory = plasmidDict[currentlyOpenedPlasmid]["fileHistory"];
-    console.log("refreshUndoRedoButtons", currentlyOpenedPlasmid, currentInstance);
+    const activePlasmid = Project.activePlasmid();
+    const currentInstance = activePlasmid.historyTracker;
+    const currentFileHistory = activePlasmid.history;
 
     if (currentInstance === 0) {
         // We're on the newest version, disable the redo button
@@ -126,19 +95,18 @@ function refreshUndoRedoButtons() {
 function updateSidebarAndGrid() {
     // Update sidebar table
     const sidebarContent = document.querySelector('.sidebar-content');
-    console.log("sidebarContent", sidebarContent)
     const currSidebarTable = document.getElementById("sidebar-table");
     if (currSidebarTable) {
         currSidebarTable.parentNode.removeChild(currSidebarTable)
     };
-    sidebarContent.after(plasmidDict[currentlyOpenedPlasmid]["sidebarTable"]);
+    sidebarContent.after(Project.activePlasmid().sidebarTable);
     enableSidebarEditing();
     addScrollingEffectToFeatureTable();
     
     // Update content grid
     const contentGridContainer = document.getElementById('file-content');
     contentGridContainer.innerHTML = "";
-    contentGridContainer.appendChild(plasmidDict[currentlyOpenedPlasmid]["contentGrid"]);
+    contentGridContainer.appendChild(Project.activePlasmid().contentGrid);
     addHoverPopupToTable();
     updateAnnotationTrianglesWidth();
 };
@@ -151,8 +119,8 @@ function updateSidebarPrimers() {
 
     let newPrimers = document.createElement("div");
     newPrimers.classList.add("sidebar-content");
-    if (plasmidDict[currentlyOpenedPlasmid]["sidebarPrimers"] !== null) {
-        newPrimers.innerHTML = plasmidDict[currentlyOpenedPlasmid]["sidebarPrimers"];
+    if (Project.activePlasmid().primers !== null) {
+        newPrimers.innerHTML = Project.activePlasmid().primers;
     } else {
         newPrimers.innerHTML = `<h2 id="primers-div-headline">Primers will appear here.</h2>`;
     };
@@ -165,28 +133,21 @@ function updateSidebarPrimers() {
 
 
 function saveSidebarAndGrid() {
-    if (document.getElementById('sidebar-table') && document.getElementById('sequence-grid-' + currentlyOpenedPlasmid)) {
+    if (document.getElementById('sidebar-table') && document.getElementById('sequence-grid-' + Project.activePlasmidIndex)) {
         // Sidebar
-        plasmidDict[currentlyOpenedPlasmid]["sidebarTable"] = document.getElementById('sidebar-table');
-        console.log("Updating save table", currentlyOpenedPlasmid, document.getElementById('sidebar-table').innerHTML.slice(200, 300), plasmidDict[currentlyOpenedPlasmid]["sidebarTable"].innerHTML.slice(200, 300))
+        Project.activePlasmid().sidebarTable = document.getElementById('sidebar-table');
 
         // Content grid
-        plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = document.getElementById('sequence-grid-' + currentlyOpenedPlasmid);
+        Project.activePlasmid().contentGrid = document.getElementById('sequence-grid-' + Project.activePlasmidIndex);
     };
-};
-
-function savePrimers() {
-    console.log("Saving primers", document.querySelector('.sidebar-content'))
-    plasmidDict[currentlyOpenedPlasmid]["sidebarPrimers"] = document.querySelector('.sidebar-content').innerHTML;
 };
 
 
 function switchPlasmidTab(plasmidIndex) {
-    console.log("Switching from", currentlyOpenedPlasmid, "to", plasmidIndex)
     removeAllPlasmidTabDropdownMenus();
     
     // Deselect plasmid tab
-    const previousPlasmidTab = document.getElementById("plasmid-tab-" + currentlyOpenedPlasmid);
+    const previousPlasmidTab = document.getElementById("plasmid-tab-" + Project.activePlasmidIndex);
     previousPlasmidTab.classList.remove("plasmid-tab-selected");
     
     // Select new tab
@@ -197,15 +158,14 @@ function switchPlasmidTab(plasmidIndex) {
     saveSidebarAndGrid();
 
     // Update global tracker
-    currentlyOpenedPlasmid = plasmidIndex;
+    Project.activePlasmidIndex = plasmidIndex;
 
     // Repopulate sidebar and grid
     // Check if the grid needs to be redrawn because the gridWidth has changed
-    const newGridWidth = plasmidDict[plasmidIndex]["contentGrid"].rows[0].cells.length;
+    const newGridWidth = Project.activePlasmid().contentGrid.rows[0].cells.length;
     const remakeContentGrid = gridWidth !== newGridWidth;
-    console.log("switchPlasmidTab", gridWidth, newGridWidth, remakeContentGrid);
     if (remakeContentGrid) {
-        plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = makeContentGrid(currentlyOpenedPlasmid);
+        Project.activePlasmid().makeContentGrid();
     };
     updateSidebarAndGrid();
 
@@ -220,21 +180,22 @@ function switchPlasmidTab(plasmidIndex) {
     updateFooterSelectionInfo();
 
 
-    if (subcloningOriginPlasmidIndex !== null && currentlyOpenedPlasmid === subcloningOriginPlasmidIndex) {
-        console.log("Marked for subcloning on this tab")
-        markSelectionForSubcloning(currentlyOpenedPlasmid, subcloningOriginSpan[0], subcloningOriginSpan[1])
+    const subcloningOriginPlasmidIndex = Project.subcloningOriginIndex;
+    if (subcloningOriginPlasmidIndex !== null && Project.activePlasmidIndex === subcloningOriginPlasmidIndex) {
+        markSelectionForSubcloning(
+            Project.activePlasmidIndex,
+            Project.subcloningOriginSpan[0],
+            Project.subcloningOriginSpan[1]
+        );
     } else {
-        console.log("No marked for subcloning on this tab")
-        clearAllSubcloningSelections(clearVariables = false);
+        clearAllSubcloningSelections(clearVariables=false);
     };
 };
 
 
 function renamePlasmid(plasmidIndex) {
-    console.log("Renaming plasmid", plasmidIndex);
 
     const plasmidTabElement = document.getElementById("plasmid-tab-" + plasmidIndex);
-    console.log(plasmidTabElement)
     const oldHTML = plasmidTabElement.innerHTML;
     const originalText = plasmidTabElement.firstElementChild.textContent;
     const input = document.createElement('input');
@@ -243,7 +204,7 @@ function renamePlasmid(plasmidIndex) {
     input.style.padding = "12px 2px 12px 16px"
     input.type = 'text';
 
-    let fileExtension = plasmidDict[plasmidIndex]["fileExtension"];
+    let fileExtension = Project.getPlasmid(plasmidIndex).extension;
     input.value = originalText.replace(fileExtension, "");
     
     // Save the edited content when Enter is pressed
@@ -251,14 +212,14 @@ function renamePlasmid(plasmidIndex) {
         if (event.key === 'Enter') {
             plasmidTabElement.innerHTML = oldHTML;
             plasmidTabElement.firstElementChild.textContent = (input.value !== "") ? input.value + fileExtension: originalText;
-            plasmidDict[plasmidIndex]["fileName"] = plasmidTabElement.firstElementChild.textContent;
+            Project.getPlasmid(plasmidIndex).name = plasmidTabElement.firstElementChild.textContent;
         };
     });
 
     input.addEventListener('blur', () => {
         plasmidTabElement.innerHTML = oldHTML;
         plasmidTabElement.firstElementChild.textContent = (input.value !== "") ? input.value + fileExtension: originalText;
-        plasmidDict[plasmidIndex]["fileName"] = plasmidTabElement.firstElementChild.textContent;
+        Project.getPlasmid(plasmidIndex).name = plasmidTabElement.firstElementChild.textContent;
     });
     
     plasmidTabElement.innerHTML = '';
@@ -268,18 +229,15 @@ function renamePlasmid(plasmidIndex) {
 
 
 function closePlasmid(plasmidIndex) {
-    console.log("Closing plasmid", plasmidIndex)
-    const entriesList = Object.keys(plasmidDict);
+    const entriesList = Object.keys(Project.plasmids);
     // Check if were deleting the currently displayed plasmid
-    if (currentlyOpenedPlasmid === plasmidIndex) {
+    if (Project.activePlasmidIndex === plasmidIndex) {
         // If we can switch to another tab, do it
         if (entriesList.length > 1) {
             const index = entriesList.indexOf("" + plasmidIndex)
             if (index !== 0) {
-                console.log("Go left", index, entriesList, entriesList[index - 1])
                 switchPlasmidTab(entriesList[index - 1])
             } else {
-                console.log("Go right", index, entriesList, entriesList[index + 1])
                 switchPlasmidTab(entriesList[index + 1])
             };
         // Other wise clear everything
@@ -291,20 +249,19 @@ function closePlasmid(plasmidIndex) {
             // Clear content grid
             const contentGridContainer = document.getElementById('file-content');
             contentGridContainer.innerHTML = "";
-            currentlyOpenedPlasmid = null;
+            Project.activePlasmidIndex = null;
         };
     }
     // Delete plasmid info and tab
-    delete plasmidDict[plasmidIndex];
+    delete Project.plasmids[plasmidIndex];
     const plasmidTabElement = document.getElementById("plasmid-tab-" + plasmidIndex);
     plasmidTabElement.parentNode.removeChild(plasmidTabElement);
 };
 
 
 function closeOtherPlasmids(plasmidIndex) {
-    console.log("Closing other plasmids", plasmidIndex);
     switchPlasmidTab(plasmidIndex);
-    for (const [plasmid, value] of Object.entries(plasmidDict)) {
+    for (const [plasmid, ] of Object.entries(Project.plasmids)) {
         const pIndex = parseInt(plasmid);
         if (pIndex !== plasmidIndex) {closePlasmid(pIndex)}
     };
@@ -312,11 +269,10 @@ function closeOtherPlasmids(plasmidIndex) {
 
 
 function closePlasmidsToTheRight(plasmidIndex) {
-    console.log("Closing plasmids to the right", plasmidIndex);
-    if (plasmidIndex < currentlyOpenedPlasmid) {
+    if (plasmidIndex < Project.activePlasmidIndex) {
         switchPlasmidTab(plasmidIndex);
     };
-    for (const [plasmid, value] of Object.entries(plasmidDict)) {
+    for (const [plasmid, ] of Object.entries(Project.plasmids)) {
         const pIndex = parseInt(plasmid);
         if (pIndex > plasmidIndex) {closePlasmid(pIndex)}
     };
@@ -394,7 +350,6 @@ function positionPlasmidTabDropdownMenu(parentTab, dropdownMenu) {
 
 
 function exportPrimers(client, plasmidIndex) {
-    console.log(client, plasmidIndex)
     exportPrimersDict[client.getAttribute("fileType")](plasmidIndex);
 };
 

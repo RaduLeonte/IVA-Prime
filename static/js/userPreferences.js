@@ -106,19 +106,3 @@ const defaultSetingsDict = {
 for (let setting in defaultSetingsDict) {
     window[setting] = (getUserPreference(setting) !== null) ? getUserPreference(setting) : defaultSetingsDict[setting];
 };
-
-
-/**
- * Plasmid dict. Holds all info about each opened plasmid file.
- */
-// TO DO: Replace with a Project class and populate with Plasmid objects instead of using
-// nested dictionaries. Project class could hold some of the other global variables like
-// currentlyOpenedPlasmid, or subcloning trackers.
-let plasmidDict = {};
-let currentlyOpenedPlasmid = null;
-// Subcloning trackers
-let subcloningOriginPlasmidIndex = null;
-let subcloningOriginSpan = null;
-// Cursor trackers
-let basePosition = -1;
-let hoveringOverSelectionCursor = null;

@@ -1,3 +1,7 @@
+// Cursor trackers
+let basePosition = -1;
+let hoveringOverSelectionCursor = null;
+
 /**
  * Enables the cursor hvoer hint displaying the position in the sequence and table coordinates.
  * 
@@ -8,7 +12,6 @@
 function addHoverPopupToTable() {
   removeAllHoverPopups();
   // Select table
-  //const tableId = "sequence-grid-" + currentlyOpenedPlasmid;
   const tablecontainer = document.getElementById("content");
   const fileContent = document.getElementById("file-content");
   const footerElement = document.getElementById("footer");
@@ -78,10 +81,9 @@ function addHoverPopupToTable() {
         const cellWidth = cellRect.width;
         const tdCursorCoords = Math.min(1, Math.max(0, cursorOffset / cellWidth)) * (targetCellSpan);
         const basePositionOffset = Math.round(tdCursorCoords);
-        //console.log("Table Hover", targetCell, tdCursorCoords, basePositionOffset);
   
         // Check which side of the cell we're closer to
-        const gridStructureLength = plasmidDict[currentlyOpenedPlasmid]["gridStructure"].length
+        const gridStructureLength = Project.activePlasmid().gridStructure.length
         basePosition = Math.floor((targetCellRowIndex + 1) / gridStructureLength) * gridWidth + targetCellCellIndex + 1 + basePositionOffset;
   
         // Update the text content and mvoe the popup into position
@@ -114,7 +116,6 @@ function addHoverPopupToTable() {
       mouseY < tableRect.top ||
       mouseY > tableRect.bottom
     ) {
-      console.log("Mouse out of the table bounds");
       if (popup) {
         popup.style.display = "none";
       };

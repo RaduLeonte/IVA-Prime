@@ -8,10 +8,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.getElementById("content").addEventListener('contextmenu', function (event) {
     event.preventDefault(); // Prevent default right click menu
-    if (plasmidDict[currentlyOpenedPlasmid]["fileSequence"] !== "") {
+    const currPlasmid = Project.activePlasmid();
+    if (currPlasmid.sequence !== "") {
       const contextMenu = document.querySelector('.custom-context-menu');
       contextMenu.style.display = "block";
-      insertionPosition = plasmidDict[currentlyOpenedPlasmid]["basePosition"];
+      insertionPosition = currPlasmid.basePosition;
       handleContextMenu(event.clientX, event.clientY);
     };
   });
@@ -42,43 +43,38 @@ document.addEventListener('DOMContentLoaded', function () {
      * Copy forward strand
      */
     if (menuItemId === 'copy-selection') {
-      console.log('Copyting selection.');
-      copySelectionToClipboard(currentlyOpenedPlasmid, null);
+      copySelectionToClipboard(Project.activePlasmidIndex, null);
     
     /**
      * Copy complementary strand
      */
     } else if (menuItemId === 'copy-complement') {
-      console.log('Copyting selection.');
-      copySelectionToClipboard(currentlyOpenedPlasmid, "complement");
+      copySelectionToClipboard(Project.activePlasmidIndex, "complement");
     
     /**
      * Copy reverse complement
      */
     } else if (menuItemId === 'copy-rev-complement') {
-      console.log('Copyting selection.');
-      copySelectionToClipboard(currentlyOpenedPlasmid, "revcomplement");
+      copySelectionToClipboard(Project.activePlasmidIndex, "revcomplement");
     
     /**
      * Insert here
      */
     } else if (menuItemId === 'insertion') {
-      console.log('Insertion selected');
       showPopupWindow("Insert here:", "Insertion"); // Show the popup window for insertions/replacements
     
     /**
      * Delete selection
      */
     } else if (menuItemId === 'deletion') {
-      console.log('Deletion selected');
-      //createDeletionPrimers(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]); // Create deletion primers
+      const currPlasmid = Project.activePlasmid();
       makePrimers(
-        plasmidDict[currentlyOpenedPlasmid]["fileSequence"],
+        currPlasmid.sequence,
         "",
         "",
         "",
-        plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"],
-        plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"],
+        currPlasmid.selectionStartPos,
+        currPlasmid.selectionEndPos,
         "Deletion",
         false
       );
@@ -88,69 +84,89 @@ document.addEventListener('DOMContentLoaded', function () {
      * Mutate selection
      */
     } else if (menuItemId === 'mutation') {
-      console.log('Mutation selected');
       showPopupWindow("Mutate selection to:", "Mutation"); // Show the popup window for insertions/replacements
     
     /**
      * Mark selection as subcloning target
      */
     } else if (menuItemId === 'mark-for-subcloning') {
-      console.log('Marking selection for subcloning', plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]);
-      markSelectionForSubcloning(currentlyOpenedPlasmid, plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]);
+      const currPlasmid = Project.activePlasmid();
+      markSelectionForSubcloning(
+        Project.activePlasmidIndex,
+        currPlasmid.selectionStartPos,
+        currPlasmid.selectionEndPos
+      );
     
       /**
      * Subclone into selection
      */
     } else if (menuItemId === 'subcloning') {
-      console.log('Subcloning selected');
-      makeSubcloningPrimers(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"],
-                            plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"],
-                            "",
-                            "",
-                            "",
-                            "",
-                            null);
+      const currPlasmid = Project.activePlasmid();
+      makeSubcloningPrimers(
+        currPlasmid.selectionStartPos,
+        currPlasmid.selectionEndPos,
+        "",
+        "",
+        "",
+        "",
+        null
+      );
 
     /**
      * Subclone into selection with insertion
      */
     } else if (menuItemId === 'subcloning-with-insertion') {
-      console.log('Subcloning selected');
       showPopupWindow("Subclone with insertions:", "Subcloning");
 
     /**
      * Begin translation at first ATG
      */
     } else if (menuItemId === 'begin-translation') {
-      console.log('Beginning translation');
+      const currPlasmid = Project.activePlasmid();
       // Start translation logic
-      if (plasmidDict[currentlyOpenedPlasmid]["fileSequence"].slice(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"] - 1, plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"] + 2) === "ATG") { // If we clicked on ATG, start translation there
-        startTranslation(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"]);
+      if (currPlasmid.sequence.slice(currPlasmid.selectionStartPos - 1, currPlasmid.selectionStartPos + 2) === "ATG") { // If we clicked on ATG, start translation there
+        startTranslation(currPlasmid.selectionStartPos);
       } else { // Else search for the first ATG then start there
-        startTranslation(plasmidDict[currentlyOpenedPlasmid]["fileSequence"].indexOf("ATG", plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"]) + 1);
+        startTranslation(currPlasmid.sequence.indexOf("ATG", currPlasmid.selectionStartPos) + 1);
       };
     
     /**
      * Translate current selection
      */
     } else if (menuItemId === 'translate-selection') {
-      const translateSpanStart = Math.min(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]);
-      const translateSpanEnd = Math.max(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]) - 3;
+      const currPlasmid = Project.activePlasmid();
+      const translateSpanStart = Math.min(currPlasmid.selectionStartPos, currPlasmid.selectionEndPos);
+      const translateSpanEnd = Math.max(currPlasmid.selectionStartPos, currPlasmid.selectionEndPos) - 3;
       
-      const targetTable = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
-      const targetGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
-      translateSpan("fwd", translateSpanStart, translateSpanEnd, targetTable, targetGridStructure, currentlyOpenedPlasmid);
+      const targetTable = document.getElementById("sequence-grid-" + Project.activePlasmidIndex);
+      const targetGridStructure = currPlasmid.gridStructure;
+      translateSpan(
+        "fwd",
+        translateSpanStart,
+        translateSpanEnd,
+        targetTable,
+        targetGridStructure,
+        Project.activePlasmidIndex
+      );
     
     /**
      * Reverse ranslate current selection
      */
     } else if (menuItemId === 'translate-selection-rev') {
-      const translateSpanStart = Math.min(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]);
-      const translateSpanEnd = Math.max(plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"], plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"]);
-
-      const targetTable = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
-      const targetGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
-      translateSpan("comp", translateSpanStart + 1, translateSpanEnd - 1, targetTable, targetGridStructure, currentlyOpenedPlasmid);
+      const currPlasmid = Project.activePlasmid();
+      const translateSpanStart = Math.min(currPlasmid.selectionStartPos, currPlasmid.selectionEndPos);
+      const translateSpanEnd = Math.max(currPlasmid.selectionStartPos, currPlasmid.selectionEndPos) - 3;
+      
+      const targetTable = document.getElementById("sequence-grid-" + Project.activePlasmidIndex);
+      const targetGridStructure = currPlasmid.gridStructure;
+      translateSpan(
+        "comp",
+        translateSpanStart + 1,
+        translateSpanEnd - 1,
+        targetTable,
+        targetGridStructure,
+        Project.activePlasmidIndex
+      );
     };
 
     // Hide the menu once done
@@ -163,7 +179,8 @@ document.addEventListener('DOMContentLoaded', function () {
    */
   function handleContextMenu(clientX, clientY) {
     // Record cursor position
-    insertionPosition = plasmidDict[currentlyOpenedPlasmid]["basePosition"];
+    const currPlasmid = Project.activePlasmid()
+    insertionPosition = currPlasmid.basePosition;
   
     // Select all the menu items
     const copySelectionMenuItem = document.getElementById('copy-selection');
@@ -176,8 +193,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const markForSubcloningMenuItem = document.getElementById('mark-for-subcloning');
     const subcloningMenuItem = document.getElementById('subcloning');
-    if (subcloningOriginPlasmidIndex !== null) {
-      subcloningMenuItem.innerHTML = subcloningMenuItem.innerHTML.replace(/\((.*)\)$/, `(${subcloningOriginSpan[0]}-${subcloningOriginSpan[1]} from ${plasmidDict[subcloningOriginPlasmidIndex]["fileName"]})`);
+    if (Project.subcloningOriginIndex !== null) {
+      const subcloningOriginSpan = Project.subcloningOriginSpan;
+      const subcloningOriginIndex = Project.subcloningOriginIndex;
+      subcloningMenuItem.innerHTML = subcloningMenuItem.innerHTML.replace(/\((.*)\)$/, `(${subcloningOriginSpan[0]}-${subcloningOriginSpan[1]} from ${Project.getPlasmid(subcloningOriginIndex).name})`);
     } else {
       subcloningMenuItem.innerHTML = subcloningMenuItem.innerHTML.replace(/\((.*)\)$/, `(<em>no region marked for subcloning</em>)`);
     };
@@ -188,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const translateSelectionRevMenuItem = document.getElementById('translate-selection-rev');
 
     // Enable or disable menu items based on if the user is making a selection
-    if (plasmidDict[currentlyOpenedPlasmid]["selectedText"]) {
+    if (currPlasmid.selectedText) {
       copySelectionMenuItem.classList.remove("disabled");
       copyComplementSelectionMenuItem.classList.remove("disabled");
       copyRevComplementSelectionMenuItem.classList.remove("disabled");
@@ -221,7 +240,7 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     // If there is a selection and a second plasmid has been imported, enable the subcloning option
-    if (subcloningOriginSpan) {
+    if (Project.subcloningOriginSpan) {
       subcloningMenuItem.classList.remove('disabled');
       subcloningWithInsertionMenuItem.classList.remove('disabled');
     } else {
@@ -241,13 +260,11 @@ function positionContextMenu(clientX, clientY) {
   const contextMenu = document.querySelector('.custom-context-menu');
   const sequenceGrid = document.getElementById("content");
   
-  console.log("positionContextMenu", clientX, clientY, sequenceGrid.scrollLeft, sequenceGrid.scrollTop, sequenceGrid.getBoundingClientRect().left, sequenceGrid.getBoundingClientRect().top);
   let posX = clientX + sequenceGrid.scrollLeft - sequenceGrid.getBoundingClientRect().left;
   let posY = clientY + sequenceGrid.scrollTop - sequenceGrid.getBoundingClientRect().top;
 
   const maxX = sequenceGrid.scrollWidth - contextMenu.offsetWidth;
   const maxY = sequenceGrid.scrollHeight - contextMenu.offsetHeight;
-  console.log("positionContextMenu", posX, posY, maxX, maxY, posX > maxX, posY > maxY, sequenceGrid.scrollHeight)
   
   if (posX > maxX) {
     contextMenu.style.left = (posX - contextMenu.offsetWidth) + 'px';

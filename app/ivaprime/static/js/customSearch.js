@@ -62,7 +62,7 @@ function initiateSearchFunctionality() {
  */
 function resetTableCells() {
     // Select table element
-    let table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
+    let table = document.getElementById("sequence-grid-" + Project.activePlasmidIndex);
     
     // Find all highlighted cells (search results and highlighted search result)
     const cellsHighlighted = table.getElementsByClassName("cell-search-result-highlight");
@@ -97,9 +97,9 @@ function searchOccurrences(customSearchInput) {
         // and AA checkbox is checked
         
         // Select the sequence and grid structure of the plasmid of interest
-        let currSequence = plasmidDict[currentlyOpenedPlasmid]["fileSequence"];
-        let currSequenceComp = plasmidDict[currentlyOpenedPlasmid]["fileComplementarySequence"];
-        let currGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
+        const currPlasmid = Project.activePlasmid();
+        let currSequence = currPlasmid.sequence;
+        let currSequenceComp = currPlasmid.complementarySequence;
     
         // If the query is not empty
         if (searchQuery) {
@@ -210,7 +210,7 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, h
             // Get list of translations for the current translation direction
             const translationDirection = (targetStrandIndex === 0) ? "forward": "reverse";
             const dir = (targetStrandIndex === 0) ? 1: -1;
-            const listOfTranslationDicts = plasmidDict[currentlyOpenedPlasmid]["translations"][translationDirection];
+            const listOfTranslationDicts = Project.activePlasmid().translations[translationDirection];
 
             // Iterate over the list of translation dicts and search for occurences of the search query
             let indicesResultsAA = [];
@@ -224,10 +224,8 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, h
                 let index = translationSequence.indexOf(workingQuery);
                 while (index !== -1) {
                     if (dir === 1) {
-                        console.log("highlightOccurences", dir, translationSpan[0] + index*3)
                         indicesResultsAA.push(translationSpan[0] + index*3);
                     } else {
-                        console.log("highlightOccurences", dir, translationSpan[0] - index*3 + 1)
                         indicesResultsAA.push(translationSpan[0] - index*3 + 1);
                     }
                     index = translationSequence.indexOf(workingQuery, index + 1);
@@ -272,8 +270,8 @@ function highlightSpan(targetStrandIndex, spanStart, spanEnd, highlightClass, ba
     endIndex = Math.max(spanStart, spanEnd);
 
     // Select table element
-    let table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
-    const currentGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"]
+    let table = document.getElementById("sequence-grid-" + Project.activePlasmidIndex);
+    const currentGridStructure = Project.activePlasmid().gridStructure;
     if (table) {
         // Iterate over cells in span and add the highlightClass to the cells
         for (let j = startIndex; j < endIndex; j++) {
@@ -298,7 +296,7 @@ function highlightSpan(targetStrandIndex, spanStart, spanEnd, highlightClass, ba
  */
 function scrollToNearestSearchResult() {
     // Select table element
-    let table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
+    let table = document.getElementById("sequence-grid-" + Project.activePlasmidIndex);
 
     /**
      * Check if any search result is currently on screen
@@ -377,7 +375,7 @@ function navigateSearchResults(direction) {
 
         // Get sequence index to scroll to and calculate table coords
         const cellSeqIndex = workingList[resultIndex];
-        const currentGridStructure = plasmidDict[currentlyOpenedPlasmid]["gridStructure"];
+        const currentGridStructure = Project.activePlasmid().gridStructure;
         let tarStrand;
         let tableCoords;
         let highlightStartIndex;
@@ -391,7 +389,7 @@ function navigateSearchResults(direction) {
         };
 
         // Find target cell using table coords
-        const table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
+        const table = document.getElementById("sequence-grid-" + Project.activePlasmidIndex);
         const targetCell = table.rows[tableCoords[0]].cells[tableCoords[1]];
     
         // Highlight search result that has targeCell
@@ -417,7 +415,7 @@ function highlightSearchResult(firstCell) {
 
     // Find all currently active search result cells and convert them back to standard
     // search result cells
-    const table = document.getElementById("sequence-grid-" + currentlyOpenedPlasmid);
+    const table = document.getElementById("sequence-grid-" + Project.activePlasmidIndex);
     const cellsHighlighted = table.getElementsByClassName("cell-search-result-highlight");
     while (cellsHighlighted.length > 0) {
         cellsHighlighted[0].classList.add("cell-search-result");
@@ -438,7 +436,7 @@ function highlightSearchResult(firstCell) {
         currentCell.classList.add("cell-search-result-highlight");
         if (currentCell.nextElementSibling === null) {
             let row = currentCell.parentElement;
-            const currGridStructureLength = plasmidDict[currentlyOpenedPlasmid]["gridStructure"].length;
+            const currGridStructureLength = Project.activePlasmid().gridStructure.length;
             for (j = 0; j < currGridStructureLength; j++) {
                 row = row.nextElementSibling;
             };
@@ -486,7 +484,7 @@ function searchResultCellToTracker(inputCell) {
         cellRow -= 2;
     };
     const cellCol = inputCell.cellIndex;
-    const cellSeqIndex = cellRow/plasmidDict[currentlyOpenedPlasmid]["gridStructure"].length*gridWidth + cellCol;
+    const cellSeqIndex = cellRow/Project.activePlasmid().gridStructure.length*gridWidth + cellCol;
 
     // Iterate over the list of search results and find the serach result with the nearest sequence index
     // to the index of the inputCell

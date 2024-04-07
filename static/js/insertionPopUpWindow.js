@@ -72,6 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Creat primers button
     if (event.target.id === 'create-primers-button') {
       const operationType = event.target.getAttribute("operation-type");
+      const currPlasmid = Project.activePlasmid();
       if (operationType === "Subcloning") {
         // Get the entered values from the text inputs and sanitize them
         // To uppercase, then remove anything that is not ACTG
@@ -85,8 +86,8 @@ document.addEventListener('DOMContentLoaded', function () {
         aminoAcidSequenceInput5 = aminoAcidSequenceInput5.split('').filter(char => allowedLetterCodes.includes(char)).join('');
         aminoAcidSequenceInput3 = aminoAcidSequenceInput3.split('').filter(char => allowedLetterCodes.includes(char)).join('');
 
-        let startPos = plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"];
-        let endPos = plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"];
+        let startPos = currPlasmid.selectionStartPos;
+        let endPos = currPlasmid.selectionEndPos;
         if (!startPos) {startPos = endPos};
         if (!endPos) {endPos = startPos};
 
@@ -120,15 +121,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
         // Call the function to create insertion primers or replacement primers if we have text selected
-        let startPos = plasmidDict[currentlyOpenedPlasmid]["selectionStartPos"];
-        let endPos = plasmidDict[currentlyOpenedPlasmid]["selectionEndPos"];
+        let startPos = currPlasmid.selectionStartPos;
+        let endPos = currPlasmid.selectionEndPos;
         if (!startPos) {startPos = endPos};
         if (!endPos) {endPos = startPos};
 
         const translateFeature = document.getElementById("translate-new-feature-checkbox").checked;;
 
         makePrimers(
-          plasmidDict[currentlyOpenedPlasmid]["fileSequence"],
+          currPlasmid.sequence,
           dnaSequenceInput,
           aminoAcidSequenceInput,
           document.getElementById("targetOrganismSelector").value,
@@ -188,7 +189,6 @@ function showPopupWindow(headerText, operationType) {
   popupWindowHeader.innerText = headerText;
   
   const createPrimersButton = popupWindow.querySelector('#create-primers-button');
-  console.log("showPopUpWindow", createPrimersButton, operationType);
   createPrimersButton.setAttribute("operation-type", operationType);
 
   if (operationType === "Subcloning") {

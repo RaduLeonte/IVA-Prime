@@ -98,25 +98,19 @@ document.addEventListener('DOMContentLoaded', function () {
             // Check if the variable exists
             if (eval(variableName) !== undefined) {
                 // Set the element's value to the variable's value
-                console.log(element, element.tagName, element.type)
                 if (element.type === "text") {
-                    console.log(variableName + " = parseFloat(document.getElementById(\"" + variableName + "SettingsElement\"" +").value)")
                     eval(variableName + " = parseFloat(document.getElementById(\"" + variableName + "SettingsElement\"" + ").value)");
                 } else if (element.tagName === "SELECT") {
-                    console.log("SELECT", element)
                     eval(variableName + " = document.getElementById(\"" + variableName + "SettingsElement\"" + ").value");
                 } else if (element.type === "checkbox") {
                     eval(variableName + " = document.getElementById(\"" + variableName + "SettingsElement\"" + ").checked");
                 } else if (element.type === "number") {
-                    console.log("Updating number");
                     if (variableName === "gridWidth") {
                         const gridWidthMin = 10;
                         if (gridWidth !== parseInt(document.getElementById(variableName + "SettingsElement").value) && gridWidthMin <= parseInt(document.getElementById(variableName + "SettingsElement").value)) {
-                            console.log("Updating new gridwith [old, new]", gridWidth, parseInt(document.getElementById(variableName + "SettingsElement").value))
                             eval(variableName + " = parseInt(document.getElementById(\"" + variableName + "SettingsElement\"" + ").value)");
-                            if (currentlyOpenedPlasmid !== null) {
-                                console.log("Updating, sequence not empty")
-                                plasmidDict[currentlyOpenedPlasmid]["contentGrid"] = makeContentGrid(currentlyOpenedPlasmid);
+                            if (Project.activePlasmidIndex !== null) {
+                                Project.activePlasmid().makeContentGrid();
                                 updateSidebarAndGrid();
                             };
                         };
@@ -130,7 +124,6 @@ document.addEventListener('DOMContentLoaded', function () {
         updateMeltingTemperatureAlgorithmImageSource();
         updateSaltCorrectionImageSource();
         updateCSSTheme();
-        console.log("Updating settings:", JSON.stringify(JSON.parse(getCookieValue('userPreferences') || '{}'), null, 2));
     };
 
 
@@ -229,6 +222,19 @@ function hideAllHideableWindows() {
 
 
 /**
+ * On Esc, hide all windows
+ */
+document.addEventListener('keydown', function(event) {
+    if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        hideAllHideableWindows();
+        hidePopupWindow();
+    };
+});
+
+
+/**
  * Slide settings tab
  */
 function slideTab(e, direction) {
@@ -268,12 +274,10 @@ document.addEventListener('DOMContentLoaded', function () {
             event.stopPropagation();
             event.stopImmediatePropagation()
             if (document.getElementById(windowName).style.display === "none") {
-                //console.log("Hiding windows1")
                 hideAllHideableWindows();
                 showHideableWindow(windowName);
             } else {
                 hideAllHideableWindows();
-                //console.log("Hiding windows2")
             };
         });
 
@@ -285,8 +289,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 const clickX = event.clientX;
                 const clickY = event.clientY;
-                console.log("Hiding windows", clickX, clickY, windowRect.left, windowRect.right, windowRect.top, windowRect.bottom)
-                console.log("Hiding windows", clickX < windowRect.left, clickX > windowRect.right,clickY < windowRect.top, clickY > windowRect.bottom)
                 if (clickX !== 0, clickY !== 0) {
                     if (
                         clickX < windowRect.left || 
@@ -295,7 +297,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         clickY > windowRect.bottom
                     ) {
                         hideHideableWindow(windowName);
-                        console.log("Hiding windows3")
                     };
                 };
             };
