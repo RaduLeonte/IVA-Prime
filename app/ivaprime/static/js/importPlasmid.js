@@ -58,8 +58,8 @@ const Project = new class {
       this.activePlasmidIndex = currIndex;
     };
 
-    this.plasmids[currIndex].createSidebarTable();
     this.plasmids[currIndex].makeContentGrid();
+    this.plasmids[currIndex].createSidebarTable();
 
     //this.plasmids[currIndex].savePrimers();
     this.plasmids[currIndex].saveProgress();
@@ -172,74 +172,142 @@ class Plasmid {
     let currFeatures = this.features;
 
     // Set table headers
-    const sidebarTable = document.createElement("TABLE");
-    sidebarTable.id = "sidebar-table";
-    sidebarTable.classList.add("sidebar-table");
-    sidebarTable.innerHTML = `
-        <tr>
-            <th class = 'wrap-text'>Type</th>
-            <th class = 'wrap-text'>Label</th>
-            <th class = 'wrap-text'>Span</th>
-            <th class = 'wrap-text'>Note</th>
-        </tr>
-    `;
+    const sidebarDiv = document.createElement("DIV");
+    sidebarDiv.id = "sidebar-table";
+    sidebarDiv.classList.add("sidebar-table");
 
     // Iterate over the features and populate the table
     for (const featureID in currFeatures) {
       const feature = currFeatures[featureID];
-      if (!featureID.includes("LOCUS") && !feature.type.includes("source")) { // Skip LOCUS and source
+      // Skip LOCUS and source
+      if (!featureID.includes("LOCUS") && !feature.type.includes("source")) {
 
         // Create a new table row
-        let row = document.createElement('tr');
-        row.id = featureID;
-    
-        // Add feature type
-        const typeCell = document.createElement('td');
-        typeCell.textContent = feature.type || '';
-        typeCell.className = 'wrap-text';
-        row.appendChild(typeCell);
-    
-        // Add feature label
-        const labelCell = document.createElement('td');
-        labelCell.textContent = feature.label || '';
-        labelCell.className = 'wrap-text';
-        labelCell.id = "sidebar-label";
-        labelCell.classList.add("editable");
-        row.appendChild(labelCell);
-    
-        // Add feature range
-        const rangeCell = document.createElement('td');
-        rangeCell.textContent = feature.span
-        rangeCell.className = 'wrap-text';
-        row.appendChild(rangeCell);
-    
-        // Add feature note
-        const noteCell = document.createElement('td');
-        if (feature.note && feature.note.includes("note: ")) {
-          const keyValuePairs = feature.note.split(/\s*(?::| )\s*/);
-          const noteDict = {};
-          for (let i = 0; i < keyValuePairs.length; i += 2) {
-            const key = keyValuePairs[i];
-            const value = keyValuePairs[i + 1];
-            if (key && value) {
-              noteDict[key] = value;
-            };
+        const featureDiv = document.createElement("DIV");
+        featureDiv.id = featureID;
+
+        const collapsibleHeader = document.createElement("BUTTON");
+        collapsibleHeader.type = "button";
+        collapsibleHeader.classList.add("collapsible-header");
+        collapsibleHeader.style.backgroundColor = feature.ivaprimeColor;
+        //collapsibleHeader.style.borderLeft = `5px solid ${feature.ivaprimeColor}`;
+        collapsibleHeader.innerText = feature.label;
+
+        const collapsibleContent = document.createElement("DIV");
+        collapsibleContent.classList.add("collapsible-content");
+
+        /**
+         * Label
+         */
+        const labelDiv = document.createElement("DIV");
+        labelDiv.classList.add("collapsible-content-hgroup");
+        labelDiv.innerHTML = `
+        <label>Label</label>
+        <input id="labelInput" value="${feature.label}">
+        `;
+        collapsibleContent.appendChild(labelDiv);
+
+
+        /**
+         * Span
+         */
+        const spanDiv = document.createElement("DIV");
+        spanDiv.classList.add("collapsible-content-hgroup");
+        spanDiv.innerHTML = `
+        <label>Span</label>
+        <input id="spanInput" value="${feature.span}">
+        `;
+        collapsibleContent.appendChild(spanDiv);
+
+
+        /**
+         * Feature type
+         */
+        const typeDiv = document.createElement("DIV");
+        typeDiv.classList.add("collapsible-content-hgroup");
+        typeDiv.innerHTML = `
+        <label>Feature type</label>
+        <select id="typeSelect" onchange="
+        if (this.options[this.selectedIndex].value=='customOption') {
+          toggleInputInSelect(this, this.nextElementSibling);
+          this.selectedIndex='0'}
+          ">
+        </select><input id="typeInput" name="browser" style="display: none;" disabled="disabled" onblur="
+        if (this.value === '') {
+          toggleInputInSelect(this, this.previousElementSibling);}
+        ">
+        `;
+        const defaultTypes = [
+          "CDS",
+          "misc_feature",
+          "primer_bind",
+          "promoter",
+          "protein_bind",
+          "source",
+          "terminator"
+        ];
+        const select = typeDiv.getElementsByTagName("select")[0];
+        for (let i = 0; i < defaultTypes.length; i++) {
+          let newOption = new Option(defaultTypes[i], defaultTypes[i]);
+          if (defaultTypes[i] === feature.type) {
+            newOption.setAttribute('selected','selected');
           };
-          noteCell.textContent = noteDict["note"];
-        } else {
-          noteCell.textContent = feature.note || '';
+          select.add(newOption, undefined);
         };
-        noteCell.className = 'wrap-text';
-        noteCell.id = "sidebar-note";
-        noteCell.classList.add("editable");
-        row.appendChild(noteCell);
-    
-        // Append the row to the table
-        sidebarTable.appendChild(row);
+        if (!defaultTypes.includes(feature.type)) {
+          let newOption = new Option(feature.type, feature.type);
+          newOption.setAttribute('selected','selected');
+          select.add(newOption, undefined);
+        };
+        const customOption = new Option("Custom type", "customOption");
+        select.add(customOption, undefined);
+
+        collapsibleContent.appendChild(typeDiv);
+
+
+        /**
+         * Note
+         */
+        const noteDiv = document.createElement("DIV");
+        noteDiv.classList.add("collapsible-content-hgroup");
+        noteDiv.innerHTML = `
+        <label>Note</label>
+        <textarea id="noteTextArea" spellcheck="false">${feature.note}</textarea>
+        `;
+        collapsibleContent.appendChild(noteDiv);
+
+        /**
+         * Update info button
+         */
+        const updaetButtonDiv = document.createElement("DIV");
+        updaetButtonDiv.classList.add("collapsible-content-hgroup");
+        updaetButtonDiv.innerHTML = `
+        <button style="background-color: ${feature.ivaprimeColor}" onClick="updateFeatureProperties(this)">Update</button>
+        `;
+        collapsibleContent.appendChild(updaetButtonDiv);
+
+
+        featureDiv.appendChild(collapsibleHeader);
+        featureDiv.appendChild(collapsibleContent);
+        sidebarDiv.appendChild(featureDiv);
+
+
+
+
+        collapsibleHeader.addEventListener("click", function() {
+          this.classList.toggle("collapsible-header-active");
+          const content = this.nextElementSibling;
+          content.style.display = (content.style.display === "block") ? "none": "block";
+          content.style.maxHeight = (content.style.maxHeight) ? null: "none"; 
+
+          if ((content.style.display === "block")) {
+            scrollToAnnotation(this.parentElement.id);
+          };
+        });
       };
     };
 
-    this.sidebarTable = sidebarTable;
+    this.sidebarTable = sidebarDiv;
   };
 
 
@@ -447,6 +515,7 @@ class Plasmid {
           annotColor = window.getComputedStyle(document.documentElement).getPropertyValue(`--${annotationColorVariable}`).trim();;
         };
 
+        value["ivaprimeColor"] = annotColor;
         if (!value["color"]) {
           value["color"] = annotColor;
         };
@@ -566,9 +635,48 @@ class Plasmid {
   };
 
 };
-//// Cursor trackers
-//let basePosition = -1;
-//let hoveringOverSelectionCursor = null;
+
+
+/**
+ * 
+ * @param {*} hideObj 
+ * @param {*} showObj 
+ */
+function toggleInputInSelect(hideObj, showObj){
+  console.log(hideObj)
+  hideObj.disabled = true;		
+  hideObj.style.display = 'none';
+  console.log(showObj)
+  showObj.disabled = false;	
+  showObj.style.display = 'inline';
+  showObj.focus();
+};
+
+
+/**
+ * 
+ * @param {*} btn 
+ */
+function updateFeatureProperties(btn) {
+  // Current file features
+  const currPlasmid = Project.activePlasmid();
+  const parentDiv = btn.parentElement.parentElement;
+  const featureID = parentDiv.parentElement.id;
+  
+  console.log(parentDiv.querySelectorAll("#typeSelect"))
+  console.log(parentDiv.querySelectorAll("#typeSelect").disabled)
+  console.log(parentDiv.querySelectorAll("#typeInput"))
+  Project.activePlasmid().features[featureID].label = parentDiv.querySelectorAll("#labelInput")[0].value;
+  Project.activePlasmid().features[featureID].span = parentDiv.querySelectorAll("#spanInput")[0].value;
+  Project.activePlasmid().features[featureID].type = (parentDiv.querySelectorAll("#typeSelect")[0].disabled === false) ? parentDiv.querySelectorAll("#typeSelect")[0].value: parentDiv.querySelectorAll("#typeInput")[0].value;
+  Project.activePlasmid().features[featureID].note = parentDiv.querySelectorAll("#noteTextArea")[0].value;
+
+  // Refresh sidebar table
+  currPlasmid.makeContentGrid();
+  currPlasmid.createSidebarTable();
+
+  updateSidebarAndGrid();
+};
 
 
 /**

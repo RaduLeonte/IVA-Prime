@@ -244,6 +244,7 @@ function addCellSelection(sequenceGridTable, plasmidIndex) {
       !event.target.closest('#sequence-grid-' + currActivePlasmidIndex)
       && !event.target.closest('.popup-window')
       && event.target.tagName !== "A"
+      && !event.target.className.includes("collapsible-header")
     ) {
       clearSelection(currActivePlasmidIndex, true);
       clearSelectionCursors(currActivePlasmidIndex);
@@ -320,6 +321,7 @@ function getSelectedText(plasmidIndex) {
 * Removes the selected appearance from all the currently selected cells.
 */
 function clearSelection(plasmidIndex, clearingGlobalVars) {
+  console.log("clearSelection", plasmidIndex, clearingGlobalVars)
   clearSelectionCursors(plasmidIndex);
   // Find all selected cells and iterate over them to remove the selected class
   const selectedCells = document.getElementById("sequence-grid-" + plasmidIndex).querySelectorAll('.selected-cell');
@@ -340,54 +342,44 @@ function clearSelection(plasmidIndex, clearingGlobalVars) {
  * Select text from feature span.
  */
 function selectBySpan(inputSpan) {
-  const currPlasmid = Project.activePlasmid();
+  console.log("selectBySpan inputSpan", inputSpan);
+
   const activePlasmidIndex = Project.activePlasmidIndex
-  let currGridStructure = currPlasmid.gridStructure;
+  let currGridStructure = Project.activePlasmid().gridStructure;
   const sequenceGridTable = document.getElementById('sequence-grid-' + activePlasmidIndex);
 
-  const spanList = removeNonNumeric(inputSpan);
-  const range = spanList.split("..").map(Number);
+  const range = removeNonNumeric(inputSpan).split("..").map(parseFloat);
+
+  const spanStart = Math.min(range[0], range[1]);
+  const spanEnd = Math.max(range[0], range[1]);
 
   if (!inputSpan.includes("complement")) {
-    currPlasmid.selectionStartPos = range[0];
-    currPlasmid.selectionEndPos = range[1] + 1;
+    Project.activePlasmid().selectionStartPos = range[0];
+    Project.activePlasmid().selectionEndPos = range[1] + 1;
   } else {
-    currPlasmid.selectionEndPos = range[0];
-    currPlasmid.selectionStartPos = range[1] + 1;
+    Project.activePlasmid().selectionEndPos = range[0];
+    Project.activePlasmid().selectionStartPos = range[1] + 1;
   };
 
-  clearSelection(activePlasmidIndex, false);
+  clearSelection(
+    activePlasmidIndex,
+    false
+  );
   setSelectionCursors(
     activePlasmidIndex,
-    currPlasmid.selectionStartPos,
-    currPlasmid.selectionEndPos
+    spanStart,
+    spanEnd + 1
   );
 
-  const starCellCoords = seqIndexToCoords(range[0], 0, currGridStructure);
-  const endCellCoords = seqIndexToCoords(range[1], 0, currGridStructure);
-
-  const startRowIndex = starCellCoords[0];
-  const startCellIndex = starCellCoords[1];
-  const endRowIndex = endCellCoords[0];
-  const endCellIndex = endCellCoords[1];
-
-
-  // Iterate over cells between start and end cells and select them
-  for (let i = startRowIndex; i <= endRowIndex; i++) {
-    // Current row
-    const row = sequenceGridTable.rows[i];
-    const start = (i === startRowIndex) ? startCellIndex : 0;
-    const end = (i === endRowIndex) ? endCellIndex : row.cells.length - 1;
-    // Iterate over all cells in the row
-    for (let j = start; j <= end; j++) {
-      const selectedCell = row.cells[j];
-      if (selectedCell.id === "Forward Strand" && selectedCell.innerText.trim() !== "") {
-        selectedCell.classList.add('selected-cell');
-      };
-    };
+  console.log("selectBySpan", spanStart, spanEnd);
+  for (let i = spanStart; i <= spanEnd; i++) {
+    const [row, col] = seqIndexToCoords(i, 0, currGridStructure);
+    const selectedCell = sequenceGridTable.rows[row].cells[col];
+    //console.log(selectedCell)
+    selectedCell.classList.add('selected-cell');
   };
 
-  currPlasmid.selectedText = getSelectedText(activePlasmidIndex);
+  Project.activePlasmid().selectedText = getSelectedText(activePlasmidIndex);
   updateFooterSelectionInfo()
 };
 

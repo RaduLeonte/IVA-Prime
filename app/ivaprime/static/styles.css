@@ -331,6 +331,79 @@ body {
     margin-bottom: 0;
 }
 
+.collapsible-header {
+  cursor: pointer;
+  padding: 10px;
+  margin: 2px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 16px;
+}
+
+.collapsible-header:hover {
+  cursor: pointer;
+  padding: 10px;
+  margin: 2px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 16px;
+}
+
+.collapsible-header:after {
+  content: '\002B';
+  font-size: 14px;
+  font-weight: bold;
+  color: black;
+  float: left;
+  margin-right: 12px;
+}
+
+.collapsible-header-active:after {
+  content: "\2212";
+}
+
+.collapsible-content {
+  padding: 12px;
+  display: none;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease-out;
+}
+
+.collapsible-content-hgroup {
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.collapsible-content-hgroup label {
+  font-weight: bold;
+}
+
+input, select, textarea {
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+} 
+
+.collapsible-content-hgroup input, select, textarea {
+  width: 60%;
+  padding: 5px;
+}
+
+.collapsible-content-hgroup textarea {
+  height: 150px;
+  resize: vertical;
+}
+
+
+
+
 /* Force text to wrap*/
 .wrap-text {
   word-wrap: break-word;
