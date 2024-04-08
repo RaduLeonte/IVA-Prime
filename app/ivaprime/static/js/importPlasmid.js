@@ -202,8 +202,14 @@ class Plasmid {
         const labelDiv = document.createElement("DIV");
         labelDiv.classList.add("collapsible-content-hgroup");
         labelDiv.innerHTML = `
-        <label>Label</label>
-        <input id="labelInput" value="${feature.label}">
+        <label class="collapsible-content-hgroup-label">Label</label>
+        <div class="collapsible-content-hgroup-input">
+          <input id="labelInput" value="${feature.label}">
+          <div class="clr-field" style="color: ${feature.ivaprimeColor};">
+            <button type="button" aria-labelledby="clr-open-label"></button>
+            <input id="colorInput" type="text" class="coloris" data-coloris value="${feature.ivaprimeColor}"></div>
+          </div>
+        </div>
         `;
         collapsibleContent.appendChild(labelDiv);
 
@@ -212,12 +218,59 @@ class Plasmid {
          * Span
          */
         const spanDiv = document.createElement("DIV");
+        const [spanStart, spanEnd] = removeNonNumeric(feature.span).split("..").map(Number);
+        const spanEndMax = Project.activePlasmid().sequence.length;
+        console.log(feature.span, [spanStart, spanEnd])
         spanDiv.classList.add("collapsible-content-hgroup");
         spanDiv.innerHTML = `
-        <label>Span</label>
-        <input id="spanInput" value="${feature.span}">
+        <label class="collapsible-content-hgroup-label">Span</label>
+        <div class="collapsible-content-hgroup-input">
+          <input type="number" id="spanStartInput" min="1" max="${spanEndMax}" value="${spanStart}">
+          <span> .. </span> 
+          <input type="number" id="spanEndInput" min="1" max="${spanEndMax}" value="${spanEnd}">
+        </div>
         `;
         collapsibleContent.appendChild(spanDiv);
+
+
+        /**
+         * Direction
+         */
+        const directionDiv = document.createElement("DIV");
+        directionDiv.classList.add("collapsible-content-hgroup");
+        directionDiv.innerHTML = `
+        <label class="collapsible-content-hgroup-label">Direction</label>
+        <div class="collapsible-content-hgroup-input">
+          <select id="directionSelect">
+            <option value="fwd">Forward</option>
+            <option value="rev">Reverse</option>
+          </select>
+        </div>`;
+        const options = directionDiv.getElementsByTagName("option");
+        const featureDirection = (!feature.span.includes("complement")) ? "fwd": "rev";
+        for (let i = 0; i < options.length; i++) {
+          const option = options[i];
+          if (option.value === featureDirection) {
+            option.setAttribute('selected','selected');
+          }
+        };
+        
+        collapsibleContent.appendChild(directionDiv);
+
+
+        /**
+         * Translate feature
+         */
+        const translateDiv = document.createElement("DIV");
+        translateDiv.classList.add("collapsible-content-hgroup");
+        translateDiv.innerHTML = `
+        <label class="collapsible-content-hgroup-label">Translate</label>
+        <div class="collapsible-content-hgroup-input">
+        <input type="checkbox" id="translateCheckbox" checked="${(feature.translation === "" || feature.translation === null || (typeof feature.translation) === 'undefined') ? false: true}">
+        </div>
+        `;
+        translateDiv.getElementsByTagName("input")[0].checked = (feature.translation === "" || feature.translation === null  || (typeof feature.translation) === 'undefined') ? false: true;
+        collapsibleContent.appendChild(translateDiv);
 
 
         /**
@@ -226,16 +279,18 @@ class Plasmid {
         const typeDiv = document.createElement("DIV");
         typeDiv.classList.add("collapsible-content-hgroup");
         typeDiv.innerHTML = `
-        <label>Feature type</label>
-        <select id="typeSelect" onchange="
-        if (this.options[this.selectedIndex].value=='customOption') {
-          toggleInputInSelect(this, this.nextElementSibling);
-          this.selectedIndex='0'}
+        <label class="collapsible-content-hgroup-label">Feature type</label>
+        <div class="collapsible-content-hgroup-input">
+          <select id="typeSelect" onchange="
+          if (this.options[this.selectedIndex].value=='customOption') {
+            toggleInputInSelect(this, this.nextElementSibling);
+            this.selectedIndex='0'}
+            ">
+          </select><input id="typeInput" name="browser" style="display: none;" disabled="disabled" onblur="
+          if (this.value === '') {
+            toggleInputInSelect(this, this.previousElementSibling);}
           ">
-        </select><input id="typeInput" name="browser" style="display: none;" disabled="disabled" onblur="
-        if (this.value === '') {
-          toggleInputInSelect(this, this.previousElementSibling);}
-        ">
+        </div>
         `;
         const defaultTypes = [
           "CDS",
@@ -271,8 +326,10 @@ class Plasmid {
         const noteDiv = document.createElement("DIV");
         noteDiv.classList.add("collapsible-content-hgroup");
         noteDiv.innerHTML = `
-        <label>Note</label>
-        <textarea id="noteTextArea" spellcheck="false">${feature.note}</textarea>
+        <label class="collapsible-content-hgroup-label">Note</label>
+        <div class="collapsible-content-hgroup-input">
+          <textarea id="noteTextArea" spellcheck="false">${feature.note}</textarea>
+        </div>
         `;
         collapsibleContent.appendChild(noteDiv);
 
@@ -282,7 +339,7 @@ class Plasmid {
         const updaetButtonDiv = document.createElement("DIV");
         updaetButtonDiv.classList.add("collapsible-content-hgroup");
         updaetButtonDiv.innerHTML = `
-        <button style="background-color: ${feature.ivaprimeColor}" onClick="updateFeatureProperties(this)">Update</button>
+        <button class="update-feature-btn" style="background-color: ${feature.ivaprimeColor}" onClick="updateFeatureProperties(this)">Update</button>
         `;
         collapsibleContent.appendChild(updaetButtonDiv);
 
@@ -292,17 +349,8 @@ class Plasmid {
         sidebarDiv.appendChild(featureDiv);
 
 
-
-
         collapsibleHeader.addEventListener("click", function() {
-          this.classList.toggle("collapsible-header-active");
-          const content = this.nextElementSibling;
-          content.style.display = (content.style.display === "block") ? "none": "block";
-          content.style.maxHeight = (content.style.maxHeight) ? null: "none"; 
-
-          if ((content.style.display === "block")) {
-            scrollToAnnotation(this.parentElement.id);
-          };
+          expandCollapsibleHeader(this);
         });
       };
     };
@@ -507,18 +555,18 @@ class Plasmid {
         const annotationColorVariable = this.index + key + "-annotation-color";
 
         // If color not in list, add generate one and add it
-        let annotColor = generateRandomUniqueColor(recentColor);
-        recentColor = annotColor; // Store the colour history
-        if (globalColors.indexOf("--" + annotationColorVariable) === -1) {
-          document.documentElement.style.setProperty(`--${annotationColorVariable}`, annotColor);
+        let annotColor;
+        if (!value["ivaprimeColor"]) {
+          annotColor = generateRandomUniqueColor(recentColor);
+          recentColor = annotColor;
+          value["ivaprimeColor"] = annotColor;
+          value["color"] = annotColor;
         } else {
-          annotColor = window.getComputedStyle(document.documentElement).getPropertyValue(`--${annotationColorVariable}`).trim();;
-        };
-
-        value["ivaprimeColor"] = annotColor;
-        if (!value["color"]) {
+          annotColor = value["ivaprimeColor"];
           value["color"] = annotColor;
         };
+        
+        document.documentElement.style.setProperty(`--${annotationColorVariable}`, annotColor);
 
         // Make the annotation at the specified indices
         makeAnnotation(rangeStart - 1, rangeEnd - 1, annotText, key, annotationColorVariable, sequenceGrid, currGridStructure);
@@ -639,6 +687,21 @@ class Plasmid {
 
 /**
  * 
+ */
+function expandCollapsibleHeader(targetHeader) {
+  targetHeader.classList.toggle("collapsible-header-active");
+  const content = targetHeader.nextElementSibling;
+  content.style.display = (content.style.display === "block") ? "none": "block";
+  content.style.maxHeight = (content.style.maxHeight) ? null: "none"; 
+
+  if ((content.style.display === "block")) {
+    scrollToAnnotation(targetHeader.parentElement.id);
+  };
+};
+
+
+/**
+ * 
  * @param {*} hideObj 
  * @param {*} showObj 
  */
@@ -663,12 +726,17 @@ function updateFeatureProperties(btn) {
   const parentDiv = btn.parentElement.parentElement;
   const featureID = parentDiv.parentElement.id;
   
-  console.log(parentDiv.querySelectorAll("#typeSelect"))
-  console.log(parentDiv.querySelectorAll("#typeSelect").disabled)
-  console.log(parentDiv.querySelectorAll("#typeInput"))
+
   Project.activePlasmid().features[featureID].label = parentDiv.querySelectorAll("#labelInput")[0].value;
+
+  console.log("updateFeatureProperties", parentDiv.querySelectorAll("#colorInput")[0].value)
+  Project.activePlasmid().features[featureID].color = parentDiv.querySelectorAll("#colorInput")[0].value;
+  Project.activePlasmid().features[featureID].ivaprimeColor = parentDiv.querySelectorAll("#colorInput")[0].value;
+
   Project.activePlasmid().features[featureID].span = parentDiv.querySelectorAll("#spanInput")[0].value;
+
   Project.activePlasmid().features[featureID].type = (parentDiv.querySelectorAll("#typeSelect")[0].disabled === false) ? parentDiv.querySelectorAll("#typeSelect")[0].value: parentDiv.querySelectorAll("#typeInput")[0].value;
+  
   Project.activePlasmid().features[featureID].note = parentDiv.querySelectorAll("#noteTextArea")[0].value;
 
   // Refresh sidebar table
@@ -2134,10 +2202,19 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, annotationColor
 /**
  * Generates a random color that was not used recently.
  */
+const defaultAnnotationColors = [
+  "#FFB6C1",
+  "#FFDAB9",
+  "#FFA07A",
+  "#FFC0CB",
+  "#87CEFA",
+  "#98FB98",
+  "#FF69B4",
+  "#90EE90"
+];
 function generateRandomUniqueColor(recentColor="") {
-  const baseColors = ["#FFB6C1", "#FFDAB9", "#FFA07A", "#FFC0CB", "#87CEFA", "#98FB98", "#FF69B4", "#90EE90"];
 
-  const remainingColors = baseColors.filter(color => color !== recentColor);
+  const remainingColors = defaultAnnotationColors.filter(color => color !== recentColor);
   const randomIndex = Math.floor(Math.random() * remainingColors.length);
   const randomColor = remainingColors[randomIndex];
 
@@ -2422,3 +2499,16 @@ function cleanLostCells(targetTable) {
     };
   });
 };
+
+
+/**
+ * Configure Coloris color picker
+ */
+Coloris({
+  el: '.coloris',
+  wrap: true,
+  theme: 'polaroid',
+  swatches: defaultAnnotationColors,
+  closeButton: true,
+  closeLabel: 'Save',
+});

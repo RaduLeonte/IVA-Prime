@@ -70,7 +70,7 @@ function displayPrimers(primersType, primersDict) {
         copyPrimerSequenceButton.href = "#";
         copyPrimerSequenceButton.setAttribute("onClick", "copyPrimerSequenceToClipboard(this)");
         copyPrimerSequenceButton.classList.add("copy-primer-btn");
-        copyPrimerSequenceButton.style.backgroundImage = "url('/static/copy_icon.svg')";
+        copyPrimerSequenceButton.style.backgroundImage = "url('/static/assets/icons/copy_icon.svg')";
         primerSequence.appendChild(copyPrimerSequenceButton);
 
         // Primer info div

@@ -8,9 +8,14 @@
         <head>
             <title>IVA Prime</title>
             <!-- Styling -->
-            <link rel="icon" href="{% static 'iva-prime.ico' %}">
+            <link rel="icon" href="{% static 'assets/iva-prime.ico' %}">
             <link href="https://fonts.googleapis.com/css2?family=Anonymous+Pro&display=swap" rel="stylesheet">
+            <link rel="stylesheet" type="text/css" href="{% static 'coloris.css' %}">
             <link rel="stylesheet" type="text/css" href="{% static 'styles.css' %}">
+            <!-- Libraries -->
+            <script src="{% static 'js/libraries/html-docx.js' %}"></script>
+            <script src="{% static 'js/libraries/xlsx-populate.min.js' %}"></script>
+            <script src="{% static 'js/libraries/coloris.js' %}"></script>
             <!-- Scripts -->
             <script src="{% static 'js/importPlasmid.js' %}"></script>
             <script src="{% static 'js/userPreferences.js' %}"></script>
@@ -27,9 +32,6 @@
             <script src="{% static 'js/hideableWindows.js' %}"></script>
             <script src="{% static 'js/editFeatures.js' %}"></script>
             <script src="{% static 'js/plasmidTabs.js' %}"></script>
-            <!-- Libraries -->
-            <script src="{% static 'js/libraries/html-docx.js' %}"></script>
-            <script src="{% static 'js/libraries/xlsx-populate.min.js' %}"></script>
         </head>
         <body ondragover="importDragOver(event)" ondragleave="importDragLeave(event)" ondrop="importDrop(event)">
             <header>
@@ -54,12 +56,12 @@
                     <!-- Right side header buttons -->
                     <ul id="header-list-right" class="horizontal-list">
                         <li id="undo-btns">
-                            <a href="#" onClick="null" class="svg-icon-btn-a svg-icon-btn-a-disabled" style="background-image: url('/static/undo_icon.svg')"></a>
-                            <a href="#" onClick="null" class="svg-icon-btn-a svg-icon-btn-a-disabled" style="background-image: url('/static/undo_icon.svg'); transform: scale(-1,1)"></a>
+                            <a href="#" onClick="null" class="svg-icon-btn-a svg-icon-btn-a-disabled" style="background-image: url('/static/assets/icons/undo_icon.svg')"></a>
+                            <a href="#" onClick="null" class="svg-icon-btn-a svg-icon-btn-a-disabled" style="background-image: url('/static/assets/icons/undo_icon.svg'); transform: scale(-1,1)"></a>
                         </li>
                         <li id="tm-calc-btn"><a href="#">TM Calculator</a></li>
-                        <li id="settings-btn"><a href="#" class="svg-icon-btn-a" style="background-image: url('/static/settings_icon.svg')"></a></li>
-                        <li id="info-btn"><a href="#" class="svg-icon-btn-a" style="background-image: url('/static/info_icon.svg')"></a></li>
+                        <li id="settings-btn"><a href="#" class="svg-icon-btn-a" style="background-image: url('/static/assets/icons/settings_icon.svg')"></a></li>
+                        <li id="info-btn"><a href="#" class="svg-icon-btn-a" style="background-image: url('/static/assets/icons/info_icon.svg')"></a></li>
                     </ul>
                 </div>
             </header>
@@ -138,7 +140,7 @@
                                         <option value="oligoCalc">Basic (Oligo Calc)</option>
                                     </select>
                                 </div>
-                                <img class="equation-image" id ="meltingTempAlgorithmEquationImage" src="{% static 'nnSantaLucia equation.png' %}" alt="Melting temperature equation." style="max-width: 100%; height: 50px;">
+                                <img class="equation-image" id ="meltingTempAlgorithmEquationImage" src="{% static 'assets/equations/nnSantaLucia equation.png' %}" alt="Melting temperature equation." style="max-width: 100%; height: 50px;">
             
                                 <!-- Salt correction -->
                                 <h4>Salt Correction</h4>            
@@ -153,7 +155,7 @@
                                         <option value="Owczarzy">Owczarzy</option>
                                     </select>
                                 </div>
-                                <img class="equation-image" id ="saltCorrectionEquationImage" src="{% static 'SchildkrautLifson equation.png' %}" alt="Salt correction equation." style="max-width: 100%; height: 30px;">
+                                <img class="equation-image" id ="saltCorrectionEquationImage" src="{% static 'assets/equations/SchildkrautLifson equation.png' %}" alt="Salt correction equation." style="max-width: 100%; height: 30px;">
                                 
                                 <!-- DMSO correction -->
                                 <h4>DMSO Correction</h4> 
@@ -161,7 +163,7 @@
                                     <label for="dmsoConcSettingsElement">DMSO concentration [M]:</label>
                                     <input type="text" id="dmsoConcSettingsElement" name="dmsoConcSettingsElement">
                                 </div>
-                                <img class="equation-image" id ="dmsoCorrectionEquationImage" src="{% static 'DMSO equation.png' %}" alt="DMSO correction equation." style="max-width: 100%; height: 25px;">
+                                <img class="equation-image" id ="dmsoCorrectionEquationImage" src="{% static 'assets/equations/DMSO equation.png' %}" alt="DMSO correction equation." style="max-width: 100%; height: 25px;">
                             </div>
             
                             <div class="settings-group">
@@ -214,10 +216,10 @@
                         <h3>Insertions</h3>
                         <ol>
                             <li>Left click at the position you would like to insert a sequence.
-                                <img src="{% static 'insertion position selection.gif' %}">
+                                <img src="{% static 'assets/gifs/insertion position selection.gif' %}">
                             </li>
                             <li>Right-click to open the context menu and select <span class="info-window-menu-btn">Insert here</span>.
-                                <img src="{% static 'insertion menu item selection.gif' %}">
+                                <img src="{% static 'assets/gifs/insertion menu item selection.gif' %}">
                             </li>
                             <li>Enter a DNA or amino acid sequence to insert.</li>
                             <li>Select a target organism for codon optimisation (Escherichia coli, human, yeast etc.).</li>
@@ -227,21 +229,21 @@
                         <h3>Deletions</h3>
                         <ol>
                             <li>Select a region to be deleted.
-                                <img src="{% static 'deletion selection.gif' %}" alt="Selecting region to be deleted.">
+                                <img src="{% static 'assets/gifs/deletion selection.gif' %}" alt="Selecting region to be deleted.">
                             </li>
                             <li>Right-click to open the context menu and select <span class="info-window-menu-btn">Delete selection</span>.
-                                <img src="{% static 'deletion menu item selection.gif' %}">
+                                <img src="{% static 'assets/gifs/deletion menu item selection.gif' %}">
                             </li>
                         </ol>
 
                         <h3>Mutations & Replacements</h3>
                         <ol>
                             <li>Select a region to be mutated/replaced.
-                                <img src="{% static 'mutation selection.gif' %}">
+                                <img src="{% static 'assets/gifs/mutation selection.gif' %}">
                             </li>
                             <li>Right-click to open the context menu and select <span class="info-window-menu-btn">Mutate selection</span> or
                                 <span class="info-window-menu-btn">Mutate selection</span>.
-                                <img src="{% static 'mutation menu item selection.gif' %}">
+                                <img src="{% static 'assets/gifs/mutation menu item selection.gif' %}">
                             </li>
                             <li>Enter a DNA or amino acid sequence.</li>
                             <li>Select a target organism for codon optimisation (Escherichia coli, human, yeast etc.).</li>
@@ -251,7 +253,7 @@
                         <h3>Subcloning</h3>
                         <ol>
                             <li>To subclone navigate to your region of interest and select it.
-                                <img src="{% static 'subcloning selection.gif' %}">
+                                <img src="{% static 'assets/gifs/subcloning selection.gif' %}">
                             </li>
 
                             <li>Right-click to open the context menu and select <span class="info-window-menu-btn">Mark selection for subcloning</span>. A highlight color advanced 
@@ -344,9 +346,9 @@
                         <div class="footer" id="footer">
                             <ul class="footer-item horizontal-list">
                                 <li><input type="text" id="custom-search-input" class="search-bar" placeholder="Search"></li>
-                                <li><a class="svg-icon-btn-a footer-icon-btn-a" href="#" style="background-image: url('/static/close_icon.svg');" onclick="clearCustomSearchInput()"></a></li>
-                                <li><a class="svg-icon-btn-a footer-icon-btn-a" href="#" style="background-image: url('/static/arrow_icon.svg');" onclick="navigateSearchResults(-1)"></a></li>
-                                <li><a class="svg-icon-btn-a footer-icon-btn-a" href="#" style="background-image: url('/static/arrow_icon.svg'); transform: scale(1,-1)" onclick="navigateSearchResults(1)"></a></li>
+                                <li><a class="svg-icon-btn-a footer-icon-btn-a" href="#" style="background-image: url('/static/assets/icons/close_icon.svg');" onclick="clearCustomSearchInput()"></a></li>
+                                <li><a class="svg-icon-btn-a footer-icon-btn-a" href="#" style="background-image: url('/static/assets/icons/arrow_icon.svg');" onclick="navigateSearchResults(-1)"></a></li>
+                                <li><a class="svg-icon-btn-a footer-icon-btn-a" href="#" style="background-image: url('/static/assets/icons/arrow_icon.svg'); transform: scale(1,-1)" onclick="navigateSearchResults(1)"></a></li>
                                 <li><span id="custom-search-counter"></span></li>
                                 <li>
                                     <input type="checkbox" id="custom-search-compstrand-check" name="Complementary strand" class="footer-checkbox" onclick="searchOccurrences(customSearchInput)"/>

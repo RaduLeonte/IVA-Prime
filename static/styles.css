@@ -272,6 +272,10 @@ body {
   display: block;
 }
 
+#sidebar-container{
+  overflow-x: hidden;
+}
+
 .sidebar-table {
     width: 100%;
     table-layout: fixed;
@@ -377,11 +381,11 @@ body {
 .collapsible-content-hgroup {
   margin-bottom: 10px;
   display: flex;
-  justify-content: space-between;
   align-items: baseline;
 }
 
-.collapsible-content-hgroup label {
+.collapsible-content-hgroup-label {
+  min-width: 110px;
   font-weight: bold;
 }
 
@@ -391,17 +395,50 @@ input, select, textarea {
   -webkit-box-sizing: border-box;
 } 
 
-.collapsible-content-hgroup input, select, textarea {
-  width: 60%;
+.collapsible-content-hgroup-input {
+  flex-grow: 1;
+  display: flex;
+  justify-content: space-between;
+}
+
+.collapsible-content-hgroup-input span {
+  margin: 5px;
+}
+
+.collapsible-content-hgroup-input input, select, textarea {
+  width: 100%;
   padding: 5px;
 }
 
-.collapsible-content-hgroup textarea {
+.collapsible-content-hgroup-input input[type=checkbox] {
+  width: 18px;
+  height: 18px;
+}
+
+.collapsible-content-hgroup-input textarea {
   height: 150px;
   resize: vertical;
 }
 
+.clr-field {
+  width: 37px;
+}
 
+.clr-field button {
+  width: 100%;
+}
+
+.update-feature-btn {
+  padding: 8px 16px;
+  margin-right: 10px;
+  border: none;
+  border-radius: 5px;
+}
+
+.update-feature-btn:hover {
+  cursor: pointer;
+  filter: brightness(85%);
+}
 
 
 /* Force text to wrap*/
