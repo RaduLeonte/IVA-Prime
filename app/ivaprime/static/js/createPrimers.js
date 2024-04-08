@@ -617,29 +617,30 @@ const aaToCodon = {
  * Load codon weight tables.
  * Codon frequency tables from CoCoPUTs (Alexaki et al. 2019, https://doi.org/10.1016/j.jmb.2019.04.021).
  */
-document.addEventListener('DOMContentLoaded', function() {
-    let codonWeights;
+let codonWeights;
+/**
+ * Populate aa optimisation dropdown menu with all organism choices
+ */
+function populateOrganismDropdown() {
+    const organismsList = Object.keys(codonWeights);
+    const select = document.getElementById('targetOrganismSelector'); 
+    for (let i = 0; i < organismsList.length; i++) {
+      let newOption = new Option(organismsList[i],organismsList[i]);
+      if (organismsList[i] === preferredOrganism) {
+        newOption.setAttribute('selected','selected');
+      };
+      select.add(newOption,undefined);
+    };
+  };
+function loadCodonWeights() {
     fetch('static/codonWeights.json')
     .then(response => response.json())
     .then(json => {
         codonWeights = json;
         populateOrganismDropdown();
     });
-    /**
-     * Populate aa optimisation dropdown menu with all organism choices
-     */
-    function populateOrganismDropdown() {
-      const organismsList = Object.keys(codonWeights);
-      const select = document.getElementById('targetOrganismSelector'); 
-      for (let i = 0; i < organismsList.length; i++) {
-        let newOption = new Option(organismsList[i],organismsList[i]);
-        if (organismsList[i] === preferredOrganism) {
-          newOption.setAttribute('selected','selected');
-        };
-        select.add(newOption,undefined);
-      };
-    };
-});
+};
+document.addEventListener('DOMContentLoaded', loadCodonWeights);
 
 
 /**
