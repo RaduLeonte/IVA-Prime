@@ -688,6 +688,7 @@ function optimizeAA(inputAA, targetOrganism) {
  * @returns {[string, Object, string, number, number]}
  */
 function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, operationType) {
+    console.log("generatePrimerSequences", operationType, pos1, pos2, dnaToInsert, aaToInsert, targetOrganism,)
     /**
      * Set primer colors
      */

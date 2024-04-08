@@ -238,18 +238,18 @@ function addCellSelection(sequenceGridTable, plasmidIndex) {
   /**
    * Check for clicks outside the tables to clear the selection.
    */
-  document.addEventListener('click', function (event) {
-    const currActivePlasmidIndex = Project.activePlasmidIndex;
-    if (
-      !event.target.closest('#sequence-grid-' + currActivePlasmidIndex)
-      && !event.target.closest('.popup-window')
-      && event.target.tagName !== "A"
-    ) {
-      clearSelection(currActivePlasmidIndex, true);
-      clearSelectionCursors(currActivePlasmidIndex);
-      isSelecting = false;
-    };
-  });
+  //document.addEventListener('click', function (event) {
+  //  const currActivePlasmidIndex = Project.activePlasmidIndex;
+  //  if (
+  //    !event.target.closest('#sequence-grid-' + currActivePlasmidIndex)
+  //    && !event.target.closest('.popup-window')
+  //    && event.target.tagName !== "A"
+  //  ) {
+  //    clearSelection(currActivePlasmidIndex, true);
+  //    clearSelectionCursors(currActivePlasmidIndex);
+  //    isSelecting = false;
+  //  };
+  //});
 };
 
 /**
@@ -320,6 +320,7 @@ function getSelectedText(plasmidIndex) {
 * Removes the selected appearance from all the currently selected cells.
 */
 function clearSelection(plasmidIndex, clearingGlobalVars) {
+  console.log("clearSelection", plasmidIndex, clearingGlobalVars);
   clearSelectionCursors(plasmidIndex);
   // Find all selected cells and iterate over them to remove the selected class
   const selectedCells = document.getElementById("sequence-grid-" + plasmidIndex).querySelectorAll('.selected-cell');
@@ -340,6 +341,7 @@ function clearSelection(plasmidIndex, clearingGlobalVars) {
  * Select text from feature span.
  */
 function selectBySpan(inputSpan) {
+  console.log("selectBySpan", inputSpan)
   const currPlasmid = Project.activePlasmid();
   const activePlasmidIndex = Project.activePlasmidIndex
   let currGridStructure = currPlasmid.gridStructure;
