@@ -729,11 +729,26 @@ function updateFeatureProperties(btn) {
 
   Project.activePlasmid().features[featureID].label = parentDiv.querySelectorAll("#labelInput")[0].value;
 
-  console.log("updateFeatureProperties", parentDiv.querySelectorAll("#colorInput")[0].value)
   Project.activePlasmid().features[featureID].color = parentDiv.querySelectorAll("#colorInput")[0].value;
   Project.activePlasmid().features[featureID].ivaprimeColor = parentDiv.querySelectorAll("#colorInput")[0].value;
 
-  Project.activePlasmid().features[featureID].span = parentDiv.querySelectorAll("#spanInput")[0].value;
+  const direction = parentDiv.querySelectorAll("#directionSelect")[0].value;
+  const spanStart = parentDiv.querySelectorAll("#spanStartInput")[0].value;
+  const spanEnd = parentDiv.querySelectorAll("#spanEndInput")[0].value;
+  Project.activePlasmid().features[featureID].span = (direction === "fwd") ? spanStart + ".." + spanEnd: "complement(" + spanStart + ".." + spanEnd + ")";
+
+  if (parentDiv.querySelectorAll("#translateCheckbox")[0].checked === true) {
+    Project.activePlasmid().features[featureID].translation = translateSpan(
+      direction,
+      spanStart,
+      spanEnd,
+      document.getElementById("sequence-grid-" + Project.activePlasmidIndex),
+      Project.activePlasmid().gridStructure,
+      Project.activePlasmidIndex
+    );
+  } else {
+    delete Project.activePlasmid().features[featureID].translation;
+  };
 
   Project.activePlasmid().features[featureID].type = (parentDiv.querySelectorAll("#typeSelect")[0].disabled === false) ? parentDiv.querySelectorAll("#typeSelect")[0].value: parentDiv.querySelectorAll("#typeInput")[0].value;
   
@@ -2316,6 +2331,15 @@ function startTranslation(codonPos) {
 /**
  * Translate specific span
  */
+/**
+ * 
+ * @param {*} targetStrand - "fwd" || any string
+ * @param {*} rangeStart 
+ * @param {*} rangeEnd 
+ * @param {*} targetTable 
+ * @param {*} currGridStructure 
+ * @param {*} plasmidIndex 
+ */
 function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGridStructure, plasmidIndex) {
   // Select the corresponding features and sequence
   const currPlasmid = Project.getPlasmid(plasmidIndex);
@@ -2371,6 +2395,8 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGrid
   const targetDict = (targetStrand === "fwd") ? "forward": "reverse";
   
   Project.getPlasmid(plasmidIndex).translations[targetDict].push(translationDict);
+
+  return translatedSequence;
 };
 
 
