@@ -9,7 +9,7 @@
             <title>IVA Prime</title>
             <!-- Styling -->
             <link rel="icon" href="{% static 'assets/iva-prime.ico' %}">
-            <link href="https://fonts.googleapis.com/css2?family=Anonymous+Pro&display=swap" rel="stylesheet">
+            <!--<link href="https://fonts.googleapis.com/css2?family=Anonymous+Pro&display=swap" rel="stylesheet">-->
             <link rel="stylesheet" type="text/css" href="{% static 'coloris.css' %}">
             <link rel="stylesheet" type="text/css" href="{% static 'styles.css' %}">
             <!-- Libraries -->
@@ -34,6 +34,10 @@
             <script src="{% static 'js/plasmidTabs.js' %}"></script>
         </head>
         <body ondragover="importDragOver(event)" ondragleave="importDragLeave(event)" ondrop="importDrop(event)">
+            <script>
+                /*to prevent Firefox FOUC, this must be here*/
+                let FF_FOUC_FIX;
+            </script>
             <header>
                 <div class="nav-left">
                     <!-- Left side header buttons -->

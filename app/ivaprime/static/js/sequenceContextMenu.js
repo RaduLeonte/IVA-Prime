@@ -155,14 +155,14 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (menuItemId === 'translate-selection-rev') {
       const currPlasmid = Project.activePlasmid();
       const translateSpanStart = Math.min(currPlasmid.selectionStartPos, currPlasmid.selectionEndPos);
-      const translateSpanEnd = Math.max(currPlasmid.selectionStartPos, currPlasmid.selectionEndPos) - 3;
+      const translateSpanEnd = Math.max(currPlasmid.selectionStartPos, currPlasmid.selectionEndPos);
       
       const targetTable = document.getElementById("sequence-grid-" + Project.activePlasmidIndex);
       const targetGridStructure = currPlasmid.gridStructure;
       translateSpan(
         "comp",
-        translateSpanStart + 1,
-        translateSpanEnd - 1,
+        translateSpanStart,
+        translateSpanEnd,
         targetTable,
         targetGridStructure,
         Project.activePlasmidIndex

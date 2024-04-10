@@ -662,8 +662,8 @@ class Plasmid {
           const targetStrand = (!value.span.includes("complement")) ? "fwd": "comp";
           translateSpan(
             targetStrand,
-            rangeStart,
-            rangeEnd,
+            parseInt(rangeStart),
+            (targetStrand === "fwd") ? parseInt(rangeEnd): parseInt(rangeEnd) + 1,
             sequenceGrid,
             currGridStructure,
             this.index,
@@ -726,8 +726,9 @@ function updateFeatureProperties(btn) {
   const parentDiv = btn.parentElement.parentElement;
   const featureID = parentDiv.parentElement.id;
   
-
+  
   Project.activePlasmid().features[featureID].label = parentDiv.querySelectorAll("#labelInput")[0].value;
+  console.log("updateFeatureProperties", Project.activePlasmid().features[featureID].label)
 
   Project.activePlasmid().features[featureID].color = parentDiv.querySelectorAll("#colorInput")[0].value;
   Project.activePlasmid().features[featureID].ivaprimeColor = parentDiv.querySelectorAll("#colorInput")[0].value;
@@ -738,14 +739,16 @@ function updateFeatureProperties(btn) {
   Project.activePlasmid().features[featureID].span = (direction === "fwd") ? spanStart + ".." + spanEnd: "complement(" + spanStart + ".." + spanEnd + ")";
 
   if (parentDiv.querySelectorAll("#translateCheckbox")[0].checked === true) {
-    Project.activePlasmid().features[featureID].translation = translateSpan(
+    const translatedSequence = translateSpan(
       direction,
-      spanStart,
-      spanEnd,
+      parseInt(spanStart),
+      parseInt(spanEnd) + 1,
       document.getElementById("sequence-grid-" + Project.activePlasmidIndex),
       Project.activePlasmid().gridStructure,
       Project.activePlasmidIndex
     );
+    Project.activePlasmid().features[featureID].translation = translatedSequence;
+    console.log("updateFeatureProperties", translatedSequence)
   } else {
     delete Project.activePlasmid().features[featureID].translation;
   };
@@ -2341,12 +2344,14 @@ function startTranslation(codonPos) {
  * @param {*} plasmidIndex 
  */
 function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGridStructure, plasmidIndex) {
+  console.log("translateSpan", targetStrand, rangeStart, rangeEnd, targetTable, currGridStructure, plasmidIndex)
+  
   // Select the corresponding features and sequence
   const currPlasmid = Project.getPlasmid(plasmidIndex);
   const currSequence = (targetStrand === "fwd") ? currPlasmid.sequence: currPlasmid.complementarySequence;
 
-  const codonStartPos = (targetStrand === "fwd") ? rangeStart: rangeEnd;
-  const codonEndPos = (targetStrand === "fwd") ? rangeEnd + 1: rangeStart;
+  const codonStartPos = (targetStrand === "fwd") ? rangeStart: rangeEnd - 1;
+  const codonEndPos = (targetStrand === "fwd") ? rangeEnd + 1: rangeStart + 1;
   let codonPos = codonStartPos;
   const dir = (targetStrand === "fwd") ? 1: -1;
 
@@ -2357,6 +2362,7 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGrid
   // displayed in the middle cell of a group of 3 cells
   let row = tableCoords[0];
   let col = tableCoords[1] + 1*dir;
+  console.log("translateSpan", row, col);
 
 
   // Start translating until a stop codon is encountered
@@ -2418,6 +2424,7 @@ function translateSequence(inputSequence) {
  * 
  */
 function fillAACells(row, col, text, targetTable, currGridStructure, aaIndex) {
+  //console.log("fillAACells", row, col, text, aaIndex)
 
   // Select the middle cell
   if (col < 0) {
@@ -2431,6 +2438,7 @@ function fillAACells(row, col, text, targetTable, currGridStructure, aaIndex) {
 
     mainCell = targetTable.rows[row].cells[col];
   };
+  //console.log("fillAACells", mainCell)
 
   // Select the left and right cells
   const leftCell = targetTable.rows[row].cells[col-1];
