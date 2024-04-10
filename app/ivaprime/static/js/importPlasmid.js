@@ -341,7 +341,7 @@ class Plasmid {
         updaetButtonDiv.classList.add("collapsible-content-hgroup");
         updaetButtonDiv.innerHTML = `
         <button class="update-feature-btn" style="background-color: ${feature.ivaprimeColor}" onClick="updateFeatureProperties(this)">Update</button>
-        <button class="update-feature-btn remove-feature-btn" onClick="removeFeature(this)">Remove</button>
+        <button class="update-feature-btn remove-feature-btn" onClick="removeFeatureButton(this)">Remove</button>
         `;
         collapsibleContent.appendChild(updaetButtonDiv);
 
@@ -777,21 +777,56 @@ function updateFeatureProperties(btn) {
 
 /**
  * 
- * @param {*} btn 
+ * @param {*} featureID 
  */
-function removeFeature(btn) {
-    // Current file features
-    const currPlasmid = Project.activePlasmid();
-    const parentDiv = btn.parentElement.parentElement;
-    const featureID = parentDiv.parentElement.id;
-
+function removeFeature(featureID) {
     delete Project.activePlasmid().features[featureID];
   
     // Refresh sidebar table
-    currPlasmid.makeContentGrid();
-    currPlasmid.createSidebarTable();
+    Project.activePlasmid().makeContentGrid();
+    Project.activePlasmid().createSidebarTable();
     updateSidebarAndGrid();
-    currPlasmid.saveProgress();
+    Project.activePlasmid().saveProgress();
+};
+
+function removeFeatureButton(btn) {
+  // Current file features
+  const parentDiv = btn.parentElement.parentElement;
+  const featureID = parentDiv.parentElement.id;
+
+  removeFeature(featureID)
+};
+
+
+
+function addNewFeature(newFeatureLabel, featureSpanStart, featureSpanEnd, direction="fwd", featureColor=null, newFeatureType="misc_feature", translateFeature=false, newFeatureNote="") {
+  const currPlasmid = Project.activePlasmid();
+  const newFeatureID = crypto.randomUUID();
+
+  const newFeatureSpan = (direction === "fwd") ? featureSpanStart + ".." + featureSpanEnd: "complement(" + featureSpanStart + ".." + featureSpanEnd + ")";
+  const newFeatureColor = (featureColor === null) ? generateRandomUniqueColor(): featureColor;
+
+  Project.activePlasmid().features[newFeatureID] = {
+    type: newFeatureType,
+    label: newFeatureLabel,
+    span: newFeatureSpan,
+    color: newFeatureColor,
+    note: newFeatureNote,
+  };
+
+  if (translateFeature === true) {
+    const targetSequence = (direction === "fwd") ? currPlasmid.sequence.slice(spanStart - 1, spanEnd): getComplementaryStrand(currPlasmid.sequence.slice(spanStart - 1, spanEnd)).split("").reverse().join("");
+    const translatedSequence = translateSequence(targetSequence);
+    Project.activePlasmid().features[newFeatureID].translation = translatedSequence;
+  };
+
+  Project.activePlasmid().features = sortBySpan(Project.activePlasmid().features);
+
+  // Refresh sidebar table
+  currPlasmid.makeContentGrid();
+  currPlasmid.createSidebarTable();
+  updateSidebarAndGrid();
+  currPlasmid.saveProgress();
 };
 
 

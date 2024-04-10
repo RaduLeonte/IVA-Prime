@@ -142,7 +142,8 @@ class Plasmid {
       JSON.parse(JSON.stringify(this.features)),
       this.primers,
       this.sidebarTable,
-      this.contentGrid
+      this.contentGrid,
+      this.translations
     ];
 
     const currentInstance = this.historyTracker;
@@ -340,6 +341,7 @@ class Plasmid {
         updaetButtonDiv.classList.add("collapsible-content-hgroup");
         updaetButtonDiv.innerHTML = `
         <button class="update-feature-btn" style="background-color: ${feature.ivaprimeColor}" onClick="updateFeatureProperties(this)">Update</button>
+        <button class="update-feature-btn remove-feature-btn" onClick="removeFeatureButton(this)">Remove</button>
         `;
         collapsibleContent.appendChild(updaetButtonDiv);
 
@@ -662,8 +664,8 @@ class Plasmid {
           const targetStrand = (!value.span.includes("complement")) ? "fwd": "comp";
           translateSpan(
             targetStrand,
-            rangeStart,
-            rangeEnd,
+            parseInt(rangeStart),
+            (targetStrand === "fwd") ? parseInt(rangeEnd): parseInt(rangeEnd) + 1,
             sequenceGrid,
             currGridStructure,
             this.index,
@@ -726,24 +728,105 @@ function updateFeatureProperties(btn) {
   const parentDiv = btn.parentElement.parentElement;
   const featureID = parentDiv.parentElement.id;
   
-
+  
   Project.activePlasmid().features[featureID].label = parentDiv.querySelectorAll("#labelInput")[0].value;
+  console.log("updateFeatureProperties", Project.activePlasmid().features[featureID].label)
 
-  console.log("updateFeatureProperties", parentDiv.querySelectorAll("#colorInput")[0].value)
   Project.activePlasmid().features[featureID].color = parentDiv.querySelectorAll("#colorInput")[0].value;
   Project.activePlasmid().features[featureID].ivaprimeColor = parentDiv.querySelectorAll("#colorInput")[0].value;
 
-  Project.activePlasmid().features[featureID].span = parentDiv.querySelectorAll("#spanInput")[0].value;
+  const direction = parentDiv.querySelectorAll("#directionSelect")[0].value;
+  const spanStart = parentDiv.querySelectorAll("#spanStartInput")[0].value;
+  const spanEnd = parentDiv.querySelectorAll("#spanEndInput")[0].value;
+  Project.activePlasmid().features[featureID].span = (direction === "fwd") ? spanStart + ".." + spanEnd: "complement(" + spanStart + ".." + spanEnd + ")";
+
+  if (parentDiv.querySelectorAll("#translateCheckbox")[0].checked === true) {
+    const targetSequence = (direction === "fwd") ? currPlasmid.sequence.slice(spanStart - 1, spanEnd): getComplementaryStrand(currPlasmid.sequence.slice(spanStart - 1, spanEnd)).split("").reverse().join("");
+    console.log("updateFeatureProperties", targetSequence);
+    const translatedSequence = translateSequence(targetSequence);
+    Project.activePlasmid().features[featureID].translation = translatedSequence;
+    console.log("updateFeatureProperties", translatedSequence);
+  } else {
+    delete Project.activePlasmid().features[featureID].translation;
+  };
 
   Project.activePlasmid().features[featureID].type = (parentDiv.querySelectorAll("#typeSelect")[0].disabled === false) ? parentDiv.querySelectorAll("#typeSelect")[0].value: parentDiv.querySelectorAll("#typeInput")[0].value;
   
   Project.activePlasmid().features[featureID].note = parentDiv.querySelectorAll("#noteTextArea")[0].value;
 
+  
   // Refresh sidebar table
   currPlasmid.makeContentGrid();
   currPlasmid.createSidebarTable();
-
+  
   updateSidebarAndGrid();
+  currPlasmid.saveProgress();
+
+  if (parentDiv.querySelectorAll("#translateCheckbox")[0].checked === true) {
+    translateSpan(
+      direction,
+      parseInt(spanStart),
+      (direction === "fwd") ? parseInt(spanEnd): parseInt(spanEnd) + 1,
+      document.getElementById("sequence-grid-" + Project.activePlasmidIndex),
+      Project.activePlasmid().gridStructure,
+      Project.activePlasmidIndex
+    );
+  };
+};
+
+
+/**
+ * 
+ * @param {*} featureID 
+ */
+function removeFeature(featureID) {
+    delete Project.activePlasmid().features[featureID];
+  
+    // Refresh sidebar table
+    Project.activePlasmid().makeContentGrid();
+    Project.activePlasmid().createSidebarTable();
+    updateSidebarAndGrid();
+    Project.activePlasmid().saveProgress();
+};
+
+function removeFeatureButton(btn) {
+  // Current file features
+  const parentDiv = btn.parentElement.parentElement;
+  const featureID = parentDiv.parentElement.id;
+
+  removeFeature(featureID)
+};
+
+
+
+function addNewFeature(newFeatureLabel, featureSpanStart, featureSpanEnd, direction="fwd", featureColor=null, newFeatureType="misc_feature", translateFeature=false, newFeatureNote="") {
+  const currPlasmid = Project.activePlasmid();
+  const newFeatureID = crypto.randomUUID();
+
+  const newFeatureSpan = (direction === "fwd") ? featureSpanStart + ".." + featureSpanEnd: "complement(" + featureSpanStart + ".." + featureSpanEnd + ")";
+  const newFeatureColor = (featureColor === null) ? generateRandomUniqueColor(): featureColor;
+
+  Project.activePlasmid().features[newFeatureID] = {
+    type: newFeatureType,
+    label: newFeatureLabel,
+    span: newFeatureSpan,
+    color: newFeatureColor,
+    note: newFeatureNote,
+  };
+
+  if (translateFeature === true) {
+    const targetSequence = (direction === "fwd") ? currPlasmid.sequence.slice(spanStart - 1, spanEnd): getComplementaryStrand(currPlasmid.sequence.slice(spanStart - 1, spanEnd)).split("").reverse().join("");
+    const translatedSequence = translateSequence(targetSequence);
+    Project.activePlasmid().features[newFeatureID].translation = translatedSequence;
+  };
+
+  Project.activePlasmid().features = sortBySpan(Project.activePlasmid().features);
+
+  // Refresh sidebar table
+  currPlasmid.makeContentGrid();
+  currPlasmid.createSidebarTable();
+  updateSidebarAndGrid();
+  currPlasmid.saveProgress();
 };
 
 
@@ -1753,6 +1836,7 @@ async function exportDNAFile(plasmidIndex) {
         i++;
         xmlFeatureElement.setAttribute('name', value["label"]);
         xmlFeatureElement.setAttribute('directionality', (!value["span"].includes("complement")) ? "1": "2");
+        xmlFeatureElement.setAttribute('readingFrame', (!value["span"].includes("complement")) ? "1": "-1");
         xmlFeatureElement.setAttribute('type', value["type"]);
         xmlFeatureElement.setAttribute('allowSegmentOverlaps', "0");
         xmlFeatureElement.setAttribute('consecutiveTranslationNumbering', "1");
@@ -2247,7 +2331,7 @@ function translateCodon(codon) {
     'GTT': 'V', 'GTC': 'V', 'GTA': 'V', 'GTG': 'V',
     'TGG': 'W',
     'TAT': 'Y', 'TAC': 'Y',
-    'TAA': '-', 'TAG': '-', 'TGA': '-'
+    'TAA': '*', 'TAG': '*', 'TGA': '*'
   };
 
   return codonTable[codon] || '';
@@ -2316,13 +2400,24 @@ function startTranslation(codonPos) {
 /**
  * Translate specific span
  */
+/**
+ * 
+ * @param {*} targetStrand - "fwd" || any string
+ * @param {*} rangeStart 
+ * @param {*} rangeEnd 
+ * @param {*} targetTable 
+ * @param {*} currGridStructure 
+ * @param {*} plasmidIndex 
+ */
 function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGridStructure, plasmidIndex) {
+  console.log("translateSpan", targetStrand, rangeStart, rangeEnd, targetTable, currGridStructure, plasmidIndex)
+  
   // Select the corresponding features and sequence
   const currPlasmid = Project.getPlasmid(plasmidIndex);
   const currSequence = (targetStrand === "fwd") ? currPlasmid.sequence: currPlasmid.complementarySequence;
 
-  const codonStartPos = (targetStrand === "fwd") ? rangeStart: rangeEnd;
-  const codonEndPos = (targetStrand === "fwd") ? rangeEnd + 1: rangeStart;
+  const codonStartPos = (targetStrand === "fwd") ? rangeStart: rangeEnd - 1;
+  const codonEndPos = (targetStrand === "fwd") ? rangeEnd + 1: rangeStart + 1;
   let codonPos = codonStartPos;
   const dir = (targetStrand === "fwd") ? 1: -1;
 
@@ -2333,6 +2428,7 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGrid
   // displayed in the middle cell of a group of 3 cells
   let row = tableCoords[0];
   let col = tableCoords[1] + 1*dir;
+  console.log("translateSpan", row, col);
 
 
   // Start translating until a stop codon is encountered
@@ -2371,6 +2467,8 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGrid
   const targetDict = (targetStrand === "fwd") ? "forward": "reverse";
   
   Project.getPlasmid(plasmidIndex).translations[targetDict].push(translationDict);
+
+  return translatedSequence;
 };
 
 
@@ -2392,6 +2490,7 @@ function translateSequence(inputSequence) {
  * 
  */
 function fillAACells(row, col, text, targetTable, currGridStructure, aaIndex) {
+  //console.log("fillAACells", row, col, text, aaIndex)
 
   // Select the middle cell
   if (col < 0) {
@@ -2405,6 +2504,7 @@ function fillAACells(row, col, text, targetTable, currGridStructure, aaIndex) {
 
     mainCell = targetTable.rows[row].cells[col];
   };
+  //console.log("fillAACells", mainCell)
 
   // Select the left and right cells
   const leftCell = targetTable.rows[row].cells[col-1];

@@ -2,6 +2,7 @@
  *  Custom right click context menu.
  */
 // Wait for document to load
+let rightClickTarget;
 document.addEventListener('DOMContentLoaded', function () {
   // Right click context menu logic while clicking on the content grid
   const contextMenu = document.querySelector(".custom-context-menu");
@@ -13,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const contextMenu = document.querySelector('.custom-context-menu');
       contextMenu.style.display = "block";
       insertionPosition = currPlasmid.basePosition;
-      handleContextMenu(event.clientX, event.clientY);
+      handleContextMenu(event.target, event.clientX, event.clientY);
     };
   });
 
@@ -167,6 +168,17 @@ document.addEventListener('DOMContentLoaded', function () {
         targetGridStructure,
         Project.activePlasmidIndex
       );
+    } else if (menuItemId === "add-new-feature") {
+      const currPlasmid = Project.activePlasmid();
+      const newFeatureSpanStart = Math.min(currPlasmid.selectionStartPos, currPlasmid.selectionEndPos);
+      const newFeatureSpanEnd = Math.max(currPlasmid.selectionStartPos, currPlasmid.selectionEndPos);
+      addNewFeature(
+        "New Feature",
+        newFeatureSpanStart,
+        newFeatureSpanEnd
+      );
+    } else if (menuItemId === "delete-feature") {
+      removeFeature(rightClickTarget.getAttribute("feature-id"));
     };
 
     // Hide the menu once done
@@ -177,41 +189,58 @@ document.addEventListener('DOMContentLoaded', function () {
   /**
    * 
    */
-  function handleContextMenu(clientX, clientY) {
+  function handleContextMenu(target, clientX, clientY) {
     // Record cursor position
     const currPlasmid = Project.activePlasmid()
     insertionPosition = currPlasmid.basePosition;
   
-    // Select all the menu items
-    const copySelectionMenuItem = document.getElementById('copy-selection');
-    const copyComplementSelectionMenuItem = document.getElementById('copy-complement');
-    const copyRevComplementSelectionMenuItem = document.getElementById('copy-rev-complement');
-
+    /**
+     * IVA Operations
+     */
     const insertionMenuItem = document.getElementById('insertion');
     const deletionMenuItem = document.getElementById('deletion');
     const mutationMenuItem = document.getElementById('mutation');
 
     const markForSubcloningMenuItem = document.getElementById('mark-for-subcloning');
     const subcloningMenuItem = document.getElementById('subcloning');
+    const subcloningWithInsertionMenuItem = document.getElementById('subcloning-with-insertion');
     if (Project.subcloningOriginIndex !== null) {
       const subcloningOriginSpan = Project.subcloningOriginSpan;
       const subcloningOriginIndex = Project.subcloningOriginIndex;
       subcloningMenuItem.innerHTML = subcloningMenuItem.innerHTML.replace(/\((.*)\)$/, `(${subcloningOriginSpan[0]}-${subcloningOriginSpan[1]} from ${Project.getPlasmid(subcloningOriginIndex).name})`);
+      subcloningWithInsertionMenuItem.innerHTML = subcloningWithInsertionMenuItem.innerHTML.replace(/\((.*)\)$/, `(${subcloningOriginSpan[0]}-${subcloningOriginSpan[1]} from ${Project.getPlasmid(subcloningOriginIndex).name})`);
     } else {
       subcloningMenuItem.innerHTML = subcloningMenuItem.innerHTML.replace(/\((.*)\)$/, `(<em>no region marked for subcloning</em>)`);
+      subcloningWithInsertionMenuItem.innerHTML = subcloningWithInsertionMenuItem.innerHTML.replace(/\((.*)\)$/, `(<em>no region marked for subcloning</em>)`);
     };
-    const subcloningWithInsertionMenuItem = document.getElementById('subcloning-with-insertion');
 
+    /**
+     * Annotation stuff
+     */
+    const addNewFeatureMenuItem = document.getElementById('add-new-feature');
+    const deleteFeatureMenuItem = document.getElementById('delete-feature');
+
+    /**
+     * Copy stuff
+     */
+    const copySelectionMenuItem = document.getElementById('copy-selection');
+    const copyComplementSelectionMenuItem = document.getElementById('copy-complement');
+    const copyRevComplementSelectionMenuItem = document.getElementById('copy-rev-complement');
+ 
+    /**
+     * Translation stuff
+     */
     const beginTranslationMenuItem = document.getElementById('begin-translation');
     const translateSelectionMenuItem = document.getElementById('translate-selection');
     const translateSelectionRevMenuItem = document.getElementById('translate-selection-rev');
 
-    // Enable or disable menu items based on if the user is making a selection
+    /**
+     * Enable or disable menu items based on if the user is making a selection
+     */
     if (currPlasmid.selectedText) {
-      copySelectionMenuItem.classList.remove("disabled");
-      copyComplementSelectionMenuItem.classList.remove("disabled");
-      copyRevComplementSelectionMenuItem.classList.remove("disabled");
-
+      /**
+       * IVA Opeations
+       */
       // If there is a selection, disable insertions and translations
       insertionMenuItem.classList.add('disabled');
       beginTranslationMenuItem.classList.add('disabled');
@@ -219,14 +248,29 @@ document.addEventListener('DOMContentLoaded', function () {
       // Re-enable deletions and mutations
       deletionMenuItem.classList.remove('disabled');
       mutationMenuItem.classList.remove('disabled');
+      markForSubcloningMenuItem.classList.remove('disabled');
+
+      /**
+       * Annotation stuff
+       */
+      addNewFeatureMenuItem.classList.remove('disabled');
+
+      /**
+       * Copy stuff
+       */
+      copySelectionMenuItem.classList.remove("disabled");
+      copyComplementSelectionMenuItem.classList.remove("disabled");
+      copyRevComplementSelectionMenuItem.classList.remove("disabled");
+
+      /**
+       *  Translation stuff
+       */
       translateSelectionMenuItem.classList.remove('disabled');
       translateSelectionRevMenuItem.classList.remove('disabled');
-      markForSubcloningMenuItem.classList.remove('disabled');
     } else {
-      copySelectionMenuItem.classList.add("disabled");
-      copyComplementSelectionMenuItem.classList.add("disabled");
-      copyRevComplementSelectionMenuItem.classList.add("disabled");
-
+      /**
+       * IVA Opeations
+       */
       // If there is no selection, re-enable insertions and translations
       insertionMenuItem.classList.remove('disabled');
       beginTranslationMenuItem.classList.remove('disabled');
@@ -234,9 +278,25 @@ document.addEventListener('DOMContentLoaded', function () {
       // Disable deletions and mutations
       deletionMenuItem.classList.add('disabled');
       mutationMenuItem.classList.add('disabled');
-      translateSelectionMenuItem.classList.add('disabled');
-      translateSelectionRevMenuItem.classList.add('disabled');
       markForSubcloningMenuItem.classList.add('disabled');
+      
+      /**
+       * Annotation stuff
+       */
+     addNewFeatureMenuItem.classList.add('disabled');
+     
+      /**
+       * Copy stuff
+       */
+     copySelectionMenuItem.classList.add("disabled");
+     copyComplementSelectionMenuItem.classList.add("disabled");
+     copyRevComplementSelectionMenuItem.classList.add("disabled");
+     
+     /**
+      *  Translation stuff
+      */
+     translateSelectionMenuItem.classList.add('disabled');
+     translateSelectionRevMenuItem.classList.add('disabled');
     };
 
     // If there is a selection and a second plasmid has been imported, enable the subcloning option
@@ -246,6 +306,20 @@ document.addEventListener('DOMContentLoaded', function () {
     } else {
       subcloningMenuItem.classList.add('disabled');
       subcloningWithInsertionMenuItem.classList.add('disabled');
+    };
+
+    /**
+     * Check if click target is an annotation
+     */
+    console.log("handleContextMenu", target);
+    if (target.id === "Annotations") {
+      deleteFeatureMenuItem.classList.remove('disabled');
+      rightClickTarget = target;
+    } else if (target.parentElement.id === "Annotations") {
+      deleteFeatureMenuItem.classList.remove('disabled');
+      rightClickTarget = target.parentElement;
+    } else {
+      deleteFeatureMenuItem.classList.add('disabled');
     };
     
     // Reposition the context menu
