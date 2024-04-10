@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function () {
       addNewFeature(
         "New Feature",
         newFeatureSpanStart,
-        newFeatureSpanEnd
+        newFeatureSpanEnd - 1
       );
     } else if (menuItemId === "delete-feature") {
       removeFeature(rightClickTarget.getAttribute("feature-id"));
