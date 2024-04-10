@@ -142,7 +142,8 @@ class Plasmid {
       JSON.parse(JSON.stringify(this.features)),
       this.primers,
       this.sidebarTable,
-      this.contentGrid
+      this.contentGrid,
+      this.translations
     ];
 
     const currentInstance = this.historyTracker;
@@ -340,6 +341,7 @@ class Plasmid {
         updaetButtonDiv.classList.add("collapsible-content-hgroup");
         updaetButtonDiv.innerHTML = `
         <button class="update-feature-btn" style="background-color: ${feature.ivaprimeColor}" onClick="updateFeatureProperties(this)">Update</button>
+        <button class="update-feature-btn remove-feature-btn" onClick="removeFeature(this)">Remove</button>
         `;
         collapsibleContent.appendChild(updaetButtonDiv);
 
@@ -739,16 +741,11 @@ function updateFeatureProperties(btn) {
   Project.activePlasmid().features[featureID].span = (direction === "fwd") ? spanStart + ".." + spanEnd: "complement(" + spanStart + ".." + spanEnd + ")";
 
   if (parentDiv.querySelectorAll("#translateCheckbox")[0].checked === true) {
-    const translatedSequence = translateSpan(
-      direction,
-      parseInt(spanStart),
-      parseInt(spanEnd) + 1,
-      document.getElementById("sequence-grid-" + Project.activePlasmidIndex),
-      Project.activePlasmid().gridStructure,
-      Project.activePlasmidIndex
-    );
+    const targetSequence = (direction === "fwd") ? currPlasmid.sequence.slice(spanStart - 1, spanEnd): getComplementaryStrand(currPlasmid.sequence.slice(spanStart - 1, spanEnd)).split("").reverse().join("");
+    console.log("updateFeatureProperties", targetSequence);
+    const translatedSequence = translateSequence(targetSequence);
     Project.activePlasmid().features[featureID].translation = translatedSequence;
-    console.log("updateFeatureProperties", translatedSequence)
+    console.log("updateFeatureProperties", translatedSequence);
   } else {
     delete Project.activePlasmid().features[featureID].translation;
   };
@@ -757,11 +754,44 @@ function updateFeatureProperties(btn) {
   
   Project.activePlasmid().features[featureID].note = parentDiv.querySelectorAll("#noteTextArea")[0].value;
 
+  
   // Refresh sidebar table
   currPlasmid.makeContentGrid();
   currPlasmid.createSidebarTable();
-
+  
   updateSidebarAndGrid();
+  currPlasmid.saveProgress();
+
+  if (parentDiv.querySelectorAll("#translateCheckbox")[0].checked === true) {
+    translateSpan(
+      direction,
+      parseInt(spanStart),
+      (direction === "fwd") ? parseInt(spanEnd): parseInt(spanEnd) + 1,
+      document.getElementById("sequence-grid-" + Project.activePlasmidIndex),
+      Project.activePlasmid().gridStructure,
+      Project.activePlasmidIndex
+    );
+  };
+};
+
+
+/**
+ * 
+ * @param {*} btn 
+ */
+function removeFeature(btn) {
+    // Current file features
+    const currPlasmid = Project.activePlasmid();
+    const parentDiv = btn.parentElement.parentElement;
+    const featureID = parentDiv.parentElement.id;
+
+    delete Project.activePlasmid().features[featureID];
+  
+    // Refresh sidebar table
+    currPlasmid.makeContentGrid();
+    currPlasmid.createSidebarTable();
+    updateSidebarAndGrid();
+    currPlasmid.saveProgress();
 };
 
 
@@ -1771,6 +1801,7 @@ async function exportDNAFile(plasmidIndex) {
         i++;
         xmlFeatureElement.setAttribute('name', value["label"]);
         xmlFeatureElement.setAttribute('directionality', (!value["span"].includes("complement")) ? "1": "2");
+        xmlFeatureElement.setAttribute('readingFrame', (!value["span"].includes("complement")) ? "1": "-1");
         xmlFeatureElement.setAttribute('type', value["type"]);
         xmlFeatureElement.setAttribute('allowSegmentOverlaps', "0");
         xmlFeatureElement.setAttribute('consecutiveTranslationNumbering', "1");
@@ -2265,7 +2296,7 @@ function translateCodon(codon) {
     'GTT': 'V', 'GTC': 'V', 'GTA': 'V', 'GTG': 'V',
     'TGG': 'W',
     'TAT': 'Y', 'TAC': 'Y',
-    'TAA': '-', 'TAG': '-', 'TGA': '-'
+    'TAA': '*', 'TAG': '*', 'TGA': '*'
   };
 
   return codonTable[codon] || '';

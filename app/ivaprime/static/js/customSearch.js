@@ -205,7 +205,7 @@ function highlightOccurences(targetStrandIndex, workingSequence, workingQuery, h
         // Check if query is valid DNA sequence
         if (isAminoAcidSequence(workingQuery)) {
             // Unify stop codons
-            workingQuery = workingQuery.replace("X", "-").replace("*", "-")
+            workingQuery = workingQuery.replace("X", "*").replace("-", "*")
 
             // Get list of translations for the current translation direction
             const translationDirection = (targetStrandIndex === 0) ? "forward": "reverse";

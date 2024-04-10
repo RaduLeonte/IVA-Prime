@@ -435,6 +435,10 @@ input, select, textarea {
   border-radius: 5px;
 }
 
+.remove-feature-btn {
+  background-color: #FF5E5E;
+}
+
 .update-feature-btn:hover {
   cursor: pointer;
   filter: brightness(85%);

@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
       <div>
         <label for="amino-acid-sequence-input">Amino Acid Sequence:</label>
         <input type="text" id="amino-acid-sequence-input" class="popup-window-input">
-        <p class="stop-codon-hint">Accepted STOP letter codes: "-", "X", "*".</p>
+        <p class="stop-codon-hint">Accepted STOP letter codes: "*", "-", "X".</p>
       </div>
     </div>
 
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <div>
           <label for="amino-acid-sequence-input-5">Amino Acid Sequence:</label>
           <input type="text" id="amino-acid-sequence-input-5" class="popup-window-input">
-          <p class="stop-codon-hint">Accepted STOP letter codes: "-", "X", "*".</p>
+          <p class="stop-codon-hint">Accepted STOP letter codes: "*", "-", "X".</p>
         </div>
       <h3>3' end insertion:</h3>
         <div>
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <div>
           <label for="amino-acid-sequence-input-3">Amino Acid Sequence:</label>
           <input type="text" id="amino-acid-sequence-input-3" class="popup-window-input">
-          <p class="stop-codon-hint">Accepted STOP letter codes: "-", "X", "*".</p>
+          <p class="stop-codon-hint">Accepted STOP letter codes: "*", "-", "X".</p>
         </div>
     </div>
 
@@ -79,8 +79,8 @@ document.addEventListener('DOMContentLoaded', function () {
         dnaSequenceInput5 = document.getElementById('dna-sequence-input-5').value.toUpperCase().replace(/[^ATCG]/g, '');
         dnaSequenceInput3 = document.getElementById('dna-sequence-input-3').value.toUpperCase().replace(/[^ATCG]/g, '');
         // To uppercase, replace "-" and "*" with X
-        aminoAcidSequenceInput5 = document.getElementById('amino-acid-sequence-input-5').value.toUpperCase().replace(/[-*]/g, 'X');
-        aminoAcidSequenceInput3 = document.getElementById('amino-acid-sequence-input-3').value.toUpperCase().replace(/[-*]/g, 'X');
+        aminoAcidSequenceInput5 = document.getElementById('amino-acid-sequence-input-5').value.toUpperCase().replace(/[-X]/g, '*');
+        aminoAcidSequenceInput3 = document.getElementById('amino-acid-sequence-input-3').value.toUpperCase().replace(/[-X]/g, '*');
         // Only keep allowed amino acid 1 letter codes
         const allowedLetterCodes = Object.keys(aaToCodon);
         aminoAcidSequenceInput5 = aminoAcidSequenceInput5.split('').filter(char => allowedLetterCodes.includes(char)).join('');
@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // To uppercase, then remove anything that is not ACTG
         const dnaSequenceInput = document.getElementById('dna-sequence-input').value.toUpperCase().replace(/[^ATCG]/g, '');
         // To uppercase, replace "-" and "*" with X
-        let aminoAcidSequenceInput = document.getElementById('amino-acid-sequence-input').value.toUpperCase().replace(/[-*]/g, 'X');
+        let aminoAcidSequenceInput = document.getElementById('amino-acid-sequence-input').value.toUpperCase().replace(/[-X]/g, '*');
         // Only keep allowed amino acid 1 letter codes
         const allowedLetterCodes = Object.keys(aaToCodon);
         aminoAcidSequenceInput = aminoAcidSequenceInput.split('').filter(char => allowedLetterCodes.includes(char)).join('');

@@ -27,8 +27,10 @@ function navigateFileHistory(direction) {
         
         Project.activePlasmid().gridStructure = Project.activePlasmid().checkAnnotationOverlap();
         Project.activePlasmid().primers = instance[2];
-        Project.activePlasmid().sidebarTable = instance[3];
+        //Project.activePlasmid().sidebarTable = instance[3];
         Project.activePlasmid().contentGrid = instance[4];
+
+        Project.activePlasmid().translations = JSON.parse(JSON.stringify(instance[5]));
         
         // Update primers
         updateSidebarPrimers();
@@ -99,6 +101,7 @@ function updateSidebarAndGrid() {
     if (currSidebarTable) {
         currSidebarTable.parentNode.removeChild(currSidebarTable)
     };
+    Project.activePlasmid().createSidebarTable();
     sidebarContent.after(Project.activePlasmid().sidebarTable);
     enableSidebarEditing();
     addScrollingEffectToFeatureTable();

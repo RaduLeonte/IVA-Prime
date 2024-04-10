@@ -92,7 +92,7 @@ function addHoverPopupToTable() {
             popup.textContent = basePosition !== -1 ? basePosition + " (" + targetCellRowIndex + ", " + targetCellCellIndex + ")" : "";
             positionPopup(popup, event.clientX, event.clientY);
           } else if (event.target.id === 'Amino Acids' && event.target.getAttribute("aaindex")) {
-            popup.textContent = event.target.textContent.replace("-", "X") + event.target.getAttribute("aaindex");
+            popup.textContent = event.target.textContent + event.target.getAttribute("aaindex");
             positionPopup(popup, event.clientX, event.clientY);
           } else {
             popup.style.display = "none";
