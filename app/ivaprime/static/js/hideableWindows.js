@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const meltingTempAlgorithmSelect = document.getElementById("meltingTempAlgorithmChoiceSettingsElement");
         const meltingTempAlgorithmEquationImage = document.getElementById("meltingTempAlgorithmEquationImage");
 
-        const newPath = "/static/" + meltingTempAlgorithmSelect.value + "%20equation.png"
+        const newPath = "/static/assets/equations/" + meltingTempAlgorithmSelect.value + "%20equation.png"
         meltingTempAlgorithmEquationImage.src = newPath;
         saveUserPreference("meltingTempAlgorithmChoice", meltingTempAlgorithmSelect.value, 30, true, true);
         meltingTempAlgorithmChoice = meltingTempAlgorithmSelect.value;
@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const saltCorrectionSelect = document.getElementById("saltCorrectionEquationSettingsElement");
         const saltCorrectionEquationImage = document.getElementById("saltCorrectionEquationImage");
 
-        const newPath = "/static/" + saltCorrectionSelect.value + "%20equation.png"
+        const newPath = "/static/assets/equations/" + saltCorrectionSelect.value + "%20equation.png"
         saltCorrectionEquationImage.src = newPath;
         saveUserPreference("saltCorrectionEquation", saltCorrectionSelect.value, 30, true, true);
         saltCorrectionEquation = saltCorrectionSelect.value;
@@ -317,8 +317,16 @@ document.addEventListener('DOMContentLoaded', function () {
 function updateCSSTheme() {
     if (colorTheme === "darkTheme") {
         document.querySelector("html").setAttribute("data-theme", "dark");
+        Coloris({
+            themeMode: 'dark',
+            alpha: false
+          });
     } else if (colorTheme === "lightTheme") {
         document.querySelector("html").setAttribute("data-theme", "light");
+        Coloris({
+            themeMode: 'light',
+            alpha: false
+          });
     };
 };
 updateCSSTheme();

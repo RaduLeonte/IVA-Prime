@@ -116,7 +116,7 @@ body {
   border: 2px solid var(--context-menu-border-color);
   padding: 8px;
   box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-  z-index: 9999;
+  z-index: 99999;
 }
 
 .custom-context-menu ul {
@@ -272,6 +272,10 @@ body {
   display: block;
 }
 
+#sidebar-container{
+  overflow-x: hidden;
+}
+
 .sidebar-table {
     width: 100%;
     table-layout: fixed;
@@ -330,6 +334,118 @@ body {
 .sidebar-content p:last-child {
     margin-bottom: 0;
 }
+
+.collapsible-header {
+  cursor: pointer;
+  padding: 10px;
+  margin: 2px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 16px;
+}
+
+.collapsible-header:hover {
+  cursor: pointer;
+  padding: 10px;
+  margin: 2px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 16px;
+}
+
+.collapsible-header:after {
+  content: '\002B';
+  font-size: 14px;
+  font-weight: bold;
+  color: black;
+  float: left;
+  margin-right: 12px;
+}
+
+.collapsible-header-active:after {
+  content: "\2212";
+}
+
+.collapsible-content {
+  padding: 12px;
+  display: none;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.2s ease-out;
+}
+
+.collapsible-content-hgroup {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: baseline;
+}
+
+.collapsible-content-hgroup-label {
+  min-width: 110px;
+  font-weight: bold;
+}
+
+input, select, textarea {
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+} 
+
+.collapsible-content-hgroup-input {
+  flex-grow: 1;
+  display: flex;
+  justify-content: space-between;
+}
+
+.collapsible-content-hgroup-input span {
+  margin: 5px;
+}
+
+.collapsible-content-hgroup-input input,
+.collapsible-content-hgroup-input select,
+.collapsible-content-hgroup-input textarea {
+  width: 100%;
+  padding: 5px;
+}
+
+.collapsible-content-hgroup-input input[type=checkbox] {
+  width: 18px;
+  height: 18px;
+}
+
+.collapsible-content-hgroup-input textarea {
+  height: 150px;
+  resize: none;
+}
+
+.clr-field {
+  width: 37px;
+}
+
+.clr-field button {
+  width: 100%;
+}
+
+.update-feature-btn {
+  padding: 8px 16px;
+  margin-right: 10px;
+  border: none;
+  border-radius: 5px;
+}
+
+.remove-feature-btn {
+  background-color: #FF5E5E;
+}
+
+.update-feature-btn:hover {
+  cursor: pointer;
+  filter: brightness(85%);
+}
+
 
 /* Force text to wrap*/
 .wrap-text {
@@ -808,7 +924,7 @@ header {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 9999;
+  z-index: 1000;
   width: 100%;
   display: flex;
   justify-content: flex-start;
@@ -1114,4 +1230,15 @@ header {
 
 .primer-span-cyan {
   background-color: rgb(140, 202, 242);
+}
+
+.overlay {
+  z-index: 10000;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  /**background-color: black;*/
+  /**opacity: 50%;*/
 }

@@ -58,8 +58,8 @@ const Project = new class {
       this.activePlasmidIndex = currIndex;
     };
 
-    this.plasmids[currIndex].createSidebarTable();
     this.plasmids[currIndex].makeContentGrid();
+    this.plasmids[currIndex].createSidebarTable();
 
     //this.plasmids[currIndex].savePrimers();
     this.plasmids[currIndex].saveProgress();
@@ -142,7 +142,8 @@ class Plasmid {
       JSON.parse(JSON.stringify(this.features)),
       this.primers,
       this.sidebarTable,
-      this.contentGrid
+      this.contentGrid,
+      this.translations
     ];
 
     const currentInstance = this.historyTracker;
@@ -172,74 +173,192 @@ class Plasmid {
     let currFeatures = this.features;
 
     // Set table headers
-    const sidebarTable = document.createElement("TABLE");
-    sidebarTable.id = "sidebar-table";
-    sidebarTable.classList.add("sidebar-table");
-    sidebarTable.innerHTML = `
-        <tr>
-            <th class = 'wrap-text'>Type</th>
-            <th class = 'wrap-text'>Label</th>
-            <th class = 'wrap-text'>Span</th>
-            <th class = 'wrap-text'>Note</th>
-        </tr>
-    `;
+    const sidebarDiv = document.createElement("DIV");
+    sidebarDiv.id = "sidebar-table";
+    sidebarDiv.classList.add("sidebar-table");
 
     // Iterate over the features and populate the table
     for (const featureID in currFeatures) {
       const feature = currFeatures[featureID];
-      if (!featureID.includes("LOCUS") && !feature.type.includes("source")) { // Skip LOCUS and source
+      // Skip LOCUS and source
+      if (!featureID.includes("LOCUS") && !feature.type.includes("source")) {
 
         // Create a new table row
-        let row = document.createElement('tr');
-        row.id = featureID;
-    
-        // Add feature type
-        const typeCell = document.createElement('td');
-        typeCell.textContent = feature.type || '';
-        typeCell.className = 'wrap-text';
-        row.appendChild(typeCell);
-    
-        // Add feature label
-        const labelCell = document.createElement('td');
-        labelCell.textContent = feature.label || '';
-        labelCell.className = 'wrap-text';
-        labelCell.id = "sidebar-label";
-        labelCell.classList.add("editable");
-        row.appendChild(labelCell);
-    
-        // Add feature range
-        const rangeCell = document.createElement('td');
-        rangeCell.textContent = feature.span
-        rangeCell.className = 'wrap-text';
-        row.appendChild(rangeCell);
-    
-        // Add feature note
-        const noteCell = document.createElement('td');
-        if (feature.note && feature.note.includes("note: ")) {
-          const keyValuePairs = feature.note.split(/\s*(?::| )\s*/);
-          const noteDict = {};
-          for (let i = 0; i < keyValuePairs.length; i += 2) {
-            const key = keyValuePairs[i];
-            const value = keyValuePairs[i + 1];
-            if (key && value) {
-              noteDict[key] = value;
-            };
-          };
-          noteCell.textContent = noteDict["note"];
-        } else {
-          noteCell.textContent = feature.note || '';
+        const featureDiv = document.createElement("DIV");
+        featureDiv.id = featureID;
+
+        const collapsibleHeader = document.createElement("BUTTON");
+        collapsibleHeader.type = "button";
+        collapsibleHeader.classList.add("collapsible-header");
+        collapsibleHeader.style.backgroundColor = feature.ivaprimeColor;
+        //collapsibleHeader.style.borderLeft = `5px solid ${feature.ivaprimeColor}`;
+        collapsibleHeader.innerText = feature.label;
+
+        const collapsibleContent = document.createElement("DIV");
+        collapsibleContent.classList.add("collapsible-content");
+        collapsibleContent.style.display = "none";
+
+        /**
+         * Label
+         */
+        const labelDiv = document.createElement("DIV");
+        labelDiv.classList.add("collapsible-content-hgroup");
+        labelDiv.innerHTML = `
+        <label class="collapsible-content-hgroup-label">Label</label>
+        <div class="collapsible-content-hgroup-input">
+          <input id="labelInput" value="${feature.label}">
+          <div class="clr-field" style="color: ${feature.ivaprimeColor};">
+            <button type="button" aria-labelledby="clr-open-label"></button>
+            <input id="colorInput" type="text" class="coloris" data-coloris value="${feature.ivaprimeColor}"></div>
+          </div>
+        </div>
+        `;
+        collapsibleContent.appendChild(labelDiv);
+
+
+        /**
+         * Span
+         */
+        const spanDiv = document.createElement("DIV");
+        const [spanStart, spanEnd] = removeNonNumeric(feature.span).split("..").map(Number);
+        const spanEndMax = Project.activePlasmid().sequence.length;
+        console.log(feature.span, [spanStart, spanEnd])
+        spanDiv.classList.add("collapsible-content-hgroup");
+        spanDiv.innerHTML = `
+        <label class="collapsible-content-hgroup-label">Span</label>
+        <div class="collapsible-content-hgroup-input">
+          <input type="number" id="spanStartInput" min="1" max="${spanEndMax}" value="${spanStart}">
+          <span> .. </span> 
+          <input type="number" id="spanEndInput" min="1" max="${spanEndMax}" value="${spanEnd}">
+        </div>
+        `;
+        collapsibleContent.appendChild(spanDiv);
+
+
+        /**
+         * Direction
+         */
+        const directionDiv = document.createElement("DIV");
+        directionDiv.classList.add("collapsible-content-hgroup");
+        directionDiv.innerHTML = `
+        <label class="collapsible-content-hgroup-label">Direction</label>
+        <div class="collapsible-content-hgroup-input">
+          <select id="directionSelect">
+            <option value="fwd">Forward</option>
+            <option value="rev">Reverse</option>
+          </select>
+        </div>`;
+        const options = directionDiv.getElementsByTagName("option");
+        const featureDirection = (!feature.span.includes("complement")) ? "fwd": "rev";
+        for (let i = 0; i < options.length; i++) {
+          const option = options[i];
+          if (option.value === featureDirection) {
+            option.setAttribute('selected','selected');
+          }
         };
-        noteCell.className = 'wrap-text';
-        noteCell.id = "sidebar-note";
-        noteCell.classList.add("editable");
-        row.appendChild(noteCell);
-    
-        // Append the row to the table
-        sidebarTable.appendChild(row);
+        
+        collapsibleContent.appendChild(directionDiv);
+
+
+        /**
+         * Translate feature
+         */
+        const translateDiv = document.createElement("DIV");
+        translateDiv.classList.add("collapsible-content-hgroup");
+        translateDiv.innerHTML = `
+        <label class="collapsible-content-hgroup-label">Translate</label>
+        <div class="collapsible-content-hgroup-input">
+        <input type="checkbox" id="translateCheckbox" checked="${(feature.translation === "" || feature.translation === null || (typeof feature.translation) === 'undefined') ? false: true}">
+        </div>
+        `;
+        translateDiv.getElementsByTagName("input")[0].checked = (feature.translation === "" || feature.translation === null  || (typeof feature.translation) === 'undefined') ? false: true;
+        collapsibleContent.appendChild(translateDiv);
+
+
+        /**
+         * Feature type
+         */
+        const typeDiv = document.createElement("DIV");
+        typeDiv.classList.add("collapsible-content-hgroup");
+        typeDiv.innerHTML = `
+        <label class="collapsible-content-hgroup-label">Feature type</label>
+        <div class="collapsible-content-hgroup-input">
+          <select id="typeSelect" onchange="
+          if (this.options[this.selectedIndex].value=='customOption') {
+            toggleInputInSelect(this, this.nextElementSibling);
+            this.selectedIndex='0'}
+            ">
+          </select><input id="typeInput" name="browser" style="display: none;" disabled="disabled" onblur="
+          if (this.value === '') {
+            toggleInputInSelect(this, this.previousElementSibling);}
+          ">
+        </div>
+        `;
+        const defaultTypes = [
+          "CDS",
+          "misc_feature",
+          "primer_bind",
+          "promoter",
+          "protein_bind",
+          "source",
+          "terminator"
+        ];
+        const select = typeDiv.getElementsByTagName("select")[0];
+        for (let i = 0; i < defaultTypes.length; i++) {
+          let newOption = new Option(defaultTypes[i], defaultTypes[i]);
+          if (defaultTypes[i] === feature.type) {
+            newOption.setAttribute('selected','selected');
+          };
+          select.add(newOption, undefined);
+        };
+        if (!defaultTypes.includes(feature.type)) {
+          let newOption = new Option(feature.type, feature.type);
+          newOption.setAttribute('selected','selected');
+          select.add(newOption, undefined);
+        };
+        const customOption = new Option("Custom type", "customOption");
+        select.add(customOption, undefined);
+
+        collapsibleContent.appendChild(typeDiv);
+
+
+        /**
+         * Note
+         */
+        const noteDiv = document.createElement("DIV");
+        noteDiv.classList.add("collapsible-content-hgroup");
+        noteDiv.innerHTML = `
+        <label class="collapsible-content-hgroup-label">Note</label>
+        <div class="collapsible-content-hgroup-input">
+          <textarea id="noteTextArea" spellcheck="false">${feature.note}</textarea>
+        </div>
+        `;
+        collapsibleContent.appendChild(noteDiv);
+
+        /**
+         * Update info button
+         */
+        const updaetButtonDiv = document.createElement("DIV");
+        updaetButtonDiv.classList.add("collapsible-content-hgroup");
+        updaetButtonDiv.innerHTML = `
+        <button class="update-feature-btn" style="background-color: ${feature.ivaprimeColor}" onClick="updateFeatureProperties(this)">Update</button>
+        <button class="update-feature-btn remove-feature-btn" onClick="removeFeatureButton(this)">Remove</button>
+        `;
+        collapsibleContent.appendChild(updaetButtonDiv);
+
+
+        featureDiv.appendChild(collapsibleHeader);
+        featureDiv.appendChild(collapsibleContent);
+        sidebarDiv.appendChild(featureDiv);
+
+
+        collapsibleHeader.addEventListener("click", function() {
+          expandCollapsibleHeader(featureID);
+        });
       };
     };
 
-    this.sidebarTable = sidebarTable;
+    this.sidebarTable = sidebarDiv;
   };
 
 
@@ -439,17 +558,18 @@ class Plasmid {
         const annotationColorVariable = this.index + key + "-annotation-color";
 
         // If color not in list, add generate one and add it
-        let annotColor = generateRandomUniqueColor(recentColor);
-        recentColor = annotColor; // Store the colour history
-        if (globalColors.indexOf("--" + annotationColorVariable) === -1) {
-          document.documentElement.style.setProperty(`--${annotationColorVariable}`, annotColor);
+        let annotColor;
+        if (!value["ivaprimeColor"]) {
+          annotColor = generateRandomUniqueColor(recentColor);
+          recentColor = annotColor;
+          value["ivaprimeColor"] = annotColor;
+          value["color"] = annotColor;
         } else {
-          annotColor = window.getComputedStyle(document.documentElement).getPropertyValue(`--${annotationColorVariable}`).trim();;
-        };
-
-        if (!value["color"]) {
+          annotColor = value["ivaprimeColor"];
           value["color"] = annotColor;
         };
+        
+        document.documentElement.style.setProperty(`--${annotationColorVariable}`, annotColor);
 
         // Make the annotation at the specified indices
         makeAnnotation(rangeStart - 1, rangeEnd - 1, annotText, key, annotationColorVariable, sequenceGrid, currGridStructure);
@@ -545,8 +665,8 @@ class Plasmid {
           const targetStrand = (!value.span.includes("complement")) ? "fwd": "comp";
           translateSpan(
             targetStrand,
-            rangeStart,
-            rangeEnd,
+            parseInt(rangeStart),
+            (targetStrand === "fwd") ? parseInt(rangeEnd): parseInt(rangeEnd) + 1,
             sequenceGrid,
             currGridStructure,
             this.index,
@@ -566,9 +686,179 @@ class Plasmid {
   };
 
 };
-//// Cursor trackers
-//let basePosition = -1;
-//let hoveringOverSelectionCursor = null;
+
+
+/**
+ * 
+ */
+function expandCollapsibleHeader(featureID) {
+  const targetHeader = document.getElementById(featureID).firstChild;
+  const content = targetHeader.nextElementSibling;
+
+  if (content.style.display === "none") {
+    /**
+     * Expand
+     */
+    closeCollapsibleHeaders();
+    targetHeader.classList.toggle("collapsible-header-active");
+    content.style.display = "block";
+    content.style.maxHeight = content.scrollHeight + "px"; 
+  
+    scrollToAnnotation(targetHeader.parentElement.id);
+    targetHeader.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
+  } else {
+    /**
+     * Close
+     */
+    targetHeader.classList.toggle("collapsible-header-active");
+    content.style.display = "none";
+    content.style.maxHeight = null; 
+  };
+
+};
+
+/**
+ * 
+ */
+function closeCollapsibleHeaders() {
+  for (const header of document.querySelectorAll(".collapsible-header-active")) {
+    header.classList.toggle("collapsible-header-active");
+    const content = header.nextElementSibling;
+    content.style.display = "none";
+    content.style.maxHeight = null; 
+  };
+};
+
+
+/**
+ * 
+ * @param {*} hideObj 
+ * @param {*} showObj 
+ */
+function toggleInputInSelect(hideObj, showObj){
+  console.log(hideObj)
+  hideObj.disabled = true;		
+  hideObj.style.display = 'none';
+  console.log(showObj)
+  showObj.disabled = false;	
+  showObj.style.display = 'inline';
+  showObj.focus();
+};
+
+
+/**
+ * 
+ * @param {*} btn 
+ */
+function updateFeatureProperties(btn) {
+  // Current file features
+  const currPlasmid = Project.activePlasmid();
+  const parentDiv = btn.parentElement.parentElement;
+  const featureID = parentDiv.parentElement.id;
+  
+  
+  Project.activePlasmid().features[featureID].label = parentDiv.querySelectorAll("#labelInput")[0].value;
+  console.log("updateFeatureProperties", Project.activePlasmid().features[featureID].label)
+
+  Project.activePlasmid().features[featureID].color = parentDiv.querySelectorAll("#colorInput")[0].value;
+  Project.activePlasmid().features[featureID].ivaprimeColor = parentDiv.querySelectorAll("#colorInput")[0].value;
+
+  const direction = parentDiv.querySelectorAll("#directionSelect")[0].value;
+  const spanStart = parentDiv.querySelectorAll("#spanStartInput")[0].value;
+  const spanEnd = parentDiv.querySelectorAll("#spanEndInput")[0].value;
+  Project.activePlasmid().features[featureID].span = (direction === "fwd") ? spanStart + ".." + spanEnd: "complement(" + spanStart + ".." + spanEnd + ")";
+
+  if (parentDiv.querySelectorAll("#translateCheckbox")[0].checked === true) {
+    const targetSequence = (direction === "fwd") ? currPlasmid.sequence.slice(spanStart - 1, spanEnd): getComplementaryStrand(currPlasmid.sequence.slice(spanStart - 1, spanEnd)).split("").reverse().join("");
+    console.log("updateFeatureProperties", targetSequence);
+    const translatedSequence = translateSequence(targetSequence);
+    Project.activePlasmid().features[featureID].translation = translatedSequence;
+    console.log("updateFeatureProperties", translatedSequence);
+  } else {
+    delete Project.activePlasmid().features[featureID].translation;
+  };
+
+  Project.activePlasmid().features[featureID].type = (parentDiv.querySelectorAll("#typeSelect")[0].disabled === false) ? parentDiv.querySelectorAll("#typeSelect")[0].value: parentDiv.querySelectorAll("#typeInput")[0].value;
+  
+  Project.activePlasmid().features[featureID].note = parentDiv.querySelectorAll("#noteTextArea")[0].value;
+
+  
+  // Refresh sidebar table
+  currPlasmid.makeContentGrid();
+  currPlasmid.createSidebarTable();
+  
+  updateSidebarAndGrid();
+  currPlasmid.saveProgress();
+
+  if (parentDiv.querySelectorAll("#translateCheckbox")[0].checked === true) {
+    translateSpan(
+      direction,
+      parseInt(spanStart),
+      (direction === "fwd") ? parseInt(spanEnd): parseInt(spanEnd) + 1,
+      document.getElementById("sequence-grid-" + Project.activePlasmidIndex),
+      Project.activePlasmid().gridStructure,
+      Project.activePlasmidIndex
+    );
+  };
+};
+
+
+/**
+ * 
+ * @param {*} featureID 
+ */
+function removeFeature(featureID) {
+    delete Project.activePlasmid().features[featureID];
+  
+    // Refresh sidebar table
+    Project.activePlasmid().makeContentGrid();
+    Project.activePlasmid().createSidebarTable();
+    updateSidebarAndGrid();
+    Project.activePlasmid().saveProgress();
+};
+
+function removeFeatureButton(btn) {
+  // Current file features
+  const parentDiv = btn.parentElement.parentElement;
+  const featureID = parentDiv.parentElement.id;
+
+  removeFeature(featureID)
+};
+
+
+
+function addNewFeature(newFeatureLabel, featureSpanStart, featureSpanEnd, direction="fwd", featureColor=null, newFeatureType="misc_feature", translateFeature=false, newFeatureNote="") {
+  const currPlasmid = Project.activePlasmid();
+  const newFeatureID = crypto.randomUUID();
+
+  const newFeatureSpan = (direction === "fwd") ? featureSpanStart + ".." + featureSpanEnd: "complement(" + featureSpanStart + ".." + featureSpanEnd + ")";
+  const newFeatureColor = (featureColor === null) ? generateRandomUniqueColor(): featureColor;
+
+  Project.activePlasmid().features[newFeatureID] = {
+    type: newFeatureType,
+    label: newFeatureLabel,
+    span: newFeatureSpan,
+    color: newFeatureColor,
+    note: newFeatureNote,
+  };
+
+  if (translateFeature === true) {
+    const targetSequence = (direction === "fwd") ? currPlasmid.sequence.slice(spanStart - 1, spanEnd): getComplementaryStrand(currPlasmid.sequence.slice(spanStart - 1, spanEnd)).split("").reverse().join("");
+    const translatedSequence = translateSequence(targetSequence);
+    Project.activePlasmid().features[newFeatureID].translation = translatedSequence;
+  };
+
+  Project.activePlasmid().features = sortBySpan(Project.activePlasmid().features);
+
+  // Refresh sidebar table
+  currPlasmid.makeContentGrid();
+  currPlasmid.createSidebarTable();
+  updateSidebarAndGrid();
+  currPlasmid.saveProgress();
+};
 
 
 /**
@@ -1577,6 +1867,7 @@ async function exportDNAFile(plasmidIndex) {
         i++;
         xmlFeatureElement.setAttribute('name', value["label"]);
         xmlFeatureElement.setAttribute('directionality', (!value["span"].includes("complement")) ? "1": "2");
+        xmlFeatureElement.setAttribute('readingFrame', (!value["span"].includes("complement")) ? "1": "-1");
         xmlFeatureElement.setAttribute('type', value["type"]);
         xmlFeatureElement.setAttribute('allowSegmentOverlaps', "0");
         xmlFeatureElement.setAttribute('consecutiveTranslationNumbering', "1");
@@ -2026,10 +2317,19 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, annotationColor
 /**
  * Generates a random color that was not used recently.
  */
+const defaultAnnotationColors = [
+  "#FFB6C1",
+  "#FFDAB9",
+  "#FFA07A",
+  "#FFC0CB",
+  "#87CEFA",
+  "#98FB98",
+  "#FF69B4",
+  "#90EE90"
+];
 function generateRandomUniqueColor(recentColor="") {
-  const baseColors = ["#FFB6C1", "#FFDAB9", "#FFA07A", "#FFC0CB", "#87CEFA", "#98FB98", "#FF69B4", "#90EE90"];
 
-  const remainingColors = baseColors.filter(color => color !== recentColor);
+  const remainingColors = defaultAnnotationColors.filter(color => color !== recentColor);
   const randomIndex = Math.floor(Math.random() * remainingColors.length);
   const randomColor = remainingColors[randomIndex];
 
@@ -2062,7 +2362,7 @@ function translateCodon(codon) {
     'GTT': 'V', 'GTC': 'V', 'GTA': 'V', 'GTG': 'V',
     'TGG': 'W',
     'TAT': 'Y', 'TAC': 'Y',
-    'TAA': '-', 'TAG': '-', 'TGA': '-'
+    'TAA': '*', 'TAG': '*', 'TGA': '*'
   };
 
   return codonTable[codon] || '';
@@ -2131,13 +2431,24 @@ function startTranslation(codonPos) {
 /**
  * Translate specific span
  */
+/**
+ * 
+ * @param {*} targetStrand - "fwd" || any string
+ * @param {*} rangeStart 
+ * @param {*} rangeEnd 
+ * @param {*} targetTable 
+ * @param {*} currGridStructure 
+ * @param {*} plasmidIndex 
+ */
 function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGridStructure, plasmidIndex) {
+  console.log("translateSpan", targetStrand, rangeStart, rangeEnd, targetTable, currGridStructure, plasmidIndex)
+  
   // Select the corresponding features and sequence
   const currPlasmid = Project.getPlasmid(plasmidIndex);
   const currSequence = (targetStrand === "fwd") ? currPlasmid.sequence: currPlasmid.complementarySequence;
 
-  const codonStartPos = (targetStrand === "fwd") ? rangeStart: rangeEnd;
-  const codonEndPos = (targetStrand === "fwd") ? rangeEnd + 1: rangeStart;
+  const codonStartPos = (targetStrand === "fwd") ? rangeStart: rangeEnd - 1;
+  const codonEndPos = (targetStrand === "fwd") ? rangeEnd + 1: rangeStart + 1;
   let codonPos = codonStartPos;
   const dir = (targetStrand === "fwd") ? 1: -1;
 
@@ -2148,6 +2459,7 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGrid
   // displayed in the middle cell of a group of 3 cells
   let row = tableCoords[0];
   let col = tableCoords[1] + 1*dir;
+  console.log("translateSpan", row, col);
 
 
   // Start translating until a stop codon is encountered
@@ -2186,6 +2498,8 @@ function translateSpan(targetStrand, rangeStart, rangeEnd, targetTable, currGrid
   const targetDict = (targetStrand === "fwd") ? "forward": "reverse";
   
   Project.getPlasmid(plasmidIndex).translations[targetDict].push(translationDict);
+
+  return translatedSequence;
 };
 
 
@@ -2207,6 +2521,7 @@ function translateSequence(inputSequence) {
  * 
  */
 function fillAACells(row, col, text, targetTable, currGridStructure, aaIndex) {
+  //console.log("fillAACells", row, col, text, aaIndex)
 
   // Select the middle cell
   if (col < 0) {
@@ -2220,6 +2535,7 @@ function fillAACells(row, col, text, targetTable, currGridStructure, aaIndex) {
 
     mainCell = targetTable.rows[row].cells[col];
   };
+  //console.log("fillAACells", mainCell)
 
   // Select the left and right cells
   const leftCell = targetTable.rows[row].cells[col-1];
@@ -2314,3 +2630,16 @@ function cleanLostCells(targetTable) {
     };
   });
 };
+
+
+/**
+ * Configure Coloris color picker
+ */
+Coloris({
+  el: '.coloris',
+  wrap: true,
+  theme: 'polaroid',
+  swatches: defaultAnnotationColors,
+  closeButton: true,
+  closeLabel: 'Save',
+});

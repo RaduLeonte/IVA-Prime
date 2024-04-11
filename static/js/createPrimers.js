@@ -70,7 +70,7 @@ function displayPrimers(primersType, primersDict) {
         copyPrimerSequenceButton.href = "#";
         copyPrimerSequenceButton.setAttribute("onClick", "copyPrimerSequenceToClipboard(this)");
         copyPrimerSequenceButton.classList.add("copy-primer-btn");
-        copyPrimerSequenceButton.style.backgroundImage = "url('/static/copy_icon.svg')";
+        copyPrimerSequenceButton.style.backgroundImage = "url('/static/assets/icons/copy_icon.svg')";
         primerSequence.appendChild(copyPrimerSequenceButton);
 
         // Primer info div
@@ -589,27 +589,27 @@ function weightedCodonRandomSelect(frequenciesDict) {
  * Amino acid to codon map.
  */
 const aaToCodon = {
-    A: ['GCT', 'GCC', 'GCA', 'GCG'],
-    R: ['CGT', 'CGC', 'CGA', 'CGG', 'AGA', 'AGG'],
-    N: ['AAT', 'AAC'],
-    D: ['GAT', 'GAC'],
-    C: ['TGT', 'TGC'],
-    E: ['GAA', 'GAG'],
-    Q: ['CAA', 'CAG'],
-    G: ['GGT', 'GGC', 'GGA', 'GGG'],
-    H: ['CAT', 'CAC'],
-    I: ['ATT', 'ATC', 'ATA'],
-    L: ['TTA', 'TTG', 'CTT', 'CTC', 'CTA', 'CTG'],
-    K: ['AAA', 'AAG'],
-    M: ['ATG'],
-    F: ['TTT', 'TTC'],
-    P: ['CCT', 'CCC', 'CCA', 'CCG'],
-    S: ['TCT', 'TCC', 'TCA', 'TCG', 'AGT', 'AGC'],
-    T: ['ACT', 'ACC', 'ACA', 'ACG'],
-    W: ['TGG'],
-    Y: ['TAT', 'TAC'],
-    V: ['GTT', 'GTC', 'GTA', 'GTG'],
-    X: ['TAA', 'TAG', 'TGA']
+    "A": ['GCT', 'GCC', 'GCA', 'GCG'],
+    "R": ['CGT', 'CGC', 'CGA', 'CGG', 'AGA', 'AGG'],
+    "N": ['AAT', 'AAC'],
+    "D": ['GAT', 'GAC'],
+    "C": ['TGT', 'TGC'],
+    "E": ['GAA', 'GAG'],
+    "Q": ['CAA', 'CAG'],
+    "G": ['GGT', 'GGC', 'GGA', 'GGG'],
+    "H": ['CAT', 'CAC'],
+    "I": ['ATT', 'ATC', 'ATA'],
+    "L": ['TTA', 'TTG', 'CTT', 'CTC', 'CTA', 'CTG'],
+    "K": ['AAA', 'AAG'],
+    "M": ['ATG'],
+    "F": ['TTT', 'TTC'],
+    "P": ['CCT', 'CCC', 'CCA', 'CCG'],
+    "S": ['TCT', 'TCC', 'TCA', 'TCG', 'AGT', 'AGC'],
+    "T": ['ACT', 'ACC', 'ACA', 'ACG'],
+    "W": ['TGG'],
+    "Y": ['TAT', 'TAC'],
+    "V": ['GTT', 'GTC', 'GTA', 'GTG'],
+    "*": ['TAA', 'TAG', 'TGA']
 };
 
 
