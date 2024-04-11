@@ -618,28 +618,29 @@ const aaToCodon = {
  * Codon frequency tables from CoCoPUTs (Alexaki et al. 2019, https://doi.org/10.1016/j.jmb.2019.04.021).
  */
 let codonWeights;
-document.addEventListener('DOMContentLoaded', function() {
+/**
+ * Populate aa optimisation dropdown menu with all organism choices
+ */
+function populateOrganismDropdown() {
+    const organismsList = Object.keys(codonWeights);
+    const select = document.getElementById('targetOrganismSelector'); 
+    for (let i = 0; i < organismsList.length; i++) {
+      let newOption = new Option(organismsList[i],organismsList[i]);
+      if (organismsList[i] === preferredOrganism) {
+        newOption.setAttribute('selected','selected');
+      };
+      select.add(newOption,undefined);
+    };
+  };
+function loadCodonWeights() {
     fetch('static/codonWeights.json')
     .then(response => response.json())
     .then(json => {
         codonWeights = json;
         populateOrganismDropdown();
     });
-    /**
-     * Populate aa optimisation dropdown menu with all organism choices
-     */
-    function populateOrganismDropdown() {
-      const organismsList = Object.keys(codonWeights);
-      const select = document.getElementById('targetOrganismSelector'); 
-      for (let i = 0; i < organismsList.length; i++) {
-        let newOption = new Option(organismsList[i],organismsList[i]);
-        if (organismsList[i] === preferredOrganism) {
-          newOption.setAttribute('selected','selected');
-        };
-        select.add(newOption,undefined);
-      };
-    };
-});
+};
+document.addEventListener('DOMContentLoaded', loadCodonWeights);
 
 
 /**
@@ -687,6 +688,7 @@ function optimizeAA(inputAA, targetOrganism) {
  * @returns {[string, Object, string, number, number]}
  */
 function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, pos1, pos2, operationType) {
+    console.log("generatePrimerSequences", operationType, pos1, pos2, dnaToInsert, aaToInsert, targetOrganism,)
     /**
      * Set primer colors
      */
