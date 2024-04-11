@@ -51,13 +51,9 @@ function addCellSelection(sequenceGridTable, plasmidIndex) {
         const targetRow = targetCell.parentElement
         let targetSpan = null;
         if (targetCell.id === "Annotations") {
-          const targetString = targetCell.getAttribute('feature-id');
-          for (const entryKey in Project.activePlasmid().features) {
-              if (entryKey === targetString) {
-                  targetSpan = Project.activePlasmid().features[entryKey]["span"];
-                  break;
-              };
-          };
+          const featureID = targetCell.getAttribute('feature-id');
+          targetSpan = Project.activePlasmid().features[featureID].span;
+          expandCollapsibleHeader(featureID);
         } else if (targetCell.id === "Amino Acids" && targetCell.innerText !== "") {
           const currGridStructure = Project.activePlasmid().gridStructure;
           const seqIndex = (gridWidth * Math.floor(targetRow.rowIndex/currGridStructure.length)) + targetCell.cellIndex + 1;
@@ -380,7 +376,7 @@ function selectBySpan(inputSpan) {
   };
 
   Project.activePlasmid().selectedText = getSelectedText(activePlasmidIndex);
-  updateFooterSelectionInfo()
+  updateFooterSelectionInfo();
 };
 
 

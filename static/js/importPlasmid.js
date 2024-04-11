@@ -196,6 +196,7 @@ class Plasmid {
 
         const collapsibleContent = document.createElement("DIV");
         collapsibleContent.classList.add("collapsible-content");
+        collapsibleContent.style.display = "none";
 
         /**
          * Label
@@ -352,7 +353,7 @@ class Plasmid {
 
 
         collapsibleHeader.addEventListener("click", function() {
-          expandCollapsibleHeader(this);
+          expandCollapsibleHeader(featureID);
         });
       };
     };
@@ -690,14 +691,44 @@ class Plasmid {
 /**
  * 
  */
-function expandCollapsibleHeader(targetHeader) {
-  targetHeader.classList.toggle("collapsible-header-active");
+function expandCollapsibleHeader(featureID) {
+  const targetHeader = document.getElementById(featureID).firstChild;
   const content = targetHeader.nextElementSibling;
-  content.style.display = (content.style.display === "block") ? "none": "block";
-  content.style.maxHeight = (content.style.maxHeight) ? null: "none"; 
 
-  if ((content.style.display === "block")) {
+  if (content.style.display === "none") {
+    /**
+     * Expand
+     */
+    closeCollapsibleHeaders();
+    targetHeader.classList.toggle("collapsible-header-active");
+    content.style.display = "block";
+    content.style.maxHeight = content.scrollHeight + "px"; 
+  
     scrollToAnnotation(targetHeader.parentElement.id);
+    targetHeader.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
+  } else {
+    /**
+     * Close
+     */
+    targetHeader.classList.toggle("collapsible-header-active");
+    content.style.display = "none";
+    content.style.maxHeight = null; 
+  };
+
+};
+
+/**
+ * 
+ */
+function closeCollapsibleHeaders() {
+  for (const header of document.querySelectorAll(".collapsible-header-active")) {
+    header.classList.toggle("collapsible-header-active");
+    const content = header.nextElementSibling;
+    content.style.display = "none";
+    content.style.maxHeight = null; 
   };
 };
 

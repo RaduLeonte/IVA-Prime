@@ -327,35 +327,46 @@ document.addEventListener('DOMContentLoaded', function () {
   };
 });
 
+
 /**
  * Move context menu to coordinates.
  */
 function positionContextMenu(clientX, clientY) {
+  document.querySelector(".overlay").style.display = "block";
   const contextMenu = document.querySelector('.custom-context-menu');
   const sequenceGrid = document.getElementById("content");
-  
-  let posX = clientX + sequenceGrid.scrollLeft - sequenceGrid.getBoundingClientRect().left;
-  let posY = clientY + sequenceGrid.scrollTop - sequenceGrid.getBoundingClientRect().top;
 
-  const maxX = sequenceGrid.scrollWidth - contextMenu.offsetWidth;
-  const maxY = sequenceGrid.scrollHeight - contextMenu.offsetHeight;
-  
-  if (posX > maxX) {
-    contextMenu.style.left = (posX - contextMenu.offsetWidth) + 'px';
-  } else {
-    contextMenu.style.left = posX + 'px';
+  let posX = clientX;
+  let posY = clientY;
+
+  const menuWidth = contextMenu.offsetWidth;
+  const menuHeight = contextMenu.offsetHeight
+
+  const menuRight = posX + contextMenu.offsetWidth;
+  const menuBottom = posY + contextMenu.offsetHeight;
+
+  const gridLeft = sequenceGrid.getBoundingClientRect().left;
+  const gridRight = sequenceGrid.getBoundingClientRect().right;
+  const gridTop = sequenceGrid.getBoundingClientRect().top;
+  const gridBottom = sequenceGrid.getBoundingClientRect().bottom;
+
+  if (gridRight <= menuRight) {
+    posX = (posX - menuWidth <= gridLeft) ? gridRight - menuWidth: posX - menuWidth;
   };
-  if (posY > maxY) {
-    contextMenu.style.top = (posY - contextMenu.offsetHeight) + 'px';
-  } else {
-    contextMenu.style.top = posY + 'px';
+  if (gridBottom <= menuBottom) {
+    posY = (posY - menuHeight <= gridTop) ? gridBottom - menuHeight: posY - menuHeight;
   };
+
+  contextMenu.style.left = posX + 'px';
+  contextMenu.style.top = posY + 'px';
 };
 
 /**
-   * Hides the context menu.
-   */
+ * Hides the context menu.
+ */
 function hideContextMenu() {
+  document.querySelector(".overlay").style.display = "none";
+
   const contextMenu = document.querySelector('.custom-context-menu');
   contextMenu.style.display = 'none';
 }
