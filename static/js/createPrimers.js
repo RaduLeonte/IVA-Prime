@@ -17,11 +17,15 @@ function displayPrimers(primersType, primersDict) {
         element.textContent = "Primers:";
     };
 
-    // Main div
+    /**
+     * Operation main div
+     */
     const modDiv = document.createElement("div");
     modDiv.id = "mod-div"
 
-    // Headline: operation nr + operation type
+    /**
+     * Opearation headline
+     */
     const h3 = document.createElement('h3');
     h3.id = 'primers-type';
     h3.setAttribute("primers-type", primersType.toLowerCase());
@@ -32,15 +36,23 @@ function displayPrimers(primersType, primersDict) {
     Project.activePlasmid().operationNr = parseInt(Project.activePlasmid().operationNr) + 1;
     modDiv.appendChild(h3);
 
+    /**
+     * Homologous region info
+     */
+    const homologousRegionInfo = document.createElement("p");
 
     // Iterate over each primer in the primerDict
     for (const [primer, subprimersDict] of Object.entries(primersDict)) {
-        // Main div
+        /**
+         * Primer main div
+         */
         const primerDiv = document.createElement("div");
         primerDiv.id = "primer-div";
         primerDiv.setAttribute("direction", primer.toLowerCase().includes("forward") ? "fwd": "rev");
 
-        // Primer name (forward primer, reverse primer, vector forward etc)
+        /**
+         * Primer name
+         */
         const primerName = document.createElement('p');
         primerName.textContent = primer + ":";
         primerName.classList.add("editable")
@@ -49,11 +61,12 @@ function displayPrimers(primersType, primersDict) {
         enableElementEditing(primerName, 1)
         primerDiv.appendChild(primerName);
 
-        // Primer sequence
+        /**
+         * Primer sequence
+         */
         const primerSequence = document.createElement('p');
         primerSequence.id = 'primer-sequence';
         // Add spans for each region in the primer sequence
-        // TO DO: Create classes for primer regions instead of adding styles to the element
         for (const [subprimer, subprimerProperties] of Object.entries(subprimersDict)) {
             if (subprimer !== "info") {
                 const span = document.createElement('span');
@@ -65,7 +78,6 @@ function displayPrimers(primersType, primersDict) {
         };
 
         // Add button that copies the primer sequence to clipboard
-        // TO DO: Copy formatting of the sequence as well (rich text)
         const copyPrimerSequenceButton = document.createElement("a");
         copyPrimerSequenceButton.href = "#";
         copyPrimerSequenceButton.setAttribute("onClick", "copyPrimerSequenceToClipboard(this)");
@@ -1491,5 +1503,10 @@ function copyPrimerSequenceToClipboard(sourceBtn) {
         };
     };
 
-    copyStringToClipboard(dummyElement.innerHTML)
+    copyStringToClipboard(sourceBtn.parentElement.innerText, dummyElement.innerHTML)
+};
+
+
+function extendPrimer() {
+
 };

@@ -286,9 +286,11 @@ function copySelectionToClipboard(plasmidIndex, special=null) {
  * 
  * @param {string} inputString 
  */
-function copyStringToClipboard(inputString) {
+function copyStringToClipboard(inputString, inputHTML="") {
+  console.log("copyStringToClipboard", inputString, inputHTML)
+  
   function dummyCopyListener(event) {
-    event.clipboardData.setData("text/html", inputString);
+    event.clipboardData.setData("text/html", (inputHTML === "") ? inputString: inputHTML);
     event.clipboardData.setData("text/plain", inputString);
     event.preventDefault();
   };
