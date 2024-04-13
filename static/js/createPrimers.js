@@ -6,8 +6,9 @@
  * 
  * @returns {void} 
  */
-// TO DO: Make and assign classes to the divs instead of setting the styles manually
-function displayPrimers(primersType, primersDict) {
+function displayPrimers(operationType, primersList) {
+    console.log("displayPrimers", operationType, primersList)
+    
     // Select sidebar element
     const sidebarContentDiv = document.querySelector('.sidebar-content');
 
@@ -26,58 +27,156 @@ function displayPrimers(primersType, primersDict) {
     /**
      * Opearation headline
      */
-    const h3 = document.createElement('h3');
-    h3.id = 'primers-type';
-    h3.setAttribute("primers-type", primersType.toLowerCase());
-    h3.classList.add("editable");
-    enableElementEditing(h3, 1);
-    h3.setAttribute("edited", false);
-    h3.textContent = Project.activePlasmid().operationNr + '. ' + primersType;
+    const operationHeadline = document.createElement('h3');
+    operationHeadline.id = 'primers-type';
+    operationHeadline.setAttribute("primers-type", operationType.toLowerCase());
+    operationHeadline.classList.add("editable");
+    enableElementEditing(operationHeadline, 1);
+    operationHeadline.setAttribute("edited", false);
+    operationHeadline.textContent = Project.activePlasmid().operationNr + '. ' + operationType;
     Project.activePlasmid().operationNr = parseInt(Project.activePlasmid().operationNr) + 1;
-    modDiv.appendChild(h3);
+    modDiv.appendChild(operationHeadline);
 
     /**
      * Homologous region info
      */
-    const homologousRegionInfo = document.createElement("p");
+    const homologousRegionInfo = document.createElement("div");
+    if (primersList.length === 2) {
+        let fullSequence = "";
+        for (let i = 0; i < primersList[0]["primerRegions"].length; i++) {
+            if (primersList[0]["primerRegions"][i] !== null) {
+                fullSequence += primersList[0]["primerRegions"][i][0];
+            };
+        };
+        const overlappingSequence = fullSequence.slice(0, primersList[0]["homologousRegionLengths"]);
+        const overlappingSequenceTm = getMeltingTemperature(overlappingSequence, "oligoCalc");
+        console.log("displayPrimers", overlappingSequence, overlappingSequenceTm)
+        homologousRegionInfo.innerHTML = `
+            <p class="homologous-region-info" onmouseover="highlightHomologousRegion(this, [0, 1])" onmouseout="highlightHomologousRegion(this, [0, 1])">Homologous region: <span id="operation-info-homo-length">${overlappingSequence.length}</span> bp, <span id="operation-info-homo-tm">${overlappingSequenceTm.toFixed(2)}</span> C</p>
+        `;
+    } else if (primersList.length === 4) {
+        let fullSequences = [];
+        for (i in [0, 2]) {
+            let fullSequence = "";
+            for (let j = 0; j < primersList[i]["primerRegions"].length; j++) {
+                if (primersList[i]["primerRegions"][j] !== null) {
+                    fullSequence += primersList[i]["primerRegions"][j][0];
+                };
+            };
+            fullSequences.push(fullSequence);
+        };
+        const overlappingSequences = [
+            fullSequences[0].slice(0, primersList[0]["homologousRegionLengths"]),
+            fullSequences[1].slice(0, primersList[2]["homologousRegionLengths"])
+        ];
+        const overlappingSequencesTm = [
+            getMeltingTemperature(overlappingSequences[0], "oligoCalc"),
+            getMeltingTemperature(overlappingSequences[1], "oligoCalc")
+        ];
+
+        homologousRegionInfo.innerHTML = `
+            <p class="homologous-region-info" onmouseover="highlightHomologousRegion(this, [0, 3])" onmouseout="highlightHomologousRegion(this, [0, 3])">5' Homologous region: <span>${overlappingSequences[0].length}</span> bp, <span id="operation-info-homo-tm">${overlappingSequencesTm[0].toFixed(2)}</span> C</p>
+            <p class="homologous-region-info" onmouseover="highlightHomologousRegion(this, [1, 2])" onmouseout="highlightHomologousRegion(this, [1, 2])">3' Homologous region: <span>${overlappingSequences[1].length}</span> bp, <span id="operation-info-homo-tm">${overlappingSequencesTm[1].toFixed(2)}</span> C</p>
+        `;
+    };
+    modDiv.appendChild(homologousRegionInfo);
+
 
     // Iterate over each primer in the primerDict
-    for (const [primer, subprimersDict] of Object.entries(primersDict)) {
+    for (const primerDict of primersList) {
         /**
          * Primer main div
          */
         const primerDiv = document.createElement("div");
         primerDiv.id = "primer-div";
-        primerDiv.setAttribute("direction", primer.toLowerCase().includes("forward") ? "fwd": "rev");
+        const primerDirection = primerDict["primerName"].toLowerCase().includes("forward") ? "fwd": "rev";
+        primerDiv.setAttribute("direction", primerDirection);
 
         /**
          * Primer name
          */
-        const primerName = document.createElement('p');
-        primerName.textContent = primer + ":";
-        primerName.classList.add("editable")
-        primerName.setAttribute("edited", false);
-        primerName.id = "primer-id";
-        enableElementEditing(primerName, 1)
-        primerDiv.appendChild(primerName);
+        const primerHeader = document.createElement('h4');
+        primerHeader.textContent = primerDict["primerName"] + ":";
+        primerHeader.classList.add("editable")
+        primerHeader.setAttribute("edited", false);
+        primerHeader.id = "primer-id";
+        enableElementEditing(primerHeader, 1)
+        primerDiv.appendChild(primerHeader);
 
         /**
          * Primer sequence
          */
         const primerSequence = document.createElement('p');
+        primerSequence.classList.add("primer-sequence")
         primerSequence.id = 'primer-sequence';
+
+        const homologousRegionSpan = document.createElement('span');
+        homologousRegionSpan.id = "homologous-region";
+        homologousRegionSpan.classList.add((primersList.length === 2) ? "homologous-region-orange": "homologous-region-cyan");
+        const remainingSpan = document.createElement('span');
         // Add spans for each region in the primer sequence
-        for (const [subprimer, subprimerProperties] of Object.entries(subprimersDict)) {
-            if (subprimer !== "info") {
-                const span = document.createElement('span');
-                span.classList.add("primer-span")
-                span.classList.add(subprimerProperties["bg-class"]);
-                span.textContent = subprimerProperties["seq"];
-                primerSequence.appendChild(span)
+        let fullPrimerSequence = "";
+        let remainingHRLength = primerDict["homologousRegionLengths"];
+        for (let j = 0; j < primerDict["primerRegions"].length; j++) {
+            const primerRegion = primerDict["primerRegions"][j]
+            if (primerRegion !== null) {
+                if (primerRegion[0] !== "") {
+                    const regionSequence = primerRegion[0];
+                    const regionColorClass = primerRegion[1];
+    
+                    const regionSpan = document.createElement('span');
+                    fullPrimerSequence += primerRegion[0];
+                    regionSpan.classList.add("primer-span")
+                    regionSpan.classList.add(regionColorClass);
+
+                    const tempElement = document.createElement('div');
+                    tempElement.classList.add(regionColorClass);
+                    document.body.appendChild(tempElement);
+                    const regionColor = window.getComputedStyle(tempElement).getPropertyValue('background-color');
+                    document.body.removeChild(tempElement);
+                    console.log("regionCOlor", regionColor)
+                    regionSpan.setAttribute("onmouseover", `primerRegionHover("${regionSequence}", "${primerDirection}", "${regionColor}")`);
+                    regionSpan.setAttribute("onmouseout", "removePrimerRegionHighlight()");
+
+        
+                    console.log("displayPrimers", regionSequence.length, remainingHRLength)
+                    if (regionSequence.length <= remainingHRLength) {
+                        // If homologous region not spent, add the full length to the homologous span
+                        regionSpan.textContent = regionSequence;
+                        homologousRegionSpan.appendChild(regionSpan);
+                        remainingHRLength -= regionSequence.length;
+                    } else {
+                        const homologousSequenceLength = remainingHRLength - regionSequence.length;
+                        console.log("displayPrimers", [0, homologousSequenceLength], [homologousSequenceLength])
+                        
+                        // Only part of the sequence is in the homologous region, split it
+                        regionSpan.textContent = regionSequence.slice(0, homologousSequenceLength);
+                        console.log("displayPrimers", regionSpan.textContent)
+
+                        homologousRegionSpan.appendChild(regionSpan);
+    
+                        const regionSpan2 = document.createElement('span');
+                        regionSpan2.textContent = regionSequence.slice(homologousSequenceLength);
+                        console.log("displayPrimers", regionSpan2.textContent)
+                        regionSpan2.classList.add("primer-span");
+                        regionSpan2.classList.add(regionColorClass);
+                        regionSpan2.setAttribute("onmouseover", `primerRegionHover("${regionSequence}", "${primerDirection}", "${regionColor}")`);
+                        regionSpan2.setAttribute("onmouseout", "removePrimerRegionHighlight()");
+                        remainingSpan.appendChild(regionSpan2);
+    
+                        remainingHRLength -= regionSequence.length;
+                    };
+                };
             };
         };
+        primerSequence.appendChild(homologousRegionSpan);
+        primerSequence.appendChild(remainingSpan);
 
-        // Add button that copies the primer sequence to clipboard
+        
+
+        /**
+         * Copy primer sequence button
+         */
         const copyPrimerSequenceButton = document.createElement("a");
         copyPrimerSequenceButton.href = "#";
         copyPrimerSequenceButton.setAttribute("onClick", "copyPrimerSequenceToClipboard(this)");
@@ -85,16 +184,22 @@ function displayPrimers(primersType, primersDict) {
         copyPrimerSequenceButton.style.backgroundImage = "url('/static/assets/icons/copy_icon.svg')";
         primerSequence.appendChild(copyPrimerSequenceButton);
 
-        // Primer info div
-        const pPrimerInfo = document.createElement('p')
-        const spanPrimerInfo = document.createElement('span');
-        spanPrimerInfo.textContent = subprimersDict["info"];
-        pPrimerInfo.appendChild(spanPrimerInfo);
+        /**
+         * Template binding region and total primer info
+         */
+        const tbrSequence = primerDict["primerRegions"].pop()[0];
+        const tbrTM = getMeltingTemperature(tbrSequence, meltingTempAlgorithmChoice).toFixed(2);
+        console.log("displayPrimers", tbrSequence, tbrTM);
+        const primerInfo = document.createElement('div');
+        primerInfo.innerHTML = `
+            <p>TBR: <span id="primer-info-tbr-length">${tbrSequence.length}</span> bp, <span id="primer-info-tbr-tm">${tbrTM}</span> C</p>
+            <p>Total: <span id="primer-info-total-length">${fullPrimerSequence.length}</span> bp</p>
+        `;
+        primerInfo.classList.add("primer-info");
 
         // Append divs
-        primerSequence.style.wordBreak = 'break-all';
         primerDiv.appendChild(primerSequence);
-        primerDiv.appendChild(pPrimerInfo);
+        primerDiv.appendChild(primerInfo);
         modDiv.append(primerDiv);
     };
 
@@ -104,8 +209,6 @@ function displayPrimers(primersType, primersDict) {
     Project.activePlasmid().savePrimers();
     // Add hover effects to the different regions in the primer sequences
     // TO DO: Maybe add a click effect that takes you to that position
-    // TO DO: Make sure this doesn't stack event listeners
-    addPrimerRegionHoverEvents();
     
     // Reset selection
     Project.activePlasmid().selectedText = "";
@@ -180,15 +283,14 @@ const exportPrimersDict = {
     /**
      * Export to plain text file
      * 
-     * @param {number} plasmidIndex 
-     * @returns {void}
+     * @param {string} fileName - Name of plasmid file without extension
+     * @param {number} plasmidIndex - Index of target plasmid
+     * @param {string} primersHTML - Inner HTML of primers
      */
-    txt : (plasmidIndex) => {
+    txt : (fileName, plasmidIndex, primersHTML) => {
         // Get file name and primers from the html element
-        const currPlasmid = Project.getPlasmid(plasmidIndex);
-        const fileName = currPlasmid.name.replace(currPlasmid.extension, "") + " primers";
         const containerDiv = document.createElement("div");
-        containerDiv.innerHTML = currPlasmid.primers;
+        containerDiv.innerHTML = primersHTML;
 
         // Iterate over children of the html element and populate the string to be saved to txt
         let textContent = "";
@@ -228,41 +330,56 @@ const exportPrimersDict = {
         };
 
         // Create blob and download it
-        const blob = new Blob([textContent], { type: 'text/plain' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = fileName + '.txt';
-        link.click();
+        downloadBlob(new Blob([textContent], { type: 'text/plain' }), fileName + ".txt");
     },
     /**
      * Export to Microsoft Word file
      * 
-     * @param {number} plasmidIndex 
-     * @returns {void}
+     * @param {string} fileName - Name of plasmid file without extension
+     * @param {number} plasmidIndex - Index of target plasmid
+     * @param {string} primersHTML - Inner HTML of primers
      */
-    doc : (plasmidIndex) => {
+    doc : (fileName, plasmidIndex, primersHTML) => {
         // Get file name and primers from the html element
-        const currPlasmid = Project.getPlasmid(plasmidIndex);
-        const fileName = currPlasmid.name.replace(currPlasmid.extension, "") + " primers";
-        const htmlContent = currPlasmid.primers;
+        const tempContainer = document.createElement('div');
+        tempContainer.innerHTML = primersHTML;
+        document.body.appendChild(tempContainer);
+
+        function iterate(node) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                const tempElement = document.createElement(node.tagName);
+                node.classList.forEach(className => {
+                    tempElement.classList.add(className)
+                });
+                document.body.appendChild(tempElement);
+                const styles = window.getComputedStyle(tempElement);
+                for (let key in styles) {
+                    if (["color", "background-color", "font-weight", "font-family"].includes(key)){
+                        let prop = key.replace(/\-([a-z])/g, v => v[1].toUpperCase());
+                        node.style[prop] = styles[key];
+                    };
+                };
+                document.body.removeChild(tempElement);
+
+                node.childNodes.forEach(iterate);
+            };
+        };
+        iterate(tempContainer);
         
         // Create blob using html-docx.js and download it
-        const docx = window.htmlDocx.asBlob(htmlContent);
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(docx);
-        link.download = fileName + '.docx';
-        link.click();
+        const blob = window.htmlDocx.asBlob(tempContainer.innerHTML);
+        document.body.removeChild(tempContainer);
+        downloadBlob(blob, fileName + ".docx");
     },
     /**
      * Export to csv file
      * 
-     * @param {number} plasmidIndex 
-     * @returns {void}
+     * @param {string} fileName - Name of plasmid file without extension
+     * @param {number} plasmidIndex - Index of target plasmid
+     * @param {string} primersHTML - Inner HTML of primers
      */
-    csv : (plasmidIndex) => {
+    csv : (fileName, plasmidIndex, primersHTML) => {
         // Get file name and primers from the html element as 2d array
-        const currPlasmid = Project.getPlasmid(plasmidIndex);
-        const fileName = currPlasmid.name.replace(currPlasmid.extension, "") + " primers";
         const tableData = getPrimersAsTable(plasmidIndex, includeColumnNames=true);
 
         // Convert 2d array to 1d
@@ -275,23 +392,18 @@ const exportPrimersDict = {
         const textContent = csvLines.join('\n');
 
         // Create blob and download it
-        const blob = new Blob([textContent], { type: 'text/plain' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = fileName + '.csv';
-        link.click();
+        downloadBlob(new Blob([textContent], { type: 'text/plain' }), fileName + ".csv");
     },
     /**
      * Export to Excel file
      * 
-     * @param {number} plasmidIndex 
-     * @returns {void}
+     * @param {string} fileName - Name of plasmid file without extension
+     * @param {number} plasmidIndex - Index of target plasmid
+     * @param {string} primersHTML - Inner HTML of primers
      */
-    xlsx: (plasmidIndex) => {
+    xlsx: (fileName, plasmidIndex, primersHTML) => {
         addLoadingCursor();
         // Get file name and primers from the html element as 2d array
-        const currPlasmid = Project.getPlasmid(plasmidIndex);
-        const fileName = currPlasmid.name.replace(currPlasmid.extension, "") + " primers";
         const tableData = getPrimersAsTable(plasmidIndex, includeColumnNames=true);
 
         // Create excel file using xlsx-populate
@@ -311,24 +423,20 @@ const exportPrimersDict = {
         })
         .then((blob) => {
             // Create blob using html-docx.js and download it
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = fileName;
-            link.click();
+            downloadBlob(blob, fileName);
             removeLoadingCursor();
         })
     },
     /**
      * Export to Microsynth order form
      * 
-     * @param {number} plasmidIndex 
-     * @returns {void}
+     * @param {string} fileName - Name of plasmid file without extension
+     * @param {number} plasmidIndex - Index of target plasmid
+     * @param {string} primersHTML - Inner HTML of primers
      */
-    microsynth: (plasmidIndex) => {
+    microsynth: (fileName, plasmidIndex, primersHTML) => {
         addLoadingCursor();
         // Get file name and primers from the html element as 2d array
-        const currPlasmid = Project.getPlasmid(plasmidIndex);
-        const fileName = currPlasmid.name.replace(currPlasmid.extension, "") + " primers";
         const tableData = getPrimersAsTable(plasmidIndex, includeColumnNames = false);
         
         // Create a list of rows to append to the microsynth form
@@ -397,13 +505,24 @@ const exportPrimersDict = {
         })
         .then((blob) => {
             // Create blob using html-docx.js and download it
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = fileName + " microsynth order form";
-            link.click();
+            downloadBlob(blob, fileName + " microsynth order form");
             removeLoadingCursor();
         })
     } 
+};
+
+
+/**
+ * Create a temporary link to download blob
+ * 
+ * @param {Blob} blob 
+ * @param {string} outputFileName 
+ */
+function downloadBlob(blob, outputFileName) {
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = outputFileName;
+    link.click();
 };
 
 
@@ -427,51 +546,48 @@ function numberToColumn(index) {
 };
 
 
-/**
- * Add hover events for primer regions
- */
-// TO DO: Add click events that take you to the region
-function addPrimerRegionHoverEvents(){
-    const spansList = document.querySelector(".sidebar-content").getElementsByTagName("SPAN");
 
-    Array.from(spansList).forEach((span) => {
-        span.addEventListener('mouseover', primerRegionHover);
-        span.addEventListener('mouseout', removePrimerRegionHighlight);
-    });
+/**
+ * Highlights span corresponding to the homologous region
+ * 
+ * @param {Element} source - DOM element that triggered the event
+ * @param {Array<number>} indices - List of indices that specify which primers to be affected
+ */
+function highlightHomologousRegion(source, indices) {
+    const targets = source.parentElement.parentElement.querySelectorAll("#homologous-region");
+    for (let i = 0; i < targets.length; i++)  {
+        if (indices.includes(i)) {
+            targets[i].classList.toggle("homologous-region-hover");
+        };
+    };
 };
 
 
 /**
  * Highlights where the primer sequence is in the plasmid sequence.
  * 
- * @param {Event} event 
+ * @param {string} primerRegionSequence - Sequence to be searched
+ * @param {string} direction - Direction of sequence "fwd"|"rev"
+ * @param {string} backgroundColor - Color to be applied to search results
  */
-function primerRegionHover(event) {
-    // Get primer span info
-    // Span element
-    const targetSpan = event.target;
-    // Sequence
-    const spanSequence = targetSpan.innerText;
-    // Sequence direction
-    const spanDirection = (targetSpan.parentElement.parentElement.getAttribute("direction") === "fwd") ? "fwd": "rev";
-    // Color
-    const spanColor = window.getComputedStyle(targetSpan).backgroundColor;
+function primerRegionHover(primerRegionSequence="", direction="fwd", backgroundColor="white") {
+    if (primerRegionSequence.length > 0) {
+        // Grid structure and sequence of currently opened plasmid
+        const currPlasmid = Project.activePlasmid();
+        const currSequence = (direction === "fwd") ? currPlasmid.sequence: currPlasmid.complementarySequence;
     
-    // Grid structure and sequence of currently opened plasmid
-    const currPlasmid = Project.activePlasmid();
-    const currSequence = (spanDirection === "fwd") ? currPlasmid.sequence: currPlasmid.complementarySequence;
-
-    // Reverse sequence if direction is reverse
-    const searchQuery = (spanDirection === "fwd") ? spanSequence: spanSequence.split('').reverse().join('');
-    // Strand 0 for forward, 1 for reverse
-    const targetStrand = (spanDirection === "fwd") ? 0: 1;
-    highlightOccurences(
-        targetStrand,
-        currSequence,
-        searchQuery,
-        null,
-        spanColor
-    );
+        // Reverse sequence if direction is reverse
+        const searchQuery = (direction === "fwd") ? primerRegionSequence: primerRegionSequence.split('').reverse().join('');
+        // Strand 0 for forward, 1 for reverse
+        const targetStrand = (direction === "fwd") ? 0: 1;
+        highlightOccurences(
+            targetStrand,
+            currSequence,
+            searchQuery,
+            null,
+            backgroundColor
+        );
+    };
 };
 
 
@@ -752,8 +868,8 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
     /**
      * Homologous regions
      */
-    let primersDict = {};
-    let operationTypeTagline = "";
+    let operationTypeTagline;
+    let primersList = [];
     let homoFwd = "";
     let homoRev = "";
 
@@ -778,19 +894,30 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
                 homoRegionMinLength
             );
             homoRev = "";
-            
-            // Generate primer dict
-            const primerInfoFwd = `(Homologous region: ${homoFwd.length} bp, ${Math.round(getMeltingTemperature(homoFwd, "oligoCalc"))} °C;
-                                    Template binding region: ${tempFwd.length} bp, ${Math.round(getMeltingTemperature(tempFwd, meltingTempAlgorithmChoice))} °C; 
-                                    Total: ${(homoFwd.length + seqToInsert.length + tempFwd.length)} bp)`;
-            const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(getMeltingTemperature(tempRev, meltingTempAlgorithmChoice))} °C; 
-                                    Total: ${(tempRev.length)} bp)`;
-            primersDict["Forward Primer"] = {1: {"seq": homoFwd, "bg-class": bgClassHomo},
-                                            2: {"seq": seqToInsert, "bg-class": bgClassIns},
-                                            3: {"seq": tempFwd, "bg-class": bgClassTBR},
-                                            info: primerInfoFwd};
-            primersDict["Reverse Primer"] = {1: {"seq": tempRev, "bg-class": bgClassTBR},
-                                            info: primerInfoRev};
+
+            primersList.push(
+                {
+                    "primerName": "Forward Primer",
+                    "homologousRegionLengths": homoFwd.length,
+                    "primerRegions": [
+                        [homoFwd, bgClassHomo],
+                        [seqToInsert, bgClassIns],
+                        [tempFwd, bgClassTBR]
+                    ]
+                }
+            );
+
+            primersList.push(
+                {
+                    "primerName": "Reverse Primer",
+                    "homologousRegionLengths": homoFwd.length,
+                    "primerRegions": [
+                        null,
+                        null,
+                        [tempRev, bgClassTBR]
+                    ]
+                }
+            );
 
         } else if (primerDistribution === true) {
             /**
@@ -851,20 +978,29 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
             let homoRev1 = getComplementaryStrand(homoFwd2).split('').reverse().join('');
             let homoRev2 = getComplementaryStrand(homoFwd1).split('').reverse().join('');
  
-            // Generate primer dict
-            const primerInfoFwd = `(Overlap: ${overlappingSeq.length} bp, ${Math.round(getMeltingTemperature(overlappingSeq, "oligoCalc"))} °C;
-                                    Template binding region: ${tempFwd.length} bp, ${Math.round(getMeltingTemperature(tempFwd, meltingTempAlgorithmChoice))} °C; 
-                                    Total: ${(homoFwd1.length + seqToInsert.length + tempFwd.length)} bp)`;
-            const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(getMeltingTemperature(tempRev, meltingTempAlgorithmChoice))} °C; 
-                                    Total: ${(homoRev1.length + seqToInsert.length + tempRev.length)} bp)`;
-            primersDict["Forward Primer"] = {1: {"seq": homoFwd1, "bg-class": bgClassHomo},
-                                            2: {"seq": seqToInsert, "bg-class": bgClassIns},
-                                            3: {"seq": tempFwd, "bg-class": bgClassTBR},
-                                            info: primerInfoFwd};
-            primersDict["Reverse Primer"] = {1: {"seq": homoRev1, "bg-class": bgClassHomo},
-                                             2: {"seq": getComplementaryStrand(seqToInsert).split("").reverse().join(""), "bg-class": bgClassIns},
-                                             3: {"seq": tempRev, "bg-class": bgClassTBR},
-                                             info: primerInfoRev};
+            const homologousRegionLength = homoFwd1.length + seqToInsert.length + homoRev1.length
+            primersList.push(
+                {
+                    "primerName": "Forward Primer",
+                    "homologousRegionLengths": homologousRegionLength,
+                    "primerRegions": [
+                        [homoFwd1, bgClassHomo],
+                        [seqToInsert, bgClassIns],
+                        [tempFwd, bgClassTBR]
+                    ]
+                }
+            );
+            primersList.push(
+                {
+                    "primerName": "Reverse Primer",
+                    "homologousRegionLengths": homologousRegionLength,
+                    "primerRegions": [
+                        [homoRev1, bgClassHomo],
+                        [getComplementaryStrand(seqToInsert).split("").reverse().join(""), bgClassIns],
+                        [tempRev, bgClassTBR]
+                    ]
+                }
+            );
         };
     } else {
         /**
@@ -930,20 +1066,37 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
         };
 
         // Generate primer dict
-        const primerInfoFwd = `(Overlap: ${overlappingSeq.length} bp, ${Math.round(getMeltingTemperature(overlappingSeq, "oligoCalc"))} °C;
-                                Template binding region: ${tempFwd.length} bp, ${Math.round(getMeltingTemperature(tempFwd, meltingTempAlgorithmChoice))} °C; 
-                                Total: ${(homoFwd.length + tempFwd.length)} bp)`;
-        const primerInfoRev = `(Template binding region: ${tempRev.length} bp, ${Math.round(getMeltingTemperature(tempRev, meltingTempAlgorithmChoice))} °C; 
-                                Total: ${(homoRev.length + tempRev.length)} bp)`;
-        primersDict["Forward Primer"] = {1: {"seq": homoFwd, "bg-class": bgClassIns},
-                                         2: {"seq": tempFwd, "bg-class": bgClassTBR},
-                                        info: primerInfoFwd};
-        primersDict["Reverse Primer"] = {1: {"seq": homoRev, "bg-class": bgClassIns},
-                                         2: {"seq": tempRev, "bg-class": bgClassTBR},
-                                         info: primerInfoRev};
+        primersList.push(
+            {
+                "primerName": "Forward Primer",
+                "homologousRegionLengths": overlappingSeq.length,
+                "primerRegions": [
+                    null,
+                    [homoFwd, bgClassIns],
+                    [tempFwd, bgClassTBR]
+                ]
+            }
+        );
+        primersList.push(
+            {
+                "primerName": "Reverse Primer",
+                "homologousRegionLengths": overlappingSeq.length,
+                "primerRegions": [
+                    null,
+                    [homoRev, bgClassIns],
+                    [tempRev, bgClassTBR]
+                ]
+            }
+        );
     };
 
-    return [operationTypeTagline, primersDict, seqToInsert, operationStartPos, operationEndPos];
+    return [
+        operationTypeTagline,
+        primersList,
+        seqToInsert,
+        operationStartPos,
+        operationEndPos
+    ];
 };
 
 
@@ -965,7 +1118,7 @@ function makePrimers(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, p
     // Generate primers
     const [
         operationTypeTagline,
-        primersDict,
+        primersList,
         seqToInsert,
         operationStartPos,
         operationEndPos
@@ -982,7 +1135,7 @@ function makePrimers(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, p
     // Display primers in the sidebar
     displayPrimers(
         operationTypeTagline,
-        primersDict
+        primersList
     );
     
     // Update the sequence and features
@@ -1154,7 +1307,7 @@ function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5
     // Create a simulated plasmid sequence where the subcloning target is already inserted
     const simulatedPlasmidSequence = targetVectorSequence.slice(0, startPos-1) + subcloningTargetSequence + targetVectorSequence.slice(endPos-1);
     // Create insertion primers to insert the 5' insertion on the simulated plasmid sequence
-    const [, primersDict5, , , ] = generatePrimerSequences(
+    const [, primersList5, , , ] = generatePrimerSequences(
         simulatedPlasmidSequence,
         seqToInsert5,
         "",
@@ -1163,6 +1316,7 @@ function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5
         startPos,
         "Subcloning"
     );
+    console.log("makeSubcloningPrimers", primersList5);
 
     // Create a simulated plasmid reverse complement sequence where the subcloning target is already inserted
     const simulatedPlasmidSequenceRevComp = getComplementaryStrand(simulatedPlasmidSequence).split("").reverse().join("");
@@ -1171,7 +1325,7 @@ function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5
     // Get the reverse complement sequence of the 3' insertion
     const seqToInsert3RevComp = getComplementaryStrand(seqToInsert3).split("").reverse().join("");
     // Create insertion primers to insert the 3' insertion on the simulated plasmid sequence
-    const [, primersDict3, , , ] = generatePrimerSequences(
+    const [, primersList3, , , ] = generatePrimerSequences(
         simulatedPlasmidSequenceRevComp,
         seqToInsert3RevComp,
         "",
@@ -1180,17 +1334,28 @@ function makeSubcloningPrimers(subcloningStartPos, subcloningEndPos, aaSequence5
         endPosRevComp,
         "Subcloning"
     );
+    console.log("makeSubcloningPrimers", primersList3);
 
 
     // Generate primer dict
-    let primersDict = {};
-    primersDict["Forward Primer"] = primersDict5["Forward Primer"];
-    primersDict["Reverse Primer"] = primersDict3["Forward Primer"];
-    primersDict["Vector Forward Primer"] = primersDict3["Reverse Primer"];
-    primersDict["Vector Reverse Primer"] = primersDict5["Reverse Primer"];
+    let primersList = [
+        primersList5[0],
+        primersList3[0],
+        primersList3[1],
+        primersList5[1],
+    ];
+    console.log("makeSubcloningPrimers", primersList);
+
+    primersList[0]["primerName"] = "Forward Primer";
+    primersList[1]["primerName"] = "Reverse Primer";
+    primersList[2]["primerName"] = "Vector Forward Primer";
+    primersList[3]["primerName"] = "Vector Reverse Primer";
 
     // Display primers in the sidebar
-    displayPrimers("Subcloning", primersDict);
+    displayPrimers(
+        "Subcloning",
+        primersList
+    );
 
     // Update the sequence and features
     const plasmidLengthDiff = subcloningSequenceFull.length - (endPos - startPos);

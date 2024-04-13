@@ -130,7 +130,6 @@ function updateSidebarPrimers() {
     sidebarContainer.insertBefore(newPrimers, sidebarContainer.firstChild);
     sidebarContainer.removeChild(oldPrimers);
 
-    addPrimerRegionHoverEvents();
     enablePrimerIDEditing();
 };
 
@@ -174,7 +173,6 @@ function switchPlasmidTab(plasmidIndex) {
 
     // Update primers
     updateSidebarPrimers();
-    addPrimerRegionHoverEvents();
 
     // Refresh undo buttons and set disabled/enabled states
     refreshUndoRedoButtons();
@@ -353,7 +351,13 @@ function positionPlasmidTabDropdownMenu(parentTab, dropdownMenu) {
 
 
 function exportPrimers(client, plasmidIndex) {
-    exportPrimersDict[client.getAttribute("fileType")](plasmidIndex);
+    const currPlasmid = Project.getPlasmid(plasmidIndex);
+    const fileName = currPlasmid.name.replace(currPlasmid.extension, "") + " primers";
+    exportPrimersDict[client.getAttribute("fileType")](
+        fileName,
+        plasmidIndex,
+        currPlasmid.primers,
+    );
 };
 
 

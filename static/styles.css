@@ -316,24 +316,81 @@ body {
   margin-bottom: 5px;
 }
 
-.sidebar-content p {
-    margin: 0;
-    padding: 0;
-    line-height: 1.5;
+.sidebar-content h4 {
+  margin-bottom: 5px;
 }
 
-.sidebar-content p:not(:last-child) {
+.sidebar-content div:not(:last-child) {
     margin-bottom: 10px;
 }
 
-.sidebar-content p:first-child {
+.sidebar-content div:first-child {
     font-weight: bold;
     font-size: 18px;
 }
 
-.sidebar-content p:last-child {
+.sidebar-content div:last-child {
     margin-bottom: 0;
 }
+
+.homologous-region-info {
+  text-decoration: underline dotted;
+}
+
+.primer-sequence {
+  word-break: break-all;
+  margin: 0;
+}
+
+.primer-info p {
+  margin: 0;
+}
+
+
+.homologous-region-hover {
+  position: relative;
+}
+
+.homologous-region-orange:after {
+  background: 
+    linear-gradient(90deg,rgb(217, 130, 58) 50%, transparent 0) repeat-x,
+    linear-gradient(90deg,rgb(217, 130, 58) 50%, transparent 0) repeat-x,
+    linear-gradient(0deg,rgb(217, 130, 58) 50%, transparent 0) repeat-y,
+    linear-gradient(0deg,rgb(217, 130, 58) 50%, transparent 0) repeat-y;
+}
+
+.homologous-region-cyan:after {
+  background: 
+    linear-gradient(90deg, rgb(140, 202, 242) 50%, transparent 0) repeat-x,
+    linear-gradient(90deg, rgb(140, 202, 242) 50%, transparent 0) repeat-x,
+    linear-gradient(0deg, rgb(140, 202, 242) 50%, transparent 0) repeat-y,
+    linear-gradient(0deg, rgb(140, 202, 242) 50%, transparent 0) repeat-y;
+}
+
+.homologous-region-hover:after {
+  content: " ";
+  position: absolute;
+  left: -5px;
+  right: -5px;
+  top: -5px;
+  bottom: -5px;
+  display: inline-block;
+  width: calc(100% + 10px);
+  height: calc(100% + 10px);
+
+  background-size: 12px 3px, 12px 3px, 3px 12px, 3px 12px;
+  background-position: 0% 0%, 0 100%, 0 0, 100% 0;
+  animation: linearGradientMove .7s infinite linear;
+}
+
+
+@keyframes linearGradientMove {
+  100% {
+      background-position: 12px 0, -12px 100%, 0 -12px, 100% 12px;
+  }
+}
+
+
 
 .collapsible-header {
   cursor: pointer;
@@ -887,7 +944,7 @@ td.AminoAcids {
 }
 
 .editable::after{
-  content: url('/static/pencil.svg');
+  content: url('/static/assets/icons/pencil.svg');
   filter: invert(var(--svg-filter));
   position: absolute;
   cursor: pointer;
