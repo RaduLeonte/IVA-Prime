@@ -26,7 +26,11 @@ function navigateFileHistory(direction) {
         Project.activePlasmid().features = JSON.parse(JSON.stringify(instance[1]));
         
         Project.activePlasmid().gridStructure = Project.activePlasmid().checkAnnotationOverlap();
-        Project.activePlasmid().primers = instance[2];
+        if (instance[2] !== null) {
+            Project.activePlasmid().primers = instance[2].replace(/&quot;/g, "'");
+        } else {
+            Project.activePlasmid().primers = `<h2 id="primers-div-headline">Primers will appear here.</h2>`;
+        }
         //Project.activePlasmid().sidebarTable = instance[3];
         Project.activePlasmid().contentGrid = instance[4];
 

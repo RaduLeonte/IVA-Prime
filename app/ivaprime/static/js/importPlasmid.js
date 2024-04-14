@@ -129,7 +129,7 @@ class Plasmid {
    * 
    */
   savePrimers() {
-    this.primers = document.querySelector('.sidebar-content').innerHTML;
+    this.primers = document.querySelector('.sidebar-content').innerHTML.replace("&quot;", "'");
   };
 
 

@@ -1299,3 +1299,35 @@ header {
   /**background-color: black;*/
   /**opacity: 50%;*/
 }
+
+.adjust-primer-btns-container {
+  display: inline-block;
+  margin-left: 5px;
+}
+
+.adjust-primer-btns-container:first-child {
+  margin-right: 5px;
+  margin-left: 0px;
+}
+
+.adjust-primer-btn {
+  font-weight: bold;
+  width: 25px;
+  height: 25px;
+  text-align: center;
+  border: none;
+  background-color: unset;
+  border-radius: 5px;
+}
+
+.adjust-primer-btn-plus::after {
+  content: "+";
+}
+
+.adjust-primer-btn-minus::after {
+  content: "-";
+}
+
+.adjust-primer-btn:hover {
+  background-color: var(--footer-icon-hover);
+}
