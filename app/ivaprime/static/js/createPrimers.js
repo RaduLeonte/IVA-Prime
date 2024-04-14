@@ -120,7 +120,7 @@ function displayPrimers(operationType, primersList) {
         let remainingHRLength = primerDict["homologousRegionLengths"];
         const primerRegionTypes = ["homo", "ins", "tbr"];
         for (let j = 0; j < primerDict["primerRegions"].length; j++) {
-            const primerRegion = primerDict["primerRegions"][j]
+            const primerRegion = primerDict["primerRegions"][j];
             if (primerRegion !== null) {
                 if (primerRegion[0] !== "") {
                     const regionSequence = primerRegion[0];
@@ -141,6 +141,7 @@ function displayPrimers(operationType, primersList) {
                     regionSpan.setAttribute("region-full-sequence", regionSequence);
                     regionSpan.setAttribute("primer-direction", primerDirection);
                     regionSpan.setAttribute("region-color", regionColor);
+                    regionSpan.setAttribute("max-length", ("maxLengths" in primerDict) ? primerDict["maxLengths"][j]: Infinity);
                     regionSpan.setAttribute("onmouseover", `primerRegionHover(this)`);
                     regionSpan.setAttribute("onmouseout", "removePrimerRegionHighlight()");
 
@@ -170,6 +171,7 @@ function displayPrimers(operationType, primersList) {
                         regionSpan2.setAttribute("region-full-sequence", regionSequence);
                         regionSpan2.setAttribute("primer-direction", primerDirection);
                         regionSpan2.setAttribute("region-color", regionColor);
+                        regionSpan2.setAttribute("max-length", ("maxLengths" in primerDict) ? primerDict["maxLengths"][j]: Infinity);
                         regionSpan2.setAttribute("onmouseover", `primerRegionHover(this)`);
                         regionSpan2.setAttribute("onmouseout", "removePrimerRegionHighlight()");
                         remainingSpan.appendChild(regionSpan2);
@@ -190,6 +192,7 @@ function displayPrimers(operationType, primersList) {
         buttonContainer5.setAttribute("direction", primerDirection);
         buttonContainer5.setAttribute("sequence-end", "5'");
         buttonContainer5.setAttribute("next-base-position", primerDict["nextBases"][0]);
+        buttonContainer5.setAttribute("primer-name", primerDict["primerName"])
         const plusButton5 = document.createElement('button');
         plusButton5.classList.add("adjust-primer-btn");
         plusButton5.classList.add("adjust-primer-btn-plus");
@@ -206,6 +209,7 @@ function displayPrimers(operationType, primersList) {
         buttonContainer3.setAttribute("direction", primerDirection);
         buttonContainer3.setAttribute("sequence-end", "3'");
         buttonContainer3.setAttribute("next-base-position", primerDict["nextBases"][1]);
+        buttonContainer3.setAttribute("primer-name", primerDict["primerName"])
         const plusButton3 = document.createElement('button');
         plusButton3.classList.add("adjust-primer-btn");
         plusButton3.classList.add("adjust-primer-btn-plus");
@@ -1123,6 +1127,11 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
                     (primerDistribution === true) ? operationStartPos + seqToInsert.length - homoFwd.length - 1: null,
                     operationStartPos + seqToInsert.length + tempFwd.length 
                 ],
+                "maxLengths": [
+                    Infinity,
+                    seqToInsert.length,
+                    Infinity
+                ],
                 "primerRegions": [
                     null,
                     [homoFwd, bgClassIns],
@@ -1137,6 +1146,11 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
                 "nextBases": [
                     operationStartPos + homoRev.length,
                     operationStartPos - tempRev.length - 1 
+                ],
+                "maxLengths": [
+                    Infinity,
+                    seqToInsert.length,
+                    Infinity
                 ],
                 "primerRegions": [
                     null,
@@ -1756,73 +1770,102 @@ function copyPrimerSequenceToClipboard(sourceBtn) {
 function adjustPrimerLength(instigator, adjustmentSign) {
     const buttonContainer = instigator.parentElement;
     const sequenceEnd = buttonContainer.getAttribute("sequence-end");
-    let nextBasePosition = parseInt(buttonContainer.getAttribute("next-base-position"));
-    console.log("adjustPrimerLength", instigator, buttonContainer);
-    const targetStrand = buttonContainer.getAttribute("direction");
-    if (adjustmentSign === 1) {
-        /**
-         * Lenghtening sequence
-         */
-
-        /**
-         * Find base to be appended
-         */
-        const currPlasmid = Project.activePlasmid();
-        const currSequence = (targetStrand === "fwd") ? currPlasmid.sequence: currPlasmid.complementarySequence;
-        const nextBase = currSequence.slice(nextBasePosition - 1, nextBasePosition);
-        console.log("adjustPrimerLength", nextBasePosition, nextBase);
-
-        /**
-         * Append new base to sequence
-         */
-        if (sequenceEnd === "5'") {
-            // Left button pair, find sequence to the right
-            // Button container -> homologous region span -> first child
-            const targetSpan = buttonContainer.nextElementSibling.firstElementChild;
-            targetSpan.innerText = nextBase + targetSpan.innerText;
-            nextBasePosition += (targetStrand === "fwd") ? -1: 1;
-        } else if (sequenceEnd === "3'") {
-            // Right button pair, find sequence to the left
-            // Button container -> span -> last child
-            const targetSpan = buttonContainer.previousElementSibling.lastElementChild;
-            targetSpan.innerText = targetSpan.innerText + nextBase;
-            nextBasePosition += (targetStrand === "fwd") ? 1: -1;
+    
+    if (buttonContainer.getAttribute("next-base-position") !== "null") {
+        let nextBasePosition = parseInt(buttonContainer.getAttribute("next-base-position"));
+        // button -> buttons container -> primer-sequence p -> primer-div div -> mod-div div
+        const modDiv = instigator.parentElement.parentElement.parentElement.parentElement;
+        const primerName = buttonContainer.getAttribute("primer-name");
+    
+        let homoRegionLengthChange = 0;
+        const targetStrand = buttonContainer.getAttribute("direction");
+        if (adjustmentSign === 1) {
+            /**
+             * Lenghtening sequence
+             */
+    
+            /**
+             * Find base to be appended
+             */
+            const currPlasmid = Project.activePlasmid();
+            const currSequence = (targetStrand === "fwd") ? currPlasmid.sequence: currPlasmid.complementarySequence;
+            const nextBase = currSequence.slice(nextBasePosition - 1, nextBasePosition);
+    
+            /**
+             * Append new base to sequence
+             */
+            if (sequenceEnd === "5'") {
+                // Left button pair, find sequence to the right
+                // Button container -> homologous region span -> first child
+                const targetSpan = buttonContainer.nextElementSibling.firstElementChild;
+                if (targetSpan.innerText.length < parseFloat(targetSpan.getAttribute("max-length"))) {
+                    targetSpan.innerText = nextBase + targetSpan.innerText;
+                    nextBasePosition += (targetStrand === "fwd") ? -1: 1;
+                    homoRegionLengthChange = 1;
+                } else {
+                    return;
+                };
+    
+            } else if (sequenceEnd === "3'") {
+                // Right button pair, find sequence to the left
+                // Button container -> span -> last child
+                const targetSpan = buttonContainer.previousElementSibling.lastElementChild;
+                if (targetSpan.innerText.length < parseFloat(targetSpan.getAttribute("max-length"))) {
+                    targetSpan.innerText = targetSpan.innerText + nextBase;
+                    nextBasePosition += (targetStrand === "fwd") ? 1: -1;
+                } else {
+                    return;
+                };
+            };
+        } else if (adjustmentSign === -1) {
+            /**
+             * Deleting bases
+             */
+            if (sequenceEnd === "5'") {
+                // Left button pair, find sequence to the right
+                // Button container -> homologous region span -> first child
+                const targetSpan = buttonContainer.nextElementSibling.firstElementChild;
+                if (targetSpan.innerText.length > 0) {
+                    targetSpan.innerText = targetSpan.innerText.slice(1);
+                    nextBasePosition += (targetStrand === "fwd") ? 1: -1;
+                    homoRegionLengthChange = -1;
+                } else {
+                    return;
+                };
+    
+            } else if (sequenceEnd === "3'") {
+                // Right button pair, find sequence to the left
+                // Button container -> span -> last child
+                const targetSpan = buttonContainer.previousElementSibling.lastElementChild;
+                if (targetSpan.innerText.length > 0) {
+                    targetSpan.innerText = targetSpan.innerText.slice(0, -1);
+                    nextBasePosition += (targetStrand === "fwd") ? -1: 1;
+                } else {
+                    return;
+                };
+            };
         };
-    } else if (adjustmentSign === -1) {
-        /**
-         * Deleting bases
-         */
-        if (sequenceEnd === "5'") {
-            // Left button pair, find sequence to the right
-            // Button container -> homologous region span -> first child
-            const targetSpan = buttonContainer.nextElementSibling.firstElementChild;
-            targetSpan.innerText = targetSpan.innerText.slice(1);
-            nextBasePosition += (targetStrand === "fwd") ? 1: -1;
-        } else if (sequenceEnd === "3'") {
-            // Right button pair, find sequence to the left
-            // Button container -> span -> last child
-            const targetSpan = buttonContainer.previousElementSibling.lastElementChild;
-            targetSpan.innerText = targetSpan.innerText.slice(0, -1);
-            nextBasePosition += (targetStrand === "fwd") ? -1: 1;
+    
+        let homoRegionLengthSpan;
+        if (modDiv.querySelectorAll("#homologous-region-info")[0].children.length === 1) {
+            homoRegionLengthSpan = modDiv.querySelectorAll("#operation-info-homo-length")[0];
+        } else {
+            const targetInfoSpan = (primerName === "Forward Primer" || primerName === "Vector Reverse Primer") ? 0: 1;
+            homoRegionLengthSpan = modDiv.querySelectorAll("#operation-info-homo-length")[targetInfoSpan];
         };
+        homoRegionLengthSpan.innerText = parseInt(homoRegionLengthSpan.innerText) + homoRegionLengthChange;
+        
+        /**
+         * Update nextBasePosition
+         */
+        buttonContainer.setAttribute("next-base-position", nextBasePosition);
+    
+        /**
+         * Update stuff
+         */
+        // Update span
+        refreshPrimerDiv(modDiv);
     };
-    
-
-    /**
-     * Update nextBasePosition
-     */
-    console.log("adjustPrimerLength", nextBasePosition);
-    buttonContainer.setAttribute("next-base-position", nextBasePosition);
-    
-
-    /**
-     * Update stuff
-     */
-    // Update span
-    // button -> buttons container -> primer-sequence p -> primer-div div -> mod-div div
-    const modDiv = instigator.parentElement.parentElement.parentElement.parentElement;
-    console.log("adjustPrimerLength modDiv", modDiv)
-    refreshPrimerDiv(modDiv);
 };
 
 
@@ -1836,60 +1879,63 @@ function refreshPrimerDiv(modDiv) {
      */
     // Get new homologous region sequence -> length, tm
     const homologousRegionInfoDiv = modDiv.querySelectorAll("#homologous-region-info")[0];
-    if (homologousRegionInfoDiv.children.length === 1) {
-        /**
-         * Standard operation -> 1 homologous region
-         */
-        let homologousSequence = modDiv.querySelectorAll("#homologous-region")[0].innerText;
-        console.log("refreshPrimerDiv homologous seq", homologousSequence)
-        const homologousSequenceTm = getMeltingTemperature(homologousSequence, "oligoCalc").toFixed(2);
+    let homoRegionSpanIndices = (homologousRegionInfoDiv.children.length === 1) ? [0, 0] : [0, 1, 1, 0];
+    let tempHomoSpan;
+    let tempRemainingSpan;
+    let i = 0;
+    modDiv.querySelectorAll("#primer-sequence").forEach(primerSequenceDiv => {
+        const currentIndex = homoRegionSpanIndices[i];
+        let currHSeqLength = parseInt(modDiv.querySelectorAll("#operation-info-homo-length")[currentIndex].innerText);
+        tempHomoSpan = document.createElement("span");
+        tempRemainingSpan = document.createElement("span");
+        const regionTags = ["homo", "ins", "tbr"];
 
-        let hSeqLength = homologousSequence.length;
-        const lengthSpan = homologousRegionInfoDiv.querySelectorAll("#operation-info-homo-length")[0];
-        lengthSpan.innerText = hSeqLength;
-        const tmSpan = homologousRegionInfoDiv.querySelectorAll("#operation-info-homo-tm")[0];
-        tmSpan.innerText = homologousSequenceTm;
-        console.log(lengthSpan, tmSpan);
+        for (tagIndex in regionTags) {
+            const tag = regionTags[tagIndex]
+            let fullRegionSequence = "";
+            primerSequenceDiv.querySelectorAll(`[primer-span-type="${tag}"]`).forEach(span => {
+                fullRegionSequence += span.innerText;
+            });
 
-        const tempHomoSpan = document.createElement("span");
-        const tempRemainingSpan = document.createElement("span");
-        modDiv.querySelectorAll("#primer-sequence").forEach(primerSequenceDiv => {
-            primerSequenceDiv.querySelectorAll(".primer-span").forEach(primerSpan => {
-                const primerSpanSeq = primerSpan.innerText;
-                if (primerSpanSeq.length <= hSeqLength) {
+            if (primerSequenceDiv.querySelectorAll(`[primer-span-type="${tag}"]`)[0]) {
+                const regionSpanElement = primerSequenceDiv.querySelectorAll(`[primer-span-type="${tag}"]`)[0].cloneNode(true);
+                regionSpanElement.innerText = fullRegionSequence;
+
+                if (fullRegionSequence.length <= currHSeqLength) {
                     // Fits in h span
-                    tempHomoSpan.appendChild(primerSpan);
-                } else if (primerSpanSeq.length > hSeqLength && hSeqLength > 0) {
+                    tempHomoSpan.appendChild(regionSpanElement.cloneNode(true));
+                } else if (fullRegionSequence.length > currHSeqLength && currHSeqLength > 0) {
                     // Span needs to be split
+                    const tempSpan1 = regionSpanElement.cloneNode(true);
+                    tempSpan1.innerText = regionSpanElement.innerText.slice(0, currHSeqLength);
+                    const tempSpan2 = regionSpanElement.cloneNode(true);
+                    tempSpan2.innerText = regionSpanElement.innerText.slice(currHSeqLength)
+                    
+                    tempHomoSpan.appendChild(tempSpan1);
+                    tempRemainingSpan.appendChild(tempSpan2);
                 } else {
                     // h span spent, goes into remaining span
-                    tempRemainingSpan.appendChild(primerSpan);
+                    tempRemainingSpan.appendChild(regionSpanElement.cloneNode(true));
                 };
-                hSeqLength -= primerSpanSeq.length
-            });
-        });
+                currHSeqLength -= fullRegionSequence.length;
+            };
+        };
         const homoRegionSpan = primerSequenceDiv.querySelectorAll("#homologous-region")[0];
         const remainingRegionSpan = homoRegionSpan.nextElementSibling;
         
         homoRegionSpan.innerHTML = tempHomoSpan.innerHTML;
         remainingRegionSpan.innerHTML = tempRemainingSpan.innerHTML;
 
-    } else {
-        /**
-         * Subcloning -> 2 homologous regions
-         */
-        let homologousSequences = [];
-        modDiv.querySelectorAll("#homologous-region").forEach(span => {
-            homologousSequences.push(span.innerText)
-        });
+        i++;
+    });
 
-        const lengthSpans = homologousRegionInfoDiv.querySelectorAll("#operation-info-homo-length");
-        const tmSpans = homologousRegionInfoDiv.querySelectorAll("#operation-info-homo-tm");
-        
-        lengthSpans[0].innerText = homologousSequences[0].length;
-        tmSpans[0].innerText = getMeltingTemperature(homologousSequences[0], "oligoCalc").toFixed(2);
-        lengthSpans[1].innerText = homologousSequences[2].length;
-        tmSpans[1].innerText = getMeltingTemperature(homologousSequences[2], "oligoCalc").toFixed(2);
+    homoRegionSpanIndices = (homologousRegionInfoDiv.children.length === 1) ? [0] : [0, 1];
+    for (let j = 0; j < homoRegionSpanIndices.length; j++) {
+        const currentIndex = homoRegionSpanIndices[j];
+        let homologousSequence = modDiv.querySelectorAll("#homologous-region")[currentIndex].innerText;
+        const homologousSequenceTm = getMeltingTemperature(homologousSequence, "oligoCalc").toFixed(2);
+        const tmSpan = homologousRegionInfoDiv.querySelectorAll("#operation-info-homo-tm")[currentIndex];
+        tmSpan.innerText = homologousSequenceTm;
     };
 
     /**
@@ -1898,7 +1944,6 @@ function refreshPrimerDiv(modDiv) {
     // Iterate over primer-divs
     const primerDivs = modDiv.querySelectorAll("#primer-div");
     primerDivs.forEach((primerDiv) => {
-        console.log(primerDiv);
         /**
          * Adjust onmouseover events
          */
