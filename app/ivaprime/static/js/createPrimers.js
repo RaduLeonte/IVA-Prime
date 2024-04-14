@@ -41,6 +41,7 @@ function displayPrimers(operationType, primersList) {
      * Homologous region info
      */
     const homologousRegionInfo = document.createElement("div");
+    homologousRegionInfo.ind = "homologous-region-info"
     if (primersList.length === 2) {
         let fullSequence = "";
         for (let i = 0; i < primersList[0]["primerRegions"].length; i++) {
@@ -117,6 +118,7 @@ function displayPrimers(operationType, primersList) {
         // Add spans for each region in the primer sequence
         let fullPrimerSequence = "";
         let remainingHRLength = primerDict["homologousRegionLengths"];
+        const primerRegionTypes = ["homo", "ins", "tbr"];
         for (let j = 0; j < primerDict["primerRegions"].length; j++) {
             const primerRegion = primerDict["primerRegions"][j]
             if (primerRegion !== null) {
@@ -128,6 +130,7 @@ function displayPrimers(operationType, primersList) {
                     fullPrimerSequence += primerRegion[0];
                     regionSpan.classList.add("primer-span")
                     regionSpan.classList.add(regionColorClass);
+                    regionSpan.setAttribute("primer-span-type", primerRegionTypes[j]);
 
                     const tempElement = document.createElement('div');
                     tempElement.classList.add(regionColorClass);
@@ -160,6 +163,7 @@ function displayPrimers(operationType, primersList) {
                         console.log("displayPrimers", regionSpan2.textContent)
                         regionSpan2.classList.add("primer-span");
                         regionSpan2.classList.add(regionColorClass);
+                        regionSpan2.setAttribute("primer-span-type", primerRegionTypes[j]);
                         regionSpan2.setAttribute("onmouseover", `primerRegionHover("${regionSequence}", "${primerDirection}", "${regionColor}")`);
                         regionSpan2.setAttribute("onmouseout", "removePrimerRegionHighlight()");
                         remainingSpan.appendChild(regionSpan2);
@@ -1672,6 +1676,118 @@ function copyPrimerSequenceToClipboard(sourceBtn) {
 };
 
 
-function extendPrimer() {
+/**
+ * 
+ * @param {*} eventSource 
+ * @param {*} adjustmentDirection 
+ * @param {*} targetStrand 
+ * @param {*} startPos 
+ * @param {*} endPos 
+ */
+function adjustPrimerLength(instigator, adjustmentDirection, targetStrand, startPos, endPos) {
+    /**
+     * Get new primer sequence
+     */
+    const currPlasmid = Project.activePlasmid();
+    const currSequence = (targetStrand === "fwd") ? currPlasmid.sequence: currPlasmid.complementarySequence;
 
+    const newSequence = "";
+
+    /**
+     * Update stuff
+     */
+    // Update span
+    // button -> buttons container -> primer-sequence p -> primer-div div -> mod-div div
+    const modDiv = instigator.parentElement.parentElement.parentElement.parentElement;
+    refreshPrimerDiv(modDiv);
+};
+
+
+/**
+ * 
+ * @param {Element} modDiv 
+ */
+function refreshPrimerDiv(modDiv) {
+    /**
+     * Homologous region info
+     */
+    // Get new homologous region sequence -> length, tm
+    const homologousRegionInfoDiv = modDiv.querySelectorAll("#homologous-region-info")[0];
+    if (homologousRegionInfoDiv.childNodes.length === 1) {
+        /**
+         * Standard operation -> 1 homologous region
+         */
+        const homologousSequence = modDiv.querySelectorAll("#homologous-region")[0].innerText;
+        const homologousSequenceTm = getMeltingTemperature(homologousSequence, "oligoCalc").toFixed(2);
+
+        const lengthSpan = homologousRegionInfoDiv.querySelectorAll("#operation-info-homo-length")[0];
+        lengthSpan.innerText = homologousSequence.length;
+        const tmSpan = homologousRegionInfoDiv.querySelectorAll("#operation-info-homo-tm")[0];
+        tmSpan.innerText = homologousSequenceTm;
+        console.log(lengthSpan, tmSpan);
+    } else {
+        /**
+         * Subcloning -> 2 homologous regions
+         */
+        let homologousSequences = [];
+        modDiv.querySelectorAll("#homologous-region").forEach(span => {
+            homologousSequences.push(span.innerText)
+        });
+
+        const [lengthSpan5, lengthSpan3] = homologousRegionInfoDiv.querySelectorAll("#operation-info-homo-length");
+        const [tmSpan5, tmSpan3] = homologousRegionInfoDiv.querySelectorAll("#operation-info-homo-tm");
+        
+        lengthSpan5.innerText = homologousSequences[0];
+        tmSpan5.innerText = getMeltingTemperature(lengthSpan5.innerText, "oligoCalc").toFixed(2);
+        lengthSpan3.innerText = homologousSequences[2];
+        tmSpan3.innerText = getMeltingTemperature(lengthSpan3.innerText, "oligoCalc").toFixed(2);
+        
+        console.log(lengthSpan5, lengthSpan3);
+        console.log(tmSpan5, tmSpan3);
+    };
+
+    /**
+     * Individual primers
+     */
+    // Iterate over primer-divs
+    const primerDivs = modDiv.querySelectorAll("#primer-div");
+    primerDivs.forEach((primerDiv) => {
+        console.log(primerDiv);
+        /**
+         * Adjust onmouseover events
+         */
+        // Homo -> same sequence
+        // Ins -> span sequence
+        primerDiv.querySelectorAll('[primer-span-type="homo"], [primer-span-type="ins"]').forEach(span => {
+            const currentEvent = span.getAttribute("onmouseover");
+            const regex = /primerRegionHover\("([^"]+)", "([^"]+)", "([^"]+)"\)/;
+            const newEvent = currentEvent.replace(regex, `primerRegionHover("${span.innerText}", "$2", "$3")`);
+            span.setAttribute("onmouseover", newEvent);
+        });
+
+        // TBR -> combined span sequence
+        let tbrSequence = "";
+        primerDiv.querySelectorAll('[primer-span-type="tbr"]').forEach(tbrSpan => {
+            tbrSequence += tbrSpan.innerText;
+        });
+
+        primerDiv.querySelectorAll('[primer-span-type="tbr"]').forEach(tbrSpan => {
+            const currentEvent = tbrSpan.getAttribute("onmouseover");
+            const regex = /primerRegionHover\("([^"]+)", "([^"]+)", "([^"]+)"\)/;
+            const newEvent = currentEvent.replace(regex, `primerRegionHover("${tbrSequence}", "$2", "$3")`);
+            tbrSpan.setAttribute("onmouseover", newEvent);
+        });
+
+        // Recalculate TBR length and tm
+        const tbrLengthSpan = primerDiv.querySelectorAll("#primer-info-tbr-length")[0];
+        tbrLengthSpan.innerText = tbrSequence.length;
+        const tbrTmSpan = primerDiv.querySelectorAll("#primer-info-tbr-tm")[0];
+        tbrTmSpan.innerText = getMeltingTemperature(tbrSequence, meltingTempAlgorithmChoice).toFixed(2);
+
+
+        // Recalculate Total length
+        const fullSequenceLength = primerDiv.querySelectorAll("#primer-sequence")[0].innerText.length;
+        const totalLengthSpan = primerDiv.querySelectorAll("#primer-info-total-length")[0];
+        totalLengthSpan.innerText = fullSequenceLength;
+    })
 };
