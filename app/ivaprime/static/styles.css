@@ -13,6 +13,8 @@
   --header-text-color: #fff;
   --header-btn-hover:#5c5c5c; 
   --border-color: #b8b8b8;
+  --link-default: unset;
+  --link-visited: unset;
 
   /* Context menu */
   --context-menu-bg-color: #333;
@@ -51,6 +53,8 @@
   --header-text-color: #ffffff;
   --header-btn-hover:#374164;
   --border-color: #34373c;
+  --link-default: #9F9FFF;;
+  --link-visited: #B874F7;;
 
   /* Context menu */
   --context-menu-bg-color: #1a1a20;
@@ -102,6 +106,14 @@ body {
   background-color: var(--bg-color1);
   color: var(--text-color);
   transition: background-color 400ms ease-in-out;
+}
+
+a {
+  color: var(--link-default);
+}
+
+a:visited {
+  color: var(--link-visited);
 }
 
 /* 
@@ -251,6 +263,10 @@ body {
 
 .info-window-create-primers-btn{
   padding: 8px 16px;
+  margin-right: 10px;
+  border: none;
+  border-radius: 5px;
+  color: white;
 }
 
 #info-window img{
@@ -400,7 +416,8 @@ body {
   border: none;
   text-align: left;
   outline: none;
-  font-size: 16px;
+  font-size: 18px;
+  color: var(--text-color);
 }
 
 .collapsible-header:hover {
@@ -411,14 +428,14 @@ body {
   border: none;
   text-align: left;
   outline: none;
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .collapsible-header:after {
   content: '\002B';
-  font-size: 14px;
+  font-size: 18px;
   font-weight: bold;
-  color: black;
+  color: var(--text-color);
   float: left;
   margin-right: 12px;
 }
@@ -467,6 +484,10 @@ input, select, textarea {
 .collapsible-content-hgroup-input textarea {
   width: 100%;
   padding: 5px;
+  background-color: var(--bg-color1);
+  border: none;
+  color: var(--text-color);
+  border-radius: 4px;
 }
 
 .collapsible-content-hgroup-input input[type=checkbox] {
@@ -492,16 +513,24 @@ input, select, textarea {
   margin-right: 10px;
   border: none;
   border-radius: 5px;
+  color: white;
+  font-size: 16px;
+  background-color: #4CAF50;
+}
+
+.update-feature-btn:hover {
+  cursor: pointer;
+  background-color: #45a049;
 }
 
 .remove-feature-btn {
   background-color: #FF5E5E;
 }
 
-.update-feature-btn:hover {
-  cursor: pointer;
-  filter: brightness(85%);
+.remove-feature-btn:hover{
+  background-color: #d34f4f;
 }
+
 
 
 /* Force text to wrap*/
@@ -538,7 +567,7 @@ td.AminoAcids {
 }
 
 .Annotations {
-  color:black;
+  color: var(--text-color);
 }
 
 .ForwardStrand:hover,
@@ -608,6 +637,16 @@ td.AminoAcids {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+}
+
+.popup-window select {
+  display: inline-block;
+  max-width: 50%;
+  padding: 5px;
+  background-color: var(--bg-color1);
+  color: var(--text-color);
+  border: none;
+  border-radius: 4px;
 }
 
 .popup-window-new-file {
@@ -680,6 +719,8 @@ td.AminoAcids {
   margin-bottom: 10px;
   color: var(--text-color);
   background-color: var(--bg-color1);
+  border: none;
+  margin-top: 5px;
 }
 
 .popup-window-textarea {
@@ -821,17 +862,28 @@ td.AminoAcids {
   margin-right: 10px;
 }
 
-.settings-window-row input {
+.settings-window-row input,
+.settings-window-row select {
   display: inline-block;
   max-width: 50%;
+  padding: 5px;
+  background-color: var(--bg-color1);
+  color: var(--text-color);
+  border: none;
+  border-radius: 4px;
 }
 
 .standard-btn-a {
+  color: white;
   border-radius: 5px;
   text-align: center;
   padding: 10px 20px;
   text-decoration: none;
   margin-bottom: 10px;
+}
+
+.standard-btn-a:visited {
+  color: white;
 }
 
 .save-settings-btn{
@@ -1318,14 +1370,19 @@ header {
   border: none;
   background-color: unset;
   border-radius: 5px;
+  filter: invert(var(--svg-filter));
 }
 
 .adjust-primer-btn-plus::after {
   content: "+";
+  filter: invert(var(--svg-filter));
+  color: var(--text-color);
 }
 
 .adjust-primer-btn-minus::after {
   content: "-";
+  filter: invert(var(--svg-filter));
+  color: var(--text-color);
 }
 
 .adjust-primer-btn:hover {

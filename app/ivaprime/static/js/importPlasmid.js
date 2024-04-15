@@ -234,7 +234,6 @@ class Plasmid {
         `;
         collapsibleContent.appendChild(spanDiv);
 
-
         /**
          * Direction
          */
@@ -341,7 +340,7 @@ class Plasmid {
         const updaetButtonDiv = document.createElement("DIV");
         updaetButtonDiv.classList.add("collapsible-content-hgroup");
         updaetButtonDiv.innerHTML = `
-        <button class="update-feature-btn" style="background-color: ${feature.ivaprimeColor}" onClick="updateFeatureProperties(this)">Update</button>
+        <button class="update-feature-btn" onClick="updateFeatureProperties(this)">Update</button>
         <button class="update-feature-btn remove-feature-btn" onClick="removeFeatureButton(this)">Remove</button>
         `;
         collapsibleContent.appendChild(updaetButtonDiv);
@@ -2317,15 +2316,21 @@ function mergeCells(row, col, rowspan, colspan, text, featureId, annotationColor
 /**
  * Generates a random color that was not used recently.
  */
+//const defaultAnnotationColors = [
+//  "#FFB6C1",
+//  "#FFDAB9",
+//  "#FFA07A",
+//  "#87CEFA",
+//  "#FF69B4",
+//  "#90EE90"
+//];
 const defaultAnnotationColors = [
-  "#FFB6C1",
-  "#FFDAB9",
-  "#FFA07A",
-  "#FFC0CB",
-  "#87CEFA",
-  "#98FB98",
-  "#FF69B4",
-  "#90EE90"
+  "#ff7a8e",
+  "#bc99ee",
+  "#ff8756",
+  "#5aa8d9",
+  "#f45ba8",
+  "#74e374"
 ];
 function generateRandomUniqueColor(recentColor="") {
 
