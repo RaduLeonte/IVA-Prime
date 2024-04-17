@@ -101,7 +101,7 @@ class Plasmid {
     sequence,
     features
   ) {
-    this.index = index;
+    this.index = (index !== null) ? index: Project.nextFreeIndex();
     this.name = name;
     this.extension = extension;
     this.header = header;
