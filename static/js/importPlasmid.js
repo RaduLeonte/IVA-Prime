@@ -1114,33 +1114,18 @@ function importFile(file, plasmidIndex=null) {
 
 
 /**
- * Common features
+ * Load common features
  */
-const commonFeatures = {
-  commonAffinityTags: {
-    "6xHis": ["AA", "HHHHHH", "CDS"],
-    "7xHis": ["AA", "HHHHHHH", "CDS"],
-    "FLAG": ["AA", "DYKDDDDK", "CDS"],
-    "Myc": ["AA", "EQKLISEEDL", "CDS"],
-    "HA": ["AA", "YPYDVPDYA", "CDS"],
-  },
-  commonPromoters: {
-    "T7": ["DNA", "TAATACGACTCACTATAG", "promoter"],
-    "T3": ["DNA", "AATTAACCCTCACTAAAGG", "promoter"],
-    "CMV": ["DNA", "ACCGTAAACGGTCTGCTAGG", "promoter"],
-    "EF1α": ["DNA", "ATGGATACTGCCGGTGAC", "promoter"],
-    "SV40": ["DNA", "GAGAGTACTGTTTAAACGTAAGCTG", "promoter"]
-  },
-  commonSequencingPrimers: {
-    "M13 Forward": ["DNA", "GTAAAACGACGGCCAGT", "primer_bind"],
-    "M13 Reverse": ["DNA", "CAGGAAACAGCTATGAC", "primer_bind"],
-    "CMV Forward": ["DNA", "CGCAAATGGGCGGTAGGCGTG", "primer_bind"],
-    "T7 Terminal": ["DNA", "GCTAGTTATTGCTCAGCGG", "primer_bind"]
-  },
-  commonCleavingSites: {
-    "TEV": ["AA", "ENLYFQG", "CDS"]
-  }
+let commonFeatures;
+function loadCommonFeatures() {
+    fetch('static/commonFeatures.json')
+    .then(response => response.json())
+    .then(json => {
+        commonFeatures = json;
+    });
 };
+document.addEventListener('DOMContentLoaded', loadCommonFeatures);
+
 
 /**
  * Create a new plasmid from user input
@@ -1169,48 +1154,79 @@ function newFileFromSequence(newFileName, newFileSequence, detectCommonFeatures)
         translateSequence(currentSequence.slice(2) + currentSequence.slice(0, 2))
       ];
 
-      for (const category in commonFeatures) {
+      for (const commonFeatureIndex in commonFeatures) {
+        const commonFeatureDict = commonFeatures[commonFeatureIndex];
+        const featureLabel = commonFeatureDict["label"];
+        const featureSequenceType = commonFeatureDict["sequence type"];
+        const featureSequence = commonFeatureDict["sequence"];
+        const regex = new RegExp(featureSequence, 'g');
+        let match;
 
-        for (const featureLabel in commonFeatures[category]) {
-          const feature = commonFeatures[category][featureLabel];
+        const similarFeatures = [];
+        // Iterate over the values in the dictionary
+        Object.values(newFileFeatures).forEach((feature) => {
+          if (feature.label == featureLabel) {
+            similarFeatures.push(removeNonNumeric(feature.span).split(".."));
+          };
+        });
+        console.log("similarFeatures", featureLabel, similarFeatures);
 
-          const pattern = feature[1];
-          const regex = new RegExp(pattern, 'g');
-          let match;
+        if (featureSequenceType === "AA") {
+          for (let j = 0; j < readingFrames.length; j++) {
+            while ((match = regex.exec(readingFrames[j])) !== null) {
+              const newFeatureId = crypto.randomUUID();
+              const startIndex = (i === 0) ? match.index*3 + j + 1: currentSequence.length - j - match.index*3 - featureSequence.length*3 + 1;
+              const endIndex = startIndex + featureSequence.length*3 - 1;
+              const newFeatureSpan = (i === 0) ? startIndex + ".." + endIndex: "complement(" + startIndex + ".." + endIndex + ")";
+              
+              let canAdd = true;
 
-          if (feature[0] === "AA") {
-            for (let j = 0; j < readingFrames.length; j++) {
-              while ((match = regex.exec(readingFrames[j])) !== null) {
-                const newFeatureId = crypto.randomUUID();
-                const startIndex = (i === 0) ? match.index*3 + j + 1: currentSequence.length - j - match.index*3 - pattern.length*3 + 1;
-                const endIndex = startIndex + pattern.length*3 - 1;
-                const newFeatureSpan = (i === 0) ? startIndex + ".." + endIndex: "complement(" + startIndex + ".." + endIndex + ")";
+              Object.values(similarFeatures).forEach((existingSpan) => {
+                if (existingSpan[0] <= startIndex && endIndex <= existingSpan[1]) {
+                  console.log("similarFeatures overlap", featureLabel, [startIndex, endIndex], existingSpan)
+                  canAdd = false;
+                };
+              });
+
+              if (canAdd) {
                 newFileFeatures[newFeatureId] = {
                   label: featureLabel,
-                  type: feature[2],
+                  type: commonFeatureDict["type"],
                   span: newFeatureSpan,
-                  translation: pattern,
-                  note: ""
+                  translation: featureSequence,
+                  note: (commonFeatureDict["note"] !== null) ? commonFeatureDict["note"]: ""
                 };
               };
             };
+          };
 
-          } else if (feature[0] === "DNA") {
-            while ((match = regex.exec(currentSequence)) !== null) {
-              const newFeatureId = crypto.randomUUID();
-              const startIndex = (i === 0) ? match.index + 1: currentSequence.length - match.index - pattern.length + 1;
-              const endIndex = startIndex + pattern.length - 1;
-              const newFeatureSpan = (i === 0) ? startIndex + ".." + endIndex: "complement(" + startIndex + ".." + endIndex + ")";
+        } else if (featureSequenceType === "DNA") {
+          while ((match = regex.exec(currentSequence)) !== null) {
+            const newFeatureId = crypto.randomUUID();
+            const startIndex = (i === 0) ? match.index + 1: currentSequence.length - match.index - featureSequence.length + 1;
+            const endIndex = startIndex + featureSequence.length - 1;
+            const newFeatureSpan = (i === 0) ? startIndex + ".." + endIndex: "complement(" + startIndex + ".." + endIndex + ")";
+            
+            
+            let canAdd = true;
+
+            Object.values(similarFeatures).forEach((existingSpan) => {
+              if (existingSpan[0] <= startIndex && endIndex <= existingSpan[1]) {
+                console.log("similarFeatures overlap", featureLabel, [startIndex, endIndex], existingSpan)
+                canAdd = false;
+              };
+            });
+
+            if (canAdd) {
               newFileFeatures[newFeatureId] = {
                 label: featureLabel,
-                type: feature[2],
+                type: commonFeatureDict["type"],
                 span: newFeatureSpan,
-                note: ""
+                note: (commonFeatureDict["note"] !== null) ? commonFeatureDict["note"]: ""
               };
             };
           };
         };
-
       };
     };
 
