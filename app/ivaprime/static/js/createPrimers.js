@@ -187,42 +187,32 @@ function displayPrimers(operationType, primersList) {
         /**
          * Plus minus buttons
          */
-        const buttonContainer5 = document.createElement('div');
-        buttonContainer5.classList.add("adjust-primer-btns-container");
-        buttonContainer5.setAttribute("direction", primerDirection);
-        buttonContainer5.setAttribute("sequence-end", "5'");
-        buttonContainer5.setAttribute("next-base-position", primerDict["nextBases"][0]);
-        buttonContainer5.setAttribute("primer-name", primerDict["primerName"])
-        const plusButton5 = document.createElement('button');
-        plusButton5.classList.add("adjust-primer-btn");
-        plusButton5.classList.add("adjust-primer-btn-plus");
-        plusButton5.setAttribute("onClick", `adjustPrimerLength(this, 1)`);
-        const minusButton5 = document.createElement('button');
-        minusButton5.classList.add("adjust-primer-btn");
-        minusButton5.classList.add("adjust-primer-btn-minus");
-        minusButton5.setAttribute("onClick", `adjustPrimerLength(this, -1)`);
-        buttonContainer5.appendChild(plusButton5);
-        buttonContainer5.appendChild(minusButton5);
+        for (let i = 0; i < 2; i++) {
+            // Make the button container
+            const buttonContainer = document.createElement('div');
+            buttonContainer.classList.add("adjust-primer-btns-container");
+            buttonContainer.setAttribute("direction", primerDirection);
+            buttonContainer.setAttribute("sequence-end", (i === 0) ? "5'": "3'");
+            buttonContainer.setAttribute("next-base-position", primerDict["nextBases"][i]);
+            buttonContainer.setAttribute("primer-name", primerDict["primerName"]);
+            buttonContainer.setAttribute("history-index", Project.activePlasmid().history.length);
+            
+            // Make plus and minus buttons
+            for (let j = 0; j < 2; j++) {
+                const button = document.createElement('button');
+                button.classList.add("adjust-primer-btn");
+                button.classList.add(`adjust-primer-btn-${(j === 0) ? "plus": "minus"}`);
+                button.setAttribute("onClick", `adjustPrimerLength(this, ${(j === 0) ? "1": "-1"})`);
+                buttonContainer.appendChild(button);
+            };
 
-        const buttonContainer3 = document.createElement('div');
-        buttonContainer3.classList.add("adjust-primer-btns-container");
-        buttonContainer3.setAttribute("direction", primerDirection);
-        buttonContainer3.setAttribute("sequence-end", "3'");
-        buttonContainer3.setAttribute("next-base-position", primerDict["nextBases"][1]);
-        buttonContainer3.setAttribute("primer-name", primerDict["primerName"])
-        const plusButton3 = document.createElement('button');
-        plusButton3.classList.add("adjust-primer-btn");
-        plusButton3.classList.add("adjust-primer-btn-plus");
-        plusButton3.setAttribute("onClick", `adjustPrimerLength(this, 1)`);
-        const minusButton3 = document.createElement('button');
-        minusButton3.classList.add("adjust-primer-btn");
-        minusButton3.classList.add("adjust-primer-btn-minus");
-        minusButton3.setAttribute("onClick", `adjustPrimerLength(this, -1)`);
-        buttonContainer3.appendChild(minusButton3);
-        buttonContainer3.appendChild(plusButton3);
-        
-        primerSequence.insertBefore(buttonContainer5, primerSequence.firstChild);
-        primerSequence.appendChild(buttonContainer3);
+            // Append button pair to either before or after the sequence
+            if (i === 0) {
+                primerSequence.insertBefore(buttonContainer, primerSequence.firstChild);
+            } else {
+                primerSequence.appendChild(buttonContainer);
+            };
+        };
 
         
 
@@ -1770,6 +1760,7 @@ function copyPrimerSequenceToClipboard(sourceBtn) {
 function adjustPrimerLength(instigator, adjustmentSign) {
     const buttonContainer = instigator.parentElement;
     const sequenceEnd = buttonContainer.getAttribute("sequence-end");
+    const historyIndex = buttonContainer.getAttribute("history-index");
     
     if (buttonContainer.getAttribute("next-base-position") !== "null") {
         let nextBasePosition = parseInt(buttonContainer.getAttribute("next-base-position"));
@@ -1788,7 +1779,8 @@ function adjustPrimerLength(instigator, adjustmentSign) {
              * Find base to be appended
              */
             const currPlasmid = Project.activePlasmid();
-            const currSequence = (targetStrand === "fwd") ? currPlasmid.sequence: currPlasmid.complementarySequence;
+            const currSequenceFwd = currPlasmid.history[historyIndex][0];
+            const currSequence = (targetStrand === "fwd") ? currSequenceFwd: getComplementaryStrand(currSequenceFwd);
             const nextBase = currSequence.slice(nextBasePosition - 1, nextBasePosition);
     
             /**
