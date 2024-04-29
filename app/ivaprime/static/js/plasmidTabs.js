@@ -233,6 +233,49 @@ function renamePlasmid(plasmidIndex) {
 };
 
 
+function flipPlasmid(plasmidIndex) {
+
+    const targetPlasmid = Project.getPlasmid(plasmidIndex);
+
+    // Flip sequence
+    const flippedSequence = targetPlasmid.complementarySequence.split("").reverse().join("");
+    const flippedCompSequence = targetPlasmid.sequence.split("").reverse().join("");
+    Project.plasmids[plasmidIndex].sequence = flippedSequence;
+    Project.plasmids[plasmidIndex].complementarySequence = flippedCompSequence;
+
+    const sequenceLength = flippedSequence.length;
+
+    // Flip features
+    Object.entries(targetPlasmid.features).forEach(([key, value]) => {
+        const currSpanString = value.span;
+        const currDirection = (!currSpanString.includes("complement")) ? 1: -1;
+        const currSpan = removeNonNumeric(currSpanString).split("..").map(Number);
+
+        const newSpan = [
+            sequenceLength - currSpan[1] + 1,
+            sequenceLength - currSpan[0] + 1
+        ];
+
+        const newSpanString = (currDirection === -1) ? `${newSpan[0]}..${newSpan[1]}`: `complement(${newSpan[0]}..${newSpan[1]})`
+
+        Project.plasmids[plasmidIndex].features[key].span = newSpanString;
+    });
+    Project.plasmids[plasmidIndex].features = sortBySpan(Project.plasmids[plasmidIndex].features);
+
+    // Remake the sidebar and content grid 
+    Project.plasmids[plasmidIndex].createSidebarTable();
+    Project.plasmids[plasmidIndex].makeContentGrid();
+
+    if(plasmidIndex === Project.activePlasmidIndex) {
+        clearSelection(plasmidIndex, true);
+        updateSidebarAndGrid();
+    };
+
+    // At the very end, save the progress to file history
+    Project.plasmids[plasmidIndex].saveProgress();
+};
+
+
 function closePlasmid(plasmidIndex) {
     const entriesList = Object.keys(Project.plasmids);
     // Check if were deleting the currently displayed plasmid
@@ -333,6 +376,7 @@ function createPlasmidTabDropdownMenu(plasmidIndex) {
     <h3>Edit plasmid</h3>
     <ul>
         <li><a href="#" onclick="renamePlasmid(${plasmidIndex})">Rename plasmid</a></li>
+        <li><a href="#" onclick="flipPlasmid(${plasmidIndex})">Flip plasmid</a></li>
     </ul>
     <h3>Close plasmids</h3>
     <ul>
