@@ -352,7 +352,7 @@ class Plasmid {
 
 
         collapsibleHeader.addEventListener("click", function() {
-          expandCollapsibleHeader(featureID);
+          expandCollapsibleHeader(featureID, scroll=true);
         });
       };
     };
@@ -690,7 +690,7 @@ class Plasmid {
 /**
  * 
  */
-function expandCollapsibleHeader(featureID) {
+function expandCollapsibleHeader(featureID, scroll=false) {
   const targetHeader = document.getElementById(featureID).firstChild;
   const content = targetHeader.nextElementSibling;
 
@@ -703,11 +703,13 @@ function expandCollapsibleHeader(featureID) {
     content.style.display = "block";
     content.style.maxHeight = content.scrollHeight + "px"; 
   
-    scrollToAnnotation(targetHeader.parentElement.id);
-    targetHeader.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center',
-    });
+    if (scroll == true) {
+      scrollToAnnotation(targetHeader.parentElement.id);
+      targetHeader.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    };
   } else {
     /**
      * Close

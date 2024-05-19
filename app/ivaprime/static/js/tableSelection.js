@@ -53,7 +53,7 @@ function addCellSelection(sequenceGridTable, plasmidIndex) {
         if (targetCell.id === "Annotations") {
           const featureID = targetCell.getAttribute('feature-id');
           targetSpan = Project.activePlasmid().features[featureID].span;
-          expandCollapsibleHeader(featureID);
+          expandCollapsibleHeader(featureID, scroll=false);
         } else if (targetCell.id === "Amino Acids" && targetCell.innerText !== "") {
           const currGridStructure = Project.activePlasmid().gridStructure;
           const seqIndex = (gridWidth * Math.floor(targetRow.rowIndex/currGridStructure.length)) + targetCell.cellIndex + 1;

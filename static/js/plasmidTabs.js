@@ -108,7 +108,6 @@ function updateSidebarAndGrid() {
     Project.activePlasmid().createSidebarTable();
     sidebarContent.after(Project.activePlasmid().sidebarTable);
     enableSidebarEditing();
-    addScrollingEffectToFeatureTable();
     
     // Update content grid
     const contentGridContainer = document.getElementById('file-content');
