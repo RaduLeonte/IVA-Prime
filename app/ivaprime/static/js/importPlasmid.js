@@ -2116,7 +2116,6 @@ function getBrowserInfo() {
  */
 function downloadFile(downloadFileName, downloadFileContent, downloadFileType) {
   // Create a Blob
-  let blobURL = null;
   let blob = null;
   if (downloadFileType === "dna") {
     const byteArray = new Uint8Array(downloadFileContent);
@@ -2124,35 +2123,8 @@ function downloadFile(downloadFileName, downloadFileContent, downloadFileType) {
   } else {
     blob = new Blob([downloadFileContent], { type: "text/plain" });
   };
-  if (blobURL !== null) {
-    window.URL.revokeObjectURL(blobURL);
-  }
-  blobURL = window.URL.createObjectURL(blob);
 
-  // Create a download link
-  const downloadLink = document.createElement("a");
-  const userBrowser = getBrowserInfo().browserName
-  if (userBrowser === "Safari") {
-    const reader = new FileReader();
-    reader.onload = function () {
-      downloadLink.href = reader.result;
-      downloadLink.download = downloadFileName + "." + downloadFileType;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-    };
-    reader.readAsDataURL(blob);
-  } else {
-    const blobURL = window.URL.createObjectURL(blob);
-    downloadLink.href = blobURL;
-    downloadLink.download = downloadFileName + "." + downloadFileType;
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
-    setTimeout(() => {
-      window.URL.revokeObjectURL(blobURL);
-    }, 1000);
-  }
+  saveAs(blob, downloadFileName + "." + downloadFileType);
 };
 
 
