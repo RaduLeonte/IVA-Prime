@@ -827,7 +827,9 @@ function removeFeatureButton(btn) {
   removeFeature(featureID)
 };
 
-function generateUUID() {
+
+
+function getUUID() {
   const uuidSegments = [];
 
   for (let i = 0; i < 36; i++) {
@@ -846,14 +848,6 @@ function generateUUID() {
 
   // Combine the segments into a single string
   return uuidSegments.join('');
-};
-
-function getUUID() {
-  if (location.protocol === 'https:') {
-    return crypto.generateUUID();
-  } else {
-    return generateUUID();
-  };
 };
 
 
@@ -1437,8 +1431,8 @@ function extractGBFeatures(input) {
 
 
 /**
-   * Return the index of the matching subarray of bytes in the input byteArray.
-   */
+ * Return the index of the matching subarray of bytes in the input byteArray.
+ */
 function findSubarrayIndex(byteArray, subarray) {
   for (let i = 0; i <= byteArray.length - subarray.length; i++) {
     let match = true;
