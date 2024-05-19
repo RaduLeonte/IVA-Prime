@@ -1611,7 +1611,7 @@ function updateFeatures(operationType, translateFeature, newFeatureSequence, seg
         const insertStringPositionEnd = segmentStartPos + newFeatureSequence.length;
         tempDict.span = insertStringPositionStart + ".." + insertStringPositionEnd;
         tempDict.note = "";
-        Project.activePlasmid().features[crypto.randomUUID()] = tempDict;
+        Project.activePlasmid().features[getUUID()] = tempDict;
 
         // Sort feature dict by span
         Project.activePlasmid().features = sortBySpan(Project.activePlasmid().features);

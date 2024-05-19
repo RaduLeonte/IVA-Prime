@@ -827,11 +827,40 @@ function removeFeatureButton(btn) {
   removeFeature(featureID)
 };
 
+function generateUUID() {
+  const uuidSegments = [];
+
+  for (let i = 0; i < 36; i++) {
+      if (i === 8 || i === 13 || i === 18 || i === 23) {
+          uuidSegments[i] = '-';
+      } else if (i === 14) {
+          uuidSegments[i] = '4'; // The version 4 UUID identifier
+      } else if (i === 19) {
+          // The first character of this segment should be 8, 9, A, or B
+          uuidSegments[i] = (Math.random() * 4 + 8 | 0).toString(16);
+      } else {
+          // Generate a random hex digit
+          uuidSegments[i] = (Math.random() * 16 | 0).toString(16);
+      };
+  };
+
+  // Combine the segments into a single string
+  return uuidSegments.join('');
+};
+
+function getUUID() {
+  if (location.protocol === 'https:') {
+    return crypto.generateUUID();
+  } else {
+    return generateUUID();
+  };
+};
+
 
 
 function addNewFeature(newFeatureLabel, featureSpanStart, featureSpanEnd, direction="fwd", featureColor=null, newFeatureType="misc_feature", translateFeature=false, newFeatureNote="") {
   const currPlasmid = Project.activePlasmid();
-  const newFeatureID = crypto.randomUUID();
+  const newFeatureID = getUUID();
 
   const newFeatureSpan = (direction === "fwd") ? featureSpanStart + ".." + featureSpanEnd: "complement(" + featureSpanStart + ".." + featureSpanEnd + ")";
   const newFeatureColor = (featureColor === null) ? generateRandomUniqueColor(): featureColor;
@@ -1174,7 +1203,7 @@ function newFileFromSequence(newFileName, newFileSequence, detectCommonFeatures)
         if (featureSequenceType === "AA") {
           for (let j = 0; j < readingFrames.length; j++) {
             while ((match = regex.exec(readingFrames[j])) !== null) {
-              const newFeatureId = crypto.randomUUID();
+              const newFeatureId = getUUID();
               const startIndex = (i === 0) ? match.index*3 + j + 1: currentSequence.length - j - match.index*3 - featureSequence.length*3 + 1;
               const endIndex = startIndex + featureSequence.length*3 - 1;
               const newFeatureSpan = (i === 0) ? startIndex + ".." + endIndex: "complement(" + startIndex + ".." + endIndex + ")";
@@ -1202,7 +1231,7 @@ function newFileFromSequence(newFileName, newFileSequence, detectCommonFeatures)
 
         } else if (featureSequenceType === "DNA") {
           while ((match = regex.exec(currentSequence)) !== null) {
-            const newFeatureId = crypto.randomUUID();
+            const newFeatureId = getUUID();
             const startIndex = (i === 0) ? match.index + 1: currentSequence.length - match.index - featureSequence.length + 1;
             const endIndex = startIndex + featureSequence.length - 1;
             const newFeatureSpan = (i === 0) ? startIndex + ".." + endIndex: "complement(" + startIndex + ".." + endIndex + ")";
@@ -1378,7 +1407,7 @@ function extractGBFeatures(input) {
     // Ignore joined features for now
     if (!lines[0].includes("join")) {
       // Get feature name
-      const featureId = crypto.randomUUID();
+      const featureId = getUUID();
       const featureType = lines[0].substring(0, lines[0].indexOf(' '));
       
       // Start collecting info about the feature, starting with the span
@@ -1454,7 +1483,7 @@ function parseDNAFile(fileContent) {
   const featuresList = xmlDoc.getElementsByTagName('Feature');
   for (let i = 0; i < featuresList.length; i++) {
       const feature = featuresList[i]; // Current feature
-      const featureId = crypto.randomUUID();
+      const featureId = getUUID();
 
       // All the feature properties
       const featureInfo = {}
@@ -2001,7 +2030,7 @@ async function exportDNAFile(plasmidIndex) {
    * NOTES
    */
   // Universally unique identifier
-  let uuid = crypto.randomUUID();
+  let uuid = getUUID();
   if (!uuid) {
     uuid = "00000000-0000-0000-0000-000000000000"
   };
