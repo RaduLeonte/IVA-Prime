@@ -16,7 +16,7 @@ function setCookie(name, value, daysToExpire, isSecure=true, isCrossSite=true) {
         cookieValue += `; expires=${expirationDate.toUTCString()}`;
     };
 
-    if (isSecure) {cookieValue += '; Secure'};
+    if (isSecure && location.protocol == 'https:') {cookieValue += '; Secure'};
     if (isCrossSite) {cookieValue += '; SameSite=None'};
     document.cookie = cookieValue;
 };
