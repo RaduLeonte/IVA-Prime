@@ -538,7 +538,7 @@ class Plasmid {
     this.translations = {"forward": [], "reverse": []};
     // Iterate over the features and create the annotatations
     Object.entries(currFeatures).forEach(([key, value]) => {
-      if (value.span && !value.type.includes("source")) { // If the feature includes a span and is not "source"
+      if (value.span && value.type && !value.type.includes("source")) { // If the feature includes a span and is not "source"
         // Get the current feature's span
         const direction = (value.span.includes("complement")) ? "left": "right";
         const spanList = removeNonNumeric(value.span);
@@ -831,7 +831,7 @@ function generateUUID() {
   const uuidSegments = [];
 
   for (let i = 0; i < 36; i++) {
-      if (i === 8 || i getUUID()|| i === 23) {
+      if (i === 8 || i === 13 || i === 18 || i === 23) {
           uuidSegments[i] = '-';
       } else if (i === 14) {
           uuidSegments[i] = '4'; // The version 4 UUID identifier
@@ -850,7 +850,7 @@ function generateUUID() {
 
 function getUUID() {
   if (location.protocol === 'https:') {
-    return crypto.randomUUID();
+    return crypto.generateUUID();
   } else {
     return generateUUID();
   };
