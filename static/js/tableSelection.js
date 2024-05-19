@@ -432,6 +432,21 @@ function isShiftKeyPressed() {
 };
 
 
+function divisibleByThreeString(nr) {
+  let output;
+  if (nr < 3) {
+      output = "";
+  } else {
+      if (nr%3 == 0) {
+          output = "3x" + Math.floor(nr/3);
+      } else {
+          output = "3x" + Math.floor(nr/3) + "+" + (nr%3);
+      };
+  };
+  return output;
+};
+
+
 /**
  * Updates current selection info in the footer
  */
@@ -440,6 +455,9 @@ function updateFooterSelectionInfo() {
   const currActivePlasmid = Project.activePlasmidIndex;
   const selectedText = getSelectedText(currActivePlasmid);
   document.getElementById("footer-selection-length").innerText = selectedText.length;
+
+  // Divisible by 3 info
+  document.getElementById("footer-selection-divisible").innerText = divisibleByThreeString(selectedText.length);
   
   // Selection span
   const currSelectionStartPos = Project.activePlasmid().selectionStartPos;
