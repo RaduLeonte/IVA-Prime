@@ -353,7 +353,8 @@ const exportPrimersDict = {
         }).join('\n');
 
         // Create blob and download it
-        downloadBlob(new Blob([result], { type: 'text/plain' }), fileName + ".txt");
+        //downloadBlob(new Blob([result], { type: 'text/plain' }), fileName + ".txt");
+        saveAs(new Blob([result], { type: 'text/plain' }), fileName + ".txt");
     },
     /**
      * Export to Microsoft Word file
@@ -392,7 +393,8 @@ const exportPrimersDict = {
         // Create blob using html-docx.js and download it
         const blob = window.htmlDocx.asBlob(tempContainer.innerHTML);
         document.body.removeChild(tempContainer);
-        downloadBlob(blob, fileName + ".docx");
+        //downloadBlob(blob, fileName + ".docx");
+        saveAs(blob, fileName + ".docx");
     },
     /**
      * Export to csv file
@@ -415,7 +417,8 @@ const exportPrimersDict = {
         const textContent = csvLines.join('\n');
 
         // Create blob and download it
-        downloadBlob(new Blob([textContent], { type: 'text/plain' }), fileName + ".csv");
+        //downloadBlob(new Blob([textContent], { type: 'text/plain' }), fileName + ".csv");
+        saveAs(new Blob([textContent], { type: 'text/plain' }), fileName + ".csv");
     },
     /**
      * Export to Excel file
@@ -446,7 +449,8 @@ const exportPrimersDict = {
         })
         .then((blob) => {
             // Create blob using html-docx.js and download it
-            downloadBlob(blob, fileName);
+            //downloadBlob(blob, fileName);
+            saveAs(blob, fileName);
             removeLoadingCursor();
         })
     },
@@ -528,7 +532,8 @@ const exportPrimersDict = {
         })
         .then((blob) => {
             // Create blob using html-docx.js and download it
-            downloadBlob(blob, fileName + " microsynth order form");
+            //downloadBlob(blob, fileName + " microsynth order form");
+            saveAs(blob, fileName + " microsynth order form");
             removeLoadingCursor();
         })
     } 
