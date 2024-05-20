@@ -859,6 +859,12 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
         bgClassHomo = "primer-span-cyan";
         bgClassTBR = "primer-span-purple";
     };
+
+    
+    /**
+     * Set target tm depending on operation type
+     */
+    const targetTMHR = (operationType !== "Subcloning") ? homoRegionTm: homoRegionSubcloningTm;
     
     // Get start and end indices
     const operationStartPos = Math.min(pos1, pos2)
@@ -921,7 +927,7 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
                 operationStartPos,
                 "fwdStrand",
                 "backward",
-                homoRegionTm,
+                targetTMHR,
                 "oligoCalc",
                 homoRegionMinLength
             );
@@ -972,7 +978,7 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
                 operationStartPos,
                 "fwdStrand",
                 "backward",
-                homoRegionTm,
+                targetTMHR,
                 "oligoCalc",
                 homoRegionMinLength,
             );
@@ -981,7 +987,7 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
                 operationEndPos,
                 "fwdStrand",
                 "forward",
-                homoRegionTm,
+                targetTMHR,
                 "oligoCalc",
                 homoRegionMinLength,
             );
@@ -993,8 +999,8 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
                 // Get slice indices for the current iteration
                 const sliceIndices = (turnHomoFwd1 === true) ?  [1, overlappingSeq.length]: [0, -1]
                 // Check conditions
-                const stillAboveTargetTM = getMeltingTemperature(overlappingSeq.slice(...sliceIndices), "oligoCalc") > homoRegionTm;
-                const slicingGetsUsCloser = Math.abs(homoRegionTm - getMeltingTemperature(overlappingSeq.slice(...sliceIndices), "oligoCalc")) <= Math.abs(homoRegionTm - getMeltingTemperature(overlappingSeq, "oligoCalc"));
+                const stillAboveTargetTM = getMeltingTemperature(overlappingSeq.slice(...sliceIndices), "oligoCalc") > targetTMHR;
+                const slicingGetsUsCloser = Math.abs(targetTMHR - getMeltingTemperature(overlappingSeq.slice(...sliceIndices), "oligoCalc")) <= Math.abs(targetTMHR - getMeltingTemperature(overlappingSeq, "oligoCalc"));
                 const minimumLengthNotReached = overlappingSeq.length > homoRegionMinLength;
                 
                 if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
@@ -1066,8 +1072,8 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
             
             // Delete bases until target tm is reached
             while (true) {
-                const stillAboveTargetTM = getMeltingTemperature(overlappingSeq.slice(1), "oligoCalc") > homoRegionTm;
-                const slicingGetsUsCloser = Math.abs(homoRegionTm - getMeltingTemperature(overlappingSeq.slice(1), "oligoCalc")) <= Math.abs(homoRegionTm - getMeltingTemperature(overlappingSeq, "oligoCalc"));
+                const stillAboveTargetTM = getMeltingTemperature(overlappingSeq.slice(1), "oligoCalc") > targetTMHR;
+                const slicingGetsUsCloser = Math.abs(targetTMHR - getMeltingTemperature(overlappingSeq.slice(1), "oligoCalc")) <= Math.abs(targetTMHR - getMeltingTemperature(overlappingSeq, "oligoCalc"));
                 const minimumLengthNotReached = overlappingSeq.length > homoRegionMinLength;
                 if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
                     overlappingSeq = overlappingSeq.slice(1);
@@ -1095,8 +1101,8 @@ function generatePrimerSequences(plasmidSequence, dnaToInsert, aaToInsert, targe
             let turnHomoFwd1 = true;
             while (true) {
                 const sliceIndices = (turnHomoFwd1 === true) ? [1, overlappingSeq.length]: [0, -1]
-                const stillAboveTargetTM = getMeltingTemperature(overlappingSeq.slice(...sliceIndices), "oligoCalc") > homoRegionTm;
-                const slicingGetsUsCloser = Math.abs(homoRegionTm - getMeltingTemperature(overlappingSeq.slice(...sliceIndices), "oligoCalc")) <= Math.abs(homoRegionTm - getMeltingTemperature(overlappingSeq, "oligoCalc"));
+                const stillAboveTargetTM = getMeltingTemperature(overlappingSeq.slice(...sliceIndices), "oligoCalc") > targetTMHR;
+                const slicingGetsUsCloser = Math.abs(targetTMHR - getMeltingTemperature(overlappingSeq.slice(...sliceIndices), "oligoCalc")) <= Math.abs(targetTMHR - getMeltingTemperature(overlappingSeq, "oligoCalc"));
                 const minimumLengthNotReached = overlappingSeq.length > homoRegionMinLength;
                 if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
                     overlappingSeq = overlappingSeq.slice(...sliceIndices);

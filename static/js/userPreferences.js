@@ -90,6 +90,7 @@ const defaultSetingsDict = {
     "primerDistribution": true,
     "homoRegionMinLength": 15,
     "homoRegionTm": 50,
+    "homoRegionSubcloningTm": 55,
     "tempRegionTm": 60,
     "upperBoundShortInsertions": 49.5,
     "primerConc": 100,
