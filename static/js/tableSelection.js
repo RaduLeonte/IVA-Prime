@@ -301,7 +301,7 @@ function copyStringToClipboard(inputString, inputHTML="") {
     document.removeEventListener("copy", dummyCopyListener);
   } else {
     const el = document.createElement('textarea');
-    el.value = (inputHTML === "") ? inputString: inputHTML;
+    el.value = inputString;
     document.body.appendChild(el);
     el.select();
     document.execCommand('copy');
