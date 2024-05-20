@@ -287,17 +287,26 @@ function copySelectionToClipboard(plasmidIndex, special=null) {
  * @param {string} inputString 
  */
 function copyStringToClipboard(inputString, inputHTML="") {
-  console.log("copyStringToClipboard", inputString, inputHTML)
+  console.log("copyStringToClipboard", inputString, inputHTML, getBrowserInfo())
   
-  function dummyCopyListener(event) {
-    event.clipboardData.setData("text/html", (inputHTML === "") ? inputString: inputHTML);
-    event.clipboardData.setData("text/plain", inputString);
-    event.preventDefault();
-  };
-
-  document.addEventListener("copy", dummyCopyListener);
-  document.execCommand("copy");
-  document.removeEventListener("copy", dummyCopyListener);
+  if (getBrowserInfo().browserName !== "Safari") {
+    function dummyCopyListener(event) {
+      event.clipboardData.setData("text/html", (inputHTML === "") ? inputString: inputHTML);
+      event.clipboardData.setData("text/plain", inputString);
+      event.preventDefault();
+    };
+  
+    document.addEventListener("copy", dummyCopyListener);
+    document.execCommand("copy");
+    document.removeEventListener("copy", dummyCopyListener);
+  } else {
+    const el = document.createElement('textarea');
+    el.value = (inputHTML === "") ? inputString: inputHTML;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+  }
 };
 
 
