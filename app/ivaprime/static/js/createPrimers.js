@@ -53,7 +53,7 @@ function displayPrimers(operationType, primersList) {
         const overlappingSequenceTm = getMeltingTemperature(overlappingSequence, "oligoCalc");
         console.log("displayPrimers", overlappingSequence, overlappingSequenceTm)
         homologousRegionInfo.innerHTML = `
-            <p class="homologous-region-info" onmouseover="highlightHomologousRegion(this, [0, 1])" onmouseout="highlightHomologousRegion(this, [0, 1])">Homologous region: <span id="operation-info-homo-length">${overlappingSequence.length}</span> bp, <span id="operation-info-homo-tm">${overlappingSequenceTm.toFixed(2)}</span> C</p>
+            <p class="homologous-region-info" onmouseover="highlightHomologousRegion(this, [0, 1])" onmouseout="highlightHomologousRegion(this, [0, 1])">Homologous region: <span id="operation-info-homo-length">${overlappingSequence.length}</span> nt, <span id="operation-info-homo-tm">${overlappingSequenceTm.toFixed(2)}</span> C</p>
         `;
     } else if (primersList.length === 4) {
         let fullSequences = [];
@@ -76,8 +76,8 @@ function displayPrimers(operationType, primersList) {
         ];
 
         homologousRegionInfo.innerHTML = `
-            <p class="homologous-region-info" onmouseover="highlightHomologousRegion(this, [0, 3])" onmouseout="highlightHomologousRegion(this, [0, 3])">5' Homologous region: <span id="operation-info-homo-length">${overlappingSequences[0].length}</span> bp, <span id="operation-info-homo-tm">${overlappingSequencesTm[0].toFixed(2)}</span> C</p>
-            <p class="homologous-region-info" onmouseover="highlightHomologousRegion(this, [1, 2])" onmouseout="highlightHomologousRegion(this, [1, 2])">3' Homologous region: <span id="operation-info-homo-length">${overlappingSequences[1].length}</span> bp, <span id="operation-info-homo-tm">${overlappingSequencesTm[1].toFixed(2)}</span> C</p>
+            <p class="homologous-region-info" onmouseover="highlightHomologousRegion(this, [0, 3])" onmouseout="highlightHomologousRegion(this, [0, 3])">5' Homologous region: <span id="operation-info-homo-length">${overlappingSequences[0].length}</span> nt, <span id="operation-info-homo-tm">${overlappingSequencesTm[0].toFixed(2)}</span> C</p>
+            <p class="homologous-region-info" onmouseover="highlightHomologousRegion(this, [1, 2])" onmouseout="highlightHomologousRegion(this, [1, 2])">3' Homologous region: <span id="operation-info-homo-length">${overlappingSequences[1].length}</span> nt, <span id="operation-info-homo-tm">${overlappingSequencesTm[1].toFixed(2)}</span> C</p>
         `;
     };
     modDiv.appendChild(homologousRegionInfo);
@@ -234,8 +234,8 @@ function displayPrimers(operationType, primersList) {
         console.log("displayPrimers", tbrSequence, tbrTM);
         const primerInfo = document.createElement('div');
         primerInfo.innerHTML = `
-            <p>TBR: <span id="primer-info-tbr-length">${tbrSequence.length}</span> bp, <span id="primer-info-tbr-tm">${tbrTM}</span> C</p>
-            <p>Total: <span id="primer-info-total-length">${fullPrimerSequence.length}</span> bp</p>
+            <p>TBR: <span id="primer-info-tbr-length">${tbrSequence.length}</span> nt, <span id="primer-info-tbr-tm">${tbrTM}</span> C</p>
+            <p>Total: <span id="primer-info-total-length">${fullPrimerSequence.length}</span> nt</p>
         `;
         primerInfo.classList.add("primer-info");
 
@@ -478,7 +478,7 @@ const exportPrimersDict = {
              *  B. DNA Sequence (5' -> 3') -> primer sequence
              *  C. Length -> sequence length
              *  D. DNA Purification -> "DES"
-             *  E. DNA Scale -> "GEN" for 60 bp or less, otherwise "0.04"
+             *  E. DNA Scale -> "GEN" for 60 nt or less, otherwise "0.04"
              *  F. 5' Modification -> _
              *  G. Inner Modification (5) -> _
              *  H. Inner Modification (6) -> _
