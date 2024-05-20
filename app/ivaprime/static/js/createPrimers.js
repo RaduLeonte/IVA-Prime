@@ -1225,6 +1225,17 @@ function makePrimers(plasmidSequence, dnaToInsert, aaToInsert, targetOrganism, p
  * @returns {void}
  */
 function markSelectionForSubcloning(plasmidIndex, inputStartPos, inputEndPos) {
+    console.log("markSelectionForSubcloning", plasmidIndex, inputStartPos, inputEndPos);
+
+    // Warn if the user attempts to subclone a fragment shorter than 400 bp
+    if (Math.max(inputStartPos, inputEndPos) - Math.min(inputStartPos, inputEndPos) < 400) {
+        alert("Short Subcloning Target",
+            "Attempting to subclone fragments shorter than 400 bp may result in lower efficiency or the subcloning may fail all together.",
+            "orange",
+            10
+        );
+    };
+
     // Clear previous subcloning selections
     clearAllSubcloningSelections();
 

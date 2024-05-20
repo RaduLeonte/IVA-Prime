@@ -4,6 +4,7 @@
 [data-theme="light"] {
   /* Theme colors */
   --text-color: #000000;
+  --shadow-color: rgba(0, 0, 0, 0.1);
   --bg-color1: #fff;
   --bg-color2: #f2f2f2;
   --bg-color3: #f9f9f9;
@@ -44,6 +45,7 @@
 [data-theme="dark"] {
   /* Theme colors */
   --text-color: #ffffff;
+  --shadow-color: rgba(255, 255, 255, 0.1);
   --bg-color1: #101217;
   --bg-color2: #1c2028;
   --bg-color3: #1a1a20;
@@ -1387,4 +1389,55 @@ header {
 
 .adjust-primer-btn:hover {
   background-color: var(--footer-icon-hover);
+}
+
+
+.alert {
+  position: fixed;
+  bottom: 50px;
+  right: 25px;
+  padding: 15px;
+  border-radius: 5px;
+  box-shadow: 0px 2px 10px var(--shadow-color);
+  z-index: 1000;
+  min-width: 15vw;
+  max-width: 50vw;
+  background-color: var(--bg-color1);
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+}
+
+.alert div {
+  flex-grow:1;
+}
+
+.alert svg {
+  width: 40px;
+  height: 40px;
+  margin-right: 15px;
+}
+
+.alert h4 {
+  margin: 0;
+  margin-bottom: 5px;
+}
+
+.alert p {
+  margin: 0;
+}
+
+.alert-close-btn {
+  cursor: pointer;
+  font-size: 20px;
+  border-radius: 5px;
+  padding: 5px;
+  width: 20px;
+  height: 20px;
+  align-content: center;
+  text-align: center;
+}
+
+.alert-close-btn:hover {
+  background-color: var(--sequence-grid-cell-hover);
 }
