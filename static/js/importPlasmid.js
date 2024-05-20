@@ -97,14 +97,14 @@ class Plasmid {
     index,
     name,
     extension,
-    header,
     sequence,
-    features
+    features,
+    additionalInfo
   ) {
     this.index = (index !== null) ? index: Project.nextFreeIndex();
     this.name = name;
     this.extension = extension;
-    this.header = header;
+    this.additionalInfo = additionalInfo;
     this.sequence = sequence;
     this.complementarySequence = getComplementaryStrand(sequence);
     this.features = features;
@@ -181,7 +181,7 @@ class Plasmid {
     for (const featureID in currFeatures) {
       const feature = currFeatures[featureID];
       // Skip LOCUS and source
-      if (!featureID.includes("LOCUS") && !feature.type.includes("source")) {
+      if (!featureID.includes("LOCUS") && feature.type && !feature.type.includes("source")) {
 
         // Create a new table row
         const featureDiv = document.createElement("DIV");
@@ -1106,34 +1106,49 @@ function importFile(file, plasmidIndex=null) {
       const reader = new FileReader();
   
       // Define reader
-      reader.onload = function(e) {
-        let fileContent = e.target.result;
-        // Depending on file extension pass the file content to the appropiate parser
-        let parsedFile = null;
-        if (fileExtension === ".dna") {
+      if (fileExtension === ".dna") {
+        reader.onload = function(e) {
+          let fileContent = e.target.result;
+          // Depending on file extension pass the file content to the appropiate parser
+          let parsedFile = null;
           parsedFile = parseDNAFile(fileContent);
-        } else {
-          parsedFile = parseGBFile(fileContent);
-        };
-
-        Project.addPlasmid(new Plasmid(
-          plasmidIndex,
-          file.name,
-          fileExtension,
-          parsedFile.fileHeader,
-          parsedFile.fileSequence,
-          parsedFile.fileFeatures
-        ));
-
-      };
   
+          Project.addPlasmid(new Plasmid(
+            plasmidIndex,
+            file.name,
+            fileExtension,
+            parsedFile.fileSequence,
+            parsedFile.fileFeatures,
+            parsedFile.fileAdditionalInfo
+          ));
+        };
+        // Run reader
+        reader.readAsArrayBuffer(file);
+
+      } else {
+        reader.onload = function(e) {
+          let fileContent = e.target.result;
+          // Depending on file extension pass the file content to the appropiate parser
+          let parsedFile = null;
+          parsedFile = parseGBFile(fileContent);
+  
+          Project.addPlasmid(new Plasmid(
+            plasmidIndex,
+            file.name,
+            fileExtension,
+            parsedFile.fileSequence,
+            parsedFile.fileFeatures,
+            parsedFile.fileAdditionalInfo
+          ));
+        };
         // Run reader
         reader.readAsText(file);
       };
+    };
 
-      setTimeout(() => {
-        resolve();
-      }, 1); 
+    setTimeout(() => {
+      resolve();
+    }, 1); 
   });
 };
 
@@ -1262,9 +1277,9 @@ function newFileFromSequence(newFileName, newFileSequence, detectCommonFeatures)
     null,
     newFileName + ".gb",
     ".gb",
-    "",
     newFileSequence,
-    newFileFeatures
+    newFileFeatures,
+    null
   ));
 };
 
@@ -1280,36 +1295,72 @@ function parseGBFile(fileContent) {
   const headerNrSpaces = 12;
   // Extract header
   let currFileHeader = fileContent.substring(0, fileContent.indexOf("FEATURES")).split('\n');
-  
-  let fileHeader = {}
-  let lastAddedProperty = "";
-  let propertyCounter = 0;
-  for (l in currFileHeader) {
-    if (currFileHeader[l]) {
-      let propertyName = currFileHeader[l].substring(0, headerNrSpaces).trim();
-      if (propertyName !== "") {
-        const leadingSpaces = currFileHeader[l].match(/^\s*/);
-        const leadingSpacesNr = (leadingSpaces) ? leadingSpaces[0].length : 0;
-        propertyName = " ".repeat(leadingSpacesNr) + propertyName;
-        fileHeader[propertyCounter] = {}
-        fileHeader[propertyCounter]["name"] = propertyName;
-        fileHeader[propertyCounter]["value"] = currFileHeader[l].substring(headerNrSpaces).replace("\r", "");
-        lastAddedProperty = propertyCounter;
-        propertyCounter++;
-      } else {
-        fileHeader[lastAddedProperty]["value"] = "" + fileHeader[lastAddedProperty]["value"] + " " + currFileHeader[l].substring(headerNrSpaces);
-      };
-    };
+
+  function parseTextToDict(lines) {
+    const propertiesDict = {};
+    const references = [];
+    const stack = [{ depth: 0, dict: propertiesDict }];
+
+    lines.forEach(line => {
+        const depth = line.search(/\S|$/); // Count leading spaces
+        const trimmedLine = line.trim();
+
+        if (!trimmedLine) return; // Skip empty lines
+
+        const [key, ...valueParts] = trimmedLine.split(/\s+/);
+        const value = valueParts.join(' ');
+
+        // Find the appropriate depth level in the stack
+        while (stack.length > 0 && stack[stack.length - 1].depth >= depth) {
+            stack.pop();
+        };
+
+        // Get the current dictionary from the top of the stack
+        const currentDict = stack.length > 0 ? stack[stack.length - 1].dict : propertiesDict;
+
+        if (key === 'REFERENCE') {
+            // Handle REFERENCE separately
+            const referenceEntry = {"REFERENCE": {value, children: {} }};
+            references.push(referenceEntry);
+            // Push the new reference entry onto the stack
+            stack.push({ depth, dict: referenceEntry["REFERENCE"].children });
+        } else {
+            // Add the new entry to the current dictionary
+            currentDict[key] = { value, children: {} };
+            // Push the new dictionary and its depth onto the stack
+            stack.push({ depth, dict: currentDict[key].children });
+        };
+    });
+
+    // Add references at the end of the dictionary
+    propertiesDict.references = references;
+
+    return propertiesDict;
   };
+  
+  currFileHeader.shift();
+  let newLines = [];
+  currFileHeader.map(line => {
+    const match = line.match(/^\s*/);
+    const leadingSpaces = match ? match[0].length : 0;
+    if (leadingSpaces < 12) {
+      newLines.push(line);
+    } else {
+      newLines[newLines.length - 1] += line;
+    };
+  });
+
+  const fileAdditionalInfo = parseTextToDict(newLines)
 
   const fileSequence = extractGBSequence(fileContent);
   const fileComplementarySequence = getComplementaryStrand(fileSequence);
   const fileFeatures = extractGBFeatures(fileContent);
   return {
-    fileHeader,
     fileSequence,
     fileComplementarySequence,
-    fileFeatures};
+    fileFeatures,
+    fileAdditionalInfo
+  };
 };
 
 
@@ -1455,28 +1506,32 @@ function findSubarrayIndex(byteArray, subarray) {
 /**
  * Snapgene file parser.
  */
-function parseDNAFile(fileContent) {
-  // File needs to be read as byte stream
-  let fileBA = new TextEncoder().encode(fileContent);
+function parseDNAFile(fileArrayBuffer) {
+  const arrayBuf = new Uint8Array(fileArrayBuffer);
+  let fileContent = new TextDecoder().decode(arrayBuf);
 
-  // Extract sequence data
-  // Sequence data USUALLY ends in byte array 02 00 00, so find that and keep only stuff before it
-  let sequenceBA = fileBA.slice(25, findSubarrayIndex(fileBA, [2, 0, 0]));
+  const sequenceLengthHex = Array.from(arrayBuf.slice(20, 24)).map(byte => (byte.toString(16)));
+  const sequenceLength = parseInt(sequenceLengthHex.join(" ").replace(/\s/g, ''), 16);
+  console.log("parseDNAFile ->", sequenceLength, sequenceLengthHex, arrayBuf.slice(20, 24));
+  
+  const sequenceStartIndex = 25;
+  let sequenceBA = arrayBuf.slice(sequenceStartIndex, sequenceStartIndex + sequenceLength);
   let fileSequence = new TextDecoder().decode(sequenceBA).toUpperCase().replace(/[^TACGN]/gi, ''); // Convert to string and only keep ACTG
   let fileComplementarySequence = getComplementaryStrand(fileSequence); // Create complementary strand
 
-  // Extract features
-  // Towards the end of the file there is an XML tree containing the data for the features
-  // Extract XML tree
-  let featuresString = fileContent.slice(fileContent.indexOf("<Features"), fileContent.indexOf("</Feature></Features>") + "</Feature></Features>".length);
 
-  // Parse the string into an XML object
-  const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(featuresString, 'text/xml');
+  const xmlParser = new DOMParser();
+
+  /**
+   * Extract features
+   */
+  // Extract XML tree
+  let featuresXMLString = fileContent.slice(fileContent.indexOf("<Features"), fileContent.indexOf("</Feature></Features>") + "</Feature></Features>".length);
+  const featuresXMLDoc = xmlParser.parseFromString(featuresXMLString, 'text/xml');
   
   // Initialize dict and iterate over all feature elements in the object
   let featuresDict = {};
-  const featuresList = xmlDoc.getElementsByTagName('Feature');
+  const featuresList = featuresXMLDoc.getElementsByTagName('Feature');
   for (let i = 0; i < featuresList.length; i++) {
       const feature = featuresList[i]; // Current feature
       const featureId = getUUID();
@@ -1531,13 +1586,50 @@ function parseDNAFile(fileContent) {
       featuresDict[featureId] = featureInfo;
   };
 
+  /**
+   * Extract primers
+   */
+  // Extract XML tree
+  let primersXMLString = fileContent.slice(fileContent.indexOf("<Primers"), fileContent.indexOf("</Primer></Primers>") + "</Primer></Primers>".length);
+  const primersXMLDoc = xmlParser.parseFromString(primersXMLString, 'text/xml');
+
+  const primersList = primersXMLDoc.getElementsByTagName('Primer');
+  for (let i = 0; i < primersList.length; i++) {
+      const primer = primersList[i]; // Current feature
+      const primerId = getUUID();
+
+      // All the feature properties
+      const primerInfo = {};
+      primerInfo["type"] = "primer_bind";
+      primerInfo["label"] = primer.getAttribute('name'); // Display name
+      primerInfo["note"] = (primer.getAttribute('description') && primer.getAttribute('description') !== undefined) ? primer.getAttribute('description').replace("<html><body>", "").replace("</body></html>", ""): "";
+      const primerBindingSite = primer.getElementsByTagName("BindingSite")[0];
+      const primerSpanDirection = primerBindingSite.getAttribute('boundStrand');
+      const primerSpanString = primerBindingSite.getAttribute('location').replace("-", "..");
+      const primerSpanList = removeNonNumeric(primerSpanString).split("..").map(Number);
+      console.log("parseDNAFile", primerSpanList)
+
+      primerInfo["span"] = (primerSpanDirection == "0") ? `${primerSpanList[0] + 1}..${primerSpanList[1] + 1}`: `complement(${primerSpanList[0] + 1}..${primerSpanList[1] + 1})`;
+      console.log("parseDNAFile", primerInfo["span"])
+      primerInfo["phosphorylated"] = primer.hasAttribute("phosphorylated");
+
+      // Append feature info the corresponding feature in the dict
+      featuresDict[primerId] = primerInfo;
+  };
+
+  console.log(featuresDict)
   const fileFeatures = sortBySpan(featuresDict);
-  const fileHeader = null;
+
+  /**
+   * Additional info to keep when exporting back to .dna
+   */
+  // TO DO: Keep unknown bytes, restriction enzyme list, notes info, primers etc
+  let fileAdditionalInfo = {};
   return {
-    fileHeader,
     fileSequence,
     fileComplementarySequence,
-    fileFeatures
+    fileFeatures,
+    fileAdditionalInfo
   };
 };
 
@@ -1627,6 +1719,7 @@ function exportGBFile(plasmidIndex) {
   const currSequence = currPlasmid.sequence;
   const currFeatures = currPlasmid.features;
 
+
   /**
    * File header
    */
@@ -1657,10 +1750,120 @@ function exportGBFile(plasmidIndex) {
   /**
    * File header boilerplate
    */
+  // Check if header can be reused
+  let fileHeader;
+  if ((currPlasmid.extension === ".gbk" || currPlasmid.extension === ".gb") &&  currPlasmid.additionalInfo !== null) {
+    fileHeader = currPlasmid.additionalInfo;
+  } else {
+    fileHeader = {
+      "DEFINITION": {
+        "value": ".",
+        "children": {}
+      },
+      "ACCESSION": {
+        "value": ".",
+        "children": {}
+      },
+      "VERSION": {
+        "value": ".",
+        "children": {}
+      },
+      "KEYWORDS": {
+        "value": ".",
+        "children": {}
+      },
+      "SOURCE": {
+        "value": "synthetic DNA construct",
+        "children": {
+          "ORGANISM": {
+            "value": "synthetic DNA construct",
+            "children": {}
+          }
+        }
+      },
+      "references": []
+    };
+  };
 
-  const fileHeaderBoilerplate = "DEFINITION  .\nACCESSION   .\nVERSION     .\nKEYWORDS    .\nSOURCE      .\n  ORGANISM  .\n  REFERENCE   1  (bases 1 to 2686)\n  AUTHORS   .\n  TITLE     Direct Submission\n  JOURNAL   Exported with IVA Prime :)\n            https://www.ivaprime.com\n"
-  outputFileContent += fileHeaderBoilerplate;
+  const referencesSoFar = fileHeader["references"].length;
+  fileHeader["references"].push({
+    "REFERENCE": {
+      "value": `${referencesSoFar+1} (bases 1 to ${currSequence.length})`,
+      "children": {
+        "AUTHORS": {
+          "value": ".",
+          "children": {}
+        },
+        "TITLE": {
+          "value": "Direct Submission",
+          "children": {}
+        },
+        "JOURNAL": {
+          "value": "Exported with IVA Prime :) \nhttps://www.ivaprime.com",
+          "children": {}
+        }
+      }
+    }
+  });
+  fileHeader["references"].push({
+    "REFERENCE": {
+      "value": `${referencesSoFar+2} (bases 1 to ${currSequence.length})`,
+      "children": {
+        "AUTHORS": {
+          "value": ".",
+          "children": {}
+        },
+        "TITLE": {
+          "value": "Direct Submission",
+          "children": {}
+        },
+        "JOURNAL": {
+          "value": "SnapGene Viewer",
+          "children": {}
+        }
+      }
+    }
+  });
+  console.log(fileHeader);
 
+  const maxValueLenth = 80;
+  const maxKeyLength = 12;
+  let fileHeaderString = "";
+
+  function recursiveDictPrint(dict, depth) {
+    Object.keys(dict).forEach(key => {
+      if (key !== "references") {
+        fileHeaderString += " ".repeat(depth) + key + " ".repeat(maxKeyLength - key.length - depth);
+        
+        const valueLines = dict[key]["value"].split("\n");
+        let valueLinesToAdd = [];
+        for (let i = 0; i < valueLines.length; i++) {
+          const valueLine = valueLines[i]
+          for (let j = 0; j < valueLine.length; j += maxValueLenth) {
+            valueLinesToAdd.push(valueLine.substring(j, j + maxValueLenth));
+          };
+        }
+        for (let i = 0; i < valueLinesToAdd.length; i++) {
+          if (i !== 0) {
+            fileHeaderString += "            ";
+          };
+          fileHeaderString += valueLinesToAdd[i] + "\n"
+        };
+
+        recursiveDictPrint(dict[key]["children"], depth+2)
+      } else {
+        dict[key].forEach((reference) => {
+          recursiveDictPrint(reference, depth)
+      });
+      }
+    });
+  };
+
+  recursiveDictPrint(fileHeader, 0);
+
+  console.log(fileHeaderString)
+
+  outputFileContent += fileHeaderString;
   /**
    * File features
    */
@@ -1675,20 +1878,36 @@ function exportGBFile(plasmidIndex) {
       outputFileContent += " ".repeat(featureTitleShift) + featureType + " ".repeat(featureTitleWidth - featureType.length) + value["span"] + "\n";
       const featureInfo = Object.entries(value);
       for (const [propertyName, propertyValue] of featureInfo) {
-        if (propertyName !== "span" && propertyName !== "color") {
+        if (!["span", "color", "ivaprimeColor", "type", "phosphorylated"].includes(propertyName) && propertyValue !== "") {
           let featureToAppend;
           if (propertyName === "label" || propertyName === "codon_start" || propertyName === "direction") {
             featureToAppend = "/" + propertyName + "=" + propertyValue + "";
           } else {
             featureToAppend = "/" + propertyName + "=\"" + propertyValue + "\"";
-          }
+          };
           for (let i = 0; i < featureToAppend.length; i += featureValueWidth) {
             outputFileContent += " ".repeat(featureTitleWidth + featureTitleShift) + featureToAppend.slice(i, i + featureValueWidth) + "\n";
-          }
+          };
         };
       };
+
+      /**
+       * /note="color: black; sequence: 
+                     aggccccaaggggttatgctagttattgctcagcggtggcagcagccaa; added: 
+                     2024-05-20"
+       */
+      if (featureType == "primer_bind" ||featureType == "primer") {
+        const boundStrand = (!value["span"].includes("complement")) ? "0": "1";
+        const primerSpan = removeNonNumeric(value["span"]).split("..").map(Number).map(function(x) { return x-1 });;
+        const primerSequence = (boundStrand == "0") ? currSequence.slice(primerSpan[0], primerSpan[1] + 1): getComplementaryStrand(currSequence.slice(primerSpan[0], primerSpan[1])).split("").reverse().join("");
+        let featureToAppend = `/note="color: black; sequence: ${primerSequence}"`;
+        for (let i = 0; i < featureToAppend.length; i += featureValueWidth) {
+          outputFileContent += " ".repeat(featureTitleWidth + featureTitleShift) + featureToAppend.slice(i, i + featureValueWidth) + "\n";
+        };
+      }
     };
   };
+  outputFileContent.replace("     primer_bind     ", "     primer          ");
 
 
   /**
@@ -1732,6 +1951,11 @@ async function exportDNAFile(plasmidIndex) {
   // Select target sequence and features
   const currSequence = currPlasmid.sequence;
   const currFeatures = currPlasmid.features;
+
+  // XML parser
+  const xmlParser = new DOMParser();
+  // XML serializer
+  const xmlSerializer = new XMLSerializer();
 
 
   /**
@@ -1784,6 +2008,7 @@ async function exportDNAFile(plasmidIndex) {
   addBytes("00");
 
   // sequence length +1 (4 bytes)
+  console.log("exportDNAFile", inToHexBytes(currSequence.length + 1))
   addBytes(inToHexBytes(currSequence.length + 1));
 
   // plasmid type byte (ss+lin = 00, ss+circ=01, ds+lin=02, ds+circ=03)
@@ -1793,6 +2018,8 @@ async function exportDNAFile(plasmidIndex) {
    * Sequence bytes
    */
   addBytes(stringToBytes(currSequence.toLowerCase()));
+  console.log("exportDNAFile", currSequence.length, currSequence)
+  console.log("exportDNAFile", stringToBytes(currSequence.toLowerCase()).length, stringToBytes(currSequence.toLowerCase()))
   // Stop byte sequence
   addBytes("02");
 
@@ -1820,12 +2047,13 @@ async function exportDNAFile(plasmidIndex) {
   /**
    * Additional sequence properties
    */
-  // length
-  addBytes("00 00 01 07"); //(default xml length)
-  // content
-  const defaultAdditionalSequenceProperties = "<AdditionalSequenceProperties><UpstreamStickiness>0</UpstreamStickiness><DownstreamStickiness>0</DownstreamStickiness><UpstreamModification>Unmodified</UpstreamModification><DownstreamModification>Unmodified</DownstreamModification></AdditionalSequenceProperties>";
+  const defaultAdditionalSequenceProperties = "<AdditionalSequenceProperties><UpstreamStickiness>0</UpstreamStickiness><DownstreamStickiness>0</DownstreamStickiness><UpstreamModification>FivePrimePhosphorylated</UpstreamModification><DownstreamModification>FivePrimePhosphorylated</DownstreamModification></AdditionalSequenceProperties>";
+  // Add length
+  console.log("exportDNAFile", inToHexBytes(defaultAdditionalSequenceProperties.length))
+  addBytes(inToHexBytes(defaultAdditionalSequenceProperties.length));
+  // Add xml string
   addBytes(stringToBytes(defaultAdditionalSequenceProperties));
-  // stop byte
+  // Stop byte
   addBytes("0a");
 
 
@@ -1833,25 +2061,24 @@ async function exportDNAFile(plasmidIndex) {
    * FEATURES
    */
   // Create an XML document
-  const parser = new DOMParser();
-  const nrOfFeatures = Object.keys(currFeatures).filter(item => item !== "LOCUS").length;
+  const nrOfFeatures = Object.keys(currFeatures).filter(item => item !== "LOCUS" && currFeatures[item]["type"] !== "primer_bind").length;
 
   // Create the XML document with the correct root structure
-  const xmlDoc = parser.parseFromString(
+  const featuresXMLDoc = xmlParser.parseFromString(
     '<?xml version="1.0" ?><Features nextValidID="' + nrOfFeatures + '"></Features>',
     'application/xml'
   );
 
   // Ensure the "Features" element is correctly added as the root element
-  const root = xmlDoc.documentElement;
+  const featuresXMlRoot = featuresXMLDoc.documentElement;
   let i = 0;
   for (const key in currFeatures) {
     if (key !== "LOCUS") {
       const value = currFeatures[key];
 
-      if (key === "source") {
+      if (key === "source") {1
         // Feature
-        const xmlFeatureElement = xmlDoc.createElement('Feature');
+        const xmlFeatureElement = featuresXMLDoc.createElement('Feature');
         xmlFeatureElement.setAttribute('recentID', i + "");
         i++;
         xmlFeatureElement.setAttribute('name', "source");
@@ -1861,7 +2088,7 @@ async function exportDNAFile(plasmidIndex) {
         xmlFeatureElement.setAttribute('visible', "0");
 
         // Segment
-        const xmlSegmentElement = xmlDoc.createElement('Segment');
+        const xmlSegmentElement = featuresXMLDoc.createElement('Segment');
         xmlSegmentElement.selfClosing = true;
         xmlSegmentElement.setAttribute('range', removeNonNumeric(value["span"]).replace("..", "-"));
         if (value["color"]) {
@@ -1875,10 +2102,10 @@ async function exportDNAFile(plasmidIndex) {
 
         // Q mol_type
         if (value["mol_type"]) {
-          const xmlQmoltype = xmlDoc.createElement('Q');
+          const xmlQmoltype = featuresXMLDoc.createElement('Q');
           xmlQmoltype.setAttribute('name', "mol_type");
 
-          const xmlVmoltype = xmlDoc.createElement('V');
+          const xmlVmoltype = featuresXMLDoc.createElement('V');
           xmlVmoltype.selfClosing = true;
           xmlVmoltype.setAttribute('predef', value["mol_type"]);
 
@@ -1888,10 +2115,10 @@ async function exportDNAFile(plasmidIndex) {
 
         // Q organism
         if (value["organism"]) {
-          const xmlQOrganism = xmlDoc.createElement('Q');
+          const xmlQOrganism = featuresXMLDoc.createElement('Q');
           xmlQOrganism.setAttribute('name', "organism");
 
-          const xmlVOrganism = xmlDoc.createElement('V');
+          const xmlVOrganism = featuresXMLDoc.createElement('V');
           xmlVOrganism.selfClosing = true;
           xmlVOrganism.setAttribute('text', value["organism"]);
 
@@ -1899,10 +2126,10 @@ async function exportDNAFile(plasmidIndex) {
           xmlFeatureElement.appendChild(xmlQOrganism) // Apend
         };
         
-        root.appendChild(xmlFeatureElement);
-      } else {
+        featuresXMlRoot.appendChild(xmlFeatureElement);
+      } else if (value["type"] !== "primer_bind" && value["type"] !== "primer") {
         // Feature
-        const xmlFeatureElement = xmlDoc.createElement('Feature');
+        const xmlFeatureElement = featuresXMLDoc.createElement('Feature');
         xmlFeatureElement.setAttribute('recentID', i + "");
         i++;
         xmlFeatureElement.setAttribute('name', value["label"]);
@@ -1913,7 +2140,7 @@ async function exportDNAFile(plasmidIndex) {
         xmlFeatureElement.setAttribute('consecutiveTranslationNumbering', "1");
 
         // Segment
-        const xmlSegmentElement = xmlDoc.createElement('Segment');
+        const xmlSegmentElement = featuresXMLDoc.createElement('Segment');
         xmlSegmentElement.selfClosing = true;
         xmlSegmentElement.setAttribute('range', removeNonNumeric(value["span"]).replace("..", "-"));
         if (value["color"]) {
@@ -1932,10 +2159,10 @@ async function exportDNAFile(plasmidIndex) {
 
         // Q Label
         if (value["label"]) {
-          const xmlQLabel = xmlDoc.createElement('Q');
+          const xmlQLabel = featuresXMLDoc.createElement('Q');
           xmlQLabel.setAttribute('name', "label");
 
-          const xmlVLabel = xmlDoc.createElement('V');
+          const xmlVLabel = featuresXMLDoc.createElement('V');
           xmlVLabel.selfClosing = true;
           xmlVLabel.setAttribute('text', value["label"]);
 
@@ -1945,10 +2172,10 @@ async function exportDNAFile(plasmidIndex) {
 
         // Q Note
         if (value["note"]) {
-          const xmlQNote = xmlDoc.createElement('Q');
+          const xmlQNote = featuresXMLDoc.createElement('Q');
           xmlQNote.setAttribute('name', "note");
 
-          const xmlVNote = xmlDoc.createElement('V');
+          const xmlVNote = featuresXMLDoc.createElement('V');
           xmlVNote.selfClosing = true;
           xmlVNote.setAttribute('text', value["note"]);
 
@@ -1958,30 +2185,30 @@ async function exportDNAFile(plasmidIndex) {
 
         // Q Translation
         if (value["translation"]) {
-          const xmlQCodonStart = xmlDoc.createElement('Q');
+          const xmlQCodonStart = featuresXMLDoc.createElement('Q');
           xmlQCodonStart.setAttribute('name', "codon_start");
 
-          const xmlVCodonStart = xmlDoc.createElement('V');
+          const xmlVCodonStart = featuresXMLDoc.createElement('V');
           xmlVCodonStart.selfClosing = true;
           xmlVCodonStart.setAttribute('int', "1");
 
           xmlQCodonStart.appendChild(xmlVCodonStart) // Apend
           xmlFeatureElement.appendChild(xmlQCodonStart) // Apend
 
-          const xmlQTranslatable = xmlDoc.createElement('Q');
+          const xmlQTranslatable = featuresXMLDoc.createElement('Q');
           xmlQTranslatable.setAttribute('name', "transl_table");
 
-          const xmlVTranslatable = xmlDoc.createElement('V');
+          const xmlVTranslatable = featuresXMLDoc.createElement('V');
           xmlVTranslatable.selfClosing = true;
           xmlVTranslatable.setAttribute('int', "1");
 
           xmlQTranslatable.appendChild(xmlVTranslatable) // Apend
           xmlFeatureElement.appendChild(xmlQTranslatable) // Apend
 
-          const xmlQTranslation = xmlDoc.createElement('Q');
+          const xmlQTranslation = featuresXMLDoc.createElement('Q');
           xmlQTranslation.setAttribute('name', "translation");
 
-          const xmlVTranslation = xmlDoc.createElement('V');
+          const xmlVTranslation = featuresXMLDoc.createElement('V');
           xmlVTranslation.selfClosing = true;
           xmlVTranslation.setAttribute('text', value["translation"]);
 
@@ -1989,38 +2216,116 @@ async function exportDNAFile(plasmidIndex) {
           xmlFeatureElement.appendChild(xmlQTranslation) // Apend
         };
 
-        root.appendChild(xmlFeatureElement);
+        featuresXMlRoot.appendChild(xmlFeatureElement);
       };
     };
   };
 
   // Serialize the XML tree to a string
-  const serializer = new XMLSerializer();
-  const xmlString = serializer.serializeToString(xmlDoc).replace(/[\n\r]/g, '').replace(" encoding=\"UTF-8\"", "");
-
-  // Now, xmlString contains the XML structure as a string
-  //downloadFile('featuresXMLTree', xmlString, 'xml');
+  const featuresXMLString = xmlSerializer.serializeToString(featuresXMLDoc).replace(/[\n\r]/g, '').replace(" encoding=\"UTF-8\"", "");
 
   const emptyFeaturesXML = "<?xml version=\"1.0\"?><Features nextValidID=\"1\"><Feature recentID=\"0\" name=\"Feature 1\" type=\"misc_feature\" allowSegmentOverlaps=\"0\" consecutiveTranslationNumbering=\"1\"><Segment range=\"2-3\" color=\"#a6acb3\" type=\"standard\"/></Feature></Features>";
   // length
-  // testing adding 1 to the length
-  addBytes(inToHexBytes(xmlString.length + 1));
+  addBytes(inToHexBytes(featuresXMLString.length + 1));
   // content
-  addBytes(stringToBytes(xmlString));
+  addBytes(stringToBytes(featuresXMLString));
   // stop byte
   addBytes("0a 05");
+
 
 
   /**
    * Primers
    */
+  const nrOfPrimers = Object.keys(currFeatures).filter(item => currFeatures[item]["type"] == "primer_bind" || currFeatures[item]["type"] == "primer").length;
+
+  // Create the XML document with the correct root structure
+  const primersXMLDoc = xmlParser.parseFromString(
+    '<?xml version="1.0" ?><Primers nextValidID="' + nrOfPrimers + '"></Primers>',
+    'application/xml'
+  );
+
+  // Ensure the "Features" element is correctly added as the root element
+  const primersXMLRoot = primersXMLDoc.documentElement;
+
+  const xmlHybridizationParamsElement = primersXMLDoc.createElement('HybridizationParams');
+  xmlHybridizationParamsElement.selfClosing = true;
+  xmlHybridizationParamsElement.setAttribute('minContinuousMatchLen', "10");
+  xmlHybridizationParamsElement.setAttribute('allowMismatch', "1");
+  xmlHybridizationParamsElement.setAttribute('minMeltingTemperature', "40");
+  xmlHybridizationParamsElement.setAttribute('showAdditionalFivePrimeMatches', "1");
+  xmlHybridizationParamsElement.setAttribute('minimumFivePrimeAnnealing', "15");
+  primersXMLRoot.appendChild(xmlHybridizationParamsElement)
+
+
+  const currPrimers = {};
+  for (const [key, value] of Object.entries(currFeatures)) {
+    // Check if the value matches the specific value
+    if (value["type"] === "primer_bind") {
+        // Add the key-value pair to the new dictionary
+        currPrimers[key] = value;
+    };
+  };
+  i = 0;
+  for (const key in currPrimers) {
+    if (key !== "LOCUS") {
+      const value = currPrimers[key];
+      if (key !== "source" && value["type"] == "primer_bind") {
+        // Primer
+        const xmlPrimerElement = primersXMLDoc.createElement('Primer');
+        xmlPrimerElement.setAttribute('recentID', i + "");i++;
+        xmlPrimerElement.setAttribute('name', value["label"]);
+        const boundStrand = (!value["span"].includes("complement")) ? "0": "1";
+        const primerSpan = removeNonNumeric(value["span"]).split("..").map(Number).map(function(x) { return x-1 });;
+        const primerSequence = (boundStrand == "0") ? currSequence.slice(primerSpan[0], primerSpan[1] + 1): getComplementaryStrand(currSequence.slice(primerSpan[0], primerSpan[1] + 1)).split("").reverse().join("");
+        xmlPrimerElement.setAttribute('sequence', primerSequence.toLowerCase());
+        if (value["phosphorylated"] == true) {
+          xmlPrimerElement.setAttribute('phosphorylated', "1");
+        };
+        xmlPrimerElement.setAttribute('description', "<html><body>" + value["note"] + "</body></html>");
+        xmlPrimerElement.setAttribute('dateAdded', "2024-05-20T12:51:58Z");
+
+
+        // BindingSite
+        const xmlBindingSiteElement = primersXMLDoc.createElement('BindingSite');
+        xmlBindingSiteElement.setAttribute('simplified', "1");
+        xmlBindingSiteElement.setAttribute('location', primerSpan.join("-"));
+        xmlBindingSiteElement.setAttribute('boundStrand', boundStrand);
+        xmlBindingSiteElement.setAttribute('annealedBases', primerSequence.toLowerCase());
+        xmlBindingSiteElement.setAttribute('meltingTemperature', Math.round(getMeltingTemperature(primerSequence, meltingTempAlgorithmChoice)));
+
+        // Component
+        const xmlComponentElement = primersXMLDoc.createElement('Component');
+        xmlComponentElement.selfClosing = true;
+        xmlComponentElement.setAttribute('hybridizedRange', primerSpan.join("-"));
+        xmlComponentElement.setAttribute('bases', primerSequence.toLowerCase());
+
+        xmlBindingSiteElement.appendChild(xmlComponentElement);
+
+        const xmlBindingSiteElementSimplified = xmlBindingSiteElement.cloneNode(true);
+        xmlBindingSiteElement.removeAttribute('simplified');
+
+        xmlPrimerElement.appendChild(xmlBindingSiteElement);
+        xmlPrimerElement.appendChild(xmlBindingSiteElementSimplified);
+        primersXMLRoot.appendChild(xmlPrimerElement);
+      };
+    };
+  };
+
+  // Serialize the XML tree to a string
+  const primersXMLString = xmlSerializer.serializeToString(primersXMLDoc).replace(/[\n\r]/g, '').replace(" encoding=\"UTF-8\"", "");
+
+  // Now, xmlString contains the XML structure as a string
+  //downloadFile('featuresXMLTree', xmlString, 'xml');
+
+  const emptyPrimersXML = "<?xml version=\"1.0\"?><Primers nextValidID=\"1\"><HybridizationParams minContinuousMatchLen=\"10\" allowMismatch=\"1\" minMeltingTemperature=\"40\" showAdditionalFivePrimeMatches=\"1\" minimumFivePrimeAnnealing=\"15\"/></Primers>";
   // length
-  //addBytes("00 00 00 d9"); //(default xml length)
-  //// content
-  //const defaultPrimersXML = "<AdditionalSequenceProperties><UpstreamStickiness>0</UpstreamStickiness><DownstreamStickiness>0</DownstreamStickiness><UpstreamModification>Unmodified</UpstreamModification><DownstreamModification>Unmodified</DownstreamModification></AdditionalSequenceProperties>";
-  //addBytes(stringToBytes(defaultPrimersXML));
-  //// stop byte
-  //addBytes("0a 06");
+  // testing adding 1 to the length
+  addBytes(inToHexBytes(primersXMLString.length + 1));
+  // content
+  addBytes(stringToBytes(primersXMLString));
+  // stop byte
+  addBytes("0a 06");
 
   /**
    * NOTES
@@ -2044,21 +2349,32 @@ async function exportDNAFile(plasmidIndex) {
   const dateYMD = `${year}.${month}.${day}`;
 
   // added line feeds \n
-  const notesXML = `<Notes>\n<UUID>${uuid}</UUID>\n<Type>Natural</Type>\n<Created UTC=\"${timeHMS}\">${dateYMD}</Created>\n<LastModified UTC=\"${timeHMS}\">${dateYMD}</LastModified>\n<SequenceClass>UNA</SequenceClass>\n<TransformedInto>unspecified</TransformedInto>\n</Notes>`;
+  const notesXML = `<Notes>
+<UUID>${uuid}</UUID>
+<Type>Natural</Type>
+<Created UTC=\"${timeHMS}\">${dateYMD}</Created>
+<LastModified UTC=\"${timeHMS}\">${dateYMD}</LastModified>
+<SequenceClass>UNA</SequenceClass>
+<TransformedInto>unspecified</TransformedInto>
+<References>
+<Reference journalName="Exported with IVA Prime :) &lt;a href='https://www.ivaprime.com'>https://www.ivaprime.com&lt;/a>" type="Journal Article" journal="Exported with IVA Prime :) &lt;a href='https://www.ivaprime.com'>https://www.ivaprime.com&lt;/a>" title="Direct Submission"/>
+<Reference journalName="SnapGene Viewer" type="Journal Article" journal="SnapGene Viewer" title="Direct Submission"/>
+</References>
+</Notes>`;
   // length
-  addBytes(inToHexBytes(notesXML.length));
+  addBytes(inToHexBytes(notesXML.length + 1));
   // content
   addBytes(stringToBytes(notesXML));
   // stop byte
-  //addBytes("0a 0d");
-  //
-  ///**
-  // * Closing bytes
-  // */
-  ////                                             this byte is set to 00 in newer versions (7.1.1)
-  ////                                             |
-  //const closingBytes = "00 00 01 59 01 00 00 00 01 00 00 4b 00 00 00 00 00 00 00 00 00 03 55 6e 69 71 75 65 20 36 2b 20 43 75 74 74 65 72 73 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 19 ff 00 64 00 00 00 00 00 54 48 4f 00 ff fe 00 00 00 00 00 00 00 00 00 00 00 00 01 01 01 01 00 01 00 45 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 01 ff ff ff ff 01 59 01 f4 01 01 3f 00 50 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 1c 00 00 00 33 3c 3f 78 6d 6c 20 76 65 72 73 69 6f 6e 3d 22 31 2e 30 22 3f 3e 3c 45 6e 7a 79 6d 65 56 69 73 69 62 69 6c 69 74 69 65 73 20 76 61 6c 73 3d 22 22 2f 3e 0a 0e 00 00 00 29 3c 3f 78 6d 6c 20 76 65 72 73 69 6f 6e 3d 22 31 2e 30 22 3f 3e 3c 43 75 73 74 6f 6d 45 6e 7a 79 6d 65 53 65 74 73 2f 3e 0a";
-  //addBytes(closingBytes);
+  addBytes("0a 0d");
+  
+  /**
+   * Closing bytes
+   */
+  //                                             this byte is set to 00 in newer versions (7.1.1)
+  //                                             |
+  const closingBytes = "00 00 01 59 01 00 00 00 01 00 00 4b 00 00 00 00 00 00 00 00 00 03 55 6e 69 71 75 65 20 36 2b 20 43 75 74 74 65 72 73 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 19 ff 00 64 00 00 00 00 00 54 48 4f 00 ff fe 00 00 00 00 00 00 00 00 00 00 00 00 01 01 01 01 00 01 00 45 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 01 ff ff ff ff 01 59 01 f4 01 01 3f 00 50 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 1c 00 00 00 33 3c 3f 78 6d 6c 20 76 65 72 73 69 6f 6e 3d 22 31 2e 30 22 3f 3e 3c 45 6e 7a 79 6d 65 56 69 73 69 62 69 6c 69 74 69 65 73 20 76 61 6c 73 3d 22 22 2f 3e 0a 0e 00 00 00 29 3c 3f 78 6d 6c 20 76 65 72 73 69 6f 6e 3d 22 31 2e 30 22 3f 3e 3c 43 75 73 74 6f 6d 45 6e 7a 79 6d 65 53 65 74 73 2f 3e 0a";
+  addBytes(closingBytes);
 
   // Send for download
   downloadFile(outputFileName, outputBytes, outputFileExtension);
