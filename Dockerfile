@@ -2,7 +2,7 @@ FROM python:3.10-alpine
 LABEL maintainer="raduleonte"
 
 COPY ./requirements.txt /requirements.txt
-COPY ./app /app
+COPY --chown=django-user:django-user ./app /app
 WORKDIR /app
 
 RUN python -m venv /py && \

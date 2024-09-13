@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <a href="https://ivaprime.com"><img src="IVA Prime logo.png"/></a>
+  <a href="https://ivaprime.com"><img src="IVA Prime logo.png" width="220"></a>
   <br>
   <b>IVA Prime</b>
   <br>

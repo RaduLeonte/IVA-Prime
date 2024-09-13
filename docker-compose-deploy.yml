@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   gcloud:
     image: google/cloud-sdk:448.0.0
