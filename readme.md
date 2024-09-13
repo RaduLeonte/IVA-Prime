@@ -46,11 +46,15 @@ Additionally, insertions can be added to the subcloning target in the same opera
 
 ## Installation
 
-IVA Prime can be installed locally using [Git](https://git-scm.com/) and [Docker](https://www.docker.com/). Once Docker is installed, simply run the following commands in your terminal:
+IVA Prime can be installed locally using [Git](https://git-scm.com/) and [Docker](https://www.docker.com/). Note that on some systems, Docker Desktop does not come with docker-compose, so make sure it is installed. Once Docker is installed, simply run the following commands in your terminal:
 
 ```
 git clone https://github.com/RaduLeonte/IVA-Prime
+```
+```
 cd IVA-Prime
+```
+```
 docker-compose up --build
 ```
 
