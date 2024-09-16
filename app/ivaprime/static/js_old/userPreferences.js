@@ -107,23 +107,3 @@ const defaultSetingsDict = {
 for (let setting in defaultSetingsDict) {
     window[setting] = (getUserPreference(setting) !== null) ? getUserPreference(setting) : defaultSetingsDict[setting];
 };
-
-/**
- * Update the CSS theme
- */
-function updateCSSTheme() {
-    if (colorTheme === "darkTheme") {
-        document.querySelector("html").setAttribute("data-theme", "dark");
-        Coloris({
-            themeMode: 'dark',
-            alpha: false
-          });
-    } else if (colorTheme === "lightTheme") {
-        document.querySelector("html").setAttribute("data-theme", "light");
-        Coloris({
-            themeMode: 'light',
-            alpha: false
-          });
-    };
-};
-updateCSSTheme();

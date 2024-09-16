@@ -1,0 +1,390 @@
+{% load static %}
+<!-- Made by:
+    Radu Cristian Leonte
+    (raducristian.leonte@gmail.com)
+    (raducristian.leonte@unibas.ch) -->
+<!DOCTYPE html>
+    <html>
+        <head>
+            <title>IVA Prime</title>
+            <!-- Styling -->
+            <link rel="shortcut icon" href="{% static 'favicon.ico' %}">
+            <link rel="stylesheet" type="text/css" href="{% static 'coloris.css' %}">
+            <link rel="stylesheet" type="text/css" href="{% static 'styles.css' %}">
+            <!-- Libraries -->
+            <script src="{% static 'js/libraries/html-docx.js' %}"></script>
+            <script src="{% static 'js/libraries/xlsx-populate.min.js' %}"></script>
+            <script src="{% static 'js/libraries/coloris.js' %}"></script>
+            <script src="{% static 'js/libraries/FileSaver.js' %}"></script>
+            <!-- Scripts -->
+            <script src="{% static 'js/importPlasmid.js' %}"></script>
+            <script src="{% static 'js/userPreferences.js' %}"></script>
+            <script src="{% static 'js/getTM.js' %}"></script>
+            <script src="{% static 'js/sequenceContextMenu.js' %}"></script>
+            <script src="{% static 'js/tableHover.js' %}"></script>
+            <script src="{% static 'js/sequenceCursor.js' %}"></script>
+            <script src="{% static 'js/tableSelection.js' %}"></script>
+            <script src="{% static 'js/createPrimers.js' %}"></script>
+            <script src="{% static 'js/insertionPopUpWindow.js' %}"></script>
+            <script src="{% static 'js/scrollToAnnotation.js' %}"></script>
+            <script src="{% static 'js/customSearch.js' %}"></script>
+            <script src="{% static 'js/resizeContents.js' %}"></script>
+            <script src="{% static 'js/hideableWindows.js' %}"></script>
+            <script src="{% static 'js/editFeatures.js' %}"></script>
+            <script src="{% static 'js/plasmidTabs.js' %}"></script>
+            <script src="{% static 'js/warningPopUp.js' %}"></script>
+        </head>
+        <body ondragover="importDragOver(event)" ondragleave="importDragLeave(event)" ondrop="importDrop(event)">
+            <script>
+                /*to prevent Firefox FOUC, this must be here*/
+                let FF_FOUC_FIX;
+            </script>
+            <!-- Context menu -->
+            <div class="custom-context-menu" style="display: none;" oncontextmenu="return false;">
+                <div>
+                    <h3>IVA Cloning Operations</h3>
+                    <ul>
+                      <li id="insertion">Insert here</li>
+                      <li id="deletion" disabled>Delete selection</li>
+                      <li id="mutation" disabled>Mutate selection</li>
+                      <li id="mark-for-subcloning" disabled>Mark selection for subcloning</li>
+                      <li id="subcloning" disabled>Subclone into selection <br>(<em>no region marked for subcloning</em>)</li>
+                      <li id="subcloning-with-insertion" disabled>Subclone with insertion into selection <br>(<em>no region marked for subcloning</em>)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Annotations</h3>
+                    <ul>
+                      <li id="add-new-feature"  disabled>Annotate selection</li>
+                      <li id="delete-feature">Delete annotation</li>
+                    </ul>
+                </div> 
+                <div>
+                    <h3>Copy</h3>
+                    <ul>
+                      <li id="copy-selection">Copy selection</li>
+                      <li id="copy-complement">Copy complement of selection</li>
+                      <li id="copy-rev-complement">Copy reverse complement of selection</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Translation</h3>
+                    <ul>
+                      <li id="begin-translation" disabled>Begin translation at first ATG</li>
+                      <li id="translate-selection" disabled>Translate selection (forward strand)</li>
+                      <li id="translate-selection-rev" disabled>Reverse translate selection (reverse strand)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="overlay" style="display: none" oncontextmenu="return false;"></div>
+            <header>
+                <div class="nav-left">
+                    <!-- Left side header buttons -->
+                    <ul id="header-list"  class="horizontal-list">
+                        <li id="new-file-btn"><a href="#" id="new-file-btn-a">New File</a></li>
+                        <li id="import-btn"><a href="#" id="import-btn-a">Import File</a></li>
+                        <li id="import-demo-btn"><a href="#">Try Demo File</a></li>
+                    </ul>
+                </div>
+                <div class="nav-tabs">
+                    <!-- Plasmid tabs -->
+                    <div id="scroll-left" onclick="scrollTabs('left')">‹</div>
+                    <div id="plasmid-tabs-container" class="plasmid-tabs-container">
+                        <ul id="plasmid-tabs-list" class="plasmid-tabs-list">
+                        </ul>
+                    </div>
+                    <div id="scroll-right" onclick="scrollTabs('right')">›</div>
+                </div>
+                <div class ="nav-right">
+                    <!-- Right side header buttons -->
+                    <ul id="header-list-right" class="horizontal-list">
+                        <li id="undo-btns">
+                            <a href="#" onClick="null" class="svg-icon-btn-a svg-icon-btn-a-disabled" style="background-image: url('/static/assets/icons/undo_icon.svg')"></a>
+                            <a href="#" onClick="null" class="svg-icon-btn-a svg-icon-btn-a-disabled" style="background-image: url('/static/assets/icons/undo_icon.svg'); transform: scale(-1,1)"></a>
+                        </li>
+                        <li id="tm-calc-btn"><a href="#">TM Calculator</a></li>
+                        <li id="settings-btn"><a href="#" class="svg-icon-btn-a" style="background-image: url('/static/assets/icons/settings_icon.svg')"></a></li>
+                        <li id="info-btn"><a href="#" class="svg-icon-btn-a" style="background-image: url('/static/assets/icons/info_icon.svg')"></a></li>
+                    </ul>
+                </div>
+            </header>
+    
+            <!-- Hideable windows -->
+            <div>
+                <!-- TM Calculator window -->
+                <div id="tm-calc-window" class="hideable-window" style="display: none;">
+                    <h1>Calculate melting temperatures</h1>
+                    <div>
+                        <label for="tm-calc-primer-input1">Primer 1 TM = <span id="tm-calc-primer-tm1">--</span> °C <span id="tm-calc-info-span1" style="display: block;"></span></label>
+                        <input type="text" id="tm-calc-primer-input1"  class="popup-window-input">
+                    </div>
+                    <div>
+                        <label for="tm-calc-primer-input2">Primer 2 TM = <span id="tm-calc-primer-tm2">--</span> °C <span id="tm-calc-info-span2" style="display: block;"></span></label>
+                        <input type="text" id="tm-calc-primer-input2"  class="popup-window-input">
+                    </div>
+                </div>
+                <!-- Settings window -->
+                <div id="settings-window" class="hideable-window" style="display: none;">
+                    <div class="horizontal-list tabs-btns-list">
+                        <li><a class="standard-btn-a settings-tab-button settings-tab-button-highlighted" onClick="slideTab(this, 'basic')" href=# disabled="true">Basic</a></li>
+                        <li><a class="standard-btn-a settings-tab-button" onClick="slideTab(this, 'advanced')" href=# disabled="false">Advanced</a></li>
+                        <li><a id="reset-default-settings-btn" class="standard-btn-a reset-default-settings-btn" href=#>Reset Default Settings</a></li>
+                        <li><a id="save-settings-btn" class="standard-btn-a save-settings-btn" href=#>Save Settings</a></li>
+                    </div>
+                    <div class="tabs">
+
+                        <!-- Basic settings -->
+                        <div class="tab basic-settings">
+                            <h1> Basic Settings</h1>
+
+                            <div class="settings-group">
+                                <h3>Primer generation settings:</h3>
+                                <div class="settings-window-row">
+                                    <label for="primerDistributionSettingsElement">Distribute insertion across primer pairs:</label>
+                                    <input type="checkbox" id="primerDistributionSettingsElement" name="primerDistributionSettingsElement" checked="false" class="footer-checkbox">
+                                </div>
+                            </div>
+
+                            <div class="settings-group">
+                                <h3>Appearance settings:</h3>
+
+                                <div class="settings-window-row">
+                                    <label for="colorThemeSettingsElement">Theme:</label>
+                                    <select id="colorThemeSettingsElement" name="colorThemeSettingsElement">
+                                        <option value="lightTheme">Light</option>
+                                        <option value="darkTheme">Dark</option>
+                                    </select>
+                                </div>
+            
+                                <div class="settings-window-row">
+                                    <label for="gridWidthSettingsElement">Grid size (bases per row):</label>
+                                    <input type="number" id="gridWidthSettingsElement" name="gridWidthSettingsElement" min="10" max="9999" value="60">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced settings -->
+                        <div class="tab advanced-settings" style="position: absolute; transform: translateX(100%);">   
+                            <h1>Advanced Settings</h1>
+
+                            <div class="settings-group">
+                                <h3>Template binding region melting temperature parameters:</h3>
+            
+                                <!-- Algorithm -->
+                                <h4>Calculator</h4>
+                                <div class="settings-window-row">
+                                    <label for="primerConcSettingsElement">Primer concentration [nM]:</label>
+                                    <input type="text" id="primerConcSettingsElement" name="primerConcSettingsElement">
+                                </div>
+                                <div class="settings-window-row">
+                                    <label for="meltingTempAlgorithmChoiceSettingsElement">Calculator Algorithm:</label>
+                                    <select id="meltingTempAlgorithmChoiceSettingsElement" name="meltingTempAlgorithmChoiceSettingsElement">
+                                        <option value="nnSantaLucia">Nearest-neighbor (SantaLucia)</option>
+                                        <option value="oligoCalc">Basic (Oligo Calc)</option>
+                                    </select>
+                                </div>
+                                <img class="equation-image" id ="meltingTempAlgorithmEquationImage" src="{% static 'assets/equations/nnSantaLucia equation.png' %}" alt="Melting temperature equation." style="max-width: 100%; height: 50px;">
+            
+                                <!-- Salt correction -->
+                                <h4>Salt Correction</h4>            
+                                <div class="settings-window-row">
+                                    <label for="saltConcSettingsElement">Salt concentration [M]:</label>
+                                    <input type="text" id="saltConcSettingsElement" name="saltConcSettingsElement">
+                                </div>
+                                <div class="settings-window-row">
+                                    <label for="saltCorrectionEquationSettingsElement">Salt correction equation:</label>
+                                    <select id="saltCorrectionEquationSettingsElement" name="saltCorrectionEquationSettingsElement">
+                                        <option value="SchildkrautLifson">Schildkraut-Lifson</option>
+                                        <option value="Owczarzy">Owczarzy</option>
+                                    </select>
+                                </div>
+                                <img class="equation-image" id ="saltCorrectionEquationImage" src="{% static 'assets/equations/SchildkrautLifson equation.png' %}" alt="Salt correction equation." style="max-width: 100%; height: 30px;">
+                                
+                                <!-- DMSO correction -->
+                                <h4>DMSO Correction</h4> 
+                                <div class="settings-window-row">
+                                    <label for="dmsoConcSettingsElement">DMSO concentration [M]:</label>
+                                    <input type="text" id="dmsoConcSettingsElement" name="dmsoConcSettingsElement">
+                                </div>
+                                <img class="equation-image" id ="dmsoCorrectionEquationImage" src="{% static 'assets/equations/DMSO equation.png' %}" alt="DMSO correction equation." style="max-width: 100%; height: 25px;">
+                            </div>
+            
+                            <div class="settings-group">
+                                <h3>Primer generation settings:</h3>
+                                <div class="settings-window-row">
+                                    <label for="homoRegionMinLengthSettingsElement">Homologous region minimum length [nt]:</label>
+                                    <input type="text" id="homoRegionMinLengthSettingsElement" name="homoRegionMinLengthSettingsElement">
+                                </div>
+                                <div class="settings-window-row">
+                                    <label for="homoRegionTmSettingsElement">Homologous region TM [°C]:</label>
+                                    <input type="text" id="homoRegionTmSettingsElement" name="homoRegionTmSettingsElement">
+                                </div>
+                                <div class="settings-window-row">
+                                    <label for="homoRegionSubcloningTmSettingsElement">Subcloning homologous region TM [°C]:</label>
+                                    <input type="text" id="homoRegionSubcloningTmSettingsElement" name="homoRegionSubcloningTmSettingsElement">
+                                </div>
+                                <div class="settings-window-row">
+                                    <label for="tempRegionTmSettingsElement">Template binding region target TM [°C]:</label>
+                                    <input type="text" id="tempRegionTmSettingsElement" name="tempRegionTmSettingsElement">
+                                </div>
+                                <div class="settings-window-row">
+                                    <label for="upperBoundShortInsertionsSettingsElement">Upper bound short insertions TM [°C]:</label>
+                                    <input type="text" id="upperBoundShortInsertionsSettingsElement" name="upperBoundShortInsertionsSettingsElement">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- Info window -->
+                <div id="info-window" class="hideable-window" style="display: none;">
+                    <h1>IVA Prime</h1>
+                    <p>This web application allows you to import plasmid files (.gb and .dna), and then easily generate primers for
+                        IVA Cloning by editing the DNA sequence as you wish. The primer design technique is originally based on the work
+                        by García-Nafría et al.
+                    </p>
+                    <h3>Links:</h3>
+                    <ul>
+                        <li>Original paper by García-Nafría et al.: <a href="https://www.nature.com/articles/srep27459">DOI: 10.1038/srep27459</a></li>
+                        <li>Source code: <a href="https://github.com/RaduLeonte/IVA-Prime">GitHub Repository</a></li>
+                    </ul>
+                    <h2>Guides</h2>
+                        <h3>Importing</h3>
+                        <ol>
+                            <li><p>Click on <span id="import-btn"><a class="info-window-btn" href="#">Import File</a></span> to import either a
+                                .gb or .dna file. (Or click <span id="import-demo-btn"><a class="info-window-btn" href="#">Try Demo File</a></span> to
+                                import an empty pET-28a(+) vector.)</p>
+                            </li>
+                            <li>Navigate using the sequence grid on the right or by clicking on a specific feature in the sidebar.</li>
+                            <li>Import more plasmids by clicking <span id="import-btn"><a class="info-window-btn" href="#">Import File</a></span> again.
+                            </li>
+                        </ol>
+
+                        <h3>Insertions</h3>
+                        <ol>
+                            <li>Left click at the position you would like to insert a sequence.
+                                <img src="{% static 'assets/gifs/insertion position selection.gif' %}">
+                            </li>
+                            <li>Right-click to open the context menu and select <span class="info-window-menu-btn">Insert here</span>.
+                                <img src="{% static 'assets/gifs/insertion menu item selection.gif' %}">
+                            </li>
+                            <li>Enter a DNA or amino acid sequence to insert.</li>
+                            <li>Select a target organism for codon optimisation (Escherichia coli, human, yeast etc.).</li>
+                            <li>Press <button id="create-primers-button" class="info-window-create-primers-btn">Create Primers</button>.</li>
+                        </ol>
+
+                        <h3>Deletions</h3>
+                        <ol>
+                            <li>Select a region to be deleted.
+                                <img src="{% static 'assets/gifs/deletion selection.gif' %}" alt="Selecting region to be deleted.">
+                            </li>
+                            <li>Right-click to open the context menu and select <span class="info-window-menu-btn">Delete selection</span>.
+                                <img src="{% static 'assets/gifs/deletion menu item selection.gif' %}">
+                            </li>
+                        </ol>
+
+                        <h3>Mutations & Replacements</h3>
+                        <ol>
+                            <li>Select a region to be mutated/replaced.
+                                <img src="{% static 'assets/gifs/mutation selection.gif' %}">
+                            </li>
+                            <li>Right-click to open the context menu and select <span class="info-window-menu-btn">Mutate selection</span> or
+                                <span class="info-window-menu-btn">Mutate selection</span>.
+                                <img src="{% static 'assets/gifs/mutation menu item selection.gif' %}">
+                            </li>
+                            <li>Enter a DNA or amino acid sequence.</li>
+                            <li>Select a target organism for codon optimisation (Escherichia coli, human, yeast etc.).</li>
+                            <li>Press <button id="create-primers-button" class="info-window-create-primers-btn">Create Primers</button>.</li>
+                        </ol>
+
+                        <h3>Subcloning</h3>
+                        <ol>
+                            <li>To subclone navigate to your region of interest and select it.
+                                <img src="{% static 'assets/gifs/subcloning selection.gif' %}">
+                            </li>
+
+                            <li>Right-click to open the context menu and select <span class="info-window-menu-btn">Mark selection for subcloning</span>. A highlight color advanced 
+                                dashed lines demarcate your <span class="subcloning-target-cell-info-window">marked sequence</span>.
+                            </li>
+
+                            <li>Now open the destination plasmid, navigate to where the marked sequence will be inserted.
+                            </li>
+
+                            <li>To subclone into a region between bases, left-click at 
+                                desired position to set the cursor, then right click and choose <span class="info-window-menu-btn">Subclone into selection</span>
+                            </li>
+
+                            <li>If you wish to at the same time insert additional sequences adjacent to the subcloned sequence at the destination, choose 
+                                <span class="info-window-menu-btn">Subclone with insertion into selection</span>. This will open a window where you can 
+                                specify the additional sequences that will be included at the 5' and 3' prime ends individually. Once you are done, press 
+                                <button id="create-primers-button" class="info-window-create-primers-btn">Create Primers</button>.
+                            </li>
+                        </ol>
+
+                        <h3>Saving the primers and modified plasmid to file</h3>
+                        <ul>
+                            <li>To export the generated primers, click on the downwards arrow next to the plasmid name <span class="plasmid-tab plasmid-tab-selected" style="text-align: center; padding: 5px"><a class="plasmid-tab-dropdown" href="#" style="padding: 3px; margin: 0px">▼</a></span>. 
+                                This will open a dropdown menu where you can choose your desired format for the primer list.
+                            </li>
+                            <li>To save the modified plasmid file, click on the downwards arrow next to the plasmid name <span class="plasmid-tab plasmid-tab-selected" style="text-align: center; padding: 5px"><a class="plasmid-tab-dropdown" href="#" style="padding: 3px; margin: 0px">▼</a></span>. 
+                                This will open a dropdown menu where you can choose your desired format for plasmid file.
+                            </li>
+                        </ul>
+                </div>
+            </div>
+            
+            <!-- Main container -->
+            <div class="parent-container" id="parent-container">
+                <!-- Plasmid nr 1 -->
+                <div class="first-plasmid-container" id="first-plasmid-container">
+                    <!-- Sidebar -->
+                    <div id="sidebar" class="sidebar" style="width: 25%;">
+                        <div id="sidebar-container">
+                            <!-- Main sidebar content where primers are appended -->
+                            <div id="sidebar-content" class="sidebar-content">
+                                <h2 id="primers-div-headline">Primers will appear here.</h2>
+                            </div>
+                            <!-- Features table -->
+                            <table id="sidebar-table" class="sidebar-table">
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="plasmid-content-container" id="plasmid-content-container">
+                        <!-- Plasmid content -->
+                        <div class="content" id="content">
+                            <!-- Plasmid sequence grid-->
+                            <div id="file-content" class="file-content">
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="footer" id="footer">
+                            <ul class="footer-item horizontal-list">
+                                <li><input type="text" id="custom-search-input" class="search-bar" placeholder="Search"></li>
+                                <li><a class="svg-icon-btn-a footer-icon-btn-a" href="#" style="background-image: url('/static/assets/icons/close_icon.svg');" onclick="clearCustomSearchInput()"></a></li>
+                                <li><a class="svg-icon-btn-a footer-icon-btn-a" href="#" style="background-image: url('/static/assets/icons/arrow_icon.svg');" onclick="navigateSearchResults(-1)"></a></li>
+                                <li><a class="svg-icon-btn-a footer-icon-btn-a" href="#" style="background-image: url('/static/assets/icons/arrow_icon.svg'); transform: scale(1,-1)" onclick="navigateSearchResults(1)"></a></li>
+                                <li><span id="custom-search-counter"></span></li>
+                                <li>
+                                    <input type="checkbox" id="custom-search-compstrand-check" name="Complementary strand" class="footer-checkbox" onclick="searchOccurrences(customSearchInput)"/>
+                                    <label for="custom-search-aa-check" class="footer-checkbox-label">Complementary Strand</label>
+                                </li>
+                                <li>
+                                    <input type="checkbox" id="custom-search-aa-check" name="Amino acids" class="footer-checkbox" onclick="searchOccurrences(customSearchInput)"/>
+                                    <label for="custom-search-aa-check" class="footer-checkbox-label">Amino Acid</label>
+                                </li>
+                            </ul>
+
+                            <ul class="footer-item horizontal-list">
+                                <li>Selected:</li>
+                                <li><span id="footer-selection-length">0</span> bp (<span id="footer-selection-divisible"></span>)</li>
+                                <li><span id="footer-selection-span"></span></li>
+                                <li>Tm = <span id="footer-selection-tm">--</span> °C</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </body>
+    </html>

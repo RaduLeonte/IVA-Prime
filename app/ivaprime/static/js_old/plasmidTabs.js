@@ -408,15 +408,11 @@ function exportPrimers(client, plasmidIndex) {
 };
 
 
-/**
- * Enables horizontal scrolling using the mouse wheel 
- * inside plasmid tabs container
- */
 document.addEventListener('DOMContentLoaded', function() {
     enableTabContainerScrolling();
 })
 function enableTabContainerScrolling() {
-    const tabsContainer = document.getElementById("header-tabs-container-wrapper");
+    const tabsContainer = document.getElementById("plasmid-tabs-container");
     tabsContainer.addEventListener("wheel", function (e) {
         e.preventDefault();
         tabsContainer.scrollLeft += e.deltaY*5;
