@@ -108,6 +108,26 @@ for (let setting in defaultSetingsDict) {
     window[setting] = (getUserPreference(setting) !== null) ? getUserPreference(setting) : defaultSetingsDict[setting];
 };
 
+const defaultAnnotationColors = [
+    "#ff7a8e",
+    "#bc99ee",
+    "#ff8756",
+    "#5aa8d9",
+    "#f45ba8",
+    "#74e374"
+];
+/**
+ * Configure Coloris color picker
+ */
+Coloris({
+    el: '.coloris',
+    wrap: true,
+    theme: 'polaroid',
+    swatches: defaultAnnotationColors,
+    closeButton: true,
+    closeLabel: 'Save',
+});
+
 /**
  * Update the CSS theme
  */

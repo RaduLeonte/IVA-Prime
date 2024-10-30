@@ -22,52 +22,72 @@
             <!-- Scripts -->
             <script src="{% static 'js/userPreferences.js' %}"></script>
             <script src="{% static 'js/plasmidTabs.js' %}"></script>
+            <script src="{% static 'js/popupWindows.js' %}"></script>
+            <script src="{% static 'js/fileIO.js' %}"></script>
+            <script src="{% static 'js/nucleotides.js' %}"></script>
+            <script src="{% static 'js/plasmids.js' %}"></script>
+            <script src="{% static 'js/featuresTable.js' %}"></script>
         </head>
         
         <body ondragover="importDragOver(event)" ondragleave="importDragLeave(event)" ondrop="importDrop(event)">
             <!-- Prevents flashing bug in Firefox -->
             <script>let FF_FOUC_FIX;</script>
 
+            <!-- Start popup windows -->
+            <!-- New File window-->
+            <div class="popup-window popup-window-new-file" id="new-file-window" style="display:none">
+                <h2>New File</h2>
+    
+                <div class="popup-window-vgroup">
+                    <label for="new-file-name-input">File name:</label>
+                    <input type="text" id="new-file-name-input" class="popup-window-input" value="untitled">
+                </div>
+                
+                <div class="popup-window-vgroup popup-window-new-file-sequence-input">
+                    <label for="new-file-sequence-input">DNA Sequence:</label>
+                    <textarea id="new-file-sequence-input" class="popup-window-input popup-window-textarea" spellcheck="false"></textarea>
+                </div>
+
+                <div class="popup-window-hgroup">
+                    <input type="checkbox" id="annotate-common-features-checkbox" name="annotate-common-features-checkbox" checked="true">
+                    <label for="annotate-common-features-checkbox">Annotate common features</label>
+                </div>
+                
+                <div class="popup-window-hgroup">
+                    <a class="round-button" href="#" onclick="FileIO.newFileFromSequence()">Create File</a>
+                    <a class="round-button" href="#" onclick="FileIO.resetNewFilePopupWindow()">Cancel</a>
+                </div>
+            </div>
+            <!-- End popup windows -->
+
             <!-- Start main content-->
             <div class="content-wrapper">
                 <!-- Start Header -->
                 <div class="header">
                     <div class="header-import-buttons">
-                        <a href="#"  class="round-button" title="Import a plasmid file from your computer">Import File</a>
-                        <a href="#"  class="round-button new-file-button" title="Create a new plasmid file from a DNA sequence">New File</a>
-                        <a href="#"  class="round-button demo-file-button" title="Import a pET-28a plasmid">Demo File</a>
+                        <a href="#" class="round-button" title="Import a plasmid file from your computer">Import File</a>
+                        <a href="#" class="round-button new-file-button" title="Create a new plasmid file from a DNA sequence" onclick="PopupWindow.show('new-file-window')">New File</a>
+                        <a href="#" class="round-button demo-file-button" title="Import a pET-28a plasmid" onclick="FileIO.importDemoFile()">Demo File</a>
                     </div>
 
-                    <div class="header-tabs-wrapper">
-                        <a href="#"  class="round-button header-tabs-scroll-button">‹</a>
-                        <div id="header-tabs-container-wrapper" class="header-tabs-container-wrapper">
-                            <div class="header-tabs-container">
-                                <div class="header-tab header-tab-selected">
-                                    <a href="#" class="">pET-28a(+).dna</a>
-                                    <a href="#" class="header-tab-dropdown-button">▼</a>
-                                </div>
-                                <div class="header-tab">
-                                    <a href="#" class="">pET-28a(+).dna</a>
-                                    <a href="#" class="header-tab-dropdown-button">▼</a>
-                                </div>
-                                <div class="header-tab">
-                                    <a href="#" class="">pET-28a(+).dna</a>
-                                    <a href="#" class="header-tab-dropdown-button">▼</a>
-                                </div>
-                                <div class="header-tab">
-                                    <a href="#" class="">pET-28a(+).dna</a>
-                                    <a href="#" class="header-tab-dropdown-button">▼</a>
-                                </div>
-
+                    <div class="plasmid-tabs-wrapper">
+                        <a href="#"  class="round-button plasmid-tabs-scroll-button">‹</a>
+                        <div id="plasmid-tabs-container-wrapper" class="plasmid-tabs-container-wrapper">
+                            <div class="plasmid-tabs-container" id="plasmid-tabs-container">
+                                
                             </div>
                         </div>
-                        <a href="#" class="round-button header-tabs-scroll-button">›</a>
+                        <a href="#" class="round-button plasmid-tabs-scroll-button">›</a>
                     </div>
                 </div>
                 <!-- End Header -->
 
                 <!-- Start Sidebar -->
-                <div class="sidebar"></div>
+                <div class="sidebar">
+                    <div id="features-table-container">
+                        <div id="features-table"></div>
+                    </div>
+                </div>
                 <!-- End Sidebar -->
 
                 <!-- Start Viewer -->

@@ -1,3 +1,159 @@
+const PlasmidTabs = new class {
+    /**
+     * Create new plasmid tab
+     */
+    new(plasmidIndex, plasmidFileName) {
+        // Select tabs container
+        const plasmidTabsContainer = document.getElementById("plasmid-tabs-container");
+        const newPlasmidTabId = "plasmid-tab-" + plasmidIndex;
+        let newPlasmidTab = document.getElementById(newPlasmidTabId);
+        // Check if tab element does not exist yet, then add it
+        if (!newPlasmidTab) {
+            newPlasmidTab = document.createElement("DIV");
+            plasmidTabsContainer.appendChild(newPlasmidTab);
+        };
+        newPlasmidTab.id = newPlasmidTabId;
+        newPlasmidTab.innerHTML = `
+        <a href="#" onclick="PlasmidTabs.switch(${plasmidIndex})" oncontextmenu="PlasmidTabs.toggleDropdownMenu(event, ${plasmidIndex})">${plasmidFileName}</a>
+        <a class="plasmid-tab-dropdown-button" href="#" onclick="PlasmidTabs.toggleDropdownMenu(event, ${plasmidIndex})" oncontextmenu="PlasmidTabs.toggleDropdownMenu(event, ${plasmidIndex})">▼</a>
+        `;
+        newPlasmidTab.classList.add("plasmid-tab");
+
+        // If this is the first tab added, make it the currently
+        // selected one
+        if (Object.keys(Session.plasmids).length  === 1) {
+            newPlasmidTab.classList.add("plasmid-tab-selected");
+            Session.activePlasmidIndex = plasmidIndex;
+        };
+
+        // Generate content
+        //Session.plasmids[plasmidIndex].generateContent();
+        // Generate sidebar
+        Session.plasmids[plasmidIndex].generateFeatureTable();
+
+        // Create savepoint
+        //Session.plasmids[plasmidIndex].saveProgress();
+
+        // If this is the first tab added, enable search
+        // and switch to it.
+        if (Object.keys(Session.plasmids).length === 1) {
+            //initiateSearchFunctionality();
+            PlasmidTabs.switch(plasmidIndex);
+        };
+    };
+
+    /**
+     * Switch to specified plasmid tab.
+     * 
+     * @param {int} plasmidIndex 
+     */
+    switch(plasmidIndex) {
+        // Close dropdown menus
+        PlasmidTabs.removeAllDropdownMenus();
+        
+        // Deselect plasmid tab
+        const previousPlasmidTab = document.getElementById("plasmid-tab-" + Session.activePlasmidIndex);
+        previousPlasmidTab.classList.remove("plasmid-tab-selected");
+        
+        // Select new tab
+        const newPlasmidTab = document.getElementById("plasmid-tab-" + plasmidIndex);
+        newPlasmidTab.classList.add("plasmid-tab-selected");
+    
+        // Save side bar and grid of previous plasmid
+        //saveSidebarAndGrid();
+    
+        // Update currently active plasmid
+        Session.activePlasmidIndex = plasmidIndex;
+        
+        // Repopulate sidebar and grid
+        // Check if the grid needs to be redrawn because the gridWidth has changed
+        //const newGridWidth = Session.activePlasmid().contentGrid.rows[0].cells.length;
+        //const remakeContentGrid = gridWidth !== newGridWidth;
+        //if (remakeContentGrid) {
+        //    Session.activePlasmid().makeContentGrid();
+        //};
+        PlasmidTabs.updateFeaturesTable();
+        //PlasmidTabs.updateContent();
+        return;
+        // Update primers
+        updateSidebarPrimers();
+    
+        // Refresh undo buttons and set disabled/enabled states
+        refreshUndoRedoButtons();
+    
+        // Update selection info in the footer
+        updateFooterSelectionInfo();
+    
+    
+        const subcloningOriginPlasmidIndex = Session.subcloningOriginIndex;
+        if (subcloningOriginPlasmidIndex !== null && Session.activePlasmidIndex === subcloningOriginPlasmidIndex) {
+            markSelectionForSubcloning(
+                Session.activePlasmidIndex,
+                Session.subcloningOriginSpan[0],
+                Session.subcloningOriginSpan[1]
+            );
+        } else {
+            clearAllSubcloningSelections(clearVariables=false);
+        };
+    };
+
+    /**
+     * Update the sidebar and content with the 
+     */
+    updateFeaturesTable() {
+        // Update sidebar table
+        const featuresTableContainer = document.getElementById("features-table-container");
+        const currFeaturesTable = document.getElementById("features-table");
+        if (currFeaturesTable) {
+            featuresTableContainer.removeChild(currFeaturesTable)
+        };
+        Session.activePlasmid().generateFeatureTable();
+        featuresTableContainer.after(Session.activePlasmid().featuresTable);
+        
+        // Update content grid
+        //const contentGridContainer = document.getElementById('file-content');
+        //contentGridContainer.innerHTML = "";
+        //contentGridContainer.appendChild(Project.activePlasmid().contentGrid);
+        //addHoverPopupToTable();
+    };
+
+    /**
+     * 
+     * @param {*} event 
+     * @param {*} plasmidIndex 
+     */
+    toggleDropdownMenu(event, plasmidIndex) {
+        // Prevent default context menu on right click
+        event.preventDefault();
+        // Select closest tab, 
+        const parentTab = event.target.closest('.plasmid-tab');
+        removeAllPlasmidTabDropdownMenus()
+    
+        const dropdownMenu = createPlasmidTabDropdownMenu(plasmidIndex);
+        document.body.appendChild(dropdownMenu);
+        positionPlasmidTabDropdownMenu(parentTab, dropdownMenu);
+    
+        // Hide the dropdown menu if you click outside of it
+        document.addEventListener('click', function hideDropdown(e) {
+            if (!e.target.closest('.plasmid-tab')) {
+                removeAllPlasmidTabDropdownMenus();
+                document.removeEventListener('click', hideDropdown);
+            };
+        });
+    };
+    
+    /**
+     * Find all dropdown menus and delete them.
+     */
+    removeAllDropdownMenus() {
+        const existingDropdownMenus = document.querySelectorAll('.plasmid-tab-dropdown-menu');
+        existingDropdownMenus.forEach(element => {
+            element.parentNode.removeChild(element);
+        });
+    };
+    
+};
+
 function scrollTabs(direction) {
     const container = document.getElementById('plasmid-tabs-container');
     const scrollAmount = 200; // Adjust as needed
@@ -98,25 +254,6 @@ function refreshUndoRedoButtons() {
 };
 
 
-function updateSidebarAndGrid() {
-    // Update sidebar table
-    const sidebarContent = document.querySelector('.sidebar-content');
-    const currSidebarTable = document.getElementById("sidebar-table");
-    if (currSidebarTable) {
-        currSidebarTable.parentNode.removeChild(currSidebarTable)
-    };
-    Project.activePlasmid().createSidebarTable();
-    sidebarContent.after(Project.activePlasmid().sidebarTable);
-    enableSidebarEditing();
-    
-    // Update content grid
-    const contentGridContainer = document.getElementById('file-content');
-    contentGridContainer.innerHTML = "";
-    contentGridContainer.appendChild(Project.activePlasmid().contentGrid);
-    addHoverPopupToTable();
-    updateAnnotationTrianglesWidth();
-};
-
 
 function updateSidebarPrimers() {
     // Update primers
@@ -148,53 +285,6 @@ function saveSidebarAndGrid() {
 };
 
 
-function switchPlasmidTab(plasmidIndex) {
-    removeAllPlasmidTabDropdownMenus();
-    
-    // Deselect plasmid tab
-    const previousPlasmidTab = document.getElementById("plasmid-tab-" + Project.activePlasmidIndex);
-    previousPlasmidTab.classList.remove("plasmid-tab-selected");
-    
-    // Select new tab
-    const newPlasmidTab = document.getElementById("plasmid-tab-" + plasmidIndex);
-    newPlasmidTab.classList.add("plasmid-tab-selected");
-
-    // Save side bar and grid of previous plasmid
-    saveSidebarAndGrid();
-
-    // Update global tracker
-    Project.activePlasmidIndex = plasmidIndex;
-
-    // Repopulate sidebar and grid
-    // Check if the grid needs to be redrawn because the gridWidth has changed
-    const newGridWidth = Project.activePlasmid().contentGrid.rows[0].cells.length;
-    const remakeContentGrid = gridWidth !== newGridWidth;
-    if (remakeContentGrid) {
-        Project.activePlasmid().makeContentGrid();
-    };
-    updateSidebarAndGrid();
-
-    // Update primers
-    updateSidebarPrimers();
-
-    // Refresh undo buttons and set disabled/enabled states
-    refreshUndoRedoButtons();
-
-    // Update selection info in the footer
-    updateFooterSelectionInfo();
-
-
-    const subcloningOriginPlasmidIndex = Project.subcloningOriginIndex;
-    if (subcloningOriginPlasmidIndex !== null && Project.activePlasmidIndex === subcloningOriginPlasmidIndex) {
-        markSelectionForSubcloning(
-            Project.activePlasmidIndex,
-            Project.subcloningOriginSpan[0],
-            Project.subcloningOriginSpan[1]
-        );
-    } else {
-        clearAllSubcloningSelections(clearVariables=false);
-    };
-};
 
 
 function renamePlasmid(plasmidIndex) {
@@ -416,7 +506,7 @@ document.addEventListener('DOMContentLoaded', function() {
     enableTabContainerScrolling();
 })
 function enableTabContainerScrolling() {
-    const tabsContainer = document.getElementById("header-tabs-container-wrapper");
+    const tabsContainer = document.getElementById("plasmid-tabs-container-wrapper");
     tabsContainer.addEventListener("wheel", function (e) {
         e.preventDefault();
         tabsContainer.scrollLeft += e.deltaY*5;
