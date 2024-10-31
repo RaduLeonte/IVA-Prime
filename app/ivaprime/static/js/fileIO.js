@@ -8,10 +8,11 @@ const FileIO = new class {
     importFile(file, plasmidIndex=null) {
         return new Promise((resolve, reject) => {
             // Get filename+extension from path
-            const fileName = file.name.match(/[^\\/]*$/)[0];
+            const fileNameExtension = file.name.match(/[^\\/]*$/)[0];
             // Fish out file extension of the file
-            const fileExtension =  /\.([0-9a-z]+)(?:[\?#]|$)/i.exec(fileName)[0];
-            
+            const fileExtension =  /\.([0-9a-z]+)(?:[\?#]|$)/i.exec(fileNameExtension)[0];
+            const fileName = fileNameExtension.replace(fileExtension, "");
+
             // Check if file type is supported.
             if (![".gbk", ".gb", ".dna", ".fasta"].includes(fileExtension)) {
                 console.error("Unsupported file type.")
@@ -34,6 +35,7 @@ const FileIO = new class {
                 fileExtension,
                 parsedFile.fileSequence,
                 parsedFile.fileFeatures,
+                parsedFile.fileTopology,
                 parsedFile.fileAdditionalInfo
                 ));
             };
@@ -122,6 +124,11 @@ const FileIO = new class {
             const sequenceLength = parseInt(sequenceLengthHex.join(" ").replace(/\s/g, ''), 16);
             //console.log("parseDNAFile ->", sequenceLength, sequenceLengthHex, arrayBuf.slice(20, 24));
             
+            // Extract sequence type and topology
+            // ss+lin = 00, ss+circ=01, ds+lin=02, ds+circ=03, then it repeats the same pattern
+            const fileTopologyByte = arrayBuf.slice(24,25);
+            const fileTopology = ([0,2].includes(fileTopologyByte % 4)) ? "linear": "circular";
+            
             // Extract sequence [25, 25+sequenceLength] 
             const sequenceStartIndex = 25;
             let sequenceBytes = arrayBuf.slice(sequenceStartIndex, sequenceStartIndex + sequenceLength);
@@ -150,7 +157,7 @@ const FileIO = new class {
                         recentID="0" <- feature id
                         name="thrombin site" <- label
                         directionality="1" <- 1 for fwd; 2 for reverse; no entry for static
-                        translationMW="627.76"
+                        translationMW="627.76" <- not required
                         type="CDS" <- feature type
                         swappedSegmentNumbering="1"
                         allowSegmentOverlaps="0"
@@ -186,7 +193,6 @@ const FileIO = new class {
             // Initialize dict and iterate over all feature elements in the object
             let featuresDict = {};
             const xmlFeaturesEntries = featuresXMLDoc.getElementsByTagName('Feature');
-            console.log(xmlFeaturesEntries);
             for (let i = 0; i < xmlFeaturesEntries.length; i++) {
                 const featureXML = xmlFeaturesEntries[i]; // Current feature
                 const featureId = getUUID();
@@ -284,9 +290,9 @@ const FileIO = new class {
                 fileSequence,
                 fileComplementarySequence,
                 fileFeatures,
+                fileTopology,
                 fileAdditionalInfo
             };
-            return;
         },
         
         gb : (fileContent) => {
@@ -309,8 +315,8 @@ const FileIO = new class {
         // Get sequence info
         const newFileName = document.getElementById("new-file-name-input").value;
         const newFileSequenceInput = document.getElementById("new-file-sequence-input").value;
-        const detectCommonFeatures = document.getElementById("annotate-common-features-checkbox").checked;
-
+        const newFileTopology = document.getElementById("new-file-topology-select").value;
+        const detectCommonFeatures = document.getElementById("new-file-annotate-features-checkbox").checked;
         // Hide and reset window
         FileIO.resetNewFilePopupWindow();
     
@@ -362,7 +368,7 @@ const FileIO = new class {
                             similarFeatures.push(feature.span);
                         };
                     });
-                    console.log("similarFeatures", featureLabel, similarFeatures);
+                    //console.log("similarFeatures", featureLabel, similarFeatures);
         
                     /**
                      * If checking for amino acid sequence
@@ -460,6 +466,7 @@ const FileIO = new class {
             ".gb", // extension
             newFileSequence,
             newFileFeatures,
+            newFileTopology,
             null // additional info
         ));
     };

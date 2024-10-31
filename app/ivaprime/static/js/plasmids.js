@@ -81,6 +81,7 @@ class Plasmid {
         extension,
         sequence,
         features,
+        topology,
         additionalInfo
     ) {
         // Plasmid index, generate new one if none given
@@ -91,6 +92,7 @@ class Plasmid {
         this.sequence = sequence;
         this.complementarySequence = nucleotides.complementary(sequence);
         this.features = features;
+        this.topology = topology;
         this.translations = {"forward": [], "reverse": []};
         this.selectedText = "";
         this.selectionStartPos = null;

@@ -27,6 +27,7 @@
             <script src="{% static 'js/nucleotides.js' %}"></script>
             <script src="{% static 'js/plasmids.js' %}"></script>
             <script src="{% static 'js/featuresTable.js' %}"></script>
+            <script src="{% static 'js/plasmidViewer.js' %}"></script>
         </head>
         
         <body ondragover="importDragOver(event)" ondragleave="importDragLeave(event)" ondrop="importDrop(event)">
@@ -49,9 +50,18 @@
                 </div>
 
                 <div class="popup-window-hgroup">
-                    <input type="checkbox" id="annotate-common-features-checkbox" name="annotate-common-features-checkbox" checked="true">
-                    <label for="annotate-common-features-checkbox">Annotate common features</label>
+                    <label for="annotate-common-features-checkbox">Annotate common features:</label>
+                    <input type="checkbox" id="new-file-annotate-features-checkbox" name="annotate-common-features-checkbox" checked="true">
                 </div>
+
+                <div class="popup-window-hgroup">
+                    <label for="annotate-common-features-checkbox">Sequence topology:</label>
+                    <select id="new-file-topology-select">
+                        <option value="linear" selected="selected">Linear</option>
+                        <option value="circular">Circular</option>
+                    </select>
+                </div>
+                
                 
                 <div class="popup-window-hgroup">
                     <a class="round-button" href="#" onclick="FileIO.newFileFromSequence()">Create File</a>
@@ -91,7 +101,9 @@
                 <!-- End Sidebar -->
 
                 <!-- Start Viewer -->
-                <div class="viewer"></div>
+                <div class="viewer">
+                    <div class="svg-container" id="svg-container"></div>
+                </div>
                 <!-- End Viewer -->
 
                 <!-- Start Toolbar -->
