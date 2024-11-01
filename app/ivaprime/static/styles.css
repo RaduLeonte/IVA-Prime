@@ -621,3 +621,55 @@ input, select, textarea {
 .remove-feature-button:hover{
   background-color: #d34f4f;
 }
+
+
+/* VIEWER */
+.viewer {
+  padding: 20px;
+}
+
+.svg-container {
+  width: 100%;
+  height: 100%;
+}
+
+#circular-view-container {
+  display: flex;
+  flex-flow: row;
+  justify-content: center;
+}
+
+#linear-view-container {
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+}
+
+#circular-view-container svg {
+  width: 100%;
+  height: 100%;
+}
+
+#linear-view-container svg {
+  width: 100%;
+  height: 200px;
+}
+
+.svg-plasmid-title {
+  font-weight: bold;
+}
+
+.svg-sequence-axis {
+  fill: none;
+  stroke: var(--border-color);
+  stroke-width: 2;
+}
+
+.svg-feature-arrow {
+  stroke: var(--border-color);
+  stroke-width: 1;
+}
+
+.svg-feature-label {
+  fill: white;
+}

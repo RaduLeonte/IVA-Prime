@@ -24,20 +24,7 @@ const PlasmidTabs = new class {
         if (Object.keys(Session.plasmids).length  === 1) {
             newPlasmidTab.classList.add("plasmid-tab-selected");
             Session.activePlasmidIndex = plasmidIndex;
-        };
 
-        // Generate content
-        //Session.plasmids[plasmidIndex].generateContent();
-        // Generate sidebar
-        Session.plasmids[plasmidIndex].generateFeatureTable();
-
-        // Create savepoint
-        //Session.plasmids[plasmidIndex].saveProgress();
-
-        // If this is the first tab added, enable search
-        // and switch to it.
-        if (Object.keys(Session.plasmids).length === 1) {
-            //initiateSearchFunctionality();
             PlasmidTabs.switch(plasmidIndex);
         };
     };
@@ -72,8 +59,11 @@ const PlasmidTabs = new class {
         //if (remakeContentGrid) {
         //    Session.activePlasmid().makeContentGrid();
         //};
-        PlasmidTabs.updateFeaturesTable();
-        //PlasmidTabs.updateContent();
+
+        this.updateViewer();
+
+        this.updateFeaturesTable();
+
         return;
         // Update primers
         updateSidebarPrimers();
@@ -97,6 +87,27 @@ const PlasmidTabs = new class {
         };
     };
 
+    updateViewer() {
+        let targetView;
+        if (PlasmidViewer.activeView) {
+            targetView = PlasmidViewer.activeView;
+        } else {
+            targetView = "circular";
+        };
+
+        const views = ["circular", "linear", "grid"]
+        for (let i in views) {
+            const svgContainer = document.getElementById(`${views[i]}-view-container`);
+            if (svgContainer.firstElementChild) {
+                svgContainer.removeChild(svgContainer.firstElementChild)
+            };
+
+            svgContainer.appendChild(Session.activePlasmid().views[views[i]]);
+        };
+
+        PlasmidViewer.switchView(targetView);
+    };
+
     /**
      * Update the sidebar and content with the 
      */
@@ -107,8 +118,7 @@ const PlasmidTabs = new class {
         if (currFeaturesTable) {
             featuresTableContainer.removeChild(currFeaturesTable)
         };
-        Session.activePlasmid().generateFeatureTable();
-        featuresTableContainer.after(Session.activePlasmid().featuresTable);
+        featuresTableContainer.appendChild(Session.activePlasmid().featuresTable);
         
         // Update content grid
         //const contentGridContainer = document.getElementById('file-content');

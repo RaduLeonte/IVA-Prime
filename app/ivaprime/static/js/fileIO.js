@@ -15,8 +15,8 @@ const FileIO = new class {
 
             // Check if file type is supported.
             if (![".gbk", ".gb", ".dna", ".fasta"].includes(fileExtension)) {
-                console.error("Unsupported file type.")
-                return
+                console.error("Unsupported file type.");
+                return;
             };
 
             // Initialise file reader
@@ -30,13 +30,13 @@ const FileIO = new class {
                 let parsedFile = FileIO.parsers[fileExtension.replace(".", "")](fileContent);
         
                 Session.addPlasmid(new Plasmid(
-                plasmidIndex,
-                fileName,
-                fileExtension,
-                parsedFile.fileSequence,
-                parsedFile.fileFeatures,
-                parsedFile.fileTopology,
-                parsedFile.fileAdditionalInfo
+                    plasmidIndex,
+                    fileName,
+                    fileExtension,
+                    parsedFile.fileSequence,
+                    parsedFile.fileFeatures,
+                    parsedFile.fileTopology,
+                    parsedFile.fileAdditionalInfo
                 ));
             };
             
@@ -62,7 +62,8 @@ const FileIO = new class {
         const response = await fetch(filePath);
         const blob = await response.blob();
         const file = new File([blob], filePath.split('\\').pop());
-        FileIO.importFile(file);
+        
+        this.importFile(file);
     };
 
 
@@ -78,9 +79,10 @@ const FileIO = new class {
             const response = await fetch(serverFile);
             const blob = await response.blob();
             const file = new File([blob], serverFile.split('\\').pop());
-            importFile(file, plasmidIndex);
+            
+            this.importFile(file, plasmidIndex);
         } else {
-            importQueue(event.target.files)
+            this.importQueue(event.target.files)
         };
     };
 
@@ -95,7 +97,7 @@ const FileIO = new class {
         addLoadingCursor();
         let importTasks = []
         for (let i = 0; i < filesList.length; i++) {
-          importTasks.push(importFile(filesList[i], startingPlasmidIndex + i));
+          importTasks.push(this.importFile(filesList[i], startingPlasmidIndex + i));
         };
         
         Promise.all(importTasks).then(() => removeLoadingCursor())
@@ -318,7 +320,7 @@ const FileIO = new class {
         const newFileTopology = document.getElementById("new-file-topology-select").value;
         const detectCommonFeatures = document.getElementById("new-file-annotate-features-checkbox").checked;
         // Hide and reset window
-        FileIO.resetNewFilePopupWindow();
+        this.resetNewFilePopupWindow();
     
         /** 
          * Generate plasmid object

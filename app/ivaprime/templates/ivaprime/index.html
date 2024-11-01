@@ -34,7 +34,11 @@
             <!-- Prevents flashing bug in Firefox -->
             <script>let FF_FOUC_FIX;</script>
 
-            <!-- Start popup windows -->
+            <!-- 
+            
+            Popup windows
+            
+            -->
             <!-- New File window-->
             <div class="popup-window popup-window-new-file" id="new-file-window" style="display:none">
                 <h2>New File</h2>
@@ -72,14 +76,20 @@
 
             <!-- Start main content-->
             <div class="content-wrapper">
-                <!-- Start Header -->
+                <!--
+                
+                Header
+                
+                -->
                 <div class="header">
+                    <!-- Import buttons -->
                     <div class="header-import-buttons">
                         <a href="#" class="round-button" title="Import a plasmid file from your computer">Import File</a>
                         <a href="#" class="round-button new-file-button" title="Create a new plasmid file from a DNA sequence" onclick="PopupWindow.show('new-file-window')">New File</a>
                         <a href="#" class="round-button demo-file-button" title="Import a pET-28a plasmid" onclick="FileIO.importDemoFile()">Demo File</a>
                     </div>
 
+                    <!-- Plasmid tabs -->
                     <div class="plasmid-tabs-wrapper">
                         <a href="#"  class="round-button plasmid-tabs-scroll-button">‹</a>
                         <div id="plasmid-tabs-container-wrapper" class="plasmid-tabs-container-wrapper">
@@ -92,21 +102,41 @@
                 </div>
                 <!-- End Header -->
 
-                <!-- Start Sidebar -->
+                <!--
+                
+                SIDEBAR 
+                
+                -->
                 <div class="sidebar">
+                    <!-- Primers -->
+                    <div id="primers-table-container">
+                        <div id="primers-table"></div>
+                    </div>
+
+                    <!-- Features table -->
                     <div id="features-table-container">
                         <div id="features-table"></div>
                     </div>
                 </div>
                 <!-- End Sidebar -->
 
-                <!-- Start Viewer -->
+                <!--
+
+                VIEWER
+
+                -->
                 <div class="viewer">
-                    <div class="svg-container" id="svg-container"></div>
+                    <div class="svg-container" id="circular-view-container" style="display:none"></div>
+                    <div class="svg-container" id="linear-view-container" style="display:none"></div>
+                    <div class="svg-container" id="grid-view-container" style="display:none"></div>
                 </div>
                 <!-- End Viewer -->
 
-                <!-- Start Toolbar -->
+                <!--
+                
+                Toolbar
+                
+                -->
                 <div class="toolbar">
                     <!-- Undo Redo -->
                     <div class="toolbar-group">
@@ -125,9 +155,9 @@
                     
                     <!-- Plasmid view options -->
                     <div class="toolbar-group">
-                        <a href="#" class="toolbar-button toolbar-plasmid-circular-button" title="Circular plasmid view"></a>
-                        <a href="#" class="toolbar-button toolbar-plasmid-linear-button" title="Linear plasmid view"></a>
-                        <a href="#" class="toolbar-button toolbar-plasmid-grid-button toolbar-button-selected" title="Grid plasmid view"></a>
+                        <a href="#" id="circular-view-button" class="toolbar-button toolbar-plasmid-circular-button" title="Circular plasmid view" onclick='PlasmidViewer.switchView("circular")'></a>
+                        <a href="#" id="linear-view-button" class="toolbar-button toolbar-plasmid-linear-button" title="Linear plasmid view" onclick='PlasmidViewer.switchView("linear")'></a>
+                        <a href="#" id="grid-view-button" class="toolbar-button toolbar-plasmid-grid-button" title="Grid plasmid view" onclick='PlasmidViewer.switchView("grid")'></a>
                     </div>
 
                     <!-- Settings & help -->
@@ -138,7 +168,11 @@
                 </div>
                 <!-- End Toolbar -->
 
-                <!-- Start Footer -->
+                <!--
+                
+                Footer
+                
+                -->
                 <div class="footer">
                     <div class="footer-search">
                         <input type="text" placeholder="Search sequence">
