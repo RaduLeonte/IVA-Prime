@@ -28,6 +28,7 @@
             <script src="{% static 'js/plasmids.js' %}"></script>
             <script src="{% static 'js/featuresTable.js' %}"></script>
             <script src="{% static 'js/plasmidViewer.js' %}"></script>
+            <script src="{% static 'js/alerts.js' %}"></script>
         </head>
         
         <body ondragover="importDragOver(event)" ondragleave="importDragLeave(event)" ondrop="importDrop(event)">
@@ -84,7 +85,7 @@
                 <div class="header">
                     <!-- Import buttons -->
                     <div class="header-import-buttons">
-                        <a href="#" class="round-button" title="Import a plasmid file from your computer">Import File</a>
+                        <a href="#" class="round-button" title="Import a plasmid file from your computer" onclick="FileIO.importFileButton(event)">Import File</a>
                         <a href="#" class="round-button new-file-button" title="Create a new plasmid file from a DNA sequence" onclick="PopupWindow.show('new-file-window')">New File</a>
                         <a href="#" class="round-button demo-file-button" title="Import a pET-28a plasmid" onclick="FileIO.importDemoFile()">Demo File</a>
                     </div>
@@ -125,7 +126,7 @@
                 VIEWER
 
                 -->
-                <div class="viewer">
+                <div id="viewer" class="viewer">
                     <div class="svg-container" id="circular-view-container" style="display:none"></div>
                     <div class="svg-container" id="linear-view-container" style="display:none"></div>
                     <div class="svg-container" id="grid-view-container" style="display:none"></div>

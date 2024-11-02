@@ -92,7 +92,7 @@ const PlasmidTabs = new class {
         if (PlasmidViewer.activeView) {
             targetView = PlasmidViewer.activeView;
         } else {
-            targetView = "circular";
+            targetView = "grid";
         };
 
         const views = ["circular", "linear", "grid"]
@@ -104,6 +104,7 @@ const PlasmidTabs = new class {
 
             svgContainer.appendChild(Session.activePlasmid().views[views[i]]);
         };
+
 
         PlasmidViewer.switchView(targetView);
     };
