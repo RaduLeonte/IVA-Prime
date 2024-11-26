@@ -1096,6 +1096,11 @@ function sanitizeDNASequence(input) {
  * Imports and parses given file object
  */
 function importFile(file, plasmidIndex=null) {
+  const disclaimer = document.getElementById("disclaimer");
+  if (disclaimer) {
+    disclaimer.parentElement.removeChild(disclaimer)
+  };
+
   return new Promise((resolve, reject) => {
     file.name = file.name.match(/[^\\/]*$/)[0];
     const fileExtension =  /\.([0-9a-z]+)(?:[\?#]|$)/i.exec(file.name)[0]; // Fish out file extension of the file

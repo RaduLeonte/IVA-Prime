@@ -117,7 +117,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const ele = document.getElementById("cookie-warning-popup");
         ele.style.display = "flex";
     }
-
 })
 
 function cookieWarningUnderstood() {
