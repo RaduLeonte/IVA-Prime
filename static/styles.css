@@ -1441,3 +1441,30 @@ header {
 .alert-close-btn:hover {
   background-color: var(--sequence-grid-cell-hover);
 }
+
+/*
+ * ABOUT PAGE
+ */
+.about-main-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.about-main-container {
+  width: 1000px;
+  height: 100%;
+  padding: 20px 50px 20px 50px;
+
+  background-color: var(--bg-color2);
+  border-right: var(--border-color);
+  border-right-style: solid;
+  border-left: var(--border-color);
+  border-left-style: solid;
+}
+
+.about-section p {
+  line-height: 1.5;
+  text-align: justify;
+}

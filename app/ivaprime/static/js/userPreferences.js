@@ -87,6 +87,7 @@ function getUserPreference(preferenceName) {
  */
 const defaultSetingsDict = {
     "colorTheme": "lightTheme",
+    "cookieWarningDontShowAgain": false,
     "primerDistribution": true,
     "homoRegionMinLength": 18,
     "homoRegionTm": 50,
@@ -107,3 +108,21 @@ const defaultSetingsDict = {
 for (let setting in defaultSetingsDict) {
     window[setting] = (getUserPreference(setting) !== null) ? getUserPreference(setting) : defaultSetingsDict[setting];
 };
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    console.log(getUserPreference("cookieWarningDontShowAgain"))
+    const dontShowAgain = (getUserPreference("cookieWarningDontShowAgain") !== null) ? getUserPreference("cookieWarningDontShowAgain") : false;
+    if (dontShowAgain === false) {
+        const ele = document.getElementById("cookie-warning-popup");
+        ele.style.display = "flex";
+    }
+
+})
+
+function cookieWarningUnderstood() {
+    saveUserPreference("cookieWarningDontShowAgain", true, 30);
+
+    const ele = document.getElementById("cookie-warning-popup");
+    ele.style.display = "none";
+}

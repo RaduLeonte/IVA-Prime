@@ -22,6 +22,7 @@ from ivaprime import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.home),
+    path('', views.home, name="home"),
+    path('about', views.about, name="about"),
     path('favicon.ico', RedirectView.as_view(url=static('favicon.ico')))
 ]
