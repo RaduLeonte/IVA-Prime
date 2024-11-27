@@ -110,7 +110,7 @@ const PlasmidViewer = new class {
         groupBackboneTicks.setAttribute("id", "svg-axis-ticks")
         groupBackbone.appendChild(groupBackboneTicks);
         const ticksPos = this.generateTicks(sequence.length);
-        const tickLength = 20; //px
+        const tickLength = 15; //px
         const tickLabelPos = 30;
 
         let seqToPixel = (s, r) => {
@@ -165,12 +165,17 @@ const PlasmidViewer = new class {
         groupFeatures.setAttribute("id", "svg-features");
         groupMain.appendChild(groupFeatures);
 
+        const anglePerLetter = 1.5 // degree
         for (const [featureID, featureDict] of Object.entries(features)) {
+            const featureLength = featureDict["span"][1] - featureDict["span"][0];
+            const featureSpanLengthInDegrees = (featureLength / sequence.length) * 360;
+            const featureLabelLengthInDegrees = featureDict["label"].length * anglePerLetter;
+            const drawFeatureLabel = (featureLabelLengthInDegrees <= featureSpanLengthInDegrees) ? true: false;
             groupFeatures.appendChild(this.circularFeature(
                 featureDict["span"],
                 featuresLevels[featureDict["level"]],
                 featureDict["directionality"],
-                featureDict["label"],
+                (drawFeatureLabel) ? featureDict["label"]: "",
                 featureDict["color"],
                 null,
                 "svg-feature-arrow",
@@ -288,7 +293,7 @@ const PlasmidViewer = new class {
         groupAxis.appendChild(groupAxisTicks);
         const ticksPos = this.generateTicks(sequence.length);
         const ticksSeqPos = ticksPos.map((x) => seqToPixel(x));
-        const tickLength = 20; //px
+        const tickLength = 15; //px
         const tickLabelPos = 30;
         for (let i in ticksSeqPos) {
             groupAxisTicks.appendChild(this.line(
@@ -321,12 +326,17 @@ const PlasmidViewer = new class {
         groupFeatures.setAttribute("id", "svg-features");
         groupMain.appendChild(groupFeatures);
 
+        const percentagePerLetter = 1 // %
         for (const [featureID, featureDict] of Object.entries(features)) {
+            const featureLength = featureDict["span"][1] - featureDict["span"][0];
+            const featureSpanLengthInPercent = (featureLength / sequence.length) * 100;
+            const featureLabelLengthInPercent = featureDict["label"].length * percentagePerLetter;
+            const drawFeatureLabel = (featureLabelLengthInPercent <= featureSpanLengthInPercent) ? true: false;
             groupFeatures.appendChild(this.linearFeature(
                 [seqToPixel(featureDict["span"][0]), seqToPixel(featureDict["span"][1])],
                 featuresLevels[featureDict["level"]],
                 featureDict["directionality"],
-                featureDict["label"],
+                (drawFeatureLabel) ? featureDict["label"]: "",
                 featureDict["color"],
                 null,
                 "svg-feature-arrow"
