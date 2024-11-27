@@ -355,6 +355,17 @@ const PlasmidViewer = new class {
      * @param {*} topology 
      */
     drawGrid(plasmidName, sequence, complementarySequence, features, topology) {
+        /**
+         * Settings
+         */
+        const basesPerLine = 60;
+        const sequenceFwdHeight = 20;
+        const sequenceAxisHeight = 30
+        const sequenceRevHeight = 55;
+        
+        /**
+         * Figure out how wide the drawable area is
+         */
         const svgContainer = document.getElementById("grid-view-container");
         svgContainer.style.display = "flex";
         
@@ -376,31 +387,86 @@ const PlasmidViewer = new class {
 
         svgContainer.style.display = "";
         svgContainer.removeChild(svgWrapperDummy);
-        
+
+        // Sequence coordinate to pixel in axis
+        let seqToPixel = (s) => (s / basesPerLine)*(maxWidth);
+
+        /**
+         * Prepare segments
+         */
+        const nrOfSegments = Math.ceil(sequence.length/basesPerLine);
+        const segments = [];
+        for (let i = 0; i < nrOfSegments; i++) {
+            const sequenceStartIndex = i*basesPerLine;
+            const sequenceEndIndex = sequenceStartIndex + basesPerLine;
+            const sequenceFwd = sequence.slice(sequenceStartIndex, sequenceEndIndex);
+            const sequenceRev = complementarySequence.slice(sequenceStartIndex, sequenceEndIndex);
+
+            segments.push(
+                {
+                    "segmentIndexStart": sequenceStartIndex,
+                    "segmentIndexEnd": sequenceEndIndex,
+                    "sequenceFwd": sequenceFwd,
+                    "sequenceRev": sequenceRev,
+                    "features": {}
+                }
+            );
+        };
+
+        // Figure out which features are drawn on which segments
+        for (const [featureID, featureDict] of Object.entries(features)) {
+            const featureSpanStart = featureDict["span"][0];
+            const featureSpanEnd = featureDict["span"][1];
+            const segmentListIndexStart = Math.floor(featureSpanStart / basesPerLine);
+            const segmentListIndexEnd = Math.floor(featureSpanEnd / basesPerLine);
+            //console.log("PlasmidViewer.drawGrid", featureDict["label"], [featureSpanStart, featureSpanEnd], [segmentIndexStart, segmentIndexEnd]);
+
+            for (let i = segmentListIndexStart; i <= segmentListIndexEnd; i++) {
+                segments[i]["features"][featureID] = JSON.parse(JSON.stringify(featureDict));
+
+                const featureSegmentSpanStart = Math.max((segments[i]["segmentIndexStart"] + 1), featureSpanStart);
+                const featureSegmentSpanEnd = Math.min(segments[i]["segmentIndexEnd"], featureSpanEnd);
+                
+                segments[i]["features"][featureID]["span"] = [
+                    featureSegmentSpanStart - segments[i]["segmentIndexStart"],
+                    featureSegmentSpanEnd - segments[i]["segmentIndexStart"]
+                ]
+                
+                //console.log("PlasmidViewer.drawGrid -> segment features:",
+                //    featureDict["label"],
+                //    i,
+                //    [featureSpanStart, featureSpanEnd],
+                //    [segments[i]["segmentIndexStart"], segments[i]["segmentIndexEnd"]],
+                //    segments[i]["features"][featureID]["span"]
+                //)
+            };
+        };
 
         // Main wrapper
         const svgWrapper = document.createElement("DIV");
         svgWrapper.classList.add("svg-wrapper-grid");
 
-        const basesPerLine = 50;
-        for (let i = 0; i < Math.ceil(sequence.length/basesPerLine); i++) {
-            /**
-             * Single grid segment
-             */
-            const sequenceStartIndex = i*basesPerLine;
-            const sequenceEndIndex = sequenceStartIndex + basesPerLine;
-            const sequenceFwd = sequence.slice(sequenceStartIndex, sequenceEndIndex);
-            const sequenceRev = complementarySequence.slice(sequenceStartIndex, sequenceEndIndex);
+        const basesWidth = maxWidth/basesPerLine;
+        const basesPositions = [];
+        for (let i = 0; i < basesPerLine; i++) {
+            basesPositions.push(basesWidth/2 + i*basesWidth)
+        };
+
+        const featuresLevelStart = 100;
+        const featuresLevelOffset = 25;
+        const featuresLevelsNr = 3;
+        let featuresLevels = [];
+        for (let i = 0; i < featuresLevelsNr; i++) {
+            featuresLevels.push(featuresLevelStart + i*featuresLevelOffset)
+        };
+
+        /**
+         * Iterate over segments and draw
+         */
+        segments.forEach((segment) => {
+            const segmentIndexStart = segment["segmentIndexStart"];
+            const segmentIndexEnd = segment["segmentIndexEnd"];
             
-            const sequenceFwdHeight = 20;
-            const sequenceAxisHeight = 30
-            const sequenceRevHeight = 55;
-            const basesWidth = maxWidth/basesPerLine;
-            const basesPositions = [];
-            for (let i = 0; i < basesPerLine; i++) {
-                basesPositions.push(basesWidth/2 + i*basesWidth)
-            };
-    
             // Canvas
             const svgCanvas = this.createShapeElement("svg");
             svgCanvas.setAttribute("version", "1.2");
@@ -418,7 +484,7 @@ const PlasmidViewer = new class {
             for (let i = 0; i < basesPerLine; i++) {
                 groupStrandFwd.appendChild(this.text(
                     [basesPositions[i], sequenceFwdHeight],
-                    sequenceFwd[i],
+                    segment["sequenceFwd"][i],
                     null,
                     "svg-sequence-bases-text",
                     "middle"
@@ -429,7 +495,7 @@ const PlasmidViewer = new class {
             // Sequence axis
             groupMain.appendChild(this.line(
                 [0, sequenceAxisHeight],
-                [(sequenceFwd.length/basesPerLine)*maxWidth, sequenceAxisHeight],
+                [(segment["sequenceFwd"].length/basesPerLine)*maxWidth, sequenceAxisHeight],
                 null,
                 "svg-sequence-axis-grid"
             ));
@@ -437,26 +503,24 @@ const PlasmidViewer = new class {
             const groupTicks = this.createShapeElement("g");
             // Ticks 10s
             const ticksLength10s = 14;
-            for (let num = Math.ceil(sequenceStartIndex / 10) * 10; num <= sequenceEndIndex; num += 10) {
-                if (num - sequenceStartIndex === 0) {continue};
-                if (num - sequenceStartIndex > sequenceFwd.length) {continue}
-                //console.log("drawGrid", num-sequenceStartIndex);
+            for (let num = Math.ceil(segmentIndexStart / 10) * 10; num <= segmentIndexEnd; num += 10) {
+                if (num - segmentIndexStart === 0) {continue};
+                if (num - segmentIndexStart > segment["sequenceFwd"].length) {continue}
                 groupTicks.appendChild(this.line(
-                    [basesPositions[num - sequenceStartIndex - 1], sequenceAxisHeight-ticksLength10s/2],
-                    [basesPositions[num - sequenceStartIndex - 1], sequenceAxisHeight+ticksLength10s/2],
+                    [basesPositions[num - segmentIndexStart - 1], sequenceAxisHeight-ticksLength10s/2],
+                    [basesPositions[num - segmentIndexStart - 1], sequenceAxisHeight+ticksLength10s/2],
                     null,
                     "svg-sequence-axis-grid"
                 ));
             };
             // Ticks 5s
             const ticksLength5s = 7;
-            for (let num = Math.ceil(sequenceStartIndex / 5) * 5; num <= sequenceEndIndex; num += 5) {
-                if (num - sequenceStartIndex === 0) {continue};
-                if (num - sequenceStartIndex > sequenceFwd.length) {continue}
-                //console.log("drawGrid", num-sequenceStartIndex);
+            for (let num = Math.ceil(segmentIndexStart / 5) * 5; num <= segmentIndexEnd; num += 5) {
+                if (num - segmentIndexStart === 0) {continue};
+                if (num - segmentIndexStart > segment["sequenceFwd"].length) {continue}
                 groupTicks.appendChild(this.line(
-                    [basesPositions[num - sequenceStartIndex - 1], sequenceAxisHeight-ticksLength5s/2],
-                    [basesPositions[num - sequenceStartIndex - 1], sequenceAxisHeight+ticksLength5s/2],
+                    [basesPositions[num - segmentIndexStart - 1], sequenceAxisHeight-ticksLength5s/2],
+                    [basesPositions[num - segmentIndexStart - 1], sequenceAxisHeight+ticksLength5s/2],
                     null,
                     "svg-sequence-axis-grid"
                 ));
@@ -469,14 +533,42 @@ const PlasmidViewer = new class {
             for (let i = 0; i < basesPerLine; i++) {
                 groupStrandRev.appendChild(this.text(
                     [basesPositions[i], sequenceRevHeight],
-                    sequenceRev[i],
+                    segment["sequenceRev"][i],
                     null,
                     "svg-sequence-bases-text",
                     "middle"
                 ));
             };
             groupMain.appendChild(groupStrandRev);
-        };
+
+            /**
+             * Features
+             */
+            const segmentFeatures = this.createShapeElement("g");
+            segmentFeatures.setAttribute("id", "svg-features");
+            groupMain.appendChild(segmentFeatures);
+
+            for (const [featureID, featureDict] of Object.entries(segment["features"])) {
+                console.log(
+                    "PlasmidViewer.drawGrid -> segment features",
+                    featureDict["label"],
+                    featureDict["span"]
+                );
+
+                segmentFeatures.appendChild(this.gridFeature(
+                    [
+                        seqToPixel(featureDict["span"][0]-1),
+                        seqToPixel(featureDict["span"][1])
+                    ],
+                    featuresLevels[featureDict["level"]],
+                    featureDict["directionality"],
+                    featureDict["label"],
+                    featureDict["color"],
+                    null,
+                    "svg-feature-arrow"
+                ));
+            };
+        });
 
         return svgWrapper;
     };
@@ -501,11 +593,11 @@ const PlasmidViewer = new class {
      * @param {*} textAnchor 
      * @returns 
      */
-    text(pos, content, id=null, cssClass=null, textAnchor="start") {
+    text(pos, content, id=null, cssClass=null, textAnchor="start", dy=0) {
         const textElement = this.createShapeElement("text");
         textElement.setAttribute("x", pos[0]);
         textElement.setAttribute("y", pos[1]);
-        
+        textElement.setAttribute("dy", dy);      
         textElement.textContent = content;
 
         if (id) {textElement.setAttribute("class", cssClass)};
@@ -616,6 +708,7 @@ const PlasmidViewer = new class {
         return featureGroup;
     };
 
+
     circularFeature(span, levelHeight, directionality, label, color, id, cssClass, seqToPixel, sequenceLength) {
         const featureGroup = this.createShapeElement("g");
         /**
@@ -714,6 +807,77 @@ const PlasmidViewer = new class {
         const y = r*Math.sin(a1);
         featureLabel.setAttribute("transform", `translate(${x}, ${y}) rotate(${a2})`)
         featureGroup.appendChild(featureLabel);
+
+        return featureGroup;
+    };
+
+
+    gridFeature(span, levelHeight, directionality, label, color, id, cssClass) {
+        const featureArrowWidth = 30; //px
+        const featureHeadMinWidth = 10; //px
+        const featureBodyHeadRatio = 0.9;
+
+        const textHeight = 21; // px approx
+        
+        
+        const featureGroup = this.createShapeElement("g");
+        
+        /**
+         * Arrow
+         */
+        const featureArrow = this.createShapeElement("polygon");
+
+        const featureHeadWidth = Math.min(featureHeadMinWidth, (span[1] - span[0])*featureBodyHeadRatio)
+        const featureHeight = levelHeight - featureArrowWidth/2;
+
+        let points = []
+        switch (directionality) {
+            case "fwd":
+                points = [
+                    [span[0], featureHeight],
+                    [span[1] - featureHeadWidth, featureHeight],
+                    [span[1], featureHeight + featureArrowWidth/2],
+                    [span[1] - featureHeadWidth, featureHeight + featureArrowWidth],
+                    [span[0], featureHeight + featureArrowWidth]
+                ];
+                break;
+            case "rev":
+                points = [
+                    [span[1], featureHeight],
+                    [span[0] + featureHeadWidth, featureHeight],
+                    [span[0], featureHeight + featureArrowWidth/2],
+                    [span[0] + featureHeadWidth, featureHeight + featureArrowWidth],
+                    [span[1], featureHeight + featureArrowWidth]
+                ];
+                break;
+            default:
+                points = [
+                    [span[0], featureHeight],
+                    [span[1], featureHeight],
+                    [span[1], featureHeight + featureArrowWidth],
+                    [span[0], featureHeight + featureArrowWidth]
+                ];
+        };
+        featureArrow.setAttribute("points", points);
+
+        featureArrow.setAttribute("fill", color);
+
+        if (id) {featureArrow.setAttribute("id", id)};
+        if (cssClass) {featureArrow.setAttribute("class", cssClass)};
+        
+        featureGroup.appendChild(featureArrow);
+
+        /**
+         * Text
+         */
+        featureGroup.appendChild(this.text(
+            [span[0] + (span[1] - span[0])/2, featureHeight+(featureArrowWidth/2)],
+            label,
+            null,
+            "svg-feature-label",
+            "middle",
+            "0.4em"
+        ));
 
         return featureGroup;
     };
