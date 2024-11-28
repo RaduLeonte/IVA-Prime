@@ -68,6 +68,8 @@ const FileIO = new class {
 
 
     /**
+     * Opens the file browser when clicking on the "Import File" button.
+     * Creates a temporary file input element and clicks it.
      * 
      * @param {*} event 
      */
@@ -79,49 +81,35 @@ const FileIO = new class {
         fileInput.style.display = 'none';
         document.body.appendChild(fileInput);
         fileInput.addEventListener('change', function(event) {
-          FileIO.fileSelect(
-            event,
-            Session.nextFreeIndex(),
-            null
-          );
+          this.importQueue(event.target.files);
         });
         fileInput.click();
     };
 
 
     /**
-     * Handles file selection functionality.
-     * 
-     * @param {Object} event - File select event.
-     * @param {int} plasmidIndex - Index for imported plasmid.
-     * @param {string} serverFile - 
-     */
-    async fileSelect(event, plasmidIndex=0, serverFile=null, ) {
-        if (serverFile) {
-            const response = await fetch(serverFile);
-            const blob = await response.blob();
-            const file = new File([blob], serverFile.split('\\').pop());
-            
-            this.importFile(file, plasmidIndex);
-        } else {
-            this.importQueue(event.target.files)
-        };
-    };
-
-
-    /**
-     * Handles importing of multiple files.
+     * Handles importing of single or multiple files.
      * 
      * @param {Array} filesList - List of files to import.
      */
     importQueue(filesList) {
-        const startingPlasmidIndex = Session.nextFreeIndex();
+        // Change cursor to loading
         this.addLoadingCursor();
+
+        // Iterate over files list and prepare import tasks with
+        // predetermined plasmid indices
+        const startingPlasmidIndex = Session.nextFreeIndex();
         let importTasks = []
         for (let i = 0; i < filesList.length; i++) {
-          importTasks.push(this.importFile(filesList[i], startingPlasmidIndex + i));
+            importTasks.push(
+                this.importFile(
+                    filesList[i],
+                    startingPlasmidIndex + i
+                )
+            );
         };
         
+        // Execute tasks then remove loading cursor
         Promise.all(importTasks).then(() => this.removeLoadingCursor())
     };
 
@@ -134,19 +122,30 @@ const FileIO = new class {
          * Snapgene .dna file parser.
          * 
          * @param {Array} fileArrayBuffer - Array buffer from imported file.
-         * @returns 
+         * @returns {
+         *      fileSequence,
+         *      fileComplementarySequence,
+         *      fileFeatures,
+         *      fileTopology,
+         *      fileAdditionalInfo
+         * }
          */
         dna : (fileArrayBuffer) => {
             // Read array as list of 8 bit integers
             const arrayBuf = new Uint8Array(fileArrayBuffer);
-            
             // Decode file content as string
             let fileContent = new TextDecoder().decode(arrayBuf);
+            // Init XML parser
+            const xmlParser = new DOMParser();
+            
 
+            /**
+             * SEQUENCE
+             */
+            //#region SEQUENCE
             // Read file sequence length from bytes [20,23]
             const sequenceLengthHex = Array.from(arrayBuf.slice(20, 24)).map(byte => (byte.toString(16)));
             const sequenceLength = parseInt(sequenceLengthHex.join(" ").replace(/\s/g, ''), 16);
-            //console.log("parseDNAFile ->", sequenceLength, sequenceLengthHex, arrayBuf.slice(20, 24));
             
             // Extract sequence type and topology
             // ss+lin = 00, ss+circ=01, ds+lin=02, ds+circ=03, then it repeats the same pattern
@@ -159,14 +158,13 @@ const FileIO = new class {
             let fileSequence = new TextDecoder().decode(sequenceBytes);
             fileSequence = nucleotides.sanitizeSequence(fileSequence);
             let fileComplementarySequence = nucleotides.complementary(fileSequence);
+            //#endregion
 
-
-            // Init XML parser
-            const xmlParser = new DOMParser();
 
             /**
-             * Extract features
+             * FEATURES
              */
+            //#region FEATURES
             // Extract XML tree
             let featuresXMLString = fileContent.slice(fileContent.indexOf("<Features"), fileContent.indexOf("</Feature></Features>") + "</Feature></Features>".length);
             const featuresXMLDoc = xmlParser.parseFromString(featuresXMLString, 'text/xml');
@@ -175,7 +173,7 @@ const FileIO = new class {
              * XML Structure
              * 
              *  <Features
-                    nextValidID="1" <- next available id for a new feature
+                    nextValidID="1" <- next available id/index for a new feature
                 >
                     <Feature
                         recentID="0" <- feature id
@@ -198,13 +196,13 @@ const FileIO = new class {
                             type="standard" <- never seen anything but standard
                             translated="1" <- indicate if should be translated, no entry if not translated
                         />
-                        <Q name="codon_start">
+                        <Q name="codon_start"> ?
                             <V int="1"/>
                         </Q>
                         <Q name="product"> <- product information (not note!)
                             <V text="&lt;html&gt;&lt;body&gt;thrombin recognition and cleavage site&lt;/body&gt;&lt;/html&gt;"/>
                         </Q>
-                        <Q name="transl_table"> <- required if translated,
+                        <Q name="transl_table"> <- required if translated?
                             <V int="1"/>
                         </Q>
                         <Q name="translation"> <- if translated, provide translated sequence
@@ -219,13 +217,14 @@ const FileIO = new class {
             const xmlFeaturesEntries = featuresXMLDoc.getElementsByTagName('Feature');
             for (let i = 0; i < xmlFeaturesEntries.length; i++) {
                 const featureXML = xmlFeaturesEntries[i]; // Current feature
-                const featureId = getUUID();
+                const featureId = getUUID(); // Create UUID
 
                 // All the feature properties
                 const featureInfo = {}
-                featureInfo["type"] = featureXML.getAttribute('type');
+                featureInfo["type"] = featureXML.getAttribute('type'); // Type (CDS, RBS etc)
                 featureInfo["label"] = featureXML.getAttribute('name'); // Display name
-                const spanDirectionality = featureXML.getAttribute('directionality');
+                // Get feature directionaliy, fwd, rev, or null
+                featureInfo["directionality"] = {"1": "fwd", "2": "rev"}[featureXML.getAttribute('directionality')] || null;
                 featureInfo["span"] = "";
                 featureInfo["note"] = "";
 
@@ -233,53 +232,62 @@ const FileIO = new class {
                 const featureChildren = featureXML.children;
                 for (let j = 0; j < featureChildren.length; j++) {
                     const child = featureChildren[j]; // Current child
-                    const childName = child.nodeName; // Get the node name
 
-                    // Nodes with the name "Segment" contain:
-                    // span, color, type, translated
-                    if (childName === "Segment") {
-                        let currSpan = child.getAttribute('range').split("-"); // Get span and split into list
-                        // Add span to feature info
-                        featureInfo["span"] = currSpan.map((s) => parseInt(s));
-                        if (spanDirectionality === "1") {
-                            featureInfo["directionality"] = "fwd";
-                        } else if (spanDirectionality === "2") {
-                            featureInfo["directionality"] = "rev";
-                        } else {
-                            featureInfo["directionality"] = null;
-                        };
-                        // Extract color
-                        featureInfo["color"] = child.getAttribute('color');
-                    };
-                    // Nodes with the name "Q" contain:
-                    // feature name, "V" nodes (contains the note text or a number)
-                    if (childName === "Q") {
-                        const subNoteName = child.getAttribute('name'); // Get name
-                        let subNoteEntry = "";
-                        // If the V node is an int
-                        if (child.children[0].attributes.getNamedItem("int")) {
-                            subNoteEntry = child.children[0].getAttribute("int");
-                        }
-                        // If the V node has text
-                        if (child.children[0].attributes.getNamedItem("text")) {
-                            subNoteEntry = child.children[0].getAttribute("text"); // Get text entry
-                            subNoteEntry = new DOMParser().parseFromString(subNoteEntry, 'text/html').body.textContent; // Sometimes the text contains html
-                        }
-                        // Save note to the dict
-                        featureInfo[subNoteName] = subNoteEntry;
+                    switch(child.nodeName) {
+                        // Nodes with the name "Segment" contain:
+                        // span, color, type, translated
+                        case "Segment":
+                            // Get span and split into list
+                            let currSpan = child.getAttribute('range').split("-");
+                            // Add span to feature info
+                            featureInfo["span"] = currSpan.map((s) => parseInt(s));
+                            
+        
+                            // Extract color
+                            featureInfo["color"] = child.getAttribute('color');
+        
+                            break;
+
+                        // Nodes with the name "Q" and its "V" children are "Query-Value" nodes
+                        // Basically dictionary key and value
+                        // codon_start: int (?)
+                        // product: text (string, note about gene product)
+                        // transl_table: int (boolean, ?)
+                        // translation: text (string, AA sequence of product)
+                        case "Q":
+                            // Get query name
+                            const subNoteName = child.getAttribute('name');
+        
+                            // Value node
+                            const V = child.children[0];
+                            Array.from(V.attributes).forEach((attr) => {
+                                switch(attr.name) {
+                                    case "int":
+                                        featureInfo[attr.name] = parseInt(attr.value);
+                                        break;
+                                    case "text":
+                                        // Sometimes the text has html so we need to deal with it
+                                        featureInfo[attr.name] = new DOMParser().parseFromString(attr.value, 'text/html').body.textContent.trim();
+                                        break;
+                                }
+                            });
+                            break;
                     };
                 };
-                featureInfo["note"] = featureInfo["note"].trim();
 
-                // Append feature info the corresponding feature in the dict
+                // Append feature info dict the corresponding feature in the dict
                 featuresDict[featureId] = featureInfo;
             };
+            //#endregion
+
 
             /**
-             * Extract primers
+             * PRIMERS
              */
-            // Extract XML tree
+            //#region PRIMERS
+            // Extract XML tree string
             let primersXMLString = fileContent.slice(fileContent.indexOf("<Primers"), fileContent.indexOf("</Primer></Primers>") + "</Primer></Primers>".length);
+            // Parse string to XML tree
             const primersXMLDoc = xmlParser.parseFromString(primersXMLString, 'text/xml');
 
             const primersList = primersXMLDoc.getElementsByTagName('Primer');
@@ -305,8 +313,8 @@ const FileIO = new class {
                 // Append feature info the corresponding feature in the dict
                 featuresDict[primerId] = primerInfo;
             };
+            //#endregion
 
-            console.log(featuresDict)
             const fileFeatures = sortBySpan(featuresDict);
 
             /**
