@@ -1,15 +1,18 @@
 const PlasmidViewer = new class {
 
+    // Init viewer variables
     activeView = null;
 
+    // Shortname
     svgNameSpace = "http://www.w3.org/2000/svg";
 
     /**
+     * Redraw all views and return svgs to class that called it
      * 
-     * @param {*} sequence 
-     * @param {*} complementarySequence 
-     * @param {*} features 
-     * @param {*} topology 
+     * @param {string} sequence - Plasmid sequence
+     * @param {string} complementarySequence - Plasmid complementary sequence
+     * @param {Object} features - Dictionary of features
+     * @param {*} topology - 
      * @returns 
      */
     draw(plasmidName, sequence, complementarySequence, features, topology) {
@@ -21,12 +24,14 @@ const PlasmidViewer = new class {
     };
 
     /**
+     * Draw the circular view
      * 
      * @param {*} sequence 
      * @param {*} complementarySequence 
      * @param {*} features 
      * @param {*} topology 
      */
+    //#region Circular view
     drawCircular(plasmidName, sequence, complementarySequence, features, topology) {
         const svgContainer = document.getElementById("linear-view-container");
         const mainViewerDiv = svgContainer.parentElement;
@@ -195,6 +200,7 @@ const PlasmidViewer = new class {
      * @param {*} features 
      * @param {*} topology 
      */
+    //#region Linear view
     drawLinear(plasmidName, sequence, complementarySequence, features, topology) {
         const svgContainer = document.getElementById("linear-view-container");
         const mainViewerDiv = svgContainer.parentElement;
@@ -354,6 +360,7 @@ const PlasmidViewer = new class {
      * @param {*} features 
      * @param {*} topology 
      */
+    //#region Grid view
     drawGrid(plasmidName, sequence, complementarySequence, features, topology) {
         /**
          * Settings
@@ -478,9 +485,13 @@ const PlasmidViewer = new class {
             groupMain.setAttribute("transform", `translate(${0} ${0})`);
             svgCanvas.appendChild(groupMain);
     
+            // Sequence group (fwd strand + axis + rev strand)
+            const groupSequence = this.createShapeElement("g");
+            groupSequence.setAttribute("id", "sequence-group");
+
             // Forward strand
             const groupStrandFwd = this.createShapeElement("g");
-            groupStrandFwd.setAttribute("id", "strand-fwd")
+            groupStrandFwd.setAttribute("id", "strand-fwd");
             for (let i = 0; i < basesPerLine; i++) {
                 groupStrandFwd.appendChild(this.text(
                     [basesPositions[i], sequenceFwdHeight],
@@ -490,10 +501,10 @@ const PlasmidViewer = new class {
                     "middle"
                 ));
             };
-            groupMain.appendChild(groupStrandFwd);
+            groupSequence.appendChild(groupStrandFwd);
             
             // Sequence axis
-            groupMain.appendChild(this.line(
+            groupSequence.appendChild(this.line(
                 [0, sequenceAxisHeight],
                 [(segment["sequenceFwd"].length/basesPerLine)*maxWidth, sequenceAxisHeight],
                 null,
@@ -525,7 +536,7 @@ const PlasmidViewer = new class {
                     "svg-sequence-axis-grid"
                 ));
             };
-            groupMain.appendChild(groupTicks);
+            groupSequence.appendChild(groupTicks);
     
             // Reverse strand
             const groupStrandRev = this.createShapeElement("g");
@@ -539,7 +550,10 @@ const PlasmidViewer = new class {
                     "middle"
                 ));
             };
-            groupMain.appendChild(groupStrandRev);
+            groupSequence.appendChild(groupStrandRev);
+
+            groupMain.appendChild(groupSequence);
+
 
             /**
              * Features
@@ -556,6 +570,7 @@ const PlasmidViewer = new class {
                 );
 
                 segmentFeatures.appendChild(this.gridFeature(
+                    featureID,
                     [
                         seqToPixel(featureDict["span"][0]-1),
                         seqToPixel(featureDict["span"][1])
@@ -812,7 +827,7 @@ const PlasmidViewer = new class {
     };
 
 
-    gridFeature(span, levelHeight, directionality, label, color, id, cssClass) {
+    gridFeature(featureId, span, levelHeight, directionality, label, color, elementId, cssClass) {
         const featureArrowWidth = 30; //px
         const featureHeadMinWidth = 10; //px
         const featureBodyHeadRatio = 0.9;
@@ -821,11 +836,13 @@ const PlasmidViewer = new class {
         
         
         const featureGroup = this.createShapeElement("g");
+        featureGroup.setAttribute("feature-id", featureId)
         
         /**
          * Arrow
          */
         const featureArrow = this.createShapeElement("polygon");
+        featureArrow.setAttribute("id", "arrow")
 
         const featureHeadWidth = Math.min(featureHeadMinWidth, (span[1] - span[0])*featureBodyHeadRatio)
         const featureHeight = levelHeight - featureArrowWidth/2;
@@ -862,7 +879,7 @@ const PlasmidViewer = new class {
 
         featureArrow.setAttribute("fill", color);
 
-        if (id) {featureArrow.setAttribute("id", id)};
+        if (elementId) {featureArrow.setAttribute("id", elementId)};
         if (cssClass) {featureArrow.setAttribute("class", cssClass)};
         
         featureGroup.appendChild(featureArrow);
@@ -878,6 +895,31 @@ const PlasmidViewer = new class {
             "middle",
             "0.4em"
         ));
+
+        /** 
+         * Event listeners
+        */
+        featureGroup.addEventListener("mouseover", () => {
+            const containerDiv = document.getElementById('grid-view-container');
+            const shapesWithAttribute = containerDiv.querySelectorAll(`svg [feature-id="${featureId}"]`);
+            shapesWithAttribute.forEach((shape) => {
+                shape.querySelector("#arrow").classList.add("svg-feature-arrow-hover")
+            });
+            //console.log(`PlasmidViewer.gridFeature.Event.mouseover -> ${label} ${featureId}`);
+        });
+
+        featureGroup.addEventListener("mouseout", () => {
+            const containerDiv = document.getElementById('grid-view-container');
+            const shapesWithAttribute = containerDiv.querySelectorAll(`svg [feature-id="${featureId}"]`);
+            shapesWithAttribute.forEach((shape) => {
+                shape.querySelector("#arrow").classList.remove("svg-feature-arrow-hover")
+            });
+            console.log(`PlasmidViewer.gridFeature.Event.mouseout -> ${label} ${featureId}`);
+        });
+
+        featureGroup.addEventListener("click", () => {
+            console.log(`PlasmidViewer.gridFeature.Event.click -> ${label} ${featureId}`);
+        });
 
         return featureGroup;
     };
