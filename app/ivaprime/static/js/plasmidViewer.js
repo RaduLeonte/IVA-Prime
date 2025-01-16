@@ -655,8 +655,10 @@ const PlasmidViewer = new class {
                     console.log('Removed class from:', el);
                 });
 
-                nearestRect.classList.add("svg-sequence-base-box-hover");
-                console.log(`PlasmidViewer.sequenceSegment.Event.mousemove -> ${nearestRect}`);
+                if (nearestRect) {
+                    nearestRect.classList.add("svg-sequence-base-box-hover");
+                    console.log(`PlasmidViewer.sequenceSegment.Event.mousemove -> ${nearestRect}`);
+                };
             });
 
             groupSequence.addEventListener("mouseleave", (e) => {
@@ -690,6 +692,13 @@ const PlasmidViewer = new class {
                     featureDict
                 );
 
+                const featureLength = featureDict["span"][1] - featureDict["span"][0];
+                let featureLabel = featureDict["label"];
+                if (featureLength <= 2) {
+                    featureLabel = ""
+                } else if (featureLength > 2 && (featureLength*2) < featureLabel.length) {
+                    featureLabel = featureLabel.slice(0,3) + "..."
+                }
                 segmentFeatures.appendChild(this.gridFeature(
                     featureID,
                     [
@@ -699,7 +708,7 @@ const PlasmidViewer = new class {
                     featuresLevels[featureDict["level"]],
                     featureDict["shape-left"],
                     featureDict["shape-right"],
-                    featureDict["label"],
+                    featureLabel,
                     featureDict["color"],
                     null,
                     "svg-feature-arrow"
