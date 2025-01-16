@@ -1009,8 +1009,10 @@ const PlasmidViewer = new class {
         /**
          * Text
          */
+        const textBoxStart = (featureShapeLeft == null) ? span[0]: span[0] + featureHeadWidth;
+        const textBoxEnd = (featureShapeRight == null) ? span[1]: span[1] - featureHeadWidth;
         featureGroup.appendChild(this.text(
-            [span[0] + (span[1] - span[0])/2, featureHeight+(featureArrowWidth/2)],
+            [textBoxStart + (textBoxEnd - textBoxStart)/2, featureHeight+(featureArrowWidth/2)],
             label,
             null,
             `svg-feature-label-${this.getTextColorBasedOnBg(color)}`,
