@@ -425,6 +425,7 @@ const PlasmidViewer = new class {
         for (const [featureID, featureDict] of Object.entries(features)) {
             const featureSpanStart = featureDict["span"][0];
             const featureSpanEnd = featureDict["span"][1];
+            const featureDirectionality = featureDict["directionality"];
             const segmentListIndexStart = Math.floor(featureSpanStart / basesPerLine);
             const segmentListIndexEnd = Math.floor(featureSpanEnd / basesPerLine);
             //console.log("PlasmidViewer.drawGrid", featureDict["label"], [featureSpanStart, featureSpanEnd], [segmentIndexStart, segmentIndexEnd]);
@@ -439,7 +440,50 @@ const PlasmidViewer = new class {
                     featureSegmentSpanStart - segments[i]["segmentIndexStart"],
                     featureSegmentSpanEnd - segments[i]["segmentIndexStart"]
                 ]
+
+                // Figure out shape of this segment -> left=arrow/continued/none, right=arrow/continued/none
+                segments[i]["features"][featureID]["shape-left"] = null;
+                segments[i]["features"][featureID]["shape-right"] = null;
+                const isFirstSegment = (i == segmentListIndexStart) ? true: false;
+                const isLastSegment = (i == segmentListIndexEnd) ? true: false;
+                const isMiddleSegment = (!isFirstSegment && !isLastSegment) ? true: false;
                 
+                // If we're first segment
+                if (isFirstSegment) {
+                    // Left side
+                    segments[i]["features"][featureID]["shape-left"] = (featureDirectionality == "fwd") ? "null" : "arrow";
+
+                    // Right side
+                    if (isLastSegment) {
+                        // One single segment, draw blunt end or arrow end
+                        segments[i]["features"][featureID]["shape-right"] = (featureDirectionality == "fwd") ? "arrow" : null;
+                    } else {
+                        // The feature continues, draw break shape
+                        segments[i]["features"][featureID]["shape-right"] = "break";
+                    };
+                    continue;
+                };
+
+                // If we're middle segment
+                if (isMiddleSegment) {
+                    // The feature continues in both directions, draw break shapes on both ends
+                    segments[i]["features"][featureID]["shape-left"] = "break";
+                    segments[i]["features"][featureID]["shape-right"] = "break";
+                    continue;
+                };
+
+                // If this is the last segment
+                if (isLastSegment) {
+                    // Always set break shape to the left side
+                    // if it were the first segment it case would've already been handled
+                    segments[i]["features"][featureID]["shape-left"] = "break";
+
+                    segments[i]["features"][featureID]["shape-right"] = (featureDirectionality == "fwd") ? "arrow" : null;
+                    continue;
+                };
+
+
+
                 //console.log("PlasmidViewer.drawGrid -> segment features:",
                 //    featureDict["label"],
                 //    i,
@@ -567,7 +611,9 @@ const PlasmidViewer = new class {
                 console.log(
                     "PlasmidViewer.drawGrid -> segment features",
                     featureDict["label"],
-                    featureDict["span"]
+                    featureDict["span"],
+                    featureDict["directionality"],
+                    featureDict
                 );
 
                 segmentFeatures.appendChild(this.gridFeature(
@@ -577,7 +623,8 @@ const PlasmidViewer = new class {
                         seqToPixel(featureDict["span"][1])
                     ],
                     featuresLevels[featureDict["level"]],
-                    featureDict["directionality"],
+                    featureDict["shape-left"],
+                    featureDict["shape-right"],
                     featureDict["label"],
                     featureDict["color"],
                     null,
@@ -856,7 +903,9 @@ const PlasmidViewer = new class {
      * @returns 
      */
     //#region Grid feature
-    gridFeature(featureId, span, levelHeight, directionality, label, color, elementId, cssClass) {
+    gridFeature(featureId, span, levelHeight, featureShapeLeft, featureShapeRight, label, color, elementId, cssClass) {
+        console.log("PlasmidViewer.gridFeature ->", label, featureShapeLeft, featureShapeRight)
+        
         const featureArrowWidth = 30; //px
         const featureHeadMinWidth = 10; //px
         const featureBodyHeadRatio = 0.9;
@@ -870,48 +919,92 @@ const PlasmidViewer = new class {
         /**
          * Arrow
          */
+        const featureArrowGroup = this.createShapeElement("g");
         const featureArrow = this.createShapeElement("polygon");
-        featureArrow.setAttribute("id", "arrow")
+        featureArrowGroup.setAttribute("id", "arrow")
 
         const featureHeadWidth = Math.min(featureHeadMinWidth, (span[1] - span[0])*featureBodyHeadRatio)
         const featureHeight = levelHeight - featureArrowWidth/2;
 
-        let points = []
-        switch (directionality) {
-            case "fwd":
-                points = [
-                    [span[0], featureHeight],
-                    [span[1] - featureHeadWidth, featureHeight],
-                    [span[1], featureHeight + featureArrowWidth/2],
-                    [span[1] - featureHeadWidth, featureHeight + featureArrowWidth],
-                    [span[0], featureHeight + featureArrowWidth]
-                ];
-                break;
-            case "rev":
-                points = [
-                    [span[1], featureHeight],
-                    [span[0] + featureHeadWidth, featureHeight],
-                    [span[0], featureHeight + featureArrowWidth/2],
-                    [span[0] + featureHeadWidth, featureHeight + featureArrowWidth],
-                    [span[1], featureHeight + featureArrowWidth]
-                ];
-                break;
-            default:
-                points = [
-                    [span[0], featureHeight],
-                    [span[1], featureHeight],
-                    [span[1], featureHeight + featureArrowWidth],
-                    [span[0], featureHeight + featureArrowWidth]
-                ];
+        // Shapes are drawn clockwise
+        const shapesLeft = {
+            // Blunt end
+            null: [
+                [span[0], featureHeight + featureArrowWidth],
+                [span[0], featureHeight]
+            ],
+            // Arrow
+            "arrow": [
+                [span[0] + featureHeadWidth, featureHeight + featureArrowWidth],
+                [span[0], featureHeight + featureArrowWidth/2],
+                [span[0] + featureHeadWidth, featureHeight]
+            ],
+            // Break
+            "break": [
+                [span[0] + featureHeadWidth, featureHeight + featureArrowWidth],
+                [span[0], featureHeight]
+            ]
         };
+        const shapesRight = {
+            // Blunt end
+            null: [
+                [span[1], featureHeight],
+                [span[1], featureHeight + featureArrowWidth]
+            ],
+            // Arrow
+            "arrow": [
+                [span[1] - featureHeadWidth, featureHeight],
+                [span[1], featureHeight + featureArrowWidth/2],
+                [span[1] - featureHeadWidth, featureHeight + featureArrowWidth]
+            ],
+            // Break
+            "break": [
+                [span[1] - featureHeadWidth, featureHeight],
+                [span[1], featureHeight + featureArrowWidth]
+            ]
+        };
+
+        const pointsLeft = shapesLeft[featureShapeLeft];
+        const pointsRight = shapesRight[featureShapeRight];
+        const points = pointsLeft.concat(pointsRight);
         featureArrow.setAttribute("points", points);
 
         featureArrow.setAttribute("fill", color);
 
-        if (elementId) {featureArrow.setAttribute("id", elementId)};
-        if (cssClass) {featureArrow.setAttribute("class", cssClass)};
+        if (elementId) {featureArrowGroup.setAttribute("id", elementId)};
+        if (cssClass) {featureArrowGroup.setAttribute("class", cssClass)};
         
-        featureGroup.appendChild(featureArrow);
+        
+        if (featureShapeLeft == "break") {
+            const breakDecorationLeft = this.createShapeElement("polygon");
+            breakDecorationLeft.setAttribute("points", [
+                [span[0], featureHeight + featureArrowWidth],
+                [span[0] + featureHeadWidth, featureHeight],
+                [span[0] + featureHeadWidth, featureHeight + featureArrowWidth]
+            ]);
+            breakDecorationLeft.setAttribute("fill", color);
+            breakDecorationLeft.classList.add("svg-feature-arrow-decoration");
+            
+            featureArrowGroup.appendChild(breakDecorationLeft);
+        }
+
+        if (featureShapeRight == "break") {
+            const breakDecorationRight = this.createShapeElement("polygon");
+            breakDecorationRight.setAttribute("points", [
+                [span[1] - featureHeadWidth, featureHeight],
+                [span[1], featureHeight],
+                [span[1] - featureHeadWidth, featureHeight + featureArrowWidth]
+            ]);
+            breakDecorationRight.setAttribute("fill", color);
+            breakDecorationRight.classList.add("svg-feature-arrow-decoration");
+            
+            featureArrowGroup.appendChild(breakDecorationRight);
+        }
+
+
+        featureArrowGroup.appendChild(featureArrow);
+        
+        featureGroup.appendChild(featureArrowGroup);
 
         /**
          * Text

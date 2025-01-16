@@ -708,6 +708,10 @@ input, select, textarea {
   stroke-width: 1;
 }
 
+.svg-feature-arrow-decoration {
+  filter: brightness(0.7)
+}
+
 .svg-feature-arrow-hover {
   /*filter: contrast(150%)*/
   filter: brightness(1.1);
