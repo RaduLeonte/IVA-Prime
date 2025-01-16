@@ -1147,5 +1147,51 @@ const PlasmidViewer = new class {
     
         // Return white for dark backgrounds and black for light backgrounds
         return luminance > 0.5 ? 'black' : 'white';
-    }
+    };
+
+
+    updateViewer() {
+        let targetView;
+        if (PlasmidViewer.activeView) {
+            targetView = PlasmidViewer.activeView;
+        } else {
+            targetView = "grid";
+        };
+
+        const views = ["circular", "linear", "grid"]
+        for (let i in views) {
+            const svgContainer = document.getElementById(`${views[i]}-view-container`);
+            if (svgContainer.firstElementChild) {
+                svgContainer.removeChild(svgContainer.firstElementChild)
+            };
+
+            svgContainer.appendChild(Session.activePlasmid().views[views[i]]);
+        };
+
+
+        this.switchView(targetView);
+    };
+
+    redraw() {
+        const activePlasmid = Session.activePlasmid()
+        if (activePlasmid) {
+            activePlasmid.generateViews();
+            PlasmidViewer.updateViewer();
+        };
+    };
 };
+
+/**
+ * Redraw views on window resize
+ */
+let resizeTimeout;
+window.addEventListener('resize', function () {
+    document.getElementById("viewer").style.display = "none";
+    
+    clearTimeout(resizeTimeout);
+  
+    resizeTimeout = setTimeout(() => {
+        document.getElementById("viewer").style.display = "block";
+        PlasmidViewer.redraw()
+    }, 500);
+  });

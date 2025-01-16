@@ -60,7 +60,7 @@ const PlasmidTabs = new class {
         //    Session.activePlasmid().makeContentGrid();
         //};
 
-        this.updateViewer();
+        PlasmidViewer.redraw();
 
         this.updateFeaturesTable();
 
@@ -87,27 +87,6 @@ const PlasmidTabs = new class {
         };
     };
 
-    updateViewer() {
-        let targetView;
-        if (PlasmidViewer.activeView) {
-            targetView = PlasmidViewer.activeView;
-        } else {
-            targetView = "grid";
-        };
-
-        const views = ["circular", "linear", "grid"]
-        for (let i in views) {
-            const svgContainer = document.getElementById(`${views[i]}-view-container`);
-            if (svgContainer.firstElementChild) {
-                svgContainer.removeChild(svgContainer.firstElementChild)
-            };
-
-            svgContainer.appendChild(Session.activePlasmid().views[views[i]]);
-        };
-
-
-        PlasmidViewer.switchView(targetView);
-    };
 
     /**
      * Update the sidebar and content with the 
