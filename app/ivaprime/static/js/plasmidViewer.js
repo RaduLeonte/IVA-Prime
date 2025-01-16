@@ -390,13 +390,14 @@ const PlasmidViewer = new class {
         console.log("drawGrid", scrollbarWidth)
 
         maxWidth -= scrollbarWidth;
+        maxWidth -= 2; // 1 pixel marginon each side so strokes are not cutoff
         console.log("drawGrid", maxWidth);
 
         svgContainer.style.display = "";
         svgContainer.removeChild(svgWrapperDummy);
 
         // Sequence coordinate to pixel in axis
-        let seqToPixel = (s) => (s / basesPerLine)*(maxWidth);
+        let seqToPixel = (s) => (s / basesPerLine)*(maxWidth) + 1;
 
         /**
          * Prepare segments
@@ -477,7 +478,7 @@ const PlasmidViewer = new class {
             // Canvas
             const svgCanvas = this.createShapeElement("svg");
             svgCanvas.setAttribute("version", "1.2");
-            svgCanvas.setAttribute("width", maxWidth);
+            svgCanvas.setAttribute("width", maxWidth + 2); // add margin for strokes back in
             svgWrapper.appendChild(svgCanvas);
 
             // Main group
@@ -717,7 +718,7 @@ const PlasmidViewer = new class {
             [span[0] + (span[1] - span[0])/2, featureHeight+featureArrowWidth*0.8],
             label,
             null,
-            "svg-feature-label",
+            `svg-feature-label-${this.getTextColorBasedOnBg(color)}`,
             "middle"
         ));
 
@@ -822,7 +823,7 @@ const PlasmidViewer = new class {
             [0, 0],
             label,
             null,
-            "svg-feature-label",
+            `svg-feature-label-${this.getTextColorBasedOnBg(color)}`,
             "middle"
         );
         const pos = span[0] + (span[1] - span[0])/2
