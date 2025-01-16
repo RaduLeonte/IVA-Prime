@@ -81,7 +81,7 @@ const FileIO = new class {
         fileInput.style.display = 'none';
         document.body.appendChild(fileInput);
         fileInput.addEventListener('change', function(event) {
-          this.importQueue(event.target.files);
+          FileIO.importQueue(event.target.files);
         });
         fileInput.click();
     };

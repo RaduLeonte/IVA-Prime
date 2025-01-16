@@ -367,8 +367,8 @@ const PlasmidViewer = new class {
          */
         const basesPerLine = 60;
         const sequenceFwdHeight = 20;
-        const sequenceAxisHeight = 30
-        const sequenceRevHeight = 55;
+        const sequenceAxisHeight = 34;
+        const sequenceRevHeight = 59;
         
         /**
          * Figure out how wide the drawable area is
@@ -533,20 +533,53 @@ const PlasmidViewer = new class {
             // Sequence group (fwd strand + axis + rev strand)
             const groupSequence = this.createShapeElement("g");
             groupSequence.setAttribute("id", "sequence-group");
+            
 
             // Forward strand
             const groupStrandFwd = this.createShapeElement("g");
             groupStrandFwd.setAttribute("id", "strand-fwd");
             for (let i = 0; i < basesPerLine; i++) {
-                groupStrandFwd.appendChild(this.text(
+                const baseBox = this.createShapeElement("rect");
+                baseBox.setAttribute("x", basesPositions[i] - basesWidth/2);
+                baseBox.setAttribute("y", 0);
+                baseBox.setAttribute("height", sequenceAxisHeight);
+                baseBox.setAttribute("width", basesWidth);
+                baseBox.classList.add("svg-sequence-base-box");
+                groupStrandFwd.appendChild(baseBox);
+                const base = this.text(
                     [basesPositions[i], sequenceFwdHeight],
                     segment["sequenceFwd"][i],
                     null,
                     "svg-sequence-bases-text",
                     "middle"
-                ));
+                );
+                base.setAttribute("base-index", segments.indexOf(segment)*basesPerLine + i + 1);
+                groupStrandFwd.appendChild(base);
             };
             groupSequence.appendChild(groupStrandFwd);
+
+            // Reverse strand
+            const groupStrandRev = this.createShapeElement("g");
+            groupStrandRev.setAttribute("id", "strand-rev")
+            for (let i = 0; i < basesPerLine; i++) {
+                const baseBox = this.createShapeElement("rect");
+                baseBox.setAttribute("x", basesPositions[i] - basesWidth/2);
+                baseBox.setAttribute("y", sequenceAxisHeight);
+                baseBox.setAttribute("height", sequenceAxisHeight+4);
+                baseBox.setAttribute("width", basesWidth);
+                baseBox.classList.add("svg-sequence-base-box");
+                groupStrandRev.appendChild(baseBox);
+                const base = this.text(
+                    [basesPositions[i], sequenceRevHeight],
+                    segment["sequenceRev"][i],
+                    null,
+                    "svg-sequence-bases-text",
+                    "middle"
+                );
+                base.setAttribute("base-index", segments.indexOf(segment)*basesPerLine + i + 1)
+                groupStrandRev.appendChild(base);
+            };
+            groupSequence.appendChild(groupStrandRev);
             
             // Sequence axis
             groupSequence.appendChild(this.line(
@@ -583,19 +616,60 @@ const PlasmidViewer = new class {
             };
             groupSequence.appendChild(groupTicks);
     
-            // Reverse strand
-            const groupStrandRev = this.createShapeElement("g");
-            groupStrandRev.setAttribute("id", "strand-rev")
-            for (let i = 0; i < basesPerLine; i++) {
-                groupStrandRev.appendChild(this.text(
-                    [basesPositions[i], sequenceRevHeight],
-                    segment["sequenceRev"][i],
-                    null,
-                    "svg-sequence-bases-text",
-                    "middle"
-                ));
-            };
-            groupSequence.appendChild(groupStrandRev);
+
+
+            // Group sequence bounding box for events
+            const groupSequenceBox = this.createShapeElement("polygon");
+            groupSequenceBox.setAttribute("points", [
+                [0, 0],
+                [(segment["sequenceFwd"].length/basesPerLine)*maxWidth, 0],
+                [(segment["sequenceFwd"].length/basesPerLine)*maxWidth, sequenceAxisHeight*2],
+                [0, sequenceAxisHeight*2]
+            ])
+            groupSequenceBox.setAttribute("fill", "black");
+            groupSequenceBox.classList.add("svg-sequence-group-bounding-box");
+            
+            groupSequence.appendChild(groupSequenceBox);
+
+
+            /** 
+             * Event listeners
+            */
+            groupSequence.addEventListener("mousemove", (e) => {
+                const parentElement = e.target.parentNode;
+
+                // Get the mouse position
+                const mouseX = e.clientX;
+                const mouseY = e.clientY;
+
+                // Find all elements at the mouse position
+                const elementsAtPoint = document.elementsFromPoint(mouseX, mouseY);
+
+                // Filter the elements to only include <rect> elements within the parent container
+                const nearestRect = elementsAtPoint.find((el) => 
+                    el.tagName === 'rect' && parentElement.contains(el)
+                );
+
+                parentElement.querySelectorAll('.svg-sequence-base-box-hover').forEach((el) => {
+                    el.classList.remove('svg-sequence-base-box-hover');
+                    console.log('Removed class from:', el);
+                });
+
+                nearestRect.classList.add("svg-sequence-base-box-hover");
+                console.log(`PlasmidViewer.sequenceSegment.Event.mousemove -> ${nearestRect}`);
+            });
+
+            groupSequence.addEventListener("mouseleave", (e) => {
+                e.target.parentNode.querySelectorAll('.svg-sequence-base-box-hover').forEach((el) => {
+                    el.classList.remove('svg-sequence-base-box-hover');
+                    console.log('Removed class from:', el);
+                });
+            });
+
+
+            groupSequence.addEventListener("click", (e) => {
+                console.log(`PlasmidViewer.sequenceSegment.Event.click ->`);
+            });
 
             groupMain.appendChild(groupSequence);
 

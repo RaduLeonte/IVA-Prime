@@ -1,6 +1,7 @@
 /*
-  COLOR THEMES
+  MARK: COLOR THEMES
 */
+/* #region */
 [data-theme="light"] {
   /* Theme colors */
   --text-color: #000000;
@@ -82,9 +83,10 @@
   --subcloning-background: rgba(255, 70, 255, 0.2);
   --subcloning-border: #a652a6;
 }
+/* #endregion */
 
 /* 
- * Body
+ * MARK: Body
  */
 html, body {
   margin: 0;
@@ -96,14 +98,14 @@ html, body {
 }
 
 /* 
- * Layout
+ * MARK: Layout
  */
 .content-wrapper {
   width: 100%;
   height: 100%;
 
   display: grid;
-  grid-template-columns: 500px auto 55px;
+  grid-template-columns: 400px auto 55px;
   grid-template-rows: 70px auto 40px;
   
   grid-template-areas:
@@ -134,7 +136,7 @@ html, body {
 
 
 /* 
- * Buttons
+ * MARK: Buttons
  */
 .round-button {
   display: block;
@@ -171,7 +173,7 @@ html, body {
 
 
 /*
- * Inputs and checkboxes
+ * MARK: Inputs and checkboxes
  */
 input {
   padding: 5px;
@@ -190,7 +192,7 @@ input[type="checkbox"] {
 }
 
 /* 
- * Header
+ * MARK: Header
  */
 .header {
   background-color: var(--header-color);
@@ -210,7 +212,9 @@ input[type="checkbox"] {
   gap: 10px;
 }
 
-/* Plasmid tabs */
+/*
+ * MARK: Plasmid tabs
+ */
 .plasmid-tabs-wrapper {
   flex-grow: 1;
 
@@ -294,7 +298,7 @@ input[type="checkbox"] {
 
 
 /* 
- * Sidebar 
+ * MARK: Sidebar 
  */
 .sidebar {
   background-color: var(--bg-color2);
@@ -305,14 +309,14 @@ input[type="checkbox"] {
 }
 
 /* 
- * Viewer
+ * MARK: Viewer
  */
 .viewer {
   background-color: var(--bg-color1);
 }
 
 /* 
- * Toolbar
+ * MARK: Toolbar
  */
 .toolbar {
   background-color: var(--bg-color2);
@@ -406,7 +410,7 @@ input[type="checkbox"] {
 }
 
 /* 
- * Footer
+ * MARK: Footer
  */
 .footer {
   background-color: var(--bg-color2);
@@ -460,7 +464,7 @@ input[type="checkbox"] {
 
 
 /* 
- * Popup windows
+ * MARK: Popup windows
  */
 .popup-window {
  position: fixed;
@@ -511,7 +515,7 @@ input[type="checkbox"] {
 }
 
 /*
- * Features table
+ * MARK: Features table
  */
 .collapsible-header {
   cursor: pointer;
@@ -522,8 +526,9 @@ input[type="checkbox"] {
   text-align: left;
   outline: none;
   font-size: 18px;
-  color: var(--text-color);
+  /*color: var(--text-color);*/
 }
+
 
 .collapsible-header:hover {
   cursor: pointer;
@@ -623,7 +628,9 @@ input, select, textarea {
 }
 
 
-/* VIEWER */
+/*
+ * MARK: VIEWER
+ */
 
 .svg-container {
   width: 100%;
@@ -640,7 +647,7 @@ input, select, textarea {
 
 
 /*
- * LINEAR VIEW
+ * MARK: LINEAR VIEW
  */
 #linear-view-container {
 
@@ -655,7 +662,7 @@ input, select, textarea {
 }
 
 /*
- * CIRCULAR VIEW
+ * MARK: CIRCULAR VIEW
  */
 #circular-view-container {
 
@@ -665,7 +672,7 @@ input, select, textarea {
 }
 
 /*
- * GRID VIEW
+ * MARK: GRID VIEW
  */
 .viewer-grid-view {
   overflow-y: scroll;
@@ -707,7 +714,20 @@ input, select, textarea {
   stroke-width: 1;
 }
 
-.svg-feature-label {
+.svg-feature-arrow-decoration {
+  filter: brightness(0.7)
+}
+
+.svg-feature-arrow-hover {
+  /*filter: contrast(150%)*/
+  filter: brightness(1.1);
+  /*filter: opacity(0.7);*/
+  stroke: red;
+  stroke-width: 2;
+  cursor: pointer;
+}
+
+.svg-feature-label-black {
   fill: black;
 
   pointer-events: none;
@@ -716,6 +736,18 @@ input, select, textarea {
   -ms-user-select: none;
   user-select: none;
 }
+
+.svg-feature-label-white {
+  fill: white;
+
+  pointer-events: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+
 
 .svg-sequence-bases-text {
   pointer-events: none;

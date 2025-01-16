@@ -709,6 +709,11 @@ input, select, textarea {
   stroke-width: 3;
 }
 
+.svg-sequence-group-bounding-box {
+  opacity: 0;
+  cursor: text;
+}
+
 .svg-feature-arrow {
   stroke: var(--border-color);
   stroke-width: 1;
@@ -755,6 +760,16 @@ input, select, textarea {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+.svg-sequence-base-box {
+  fill: white;
+  opacity: 0;
+}
+
+.svg-sequence-base-box-hover {
+  fill: #e7e7e7;
+  opacity: 1;
 }
 
 .loading-wrapper {

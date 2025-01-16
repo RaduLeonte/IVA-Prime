@@ -174,6 +174,7 @@ class Plasmid {
             collapsibleHeader.type = "button";
             collapsibleHeader.classList.add("collapsible-header");
             const currFeatureColor = (feature.color) ? feature.color: feature.ivaprimeColor;
+            collapsibleHeader.style.color = PlasmidViewer.getTextColorBasedOnBg(currFeatureColor) // Text color
             collapsibleHeader.style.backgroundColor = currFeatureColor;
             collapsibleHeader.innerText = feature.label;
 
