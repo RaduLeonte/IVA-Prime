@@ -658,6 +658,7 @@ const PlasmidViewer = new class {
      * @param {*} cssClass 
      * @returns 
      */
+    //#region Linear feature
     linearFeature(span, levelHeight, directionality, label, color, id, cssClass) {
         const featureGroup = this.createShapeElement("g");
         
@@ -724,6 +725,20 @@ const PlasmidViewer = new class {
     };
 
 
+    /**
+     * 
+     * @param {*} span 
+     * @param {*} levelHeight 
+     * @param {*} directionality 
+     * @param {*} label 
+     * @param {*} color 
+     * @param {*} id 
+     * @param {*} cssClass 
+     * @param {*} seqToPixel 
+     * @param {*} sequenceLength 
+     * @returns 
+     */
+    //#region Circular Feature
     circularFeature(span, levelHeight, directionality, label, color, id, cssClass, seqToPixel, sequenceLength) {
         const featureGroup = this.createShapeElement("g");
         /**
@@ -827,6 +842,19 @@ const PlasmidViewer = new class {
     };
 
 
+    /**
+     * 
+     * @param {*} featureId 
+     * @param {*} span 
+     * @param {*} levelHeight 
+     * @param {*} directionality 
+     * @param {*} label 
+     * @param {*} color 
+     * @param {*} elementId 
+     * @param {*} cssClass 
+     * @returns 
+     */
+    //#region Grid feature
     gridFeature(featureId, span, levelHeight, directionality, label, color, elementId, cssClass) {
         const featureArrowWidth = 30; //px
         const featureHeadMinWidth = 10; //px
@@ -891,7 +919,7 @@ const PlasmidViewer = new class {
             [span[0] + (span[1] - span[0])/2, featureHeight+(featureArrowWidth/2)],
             label,
             null,
-            "svg-feature-label",
+            `svg-feature-label-${this.getTextColorBasedOnBg(color)}`,
             "middle",
             "0.4em"
         ));
@@ -1005,4 +1033,25 @@ const PlasmidViewer = new class {
             viewerDiv.classList.remove("viewer-grid-view");
         };
     };
+
+    /**
+     * 
+     * @param {*} bgColor 
+     * @returns 
+     */
+    getTextColorBasedOnBg(bgColor) {
+        // Remove the '#' if present
+        const hex = bgColor.replace('#', '');
+    
+        // Parse the HEX color into RGB components
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+    
+        // Calculate relative luminance
+        const luminance = (r / 255) * 0.2126 + (g / 255) * 0.7152 + (b / 255) * 0.0722;
+    
+        // Return white for dark backgrounds and black for light backgrounds
+        return luminance > 0.5 ? 'black' : 'white';
+    }
 };

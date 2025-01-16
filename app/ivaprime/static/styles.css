@@ -522,8 +522,9 @@ input[type="checkbox"] {
   text-align: left;
   outline: none;
   font-size: 18px;
-  color: var(--text-color);
+  /*color: var(--text-color);*/
 }
+
 
 .collapsible-header:hover {
   cursor: pointer;
@@ -716,7 +717,7 @@ input, select, textarea {
   cursor: pointer;
 }
 
-.svg-feature-label {
+.svg-feature-label-black {
   fill: black;
 
   pointer-events: none;
@@ -725,6 +726,18 @@ input, select, textarea {
   -ms-user-select: none;
   user-select: none;
 }
+
+.svg-feature-label-white {
+  fill: white;
+
+  pointer-events: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+
 
 .svg-sequence-bases-text {
   pointer-events: none;
