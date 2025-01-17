@@ -768,9 +768,33 @@ input, select, textarea {
 }
 
 .svg-sequence-base-box-hover {
-  fill: #e7e7e7;
+  fill: #d3d3d3;
   opacity: 1;
 }
+
+.svg-sequence-base-box-selected-preview {
+  fill: #f4f4f4;
+  opacity: 1;
+}
+
+.svg-sequence-base-box-selected {
+  fill: var(--sequence-grid-cell-selected);
+  opacity: 1;
+}
+
+.svg-sequence-cursor {
+  fill: none;
+  stroke-width: 3;
+}
+
+.svg-sequence-cursor-preview {
+  stroke: var(--border-color);
+}
+
+.svg-sequence-cursor-selection {
+  stroke: var(--selection-cursors);
+}
+
 
 .loading-wrapper {
   position: fixed;
@@ -781,4 +805,21 @@ input, select, textarea {
   background-color: transparent;
   z-index: 9999;
   cursor: wait;
+}
+
+
+/* Sequence tooltip */
+.sequence-tooltip {
+  position: absolute;
+
+  background-color: var(--bg-color1);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 14px;
+  pointer-events: none;
+
+  opacity: 0;
 }
