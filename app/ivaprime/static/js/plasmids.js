@@ -94,9 +94,10 @@ class Plasmid {
         this.features = features;
         this.topology = topology;
         this.translations = {"forward": [], "reverse": []};
+        
         this.selectedText = "";
-        this.selectionStartPos = null;
-        this.selectionEndPos = null;
+        this.selectionIndices = null;
+        
         this.primers = null;
         this.operationNr = 1;
 
@@ -134,6 +135,24 @@ class Plasmid {
             this.features,
             this.topology
         );
+    };
+
+
+    /**
+     * 
+     * @param {*} indices 
+     */
+    setSelectionIndices(indices) {
+        this.selectionIndices = indices;
+    };
+
+
+    /**
+     * 
+     * @returns 
+     */
+    getSelectionIndices() {
+        return this.selectionIndices;
     };
 
 
@@ -340,6 +359,7 @@ class Plasmid {
 
         this.featuresTable = featuresTableContainer;
     };
+
 
     /**
      * 

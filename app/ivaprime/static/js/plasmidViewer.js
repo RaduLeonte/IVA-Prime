@@ -488,6 +488,15 @@ const PlasmidViewer = new class {
         const svgWrapper = document.createElement("DIV");
         svgWrapper.classList.add("svg-wrapper-grid");
 
+        svgWrapper.addEventListener("click", (e) => {
+            const elements = document.elementsFromPoint(e.clientX, e.clientY);
+
+            const shapeTags = ['polygon', 'rect', 'line', 'circle', 'ellipse', 'path'];
+            const isOverShape = elements.some((el) => shapeTags.includes(el.tagName.toLowerCase()));
+
+            if (!isOverShape) {PlasmidViewer.deselectBases()};
+        });
+
         const basesWidth = maxWidth/basesPerLine;
         const basesPositions = [];
         for (let i = 0; i < basesPerLine; i++) {
@@ -1129,9 +1138,10 @@ const PlasmidViewer = new class {
             this.deselectFeaturePreview(featureId);
         });
 
-        featureGroup.addEventListener("click", () => {
+        featureGroup.addEventListener("click", (e) => {
             console.log(`PlasmidViewer.gridFeature.Event.click -> ${label} ${featureId}`);
-            this.selectFeature(featureId);
+            
+            this.selectFeature(featureId, e.shiftKey);
         });
 
         return featureGroup;
@@ -1426,19 +1436,37 @@ const PlasmidViewer = new class {
      * 
      * @param {*} featureID 
      */
-    selectFeature(featureID) {
-        const span = Session.activePlasmid().features[featureID]["span"];
-        console.log(`PlasmidViewer.selectFeature -> ${span}`);
-
+    selectFeature(featureID, combineSelection=false) {
+        console.log(`PlasmidViewer.selectFeature -> ${featureID} (combine=${combineSelection})`);
+        
+        
+        let span = Session.activePlasmid().features[featureID]["span"];
+        console.log(`PlasmidViewer.selectFeature -> Feature span ${span}`);
+        if (combineSelection) {
+            const combinedIndices = [
+                ...span,
+                ...Session.activePlasmid().getSelectionIndices()
+            ];
+            span = [
+                Math.min(...combinedIndices),
+                Math.max(...combinedIndices)
+            ];
+        };
+        
+        console.log(`PlasmidViewer.selectFeature -> Combined: ${span}`);
+        
         this.selectBases(span);
     };
 
 
     selectBases(span) {
+        console.log(`PlasmidViewer.selectBases -> ${span}`)
         this.deselectBases();
 
         this.placeCursor([span[0], span[1] + 1], "svg-sequence-cursor-selection");
         this.highlightBases(span, "svg-sequence-base-box-selected");
+
+        Session.activePlasmid().setSelectionIndices(span);
     };
 
 

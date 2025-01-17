@@ -768,7 +768,7 @@ input, select, textarea {
 }
 
 .svg-sequence-base-box-hover {
-  fill: #d3d3d3;
+  fill: #d3d3d3 !important;
   opacity: 1;
 }
 
