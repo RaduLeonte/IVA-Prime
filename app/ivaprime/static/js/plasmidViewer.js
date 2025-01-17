@@ -369,6 +369,7 @@ const PlasmidViewer = new class {
         const sequenceFwdHeight = 20;
         const sequenceAxisHeight = 34;
         const sequenceRevHeight = 59;
+        const gridMargin = 35; // margin on each side
         
         /**
          * Figure out how wide the drawable area is
@@ -390,7 +391,6 @@ const PlasmidViewer = new class {
         console.log("drawGrid", scrollbarWidth)
 
         maxWidth -= scrollbarWidth;
-        const gridMargin = 50; // margin on each side
         maxWidth -= gridMargin*2;
         console.log("drawGrid", maxWidth);
 
@@ -581,6 +581,21 @@ const PlasmidViewer = new class {
                 groupStrandRev.appendChild(base);
             };
             groupSequence.appendChild(groupStrandRev);
+
+            // Dots on each side of the axis for circular plasmids
+            const dotsOffset = 8;
+            const dotsWidth = 4;
+            const startingOffset = 4;
+            if (topology === "circular" && segments.indexOf(segment) == 0){
+                for (let i = 0; i < 3; i++){
+                    groupSequence.appendChild(this.line(
+                        [gridMargin - startingOffset - i*dotsOffset, sequenceAxisHeight],
+                        [gridMargin - startingOffset - i*dotsOffset - dotsWidth, sequenceAxisHeight],
+                        null,
+                        "svg-sequence-axis-grid"
+                    ));
+                };
+            };
             
             // Sequence axis
             groupSequence.appendChild(this.line(
@@ -589,6 +604,19 @@ const PlasmidViewer = new class {
                 null,
                 "svg-sequence-axis-grid"
             ));
+
+            // Dots on each side of the axis for circular plasmids
+            if (topology === "circular" && segments.indexOf(segment) == segments.length - 1){
+                const startX = gridMargin + (segment["sequenceFwd"].length/basesPerLine)*maxWidth
+                for (let i = 0; i < 3; i++) {
+                    groupSequence.appendChild(this.line(
+                        [startX + startingOffset + i*dotsOffset, sequenceAxisHeight],
+                        [startX + startingOffset + i*dotsOffset + dotsWidth, sequenceAxisHeight],
+                        null,
+                        "svg-sequence-axis-grid"
+                    ));
+                };
+            };
 
             const groupTicks = this.createShapeElement("g");
             // Ticks 10s
