@@ -710,8 +710,11 @@ const PlasmidViewer = new class {
 
                 if (nearestRect) {
                     const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
-                    const rectSpan = [baseIndex, baseIndex];
-                    this.selectBases((e.shiftKey) ? this.combineSpans(rectSpan): rectSpan);
+                    if (e.shiftKey) {
+                        this.selectBases(this.combineSpans(baseIndex));
+                    } else {
+                        this.selectBase(baseIndex);
+                    };
                 };
             });
 
@@ -1486,8 +1489,25 @@ const PlasmidViewer = new class {
     };
 
 
+    /**
+     * 
+     * @param {*} index 
+     */
+    selectBase(index) {
+        console.log(`PlasmidViewer.selectBase -> ${index}`);
+        this.deselectBases();
+
+        this.placeCursor(index, "svg-sequence-cursor-selection");
+        Session.activePlasmid().setSelectionIndices([index, null]);
+    };
+
+
+    /**
+     * 
+     * @param {*} span 
+     */
     selectBases(span) {
-        console.log(`PlasmidViewer.selectBases -> ${span}`)
+        console.log(`PlasmidViewer.selectBases -> ${span}`);
         this.deselectBases();
 
         this.placeCursor([span[0], span[1] + 1], "svg-sequence-cursor-selection");
@@ -1504,9 +1524,19 @@ const PlasmidViewer = new class {
 
 
     combineSpans(span) {
+        const singleIndexInput = !Array.isArray(span);
+
+        const currentSelection = Session.activePlasmid().getSelectionIndices().filter(item => item != null);
+        if (singleIndexInput && Math.max(...currentSelection) < span) {
+            span -= 1;
+        } else if (currentSelection.length == 1 && span < Math.min(...currentSelection)) {
+            currentSelection[0] -= 1
+        };
+
+        span = singleIndexInput ? [span] : span;
         const combinedIndices = [
             ...span,
-            ...Session.activePlasmid().getSelectionIndices()
+            ...currentSelection
         ];
 
         return [
