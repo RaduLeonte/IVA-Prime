@@ -390,14 +390,15 @@ const PlasmidViewer = new class {
         console.log("drawGrid", scrollbarWidth)
 
         maxWidth -= scrollbarWidth;
-        maxWidth -= 2; // 1 pixel marginon each side so strokes are not cutoff
+        const gridMargin = 50; // margin on each side
+        maxWidth -= gridMargin*2;
         console.log("drawGrid", maxWidth);
 
         svgContainer.style.display = "";
         svgContainer.removeChild(svgWrapperDummy);
 
         // Sequence coordinate to pixel in axis
-        let seqToPixel = (s) => (s / basesPerLine)*(maxWidth) + 1;
+        let seqToPixel = (s) => (s / basesPerLine)*(maxWidth) + gridMargin;
 
         /**
          * Prepare segments
@@ -500,7 +501,7 @@ const PlasmidViewer = new class {
         const basesWidth = maxWidth/basesPerLine;
         const basesPositions = [];
         for (let i = 0; i < basesPerLine; i++) {
-            basesPositions.push(basesWidth/2 + i*basesWidth)
+            basesPositions.push(basesWidth/2 + i*basesWidth + gridMargin)
         };
 
         const featuresLevelStart = 100;
@@ -521,7 +522,7 @@ const PlasmidViewer = new class {
             // Canvas
             const svgCanvas = this.createShapeElement("svg");
             svgCanvas.setAttribute("version", "1.2");
-            svgCanvas.setAttribute("width", maxWidth + 2); // add margin for strokes back in
+            svgCanvas.setAttribute("width", maxWidth + gridMargin*2); // add margin for strokes back in
             svgCanvas.setAttribute("indices", [segmentIndexStart+1, segmentIndexEnd])
             svgWrapper.appendChild(svgCanvas);
 
@@ -583,8 +584,8 @@ const PlasmidViewer = new class {
             
             // Sequence axis
             groupSequence.appendChild(this.line(
-                [0, sequenceAxisHeight],
-                [(segment["sequenceFwd"].length/basesPerLine)*maxWidth, sequenceAxisHeight],
+                [0 + gridMargin, sequenceAxisHeight],
+                [(segment["sequenceFwd"].length/basesPerLine)*maxWidth + gridMargin, sequenceAxisHeight],
                 null,
                 "svg-sequence-axis-grid"
             ));
