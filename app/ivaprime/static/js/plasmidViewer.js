@@ -1037,8 +1037,6 @@ const PlasmidViewer = new class {
     gridFeature(featureId, span, levelHeight, featureShapeLeft, featureShapeRight, label, color, elementId, cssClass) {
         console.log("PlasmidViewer.gridFeature ->", label, featureShapeLeft, featureShapeRight)
         
-        span = [span[0] - 1, span[1] - 1] // Fix some alignment issues
-
         const featureArrowWidth = 30; //px
         const featureHeadMinWidth = 10; //px
         const featureBodyHeadRatio = 0.9;
