@@ -637,15 +637,8 @@ const PlasmidViewer = new class {
             */
             groupSequence.addEventListener("mousemove", (e) => {
                 const parentElement = e.target.parentNode;
+                const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
 
-                // Get the mouse position
-                const mouseX = e.clientX;
-                const mouseY = e.clientY;
-
-                // Find all elements at the mouse position
-                const elementsAtPoint = document.elementsFromPoint(mouseX, mouseY);
-
-                // Filter the elements to only include <rect> elements within the parent container
                 const nearestRect = elementsAtPoint.find((el) => 
                     el.tagName === 'rect' && parentElement.contains(el)
                 );
@@ -671,7 +664,18 @@ const PlasmidViewer = new class {
 
 
             groupSequence.addEventListener("click", (e) => {
-                console.log(`PlasmidViewer.sequenceSegment.Event.click ->`);
+                const parentElement = e.target.parentNode;
+                const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+
+                const nearestRect = elementsAtPoint.find((el) => 
+                    el.tagName === 'rect' && parentElement.contains(el)
+                );
+
+                if (nearestRect) {
+                    const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
+                    const rectSpan = [baseIndex, baseIndex];
+                    this.selectBases((e.shiftKey) ? this.combineSpans(rectSpan): rectSpan);
+                };
             });
 
             groupMain.appendChild(groupSequence);
@@ -1289,6 +1293,7 @@ const PlasmidViewer = new class {
     };
 
 
+    //#region Selection
     /**
      * Show the sequence tooltip and set its position
      * 
@@ -1441,21 +1446,8 @@ const PlasmidViewer = new class {
         
         
         let span = Session.activePlasmid().features[featureID]["span"];
-        console.log(`PlasmidViewer.selectFeature -> Feature span ${span}`);
-        if (combineSelection) {
-            const combinedIndices = [
-                ...span,
-                ...Session.activePlasmid().getSelectionIndices()
-            ];
-            span = [
-                Math.min(...combinedIndices),
-                Math.max(...combinedIndices)
-            ];
-        };
         
-        console.log(`PlasmidViewer.selectFeature -> Combined: ${span}`);
-        
-        this.selectBases(span);
+        this.selectBases((combineSelection) ? this.combineSpans(span): span);
     };
 
 
@@ -1473,6 +1465,19 @@ const PlasmidViewer = new class {
     deselectBases() {
         this.removeCursors();
         this.unhighlightBases("svg-sequence-base-box-selected");
+    };
+
+
+    combineSpans(span) {
+        const combinedIndices = [
+            ...span,
+            ...Session.activePlasmid().getSelectionIndices()
+        ];
+
+        return [
+            Math.min(...combinedIndices),
+            Math.max(...combinedIndices)
+        ];
     };
 };
 
