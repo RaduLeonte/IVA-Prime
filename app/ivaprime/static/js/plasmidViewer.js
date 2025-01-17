@@ -1341,7 +1341,7 @@ const PlasmidViewer = new class {
     showSequenceTooltip(posX, posY) {
         const tooltip = document.getElementById("sequence-tooltip");
         tooltip.style.left = `${posX + 12}px`; // Add a small offset
-        tooltip.style.top = `${posY + 12}px`;
+        tooltip.style.top = `${posY + 15}px`;
         tooltip.style.opacity = 1;
     };
 
