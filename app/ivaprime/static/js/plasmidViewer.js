@@ -649,9 +649,14 @@ const PlasmidViewer = new class {
 
                 if (nearestRect) {
                     nearestRect.classList.add("svg-sequence-base-box-hover");
+                    const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
                     console.log(`PlasmidViewer.sequenceSegment.Event.mousemove -> ${nearestRect}`);
+                    
                     this.showSequenceTooltip(e.pageX, e.pageY);
-                    this.setSequenceTooltip(nearestRect.getAttribute("base-index"));
+                    this.setSequenceTooltip(baseIndex);
+
+                    this.removeCursors("svg-sequence-cursor-preview");
+                    this.placeCursor(baseIndex);
                 };
             });
 
@@ -659,7 +664,10 @@ const PlasmidViewer = new class {
                 e.target.parentNode.querySelectorAll('.svg-sequence-base-box-hover').forEach((el) => {
                     el.classList.remove('svg-sequence-base-box-hover');
                 });
+
                 this.hideSequenceTooltip();
+
+                this.removeCursors("svg-sequence-cursor-preview");
             });
 
 
