@@ -2,6 +2,7 @@ const PlasmidViewer = new class {
 
     // Init viewer variables
     activeView = null;
+    currentlySelecting = false;
 
     // Shortname
     svgNameSpace = "http://www.w3.org/2000/svg";
@@ -486,16 +487,124 @@ const PlasmidViewer = new class {
         };
 
         // Main wrapper
+        //#region Main SVG wrapper
         const svgWrapper = document.createElement("DIV");
         svgWrapper.classList.add("svg-wrapper-grid");
 
+        //#region Event listeners
+        svgWrapper.addEventListener("mousedown", (e) => {
+            console.log(`PlasmidViewer.svgWrapper.Event.mousedown ->`)
+            const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+            const nearestRect = elementsAtPoint.find((el) => el.tagName === 'rect');
+            if (nearestRect) {
+                const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
+                if (e.shiftKey) {
+                    this.selectBases(this.combineSpans(baseIndex));
+                } else {
+                    this.selectBase(baseIndex);
+                };
+
+                this.currentlySelecting = true;
+                this.selectionStartIndex = baseIndex;
+            };
+        });
+        svgWrapper.addEventListener("mouseup", (e) => {
+            console.log(`PlasmidViewer.svgWrapper.Event.mouseup ->`)
+            this.currentlySelecting = false;
+        });
+
+        svgWrapper.addEventListener("mousemove", (e) => {
+            const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+            const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
+            console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> shapesAtPoint ${shapesAtPoint}`)
+
+            Array.from(svgWrapper.children).forEach((svgEl) => {
+                svgEl.querySelectorAll('.svg-sequence-base-box-hover').forEach((el) => {
+                    el.classList.remove('svg-sequence-base-box-hover');
+                });
+            });
+
+            
+            if (!this.currentlySelecting) {
+                if (shapesAtPoint.length == 0) {
+                    this.hideSequenceTooltip();
+                    this.removeCursors("svg-sequence-cursor-preview");
+                    return;
+                };
+    
+                const nearestRect = elementsAtPoint.find((el) => el.tagName === 'rect');
+                //console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> nearestRect ${nearestRect}`)
+                if (nearestRect) {
+                    nearestRect.classList.add("svg-sequence-base-box-hover");
+                    const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
+    
+                    this.showSequenceTooltip(e.pageX, e.pageY);
+                    this.setSequenceTooltip(baseIndex);
+            
+                    this.removeCursors("svg-sequence-cursor-preview");
+                    this.placeCursor(baseIndex);
+                };
+            } else if (this.currentlySelecting) {
+                const svgElements = Array.from(svgWrapper.children);
+                let rects = [];
+                svgElements.forEach(svg => {
+                    // Get all <rect> elements inside the current SVG
+                    const rectElements = svg.querySelectorAll('.svg-sequence-base-box');
+                    rects = rects.concat(Array.from(rectElements));
+                });
+            
+
+                let nearestRect = null;
+                let lastDistance = Infinity;
+                rects.forEach(rect => {
+                    const rectBox = rect.getBoundingClientRect();
+
+                    const rectX =  rectBox.left + rectBox.width/2;
+                    const rectY = rectBox.top + rectBox.height/2;
+
+                    const distance = Math.sqrt(Math.pow(rectX - e.clientX, 2) + Math.pow(rectY - e.clientY, 2));
+                    if (distance < lastDistance) {
+                        lastDistance = distance;
+                        nearestRect = rect;
+                    }
+                });
+                //console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> nearestRect ${nearestRect}`)
+                
+                
+                if (nearestRect) {
+                    const selectionEndIndex = parseInt(nearestRect.getAttribute("base-index"));
+    
+                    this.showSequenceTooltip(e.pageX, e.pageY);
+                    this.setSequenceTooltip(selectionEndIndex);
+
+
+                    var selectionSpan;
+                    if (this.selectionStartIndex <= selectionEndIndex) {
+                        selectionSpan = [
+                            this.selectionStartIndex,
+                            selectionEndIndex
+                        ];
+                    } else {
+                        selectionSpan = [
+                            this.selectionStartIndex - 1,
+                            selectionEndIndex
+                        ];
+                    }
+                    console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Selecting: ${selectionSpan}`)
+                    this.selectBases(selectionSpan);
+                };
+            };
+        });
+
+
         svgWrapper.addEventListener("click", (e) => {
-            const elements = document.elementsFromPoint(e.clientX, e.clientY);
+            const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+            const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
 
-            const shapeTags = ['polygon', 'rect', 'line', 'circle', 'ellipse', 'path'];
-            const isOverShape = elements.some((el) => shapeTags.includes(el.tagName.toLowerCase()));
-
-            if (!isOverShape) {PlasmidViewer.deselectBases()};
+            if (shapesAtPoint.length == 0) {
+                console.log(`PlasmidViewer.svgWrapper.Event.click -> Deselecting`)
+                PlasmidViewer.deselectBases();
+            };
         });
 
         const basesWidth = maxWidth/basesPerLine;
@@ -619,7 +728,7 @@ const PlasmidViewer = new class {
             };
 
             const groupTicks = this.createShapeElement("g");
-            // Ticks 10s
+            // Ticks 10s (every 10 bases)
             const ticksLength10s = 14;
             for (let num = Math.ceil(segmentIndexStart / 10) * 10; num <= segmentIndexEnd; num += 10) {
                 if (num - segmentIndexStart === 0) {continue};
@@ -631,7 +740,7 @@ const PlasmidViewer = new class {
                     "svg-sequence-axis-grid"
                 ));
             };
-            // Ticks 5s
+            // Ticks 5s (every 5 bases)
             const ticksLength5s = 7;
             for (let num = Math.ceil(segmentIndexStart / 5) * 5; num <= segmentIndexEnd; num += 5) {
                 if (num - segmentIndexStart === 0) {continue};
@@ -659,64 +768,6 @@ const PlasmidViewer = new class {
             groupSequenceBox.classList.add("svg-sequence-group-bounding-box");
             
             groupSequence.appendChild(groupSequenceBox);
-
-
-            /** 
-             * Event listeners
-            */
-            groupSequence.addEventListener("mousemove", (e) => {
-                const parentElement = e.target.parentNode;
-                const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
-
-                const nearestRect = elementsAtPoint.find((el) => 
-                    el.tagName === 'rect' && parentElement.contains(el)
-                );
-
-                parentElement.querySelectorAll('.svg-sequence-base-box-hover').forEach((el) => {
-                    el.classList.remove('svg-sequence-base-box-hover');
-                });
-
-                if (nearestRect) {
-                    nearestRect.classList.add("svg-sequence-base-box-hover");
-                    const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
-                    console.log(`PlasmidViewer.sequenceSegment.Event.mousemove -> ${nearestRect}`);
-                    
-                    this.showSequenceTooltip(e.pageX, e.pageY);
-                    this.setSequenceTooltip(baseIndex);
-
-                    this.removeCursors("svg-sequence-cursor-preview");
-                    this.placeCursor(baseIndex);
-                };
-            });
-
-            groupSequence.addEventListener("mouseleave", (e) => {
-                e.target.parentNode.querySelectorAll('.svg-sequence-base-box-hover').forEach((el) => {
-                    el.classList.remove('svg-sequence-base-box-hover');
-                });
-
-                this.hideSequenceTooltip();
-
-                this.removeCursors("svg-sequence-cursor-preview");
-            });
-
-
-            groupSequence.addEventListener("click", (e) => {
-                const parentElement = e.target.parentNode;
-                const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
-
-                const nearestRect = elementsAtPoint.find((el) => 
-                    el.tagName === 'rect' && parentElement.contains(el)
-                );
-
-                if (nearestRect) {
-                    const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
-                    if (e.shiftKey) {
-                        this.selectBases(this.combineSpans(baseIndex));
-                    } else {
-                        this.selectBase(baseIndex);
-                    };
-                };
-            });
 
             groupMain.appendChild(groupSequence);
 
@@ -1526,17 +1577,29 @@ const PlasmidViewer = new class {
     combineSpans(span) {
         const singleIndexInput = !Array.isArray(span);
 
-        const currentSelection = Session.activePlasmid().getSelectionIndices().filter(item => item != null);
-        if (singleIndexInput && Math.max(...currentSelection) < span) {
+        const currentSelection = Session.activePlasmid().getSelectionIndices();
+        if (!currentSelection) {
+            if (singleIndexInput) {
+                return span
+            } else {
+                return [
+                    Math.min(...span),
+                    Math.max(...span)
+                ];
+            };
+        };
+        
+        const currentSelectionFiltered = currentSelection.filter(item => item != null);
+        if (singleIndexInput && Math.max(...currentSelectionFiltered) < span) {
             span -= 1;
-        } else if (currentSelection.length == 1 && span < Math.min(...currentSelection)) {
-            currentSelection[0] -= 1
+        } else if (currentSelectionFiltered.length == 1 && span < Math.min(...currentSelectionFiltered)) {
+            currentSelectionFiltered[0] -= 1
         };
 
         span = singleIndexInput ? [span] : span;
         const combinedIndices = [
             ...span,
-            ...currentSelection
+            ...currentSelectionFiltered
         ];
 
         return [
