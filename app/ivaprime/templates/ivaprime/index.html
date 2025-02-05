@@ -31,7 +31,7 @@
             <script src="{% static 'js/alerts.js' %}"></script>
         </head>
         
-        <body ondragover="importDragOver(event)" ondragleave="importDragLeave(event)" ondrop="importDrop(event)">
+        <body ondragover="FileIO.importDragOver(event)" ondragleave="FileIO.importDragLeave(event)" ondrop="FileIO.importDrop(event)">
             <!-- Prevents flashing bug in Firefox -->
             <script>let FF_FOUC_FIX;</script>
 

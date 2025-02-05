@@ -824,3 +824,34 @@ input, select, textarea {
 
   opacity: 0;
 }
+
+
+/*
+ * MARK: DRAG AND DROP 
+ */
+.drag-import-overlay::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #aeaeae;
+  opacity: .5;
+}
+
+.drag-import-overlay::after {
+  content: "Drop plasmids file to import to IVA Prime.";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 5px;
+  display: block;
+  text-align: center;
+  padding: 20px;
+  transform: translate(-50%, -50%);
+  font-weight: bold;
+  box-shadow: 0px 0px 20px #626262;
+}

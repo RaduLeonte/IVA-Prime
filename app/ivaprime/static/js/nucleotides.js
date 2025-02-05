@@ -47,7 +47,19 @@ const nucleotides = new class {
         'TGG': 'W',
         'TAT': 'Y', 'TAC': 'Y',
         'TAA': '*', 'TAG': '*', 'TGA': '*'
-      };
+    };
+
+
+    /**
+     * Check if a given sequence is a purely nucleotide sequence
+     * 
+     * @param {string} inputSequence - Input sequence to be checked
+     * @returns {bool} - True for nucleotide sequences, false for anything else
+     */
+    isNucleotideSequence(inputSequence) {
+        return [...inputSequence].every(char => char in this.complements);
+    };
+
 
     /**
      * Sanitize DNA/RNA sequence leaving only allowed IUPAC nucleotide
@@ -63,6 +75,7 @@ const nucleotides = new class {
         .replace(/[^ACGTURYSWKMBDHVN\.\-]/g, "");
     };
 
+
     /**
      * Create the complementary sequence to a given DNA/RNA sequence.
      * 
@@ -77,6 +90,7 @@ const nucleotides = new class {
             .map(nucleotide => nucleotides.complements[nucleotide])
             .join('');
     };
+
 
     /**
      * Translates a DNA/RNA sequence. Extra nucleotides are ignored.

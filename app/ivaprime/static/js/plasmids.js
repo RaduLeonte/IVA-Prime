@@ -75,6 +75,15 @@ const Session = new class {
  * Plasmid class.
  */
 class Plasmid {
+    /**
+     * @param {int} index - Index of plasmid
+     * @param {string} name - Name of plasmid
+     * @param {string} extension - File extension including period
+     * @param {string} sequence - Nucleotide sequence of plasmid
+     * @param {Object} features - Dictionary of features
+     * @param {"linear" | "circular"} topology - Topology of plasmid
+     * @param {any} additionalInfo - Additional info to keep track of (for exporting back to same file type)
+     */
     constructor(
         index,
         name,

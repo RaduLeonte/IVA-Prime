@@ -5,6 +5,7 @@ const FileIO = new class {
      * @param {Object} file - File object. 
      * @param {int} plasmidIndex - Plasmid index to be assigned.
      */
+    //#region Import single file
     importFile(file, plasmidIndex=null) {
         return new Promise((resolve, reject) => {
             // Get filename+extension from path
@@ -57,6 +58,7 @@ const FileIO = new class {
     /**
      * Imports the demo pET-28a(+).dna file.
      */
+    //#region Import the demo file
     async importDemoFile() {
         const filePath = "\\static\\plasmids\\pET-28a(+).dna"
         const response = await fetch(filePath);
@@ -73,6 +75,7 @@ const FileIO = new class {
      * 
      * @param {*} event 
      */
+    //#region "Import File" button callback
     importFileButton(event) {
         event.preventDefault();
         const fileInput = document.createElement('input');
@@ -87,11 +90,33 @@ const FileIO = new class {
     };
 
 
+    /** 
+     * Drag and drop import
+     */
+    importDragOver(e) {
+        e.preventDefault();
+        document.body.classList.add('drag-import-overlay');
+    };
+    
+    importDragLeave(e) {
+        e.preventDefault();
+        document.body.classList.remove('drag-import-overlay');
+    };
+    
+    async importDrop(e) {
+        e.preventDefault();
+        document.body.classList.remove('drag-import-overlay');
+    
+        this.importQueue(e.dataTransfer.files);
+    };
+
+
     /**
      * Handles importing of single or multiple files.
      * 
      * @param {Array} filesList - List of files to import.
      */
+    //#region Import queue
     importQueue(filesList) {
         // Change cursor to loading
         this.addLoadingCursor();
@@ -117,6 +142,7 @@ const FileIO = new class {
     /**
      * Dictionary of parsers.
      */
+    //#region File parsers
     parsers = {
         /**
          * Snapgene .dna file parser.
@@ -130,6 +156,7 @@ const FileIO = new class {
          *      fileAdditionalInfo
          * }
          */
+        //#region SNAPGENE (.DNA) 
         dna : (fileArrayBuffer) => {
             // Read array as list of 8 bit integers
             const arrayBuf = new Uint8Array(fileArrayBuffer);
@@ -331,12 +358,137 @@ const FileIO = new class {
             };
         },
         
+
+        /**
+         * Genbank .dna file parser.
+         * 
+         * @param {Array} fileContent - Array buffer from imported file.
+         * @returns {
+        *      fileSequence,
+        *      fileComplementarySequence,
+        *      fileFeatures,
+        *      fileTopology,
+        *      fileAdditionalInfo
+        * }
+        */
+       //#region GENBANK (.GB) 
         gb : (fileContent) => {
-            return;
+            //console.log(`FileIO.parsers.gb -> fileContent=${fileContent}`)
+            //#region SEQUENCE
+            const originSection = fileContent.match(/ORIGIN[\s\S]*?\n([\s\S]*?)\n\/\//);
+            //console.log(`FileIO.parsers.gb -> originSection=${originSection}`)
+            if (!originSection) {
+                console.error("No sequence found in .gb file");
+                return;
+            };
+            const sequenceSegments = originSection[0].match(/(?<=\s)[a-z]{1,10}(?=\s)/gi)
+            let fileSequence = sequenceSegments.join("").toUpperCase();
+            const fileComplementarySequence = nucleotides.complementary(fileSequence);
+
+            //#region FEATURES
+            const fileFeatures = {};
+
+            let featuresSection = fileContent.match(/FEATURES[\s\S]*ORIGIN/)[0];
+            featuresSection = featuresSection.split("\n");
+            featuresSection = featuresSection.splice(1, featuresSection.length - 2);
+            featuresSection = featuresSection.join("\n") + "\n";
+            //console.log(`FileIO.parsers.gb -> featuresSection=${featuresSection}`);
+
+            const featuresStrings = featuresSection.match(/\s{5}\S+\s*(?:complement\()?\d+\.\.\d+\)?\s(?:\s{21}[\s\S]*?\n)*/gm)
+            //console.log(`FileIO.parsers.gb -> featuresStrings=${featuresStrings}`);
+            featuresStrings.forEach((featureString) => {
+                const featureDict = {}
+
+                const firstLineMatches = /\s{5}(\S+)\s*((?:complement\()?(\d+)\.\.(\d+)\)?)\s/.exec(featureString);
+                console.log(`FileIO.parsers.gb -> firstLineMatches=${firstLineMatches}`);
+
+                featureDict["type"] = firstLineMatches[1];
+                featureDict["label"] = featureDict["type"];
+                featureDict["color"] = generateRandomUniqueColor();
+                
+                const featureSpanString = firstLineMatches[2];
+                featureDict["span"] = [parseInt(firstLineMatches[3]), parseInt(firstLineMatches[4])]
+                featureDict["directionality"] = (!featureSpanString.includes("complement")) ? "fwd" : "rev";
+            
+                const featureProperties = {};
+                let regex = /^\s{21}\/(\w+)=((?:"[\s\S]*?")|(?:[^\s]+))/gm;
+                let match;
+                while ((match = regex.exec(featureString)) !== null) {
+                    let key = match[1].trim();
+                    let value = match[2].replace(/\s+/g, " ").trim();
+                    
+                    // Remove surrounding quotes
+                    if (value.startsWith('"') && value.endsWith('"')) {
+                        value = value.slice(1, -1);
+                    };
+                    
+                    // Convert numeric values to numbers if possible
+                    if (!isNaN(value) && Number.isInteger(Number(value))) {
+                        value = parseInt(value, 10);
+                    };
+                    
+                    featureDict[key] = value;
+                };
+                
+                console.log(`FileIO.parsers.gb -> featureDict=${JSON.stringify(featureDict)}`);
+
+                fileFeatures[getUUID()] = featureDict;
+            });
+
+            const fileTopology = (fileContent.split("")[0].includes("linear")) ? "linaer": "circular";
+            const fileAdditionalInfo = {};
+
+            return {
+                fileSequence,
+                fileComplementarySequence,
+                fileFeatures,
+                fileTopology,
+                fileAdditionalInfo
+            };
         },
         
+
+        /**
+         * Fasta .fasta file parser.
+         * 
+         * @param {Array} fileContent - Array buffer from imported file.
+         * @returns {
+        *      fileSequence,
+        *      fileComplementarySequence,
+        *      fileFeatures,
+        *      fileTopology,
+        *      fileAdditionalInfo
+        * }
+        */
+       //#region FASTA (.FASTA) 
         fasta : (fileContent) => {
-            return;
+            console.log(`FileIO.parser.fasta -> fileContent=${fileContent}`);
+            const lines = fileContent.split("\n");
+
+            if (lines.length < 2) {console.error("Could not read sequence in FASTA file.")};
+
+            console.log(`FileIO.parser.fasta -> lines=${lines}`);
+            const fileSequence = lines[1];
+
+            if (!nucleotides.isNucleotideSequence(fileSequence)) {
+                console.error("FASTA sequence contains non-nucleotide codes.");
+                return;
+            };
+
+            const fileComplementarySequence = nucleotides.complementary(fileSequence);
+            
+            const fileFeatures = {};
+            
+            const fileTopology = "linear";
+            const fileAdditionalInfo = null;
+
+            return {
+                fileSequence,
+                fileComplementarySequence,
+                fileFeatures,
+                fileTopology,
+                fileAdditionalInfo
+            };
         }
     };
 
@@ -347,6 +499,7 @@ const FileIO = new class {
      * 
      * @returns 
      */
+    //#region New file from sequence
     newFileFromSequence() {
         // Get sequence info
         const newFileName = document.getElementById("new-file-name-input").value;
@@ -520,6 +673,11 @@ const FileIO = new class {
         document.getElementById("new-file-sequence-input").value = "";
     };
 
+
+    /**
+     * Change cursor to loading by adding a loading-wrapper
+     * and setting its css style to the loading cursor
+     */ 
     addLoadingCursor() {
         const loadingWrapper = document.createElement('div');
         loadingWrapper.id = "loading-wrapper";
@@ -530,6 +688,10 @@ const FileIO = new class {
         document.body.appendChild(loadingWrapper);
     };
 
+
+    /**
+     * Reset cursor icon by removing the loading-wrapper div
+     */
     removeLoadingCursor() {
         const loadingWrapper = document.getElementById("loading-wrapper")
         if (loadingWrapper && loadingWrapper.parentNode) {
