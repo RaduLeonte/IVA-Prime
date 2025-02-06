@@ -423,6 +423,7 @@ class Plasmid {
         plasmidTab.firstElementChild.innerText = this.name + this.extension
         
         if (Session.activePlasmidIndex == this.index) {
+            //TO DO: Only redraw circular and linear views
             PlasmidViewer.redraw();
         };
     };
@@ -454,6 +455,35 @@ class Plasmid {
         this.features = sortBySpan(this.features);
 
         if (Session.activePlasmidIndex == this.index) {
+            //TO DO: Update feature table
+            PlasmidViewer.deselectBases();
+            PlasmidViewer.redraw();
+        };
+    };
+
+
+    setOrigin(newOrigin) {
+        newOrigin = parseInt(newOrigin) - 1;
+        console.log(`Plasmid.setorigin -> ${this.index} newOrigin=${newOrigin}`);
+
+
+        this.sequence = this.sequence.slice(newOrigin) + this.sequence.slice(0, newOrigin);
+        this.complementarySequence = nucleotides.complementary(this.sequence);
+
+        Object.entries(this.features).forEach(([featureId, featureDict]) => {
+            const currentSpan = featureDict["span"];
+
+            const newSpan = [
+                currentSpan[0] - newOrigin,
+                currentSpan[1] - newOrigin
+            ];
+
+            this.features[featureId]["span"] = newSpan;
+        });
+        this.features = sortBySpan(this.features);
+
+        if (Session.activePlasmidIndex == this.index) {
+            //TO DO: Update feature table
             PlasmidViewer.deselectBases();
             PlasmidViewer.redraw();
         };

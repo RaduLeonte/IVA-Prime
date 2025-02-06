@@ -164,6 +164,7 @@ const PlasmidTabs = new class {
         <ul>
             <li><a href="#" onclick="PlasmidTabs.renamePlasmid(${plasmidIndex})">Rename plasmid</a></li>
             <li><a href="#" onclick="PlasmidTabs.flipPlasmid(${plasmidIndex})">Flip plasmid</a></li>
+            <li><a href="#" onclick="PlasmidTabs.setPlasmidOrigin(${plasmidIndex})">Set plasmid origin</a></li>
         </ul>
         <h3>Close plasmids</h3>
         <ul>
@@ -213,6 +214,19 @@ const PlasmidTabs = new class {
 
     flipPlasmid(plasmidIndex) {
         Session.getPlasmid(plasmidIndex).flip()
+    };
+
+
+    setPlasmidOrigin(plasmidIndex) {
+        const targetPlasmid = Session.getPlasmid(plasmidIndex);
+        createModalWindow(
+            "modal-window-set-origin",
+            "Set new plasmid origin",
+            "Set plasmid origin to:",
+            0,
+            "Set",
+            targetPlasmid.setOrigin.bind(targetPlasmid)
+        );
     };
 };
 
