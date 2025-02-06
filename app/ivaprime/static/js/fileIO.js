@@ -403,6 +403,8 @@ const FileIO = new class {
                 console.log(`FileIO.parsers.gb -> firstLineMatches=${firstLineMatches}`);
 
                 featureDict["type"] = firstLineMatches[1];
+                if (featureDict["type"] == "source") {return};
+                
                 featureDict["label"] = featureDict["type"];
                 featureDict["color"] = generateRandomUniqueColor();
                 
