@@ -709,6 +709,11 @@ input, select, textarea {
   stroke-width: 3;
 }
 
+.svg-sequence-indices {
+  font-weight: bold;
+  fill: var(--border-color);
+}
+
 .svg-sequence-group-bounding-box {
   opacity: 0;
   cursor: text;

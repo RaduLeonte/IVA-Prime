@@ -371,7 +371,7 @@ const PlasmidViewer = new class {
         const sequenceFwdHeight = 20;
         const sequenceAxisHeight = 34;
         const sequenceRevHeight = 59;
-        const gridMargin = 35; // margin on each side
+        const gridMargin = 50; // margin on each side
         
         /**
          * Figure out how wide the drawable area is
@@ -649,27 +649,8 @@ const PlasmidViewer = new class {
                 };
             };
         });
+        //#endregion
 
-
-        svgWrapper.addEventListener("click", (e) => {
-            return;
-            const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
-            const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
-
-            if (shapesAtPoint.length == 0 && !this.currentlySelecting) {
-                console.log(`PlasmidViewer.svgWrapper.Event.click -> Deselecting`);
-                PlasmidViewer.deselectBases();
-                return;
-            };
-
-            console.log(`PlasmidViewer.svgWrapper.Event.click -> shapesAtPoint${shapesAtPoint}`)
-            if (shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
-                const featureId = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id")
-                console.log(`PlasmidViewer.svgWrapper.Event.click -> featureId=${featureId}`);
-
-                this.selectFeature(featureId, e.shiftKey);
-            };
-        });
 
         const basesWidth = maxWidth/basesPerLine;
         const basesPositions = [];
@@ -768,6 +749,15 @@ const PlasmidViewer = new class {
                         "svg-sequence-axis-grid"
                     ));
                 };
+            } else {
+                groupSequence.appendChild(this.text(
+                    [gridMargin - 8, sequenceAxisHeight],
+                    `${segmentIndexStart + 1}`,
+                    null,
+                    "svg-sequence-indices",
+                    "end",
+                    5
+                ));
             };
             
             // Sequence axis
@@ -779,8 +769,8 @@ const PlasmidViewer = new class {
             ));
 
             // Dots on each side of the axis for circular plasmids
+            const startX = gridMargin + (segment["sequenceFwd"].length/basesPerLine)*maxWidth
             if (topology === "circular" && segments.indexOf(segment) == segments.length - 1){
-                const startX = gridMargin + (segment["sequenceFwd"].length/basesPerLine)*maxWidth
                 for (let i = 0; i < 3; i++) {
                     groupSequence.appendChild(this.line(
                         [startX + startingOffset + i*dotsOffset, sequenceAxisHeight],
@@ -789,6 +779,15 @@ const PlasmidViewer = new class {
                         "svg-sequence-axis-grid"
                     ));
                 };
+            } else {
+                groupSequence.appendChild(this.text(
+                    [startX + 8, sequenceAxisHeight],
+                    `${segmentIndexEnd}`,
+                    null,
+                    "svg-sequence-indices",
+                    "start",
+                    5
+                ));
             };
 
             const groupTicks = this.createShapeElement("g");
