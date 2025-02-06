@@ -3,6 +3,7 @@ const PlasmidViewer = new class {
     // Init viewer variables
     activeView = null;
     currentlySelecting = false;
+    elementsAtMouseDown = null;
 
     // Shortname
     svgNameSpace = "http://www.w3.org/2000/svg";
@@ -495,6 +496,7 @@ const PlasmidViewer = new class {
         svgWrapper.addEventListener("mousedown", (e) => {
             console.log(`PlasmidViewer.svgWrapper.Event.mousedown ->`)
             const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+            this.elementsAtMouseDown = elementsAtPoint;
             const nearestRect = elementsAtPoint.find((el) => el.tagName === 'rect');
             if (nearestRect) {
                 const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
@@ -507,11 +509,39 @@ const PlasmidViewer = new class {
                 this.currentlySelecting = true;
                 this.selectionStartIndex = baseIndex;
             };
+
         });
         svgWrapper.addEventListener("mouseup", (e) => {
             console.log(`PlasmidViewer.svgWrapper.Event.mouseup ->`)
             this.currentlySelecting = false;
+
+            //Click events
+            const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+            const clicked = elementsAtPoint.every((ele, i) => ele === this.elementsAtMouseDown[i]);
+            console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> clicked=${clicked}`);
+            //console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> elementsAtPoint (${elementsAtPoint.length}) ${elementsAtPoint}`);
+            //console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> this.elementsAtMouseDown (${this.elementsAtMouseDown.length}) ${this.elementsAtMouseDown}`);
+            if (clicked) {
+                this.elementsAtMouseDown = null;
+
+                const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
+
+                if (shapesAtPoint.length == 0) {
+                    console.log(`PlasmidViewer.svgWrapper.Event.click -> Deselecting`);
+                    PlasmidViewer.deselectBases();
+                    return;
+                };
+    
+                console.log(`PlasmidViewer.svgWrapper.Event.click -> shapesAtPoint${shapesAtPoint}`)
+                if (shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
+                    const featureId = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id")
+                    console.log(`PlasmidViewer.svgWrapper.Event.click -> featureId=${featureId}`);
+    
+                    this.selectFeature(featureId, e.shiftKey);
+                };
+            };
         });
+
 
         svgWrapper.addEventListener("mousemove", (e) => {
             const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
@@ -529,8 +559,32 @@ const PlasmidViewer = new class {
                 if (shapesAtPoint.length == 0) {
                     this.hideSequenceTooltip();
                     this.removeCursors("svg-sequence-cursor-preview");
-                    return;
                 };
+
+
+                if (shapesAtPoint[0] && shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
+                    const featureId = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id")
+                    console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Feature preview selection featureId=${featureId}`);
+                    
+                    const containerDiv = document.getElementById('grid-view-container');
+                    const shapesWithAttribute = containerDiv.querySelectorAll(`svg [feature-id="${featureId}"]`);
+                    shapesWithAttribute.forEach((shape) => {
+                        shape.querySelector("#arrow").classList.add("svg-feature-arrow-hover")
+                    });
+
+                    this.selectFeaturePreview(featureId);
+                } else {
+                    const containerDiv = document.getElementById('grid-view-container');
+                    const shapesWithAttribute = containerDiv.querySelectorAll(`svg #arrow.svg-feature-arrow-hover`);
+                    console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Feature removing preview selection shapesWithAttribute=${shapesWithAttribute}`);
+                    shapesWithAttribute.forEach((shape) => {
+                        shape.classList.remove("svg-feature-arrow-hover");
+                        const featureId = shape.parentElement.getAttribute("feature-id");
+                        console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Feature removing preview selection featureId=${featureId}`);
+                        this.deselectFeaturePreview(featureId);
+                    });
+                };
+
     
                 const nearestRect = elementsAtPoint.find((el) => el.tagName === 'rect');
                 //console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> nearestRect ${nearestRect}`)
@@ -578,7 +632,7 @@ const PlasmidViewer = new class {
                     this.setSequenceTooltip(selectionEndIndex);
 
 
-                    var selectionSpan;
+                    let selectionSpan;
                     if (this.selectionStartIndex <= selectionEndIndex) {
                         selectionSpan = [
                             this.selectionStartIndex,
@@ -590,7 +644,7 @@ const PlasmidViewer = new class {
                             selectionEndIndex
                         ];
                     }
-                    console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Selecting: ${selectionSpan}`)
+                    console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Selecting: ${selectionSpan}`);
                     this.selectBases(selectionSpan);
                 };
             };
@@ -598,12 +652,22 @@ const PlasmidViewer = new class {
 
 
         svgWrapper.addEventListener("click", (e) => {
+            return;
             const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
             const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
 
-            if (shapesAtPoint.length == 0) {
-                console.log(`PlasmidViewer.svgWrapper.Event.click -> Deselecting`)
+            if (shapesAtPoint.length == 0 && !this.currentlySelecting) {
+                console.log(`PlasmidViewer.svgWrapper.Event.click -> Deselecting`);
                 PlasmidViewer.deselectBases();
+                return;
+            };
+
+            console.log(`PlasmidViewer.svgWrapper.Event.click -> shapesAtPoint${shapesAtPoint}`)
+            if (shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
+                const featureId = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id")
+                console.log(`PlasmidViewer.svgWrapper.Event.click -> featureId=${featureId}`);
+
+                this.selectFeature(featureId, e.shiftKey);
             };
         });
 
@@ -1205,38 +1269,6 @@ const PlasmidViewer = new class {
             "0.4em"
         ));
 
-        /** 
-         * Event listeners
-        */
-        featureGroup.addEventListener("mouseover", () => {
-            const containerDiv = document.getElementById('grid-view-container');
-            const shapesWithAttribute = containerDiv.querySelectorAll(`svg [feature-id="${featureId}"]`);
-            shapesWithAttribute.forEach((shape) => {
-                shape.querySelector("#arrow").classList.add("svg-feature-arrow-hover")
-            });
-
-            console.log(`PlasmidViewer.gridFeature.Event.mouseover -> ${label} ${featureId}`);
-            this.selectFeaturePreview(featureId);
-        });
-
-        featureGroup.addEventListener("mouseout", () => {
-            const containerDiv = document.getElementById('grid-view-container');
-            const shapesWithAttribute = containerDiv.querySelectorAll(`svg [feature-id="${featureId}"]`);
-            shapesWithAttribute.forEach((shape) => {
-                shape.querySelector("#arrow").classList.remove("svg-feature-arrow-hover")
-            });
-
-            console.log(`PlasmidViewer.gridFeature.Event.mouseout -> ${label} ${featureId}`);
-            
-            this.deselectFeaturePreview(featureId);
-        });
-
-        featureGroup.addEventListener("click", (e) => {
-            console.log(`PlasmidViewer.gridFeature.Event.click -> ${label} ${featureId}`);
-            
-            this.selectFeature(featureId, e.shiftKey);
-        });
-
         return featureGroup;
     };
 
@@ -1533,7 +1565,6 @@ const PlasmidViewer = new class {
     selectFeature(featureID, combineSelection=false) {
         console.log(`PlasmidViewer.selectFeature -> ${featureID} (combine=${combineSelection})`);
         
-        
         let span = Session.activePlasmid().features[featureID]["span"];
         
         this.selectBases((combineSelection) ? this.combineSpans(span): span);
@@ -1558,6 +1589,7 @@ const PlasmidViewer = new class {
      * @param {*} span 
      */
     selectBases(span) {
+        span = [Math.min(...span), Math.max(...span)]
         console.log(`PlasmidViewer.selectBases -> ${span}`);
         this.deselectBases();
 
@@ -1590,10 +1622,16 @@ const PlasmidViewer = new class {
         };
         
         const currentSelectionFiltered = currentSelection.filter(item => item != null);
-        if (singleIndexInput && Math.max(...currentSelectionFiltered) < span) {
-            span -= 1;
-        } else if (currentSelectionFiltered.length == 1 && span < Math.min(...currentSelectionFiltered)) {
-            currentSelectionFiltered[0] -= 1
+        if (singleIndexInput) {
+            if (Math.max(...currentSelectionFiltered) < span) {
+                span -= 1;
+            } else if (currentSelectionFiltered.length == 1 && span < currentSelectionFiltered[0]) {
+                currentSelectionFiltered[0] -= 1
+            };
+        } else {
+            if (currentSelectionFiltered.length == 1 && Math.max(...span) < currentSelectionFiltered[0]) {
+                currentSelectionFiltered[0] -= 1
+            };
         };
 
         span = singleIndexInput ? [span] : span;

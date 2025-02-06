@@ -410,7 +410,6 @@ const FileIO = new class {
                 featureDict["span"] = [parseInt(firstLineMatches[3]), parseInt(firstLineMatches[4])]
                 featureDict["directionality"] = (!featureSpanString.includes("complement")) ? "fwd" : "rev";
             
-                const featureProperties = {};
                 let regex = /^\s{21}\/(\w+)=((?:"[\s\S]*?")|(?:[^\s]+))/gm;
                 let match;
                 while ((match = regex.exec(featureString)) !== null) {
