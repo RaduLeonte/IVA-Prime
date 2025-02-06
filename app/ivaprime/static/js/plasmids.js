@@ -58,6 +58,7 @@ const Session = new class {
     activePlasmid() {
       return this.plasmids[this.activePlasmidIndex];
     };
+
   
     /**
      * Returns plasmid by index.
@@ -415,13 +416,47 @@ class Plasmid {
 
     
     rename(newName) {
-        console.log(`Plasmid.rename -> ${newName}`)
+        console.log(`Plasmid.rename -> ${this.index} ${newName}`)
         this.name = newName;
-
-        PlasmidViewer.redraw();
 
         const plasmidTab = document.querySelector(`div#plasmid-tab-${this.index}`);
         plasmidTab.firstElementChild.innerText = this.name + this.extension
+        
+        if (Session.activePlasmidIndex == this.index) {
+            PlasmidViewer.redraw();
+        };
+    };
+
+
+    flip() {
+        console.log(`Plasmid.flip -> ${this.index}`);
+
+        // Flip sequence
+        const flippedSequence = this.complementarySequence.split("").reverse().join("");
+        const flippedCompSequence = this.sequence.split("").reverse().join("");
+        this.sequence = flippedSequence;
+        this.complementarySequence = flippedCompSequence;
+
+        const sequenceLength = flippedSequence.length;
+
+        // Flip features
+        Object.entries(this.features).forEach(([featureId, featureDict]) => {
+            const currentSpan = featureDict["span"];
+
+            const newSpan = [
+                sequenceLength - currentSpan[1] + 1,
+                sequenceLength - currentSpan[0] + 1
+            ];
+
+            this.features[featureId]["span"] = newSpan;
+            this.features[featureId]["directionality"] = (featureDict["directionality"] == "fwd") ? "rev": "fwd";
+        });
+        this.features = sortBySpan(this.features);
+
+        if (Session.activePlasmidIndex == this.index) {
+            PlasmidViewer.deselectBases();
+            PlasmidViewer.redraw();
+        };
     };
 };
 

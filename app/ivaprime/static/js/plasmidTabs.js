@@ -163,7 +163,7 @@ const PlasmidTabs = new class {
         <h3>Edit plasmid</h3>
         <ul>
             <li><a href="#" onclick="PlasmidTabs.renamePlasmid(${plasmidIndex})">Rename plasmid</a></li>
-            <li><a href="#" onclick="flipPlasmid(${plasmidIndex})">Flip plasmid</a></li>
+            <li><a href="#" onclick="PlasmidTabs.flipPlasmid(${plasmidIndex})">Flip plasmid</a></li>
         </ul>
         <h3>Close plasmids</h3>
         <ul>
@@ -209,51 +209,11 @@ const PlasmidTabs = new class {
             targetPlasmid.extension
         );
     };
-};
 
 
-function createModalWindow(id, title, inputLabel, inputValue, actionLabel, actionFunction, inputSuffix=null) {
-    const modalWindow = document.createElement("div");
-    modalWindow.id = id
-    modalWindow.classList.add("popup-window")
-    modalWindow.classList.add("modal-window");
-
-    modalWindow.innerHTML = `
-    <h2>${title}</h2>
-
-    <div class="popup-window-vgroup">
-        <label>${inputLabel}</label>
-        <div class="popup-window-input-wrapper">
-            <input type="text" id="${id}-input" class="popup-window-input popup-window-input-with-suffix" value="${inputValue}">
-            ${inputSuffix ? `<div class="popup-window-input-suffix">${inputSuffix}</div>` : ""}
-        </div>
-    </div>
-    
-    
-    <div class="popup-window-hgroup">
-        <a class="round-button modal-button-action" href="#" id="${id}-action-button">${actionLabel}</a>
-        <a class="round-button modal-button-cancel" href="#" onclick="removeModalWindow('${id}')">Cancel</a>
-    </div>
-    `;
-
-    const modal = document.querySelector("div.modal");
-    modal.style.display = "block";
-    modal.appendChild(modalWindow);
-
-    document.getElementById(`${id}-action-button`).addEventListener("click", function (event) {
-        event.preventDefault();
-        const inputValue = document.getElementById(`${id}-input`).value;
-        actionFunction(inputValue);
-        removeModalWindow(id);
-    });
-};
-
-
-function removeModalWindow(modalWindowId) {
-    const modalWindow = document.getElementById(modalWindowId);
-    const modal = modalWindow.parentNode;
-    modal.style.display = "none"
-    modal.removeChild(modalWindow);
+    flipPlasmid(plasmidIndex) {
+        Session.getPlasmid(plasmidIndex).flip()
+    };
 };
 
 
@@ -385,86 +345,6 @@ function saveSidebarAndGrid() {
         // Content grid
         Project.activePlasmid().contentGrid = document.getElementById('sequence-grid-' + Project.activePlasmidIndex);
     };
-};
-
-
-
-
-function renamePlasmid(plasmidIndex) {
-
-    const plasmidTabElement = document.getElementById("plasmid-tab-" + plasmidIndex);
-    const oldHTML = plasmidTabElement.innerHTML;
-    const originalText = plasmidTabElement.firstElementChild.textContent;
-    const input = document.createElement('input');
-    input.classList.add("editable-input");
-    input.classList.add("wrap-text");
-    input.style.padding = "12px 2px 12px 16px"
-    input.type = 'text';
-
-    let fileExtension = Project.getPlasmid(plasmidIndex).extension;
-    input.value = originalText.replace(fileExtension, "");
-    
-    // Save the edited content when Enter is pressed
-    input.addEventListener('keyup', (event) => {
-        if (event.key === 'Enter') {
-            plasmidTabElement.innerHTML = oldHTML;
-            plasmidTabElement.firstElementChild.textContent = (input.value !== "") ? input.value + fileExtension: originalText;
-            Project.getPlasmid(plasmidIndex).name = plasmidTabElement.firstElementChild.textContent;
-        };
-    });
-
-    input.addEventListener('blur', () => {
-        plasmidTabElement.innerHTML = oldHTML;
-        plasmidTabElement.firstElementChild.textContent = (input.value !== "") ? input.value + fileExtension: originalText;
-        Project.getPlasmid(plasmidIndex).name = plasmidTabElement.firstElementChild.textContent;
-    });
-    
-    plasmidTabElement.innerHTML = '';
-    plasmidTabElement.appendChild(input);
-    input.focus();
-};
-
-
-function flipPlasmid(plasmidIndex) {
-
-    const targetPlasmid = Project.getPlasmid(plasmidIndex);
-
-    // Flip sequence
-    const flippedSequence = targetPlasmid.complementarySequence.split("").reverse().join("");
-    const flippedCompSequence = targetPlasmid.sequence.split("").reverse().join("");
-    Project.plasmids[plasmidIndex].sequence = flippedSequence;
-    Project.plasmids[plasmidIndex].complementarySequence = flippedCompSequence;
-
-    const sequenceLength = flippedSequence.length;
-
-    // Flip features
-    Object.entries(targetPlasmid.features).forEach(([key, value]) => {
-        const currSpanString = value.span;
-        const currDirection = (!currSpanString.includes("complement")) ? 1: -1;
-        const currSpan = removeNonNumeric(currSpanString).split("..").map(Number);
-
-        const newSpan = [
-            sequenceLength - currSpan[1] + 1,
-            sequenceLength - currSpan[0] + 1
-        ];
-
-        const newSpanString = (currDirection === -1) ? `${newSpan[0]}..${newSpan[1]}`: `complement(${newSpan[0]}..${newSpan[1]})`
-
-        Project.plasmids[plasmidIndex].features[key].span = newSpanString;
-    });
-    Project.plasmids[plasmidIndex].features = sortBySpan(Project.plasmids[plasmidIndex].features);
-
-    // Remake the sidebar and content grid 
-    Project.plasmids[plasmidIndex].createSidebarTable();
-    Project.plasmids[plasmidIndex].makeContentGrid();
-
-    if(plasmidIndex === Project.activePlasmidIndex) {
-        clearSelection(plasmidIndex, true);
-        updateSidebarAndGrid();
-    };
-
-    // At the very end, save the progress to file history
-    Project.plasmids[plasmidIndex].saveProgress();
 };
 
 

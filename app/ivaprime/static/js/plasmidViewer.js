@@ -1405,6 +1405,7 @@ const PlasmidViewer = new class {
      * 
      */
     redraw() {
+        //TO DO: Keep selection when redrawing
         const activePlasmid = Session.activePlasmid()
         if (activePlasmid) {
             activePlasmid.generateViews();
