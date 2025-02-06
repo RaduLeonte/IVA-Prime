@@ -1657,6 +1657,6 @@ window.addEventListener('resize', function () {
   
     resizeTimeout = setTimeout(() => {
         document.getElementById("viewer").style.display = "block";
-        PlasmidViewer.redraw()
+        PlasmidViewer.redraw();
     }, 500);
   });

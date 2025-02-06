@@ -50,36 +50,38 @@
             
             -->
             <!-- New File window-->
-            <div class="popup-window popup-window-new-file" id="new-file-window" style="display:none">
-                <h2>New File</h2>
+            <div class="modal">
+                <div class="popup-window popup-window-new-file" id="new-file-window" style="display:none">
+                    <h2>New File</h2>
+        
+                    <div class="popup-window-vgroup">
+                        <label for="new-file-name-input">File name:</label>
+                        <input type="text" id="new-file-name-input" class="popup-window-input" value="untitled">
+                    </div>
+                    
+                    <div class="popup-window-vgroup popup-window-new-file-sequence-input">
+                        <label for="new-file-sequence-input">DNA Sequence:</label>
+                        <textarea id="new-file-sequence-input" class="popup-window-input popup-window-textarea" spellcheck="false"></textarea>
+                    </div>
     
-                <div class="popup-window-vgroup">
-                    <label for="new-file-name-input">File name:</label>
-                    <input type="text" id="new-file-name-input" class="popup-window-input" value="untitled">
-                </div>
-                
-                <div class="popup-window-vgroup popup-window-new-file-sequence-input">
-                    <label for="new-file-sequence-input">DNA Sequence:</label>
-                    <textarea id="new-file-sequence-input" class="popup-window-input popup-window-textarea" spellcheck="false"></textarea>
-                </div>
-
-                <div class="popup-window-hgroup">
-                    <label for="annotate-common-features-checkbox">Annotate common features:</label>
-                    <input type="checkbox" id="new-file-annotate-features-checkbox" name="annotate-common-features-checkbox" checked="true">
-                </div>
-
-                <div class="popup-window-hgroup">
-                    <label for="annotate-common-features-checkbox">Sequence topology:</label>
-                    <select id="new-file-topology-select">
-                        <option value="linear" selected="selected">Linear</option>
-                        <option value="circular">Circular</option>
-                    </select>
-                </div>
-                
-                
-                <div class="popup-window-hgroup">
-                    <a class="round-button" href="#" onclick="FileIO.newFileFromSequence()">Create File</a>
-                    <a class="round-button" href="#" onclick="FileIO.resetNewFilePopupWindow()">Cancel</a>
+                    <div class="popup-window-hgroup">
+                        <label for="annotate-common-features-checkbox">Annotate common features:</label>
+                        <input type="checkbox" id="new-file-annotate-features-checkbox" name="annotate-common-features-checkbox" checked="true">
+                    </div>
+    
+                    <div class="popup-window-hgroup">
+                        <label for="annotate-common-features-checkbox">Sequence topology:</label>
+                        <select id="new-file-topology-select">
+                            <option value="linear" selected="selected">Linear</option>
+                            <option value="circular">Circular</option>
+                        </select>
+                    </div>
+                    
+                    
+                    <div class="popup-window-hgroup">
+                        <a class="round-button" href="#" onclick="FileIO.newFileFromSequence()">Create File</a>
+                        <a class="round-button" href="#" onclick="FileIO.resetNewFilePopupWindow()">Cancel</a>
+                    </div>
                 </div>
             </div>
             <!-- End popup windows -->

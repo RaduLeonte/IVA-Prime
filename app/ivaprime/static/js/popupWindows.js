@@ -6,6 +6,7 @@ const PopupWindow = new class {
      * @param {*} targetWindowId - id of target element to show
      */
     show(targetWindowID) {
+        document.querySelector("div.modal").style.display = "block";
         // Select window
         const targetWindow = document.getElementById(targetWindowID);
 
@@ -25,6 +26,7 @@ const PopupWindow = new class {
      * @param {*} targetWindowId - id of target element to hide 
      */
     hide(targetWindowID) {
+        document.querySelector("div.modal").style.display = "none";
         // Select window
         const targetWindow = document.getElementById(targetWindowID);
 

@@ -412,6 +412,17 @@ class Plasmid {
             };
         };
     };
+
+    
+    rename(newName) {
+        console.log(`Plasmid.rename -> ${newName}`)
+        this.name = newName;
+
+        PlasmidViewer.redraw();
+
+        const plasmidTab = document.querySelector(`div#plasmid-tab-${this.index}`);
+        plasmidTab.firstElementChild.innerText = this.name + this.extension
+    };
 };
 
 
