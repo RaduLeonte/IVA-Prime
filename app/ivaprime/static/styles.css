@@ -296,6 +296,41 @@ input[type="checkbox"] {
 	background: #DAE0E7;
 }
 
+.plasmid-tab-dropdown-menu {
+  position: fixed;
+  background-color: var(--bg-color2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 5px;
+  margin: 0;
+  max-width: 300px;
+  border: 2px solid var(--border-color);
+}
+
+.plasmid-tab-dropdown-menu h3 {
+  margin: 0;
+  padding: 5px;
+  background-color: var(--context-menu-h3-color);
+  color: #fff;
+  font-size: 16px;
+}
+
+.plasmid-tab-dropdown-menu ul {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.plasmid-tab-dropdown-menu ul a {
+  color: var(--text-color);
+  padding: 10px 20px;
+  text-decoration: none;
+  display: block;
+}
+
+.plasmid-tab-dropdown-menu ul a:hover {
+  background-color: var(--bg-hover);
+}
+
 
 /* 
  * MARK: Sidebar 

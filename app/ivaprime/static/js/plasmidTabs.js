@@ -14,8 +14,8 @@ const PlasmidTabs = new class {
         };
         newPlasmidTab.id = newPlasmidTabId;
         newPlasmidTab.innerHTML = `
-        <a href="#" onclick="PlasmidTabs.switch(${plasmidIndex})" oncontextmenu="PlasmidTabs.toggleDropdownMenu(event, ${plasmidIndex})">${plasmidFileName}</a>
-        <a class="plasmid-tab-dropdown-button" href="#" onclick="PlasmidTabs.toggleDropdownMenu(event, ${plasmidIndex})" oncontextmenu="PlasmidTabs.toggleDropdownMenu(event, ${plasmidIndex})">▼</a>
+        <a href="#" onclick="PlasmidTabs.switch(${plasmidIndex})" oncontextmenu="PlasmidTabs.togglePlasmidTabDropdownMenu(event, ${plasmidIndex})">${plasmidFileName}</a>
+        <a class="plasmid-tab-dropdown-button" href="#" onclick="PlasmidTabs.togglePlasmidTabDropdownMenu(event, ${plasmidIndex})" oncontextmenu="PlasmidTabs.togglePlasmidTabDropdownMenu(event, ${plasmidIndex})">▼</a>
         `;
         newPlasmidTab.classList.add("plasmid-tab");
 
@@ -36,7 +36,7 @@ const PlasmidTabs = new class {
      */
     switch(plasmidIndex) {
         // Close dropdown menus
-        PlasmidTabs.removeAllDropdownMenus();
+        this.removeAllPlasmidTabDropdownMenus();
         
         // Deselect plasmid tab
         const previousPlasmidTab = document.getElementById("plasmid-tab-" + Session.activePlasmidIndex);
@@ -107,35 +107,89 @@ const PlasmidTabs = new class {
         //addHoverPopupToTable();
     };
 
+
     /**
      * 
      * @param {*} event 
      * @param {*} plasmidIndex 
      */
-    toggleDropdownMenu(event, plasmidIndex) {
+    togglePlasmidTabDropdownMenu(e, plasmidIndex) {
         // Prevent default context menu on right click
-        event.preventDefault();
+        e.preventDefault();
+
+        if (document.querySelectorAll(`ul[plasmid-index="${plasmidIndex}"]`)[0]) {
+            //console.log(`PlasmidTabs.togglePlasmidTabDropdownMenu -> Already open`);
+            this.removeAllPlasmidTabDropdownMenus();
+            return;
+        };
+
         // Select closest tab, 
-        const parentTab = event.target.closest('.plasmid-tab');
-        removeAllPlasmidTabDropdownMenus()
+        const parentTab = e.target.closest('.plasmid-tab');
     
-        const dropdownMenu = createPlasmidTabDropdownMenu(plasmidIndex);
+        const dropdownMenu = this.createPlasmidTabDropdownMenu(plasmidIndex);
         document.body.appendChild(dropdownMenu);
-        positionPlasmidTabDropdownMenu(parentTab, dropdownMenu);
+        this.positionPlasmidTabDropdownMenu(parentTab, dropdownMenu);
     
         // Hide the dropdown menu if you click outside of it
         document.addEventListener('click', function hideDropdown(e) {
             if (!e.target.closest('.plasmid-tab')) {
-                removeAllPlasmidTabDropdownMenus();
+                PlasmidTabs.removeAllPlasmidTabDropdownMenus();
                 document.removeEventListener('click', hideDropdown);
             };
         });
     };
+
+
+    createPlasmidTabDropdownMenu(plasmidIndex) {
+        const dropdownMenu = document.createElement('ul');
+        dropdownMenu.className = 'plasmid-tab-dropdown-menu';
+        dropdownMenu.setAttribute("plasmid-index", plasmidIndex);
+        dropdownMenu.style.display = 'block'; // Display the menu initially
+
+        dropdownMenu.innerHTML = `
+        <h3>Export primers</h3>
+        <ul>
+            <li><a href="#" fileType="txt" onclick="exportPrimers(this, ${plasmidIndex})">Plaint text (.txt)</a></li>
+            <li><a href="#" fileType="doc" onclick="exportPrimers(this, ${plasmidIndex})">MS Word file (.doc)</a></li>
+            <li><a href="#" fileType="csv" onclick="exportPrimers(this, ${plasmidIndex})">CSV file (.csv)</a></li>
+            <li><a href="#" fileType="xlsx" onclick="exportPrimers(this, ${plasmidIndex})">Excel file (.xlsx)</a></li>
+            <li><a href="#" fileType="microsynth" onclick="exportPrimers(this, ${plasmidIndex})">Microsynth order form (.xlsx)</a></li>
+        </ul>
+        <h3>Export plasmid file</h3>
+        <ul>
+            <li><a href="#" onclick="exportGBFile(${plasmidIndex})">GenBank file (.gb)</a></li>
+            <li><a href="#" onclick="exportDNAFile(${plasmidIndex})">SnapGene file (.dna)</a></li>
+        </ul>
+        <h3>Edit plasmid</h3>
+        <ul>
+            <li><a href="#" onclick="renamePlasmid(${plasmidIndex})">Rename plasmid</a></li>
+            <li><a href="#" onclick="flipPlasmid(${plasmidIndex})">Flip plasmid</a></li>
+        </ul>
+        <h3>Close plasmids</h3>
+        <ul>
+            <li><a href="#" onclick="closePlasmid(${plasmidIndex})">Close plasmid</a></li>
+            <li><a href="#" onclick="closeOtherPlasmids(${plasmidIndex})">Close all other plasmids</a></li>
+            <li><a href="#" onclick="closePlasmidsToTheRight(${plasmidIndex})">Close plasmids to the right</a></li>
+        </ul>
+        `;
+
+        return dropdownMenu;
+    };
+
+
+    positionPlasmidTabDropdownMenu(parentTab, dropdownMenu) {
+        const rectTab = parentTab.getBoundingClientRect();
+        const rectHeader = document.querySelectorAll("div .header")[0].getBoundingClientRect();
+        //dropdownMenu.style.width = parentTab.offsetWidth + "px";
+        dropdownMenu.style.right = (window.innerWidth - rectTab.right) + "px";
+        dropdownMenu.style.top = rectHeader.bottom + "px";
+    };
     
+
     /**
      * Find all dropdown menus and delete them.
      */
-    removeAllDropdownMenus() {
+    removeAllPlasmidTabDropdownMenus() {
         const existingDropdownMenus = document.querySelectorAll('.plasmid-tab-dropdown-menu');
         existingDropdownMenus.forEach(element => {
             element.parentNode.removeChild(element);
@@ -405,76 +459,6 @@ function closePlasmidsToTheRight(plasmidIndex) {
     };
 };
 
-
-function togglePlasmidTabDropdownMenu(event, plasmidIndex) {
-    event.preventDefault();
-    const parentTab = event.target.closest('.plasmid-tab');
-    removeAllPlasmidTabDropdownMenus()
-
-    const dropdownMenu = createPlasmidTabDropdownMenu(plasmidIndex);
-    document.body.appendChild(dropdownMenu);
-    positionPlasmidTabDropdownMenu(parentTab, dropdownMenu);
-
-    // Hide the dropdown menu if you click outside of it
-    document.addEventListener('click', function hideDropdown(e) {
-        if (!e.target.closest('.plasmid-tab')) {
-            removeAllPlasmidTabDropdownMenus();
-            document.removeEventListener('click', hideDropdown);
-        };
-    });
-};
-
-
-function removeAllPlasmidTabDropdownMenus() {
-    const existingDropdownMenus = document.querySelectorAll('.plasmid-tab-dropdown-menu');
-    existingDropdownMenus.forEach(element => {
-        element.parentNode.removeChild(element);
-    });
-};
-
-
-function createPlasmidTabDropdownMenu(plasmidIndex) {
-    const dropdownMenu = document.createElement('ul');
-    dropdownMenu.className = 'plasmid-tab-dropdown-menu';
-    dropdownMenu.style.display = 'block'; // Display the menu initially
-
-    dropdownMenu.innerHTML = `
-    <h3>Export primers</h3>
-    <ul>
-        <li><a href="#" fileType="txt" onclick="exportPrimers(this, ${plasmidIndex})">Plaint text (.txt)</a></li>
-        <li><a href="#" fileType="doc" onclick="exportPrimers(this, ${plasmidIndex})">MS Word file (.doc)</a></li>
-        <li><a href="#" fileType="csv" onclick="exportPrimers(this, ${plasmidIndex})">CSV file (.csv)</a></li>
-        <li><a href="#" fileType="xlsx" onclick="exportPrimers(this, ${plasmidIndex})">Excel file (.xlsx)</a></li>
-        <li><a href="#" fileType="microsynth" onclick="exportPrimers(this, ${plasmidIndex})">Microsynth order form (.xlsx)</a></li>
-    </ul>
-    <h3>Export plasmid file</h3>
-    <ul>
-        <li><a href="#" onclick="exportGBFile(${plasmidIndex})">GenBank file (.gb)</a></li>
-        <li><a href="#" onclick="exportDNAFile(${plasmidIndex})">SnapGene file (.dna)</a></li>
-    </ul>
-    <h3>Edit plasmid</h3>
-    <ul>
-        <li><a href="#" onclick="renamePlasmid(${plasmidIndex})">Rename plasmid</a></li>
-        <li><a href="#" onclick="flipPlasmid(${plasmidIndex})">Flip plasmid</a></li>
-    </ul>
-    <h3>Close plasmids</h3>
-    <ul>
-        <li><a href="#" onclick="closePlasmid(${plasmidIndex})">Close plasmid</a></li>
-        <li><a href="#" onclick="closeOtherPlasmids(${plasmidIndex})">Close all other plasmids</a></li>
-        <li><a href="#" onclick="closePlasmidsToTheRight(${plasmidIndex})">Close plasmids to the right</a></li>
-    </ul>
-    `;
-
-    return dropdownMenu;
-};
-
-function positionPlasmidTabDropdownMenu(parentTab, dropdownMenu) {
-    const rectTab = parentTab.getBoundingClientRect();
-    const rectHeader = document.getElementsByTagName("header")[0].getBoundingClientRect();
-    //dropdownMenu.style.width = parentTab.offsetWidth + "px";
-    dropdownMenu.style.right = (window.innerWidth - rectTab.right) + "px";
-    dropdownMenu.style.top = rectHeader.bottom + "px";
-};
 
 
 function exportPrimers(client, plasmidIndex) {
