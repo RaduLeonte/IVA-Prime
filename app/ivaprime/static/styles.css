@@ -718,6 +718,26 @@ input, select, textarea {
 /*
  * MARK: VIEWER
  */
+.welcome-disclaimer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-disclaimer-wrapper {
+  width: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.welcome-disclaimer-wrapper p {
+  text-align: center;
+  line-height: 1.5;
+}
+
 
 .svg-container {
   width: 100%;

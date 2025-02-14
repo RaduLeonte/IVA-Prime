@@ -22,10 +22,12 @@ const PlasmidTabs = new class {
         // If this is the first tab added, make it the currently
         // selected one
         if (Object.keys(Session.plasmids).length  === 1) {
+            this.hideWelcomeDisclaimer();
+
             newPlasmidTab.classList.add("plasmid-tab-selected");
             Session.activePlasmidIndex = plasmidIndex;
 
-            PlasmidTabs.switch(plasmidIndex);
+            this.switch(plasmidIndex);
         };
     };
 
@@ -85,6 +87,17 @@ const PlasmidTabs = new class {
         } else {
             clearAllSubcloningSelections(clearVariables=false);
         };
+    };
+
+
+    /**
+     * Show and hide the welcome disclaimer
+     */
+    showWelcomeDisclaimer() {
+        document.getElementById("welcome-disclaimer").style.display = "flex";
+    };
+    hideWelcomeDisclaimer() {
+        document.getElementById("welcome-disclaimer").style.display = "none";
     };
 
 
