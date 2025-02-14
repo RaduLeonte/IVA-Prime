@@ -127,11 +127,14 @@ class Plasmid {
         this.featuresTable = null;
         this.generateFeaturesTable();
         
-        this.history = [];
+        this.stateHistory = [];
 
-        this.historyTracker = 0;
+        this.stateIndex = 0;
 
         this.previousCell = null;
+
+
+        this.saveState("Create plasmid")
     };
 
     /**
@@ -414,7 +417,54 @@ class Plasmid {
         };
     };
 
-    
+
+    /**
+     * Save current state of plasmid.
+     * 
+     * @param {string} actionDescription - Description of the action that caused the checkpoint.
+     */
+    saveState(actionDescription) {
+        console.log(`Plasmid.saveState -> ${this.index} Saving state: "${actionDescription}"`)
+    };
+
+
+    /**
+     * Load specific state from the state history.
+     * 
+     * @param {int} stateIndex - Index of state to be loaded [-100, 0] 
+     */
+    loadState(stateIndex) {
+        console.log(`Plasmid.loadState -> ${this.index} Loading state: ${stateIndex}`)
+    };
+
+
+    /**
+     * Load the previous state of the plasmid.
+     */
+    undo() {
+        // Return immediately if we're on the last possible state
+        if ((this.stateIndex*-1 + 1) == this.stateHistory.length) {return};
+
+        this.loadState(this.stateIndex - 1);
+    };
+
+
+    /**
+     * Load the next state of the plasmid.
+     */
+    redo() {
+        // Return immediately if we're on the lastest state
+        if (this.stateIndex == 0) {return};
+
+        this.loadState(this.stateIndex + 1);
+    };
+
+
+    /**
+     * Rename the plasmid.
+     * 
+     * @param {string} newName - New plasmid name 
+     */
     rename(newName) {
         console.log(`Plasmid.rename -> ${this.index} ${newName}`)
         this.name = newName;
@@ -426,9 +476,14 @@ class Plasmid {
             //TO DO: Only redraw circular and linear views
             PlasmidViewer.redraw();
         };
+
+        this.saveState("Rename plasmid")
     };
 
 
+    /**
+     * Flip the plasmid sequence.
+     */
     flip() {
         console.log(`Plasmid.flip -> ${this.index}`);
 
@@ -459,9 +514,16 @@ class Plasmid {
             PlasmidViewer.deselectBases();
             PlasmidViewer.redraw();
         };
+
+        this.saveState("Flip plasmid")
     };
 
 
+    /**
+     * Set the plasmid origin and shift numbering of bases accordingly.
+     * 
+     * @param {int} newOrigin - Index of the base to be the new origin.
+     */
     setOrigin(newOrigin) {
         newOrigin = parseInt(newOrigin) - 1;
         console.log(`Plasmid.setorigin -> ${this.index} newOrigin=${newOrigin}`);
@@ -487,6 +549,8 @@ class Plasmid {
             PlasmidViewer.deselectBases();
             PlasmidViewer.redraw();
         };
+
+        this.saveState("Change plasmid origin")
     };
 };
 
