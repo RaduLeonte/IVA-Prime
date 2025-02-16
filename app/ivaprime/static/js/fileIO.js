@@ -461,6 +461,18 @@ const FileIO = new class {
             console.log(`FileIO.parsers.gb -> Additional info additionalInfoSection=\n${additionalInfoSection}`);
             
             const fileAdditionalInfo = [];
+
+            // Extract creation date
+            const dateCreatedString = fileContent.split("\n")[0].match(/\d{2}-\w{3}-\d{4}/)[0];
+            const dateCreated = this.parseGBDate(dateCreatedString);
+            fileAdditionalInfo.push(
+                {
+                    "name": "CREATED",
+                    "entry": dateCreated,
+                    "subProperties": null
+                }
+            );
+
             additionalInfoSection.match(/(?:[A-Z]+\s*)[^\n]*\n(?:\s+[^\n]*\n)*/gm).forEach((propertyString) => {
                 const matches = /([A-Z]+\s*)([^\n]*)\n([\s\S]*)/.exec(propertyString);
                 
@@ -566,6 +578,23 @@ const FileIO = new class {
                 fileAdditionalInfo
             };
         }
+    };
+
+
+    /**
+     * 
+     * @param {string} dateString 
+     * @returns 
+     */
+    parseGBDate(dateString) {
+        const months = {
+            JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
+            JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11
+        };
+
+        const [day, monthStr, year] = dateString.split("-");
+        const month = months[monthStr.toUpperCase()];
+        return new Date(year, month, day);
     };
 
 
