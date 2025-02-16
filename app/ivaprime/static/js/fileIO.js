@@ -495,6 +495,69 @@ const FileIO = new class {
 
 
     /**
+     * Dictionary of exporters.
+     */
+    //#region File exporters
+    exporters = {
+        /**
+         * Snapgene .dna file exporter.
+         * 
+         * @param {int} plasmidIndex - Index of plasmid to be exported.
+         */
+        //#region SNAPGENE (.DNA) 
+        dna: (plasmidIndex) => {
+            const targetPlasmid = Session.getPlasmid(plasmidIndex);
+        },
+
+
+        /**
+         * Genbank .gb file exporter.
+         * 
+         * @param {int} plasmidIndex - Index of plasmid to be exported.
+         */
+        //#region GENBANK (.GB) 
+        gb: (plasmidIndex) => {
+            const targetPlasmid = Session.getPlasmid(plasmidIndex);
+        },
+
+
+        /**
+         * Fasta .fasta file exporter.
+         * 
+         * @param {int} plasmidIndex - Index of plasmid to be exported.
+         */
+        //#region FASTA (.FASTA) 
+        fasta: (plasmidIndex) => {
+            const targetPlasmid = Session.getPlasmid(plasmidIndex);
+            console.log(`FileIO.exports.fasta -> ${plasmidIndex} ${targetPlasmid.name}`)
+
+            this.downloadFile(
+                targetPlasmid.name + ".fasta",
+                `>${targetPlasmid.name}\n${targetPlasmid.sequence}`
+            );
+        }
+    };
+
+
+    /**
+     * Download file by creating a blob and saving it.
+     * 
+     * @param {string} fileName - Name of the output file + extension
+     * @param {string} fileContent - Content of output file, either string or array of bytes
+     */
+    downloadFile(fileName, fileContent) {
+        const fileExtension = fileName.split('.').pop();
+
+        let blob = (fileExtension === "dna") 
+            ? new Blob([new Uint8Array(fileContent)]) 
+            : new Blob([fileContent], { type: "text/plain" });
+
+        saveAs(blob, fileName);
+    };
+
+
+
+    /**
      * Creates a new plasmid object from user input specified in the new
      * file popup window.
      * 
