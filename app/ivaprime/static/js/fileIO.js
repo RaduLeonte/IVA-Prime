@@ -11,7 +11,7 @@ const FileIO = new class {
             // Get filename+extension from path
             const fileNameExtension = file.name.match(/[^\\/]*$/)[0];
             // Fish out file extension of the file
-            const fileExtension =  /\.([0-9a-z]+)(?:[\?#]|$)/i.exec(fileNameExtension)[0];
+            let fileExtension =  "." + fileNameExtension.split(".").pop();
             const fileName = fileNameExtension.replace(fileExtension, "");
 
             // Check if file type is supported.
@@ -19,6 +19,8 @@ const FileIO = new class {
                 console.error("Unsupported file type.");
                 return;
             };
+
+            fileExtension = (fileExtension == ".gbk") ? ".gb": fileExtension;
 
             // Initialise file reader
             const reader = new FileReader();
@@ -167,9 +169,9 @@ const FileIO = new class {
             
 
             /**
-             * SEQUENCE
+             * Sequence
              */
-            //#region SEQUENCE
+            //#region Sequence
             // Read file sequence length from bytes [20,23]
             const sequenceLengthHex = Array.from(arrayBuf.slice(20, 24)).map(byte => (byte.toString(16)));
             const sequenceLength = parseInt(sequenceLengthHex.join(" ").replace(/\s/g, ''), 16);
@@ -189,9 +191,9 @@ const FileIO = new class {
 
 
             /**
-             * FEATURES
+             * Features
              */
-            //#region FEATURES
+            //#region Features
             // Extract XML tree
             let featuresXMLString = fileContent.slice(fileContent.indexOf("<Features"), fileContent.indexOf("</Feature></Features>") + "</Feature></Features>".length);
             const featuresXMLDoc = xmlParser.parseFromString(featuresXMLString, 'text/xml');
@@ -309,9 +311,9 @@ const FileIO = new class {
 
 
             /**
-             * PRIMERS
+             * Primers
              */
-            //#region PRIMERS
+            //#region Primers
             // Extract XML tree string
             let primersXMLString = fileContent.slice(fileContent.indexOf("<Primers"), fileContent.indexOf("</Primer></Primers>") + "</Primer></Primers>".length);
             // Parse string to XML tree
@@ -374,7 +376,10 @@ const FileIO = new class {
        //#region GENBANK (.GB) 
         gb : (fileContent) => {
             //console.log(`FileIO.parsers.gb -> fileContent=${fileContent}`)
-            //#region SEQUENCE
+            /**
+             * Sequence
+             */
+            //#region Sequence
             const originSection = fileContent.match(/ORIGIN[\s\S]*?\n([\s\S]*?)\n\/\//);
             //console.log(`FileIO.parsers.gb -> originSection=${originSection}`)
             if (!originSection) {
@@ -384,8 +389,12 @@ const FileIO = new class {
             const sequenceSegments = originSection[0].match(/(?<=\s)[a-z]{1,10}(?=\s)/gi)
             let fileSequence = sequenceSegments.join("").toUpperCase();
             const fileComplementarySequence = nucleotides.complementary(fileSequence);
+            //#endregion
 
-            //#region FEATURES
+            /**
+             * #region Features
+             */
+            //#region Features
             const fileFeatures = {};
 
             let featuresSection = fileContent.match(/FEATURES[\s\S]*ORIGIN/)[0];
@@ -435,9 +444,74 @@ const FileIO = new class {
 
                 fileFeatures[getUUID()] = featureDict;
             });
+            //#endregion
 
-            const fileTopology = (fileContent.split("")[0].includes("linear")) ? "linaer": "circular";
-            const fileAdditionalInfo = {};
+
+            const fileTopology = (fileContent.split("")[0].includes("linear")) ? "linear": "circular";
+            
+            
+            /**
+             * Additional info
+             */
+            //#region Additional info
+            let additionalInfoSection = fileContent.match(/LOCUS[\s\S]*FEATURES/)[0];
+            additionalInfoSection = additionalInfoSection.split("\n");
+            additionalInfoSection = additionalInfoSection.slice(1, -1);
+            additionalInfoSection = additionalInfoSection.join("\n") + "\n";
+            console.log(`FileIO.parsers.gb -> Additional info additionalInfoSection=\n${additionalInfoSection}`);
+            
+            const fileAdditionalInfo = [];
+            additionalInfoSection.match(/(?:[A-Z]+\s*)[^\n]*\n(?:\s+[^\n]*\n)*/gm).forEach((propertyString) => {
+                const matches = /([A-Z]+\s*)([^\n]*)\n([\s\S]*)/.exec(propertyString);
+                
+                let propertyName = matches[1].trim();
+                const propertyEntry = matches[2].replace("\r", "");
+                fileAdditionalInfo[propertyName] = {"entry": propertyEntry};
+                //console.log(`FileIO.parsers.gb -> Additional info ${propertyName}=${propertyEntry}`);
+                
+                const propertyDict = {
+                    "name": propertyName,
+                    "entry": propertyEntry,
+                    "subProperties": null
+                }
+
+                if (matches[3].length != 0) {
+                    const subProperties = [];
+
+                    const subPropertiesString = matches[3];
+                    
+                    const subPropertyStringMatches = [...subPropertiesString.matchAll(/^\s{2}\S+\s+/gm)];
+                    let currentIndex = subPropertyStringMatches[0].index;
+                    for (let i = 0; i < subPropertyStringMatches.length; i++) {
+                        const nextIndex = (i != subPropertyStringMatches.length - 1) ? subPropertyStringMatches[i+1].index: -1;
+                        const subPropertyString = subPropertiesString.slice(currentIndex, nextIndex);
+                        //console.log(`FileIO.parsers.gb -> Additional info subPropertyString=\n${subPropertyString}`);
+                        
+                        const subPropertyName = subPropertyString.slice(0, 12).trim();
+                        
+                        let subPropertyEntry = subPropertyString.slice(12);
+                        if (subPropertyEntry.includes("\n")) {
+                            subPropertyEntry = subPropertyEntry.split("\n")
+                                                               .map( (s) => s.trim())
+                                                               .join(" ")
+                                                               .trim();
+                        };
+                        
+                        subProperties.push(
+                            {
+                                "name": subPropertyName,
+                                "entry": subPropertyEntry
+                            }
+                        );
+                        //console.log(`FileIO.parsers.gb -> Additional info ${propertyName}--${subPropertyName}=${subPropertyEntry}`);
+                        currentIndex = nextIndex;
+                    };
+                    propertyDict["subProperties"] = subProperties;
+                };
+                fileAdditionalInfo.push(propertyDict)
+            });
+            //console.log(`FileIO.parsers.gb -> fileAdditionalInfo=\n${fileAdditionalInfo}`);
+            //#endregion
 
             return {
                 fileSequence,
@@ -461,7 +535,8 @@ const FileIO = new class {
         *      fileAdditionalInfo
         * }
         */
-       //#region FASTA (.FASTA) 
+       //#region FASTA (.FASTA)
+       //TO DO: Prompt user to specify topology and if they want common feature annotated
         fasta : (fileContent) => {
             console.log(`FileIO.parser.fasta -> fileContent=${fileContent}`);
             const lines = fileContent.split("\n");
@@ -554,7 +629,6 @@ const FileIO = new class {
 
         saveAs(blob, fileName);
     };
-
 
 
     /**
