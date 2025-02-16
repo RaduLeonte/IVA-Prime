@@ -582,9 +582,10 @@ const FileIO = new class {
 
 
     /**
+     * Convert Genbank style date to a date object.
      * 
-     * @param {string} dateString 
-     * @returns 
+     * @param {string} dateString - Date in format "DD-MON-YYYY"
+     * @returns {Date}
      */
     parseGBDate(dateString) {
         const months = {
@@ -595,6 +596,24 @@ const FileIO = new class {
         const [day, monthStr, year] = dateString.split("-");
         const month = months[monthStr.toUpperCase()];
         return new Date(year, month, day);
+    };
+
+
+    /**
+     * Generates a Genbank date from a Date object.
+     * 
+     * @param {Date} date - Date object to format
+     * @returns {String} - "DD-MON-YYY"
+     */
+    formatToGBDate(date) {
+        const months = [
+            "JAN", "FEB", "MAR", "APR", "MAY", "JUN", 
+            "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+        ];
+        const day = String(date.getDate()).padStart(2, "0");
+        const month = months[date.getMonth()];
+        const year = date.getFullYear();
+        return `${day}-${month}-${year}`;
     };
 
 
@@ -622,6 +641,120 @@ const FileIO = new class {
         //#region GENBANK (.GB) 
         gb: (plasmidIndex) => {
             const targetPlasmid = Session.getPlasmid(plasmidIndex);
+            const dateCreated = (targetPlasmid.additionalInfo["CREATED"]) ? targetPlasmid.additionalInfo["CREATED"]: new Date();
+
+            let fileContent = ""
+
+
+            /**
+             * Header
+             */
+            //#region Header
+            // LOCUS
+            fileContent += `LOCUS       `;
+            fileContent += targetPlasmid.name;
+            fileContent += " ";
+            fileContent += `${targetPlasmid.sequence.length} bp`;
+            fileContent += " ";
+            fileContent += `ds-DNA`;
+            fileContent += " ".repeat(5);
+            fileContent += (targetPlasmid.topology == "circular") ? "circular": "linear";
+            fileContent += " ".repeat(5);
+            fileContent += this.formatToGBDate(dateCreated);
+            fileContent += "\n"
+            //#endregion
+
+
+            /**
+             * Additional info
+             */
+            //#region Additional info
+            let leftColumnWidth = 12;
+            let rightColumnWidth = 50;
+            targetPlasmid.additionalInfo.forEach( property => {
+                if (property["name"] == "CREATED") {return};
+                fileContent += property["name"] + " ".repeat(leftColumnWidth - property["name"].length) + property["entry"] + "\n";
+
+                if (property["subProperties"]) {
+                    property["subProperties"].forEach( subProperty => {
+                        fileContent += " ".repeat(2) + subProperty["name"] + " ".repeat(leftColumnWidth - subProperty["name"].length - 2);
+                        
+                        const entryLines = this.breakStringIntoLines(subProperty["entry"], rightColumnWidth);
+
+                        fileContent += entryLines.join("\n" + " ".repeat(leftColumnWidth)) + "\n";
+                    });
+                };
+            });
+            //#endregion
+
+
+            /**
+             * Features
+             */
+            //#region Features
+            leftColumnWidth = 21;
+            rightColumnWidth = 60;
+            fileContent += "FEATURES             Location/Qualifiers\n";
+            for (const [key, value] of Object.entries(targetPlasmid.features)) {
+                const feature = value;
+
+                fileContent += " ".repeat(5) + feature["type"] + " ".repeat(leftColumnWidth - feature["type"].length - 5);
+                fileContent += (feature["directionality"] == "fwd")
+                ? `${feature["span"][0]}..${feature["span"][1]}`
+                : `complement(${feature["span"][0]}..${feature["span"][1]})`;
+                fileContent += "\n";
+
+                const featureProperties = Object.keys(feature);
+                featureProperties.forEach( key => {
+                    if (["directionality", "level", "span", "type"].includes(key)) {return};
+
+                    let propertyString = `/${key}=`;
+                    let propertyEntry = feature[key];
+                    if (key != "label" && !Number.isInteger(propertyEntry)) {
+                        propertyEntry = "\"" + propertyEntry + "\"";
+                    };
+                    propertyString += propertyEntry;
+
+                    const propertyLines = this.breakStringIntoLines(propertyString, rightColumnWidth);
+                    fileContent += " ".repeat(leftColumnWidth);
+                    fileContent += propertyLines.join("\n" + " ".repeat(leftColumnWidth));
+                    
+                    fileContent += "\n";
+                });
+            };
+            //#endregion
+
+
+            /**
+             * Sequence
+             */
+            //#region Sequence
+            fileContent += "ORIGIN\n";
+            const nrSequenceIndexSpaces = 9;
+            const nrBasesInSegment = 10;
+            const nrSegmentsPerLine = 6;
+            // Iterate over lines
+            for (let i = 0; i < Math.ceil(targetPlasmid.sequence.length / (nrBasesInSegment * nrSegmentsPerLine)); i++) {
+                const index = i*nrBasesInSegment*nrSegmentsPerLine + 1
+                const indexSegment = " ".repeat(nrSequenceIndexSpaces - index.toString().length) + index;
+
+                const segments = [indexSegment]
+                for (let j = 0; j < nrSegmentsPerLine; j++) {
+                    const indexStart = i*nrBasesInSegment*nrSegmentsPerLine + j*nrBasesInSegment;
+                    segments.push(targetPlasmid.sequence.slice(indexStart, indexStart + nrBasesInSegment))
+                };
+
+                fileContent += segments.join(" ") + "\n"
+            };
+            fileContent += "//"
+            console.log(`FileIO.exporters.gb -> fileContent=\n${fileContent}`)
+            //#endregion
+
+
+            this.downloadFile(
+                targetPlasmid.name + ".gb",
+                fileContent
+            );
         },
 
 
@@ -657,6 +790,40 @@ const FileIO = new class {
             : new Blob([fileContent], { type: "text/plain" });
 
         saveAs(blob, fileName);
+    };
+
+
+    /**
+     * Breaks a string into a list of lines based on maximum width of a line.
+     * 
+     * @param {string} string 
+     * @param {int} maxWidth 
+     * @returns 
+     */
+    breakStringIntoLines(string, maxWidth) {
+        const words = string.split(" ");
+        let entryLines = [];
+        let currentLine = "";
+        for (let word of words) {
+            if (word.length > maxWidth) {
+                // Break the word
+                while (word.length > maxWidth) {
+                    entryLines.push(word.slice(0, maxWidth));
+                    word = word.slice(maxWidth);
+                };
+                if (word) currentLine = word;
+            } else if ((currentLine + word).length <= maxWidth) {
+                // Append word
+                currentLine += (currentLine ? " " : "") + word;
+            } else {
+                // Put word on new line
+                entryLines.push(currentLine);
+                currentLine = word;
+            };
+        };
+        if (currentLine) entryLines.push(currentLine);
+
+        return entryLines;
     };
 
 
