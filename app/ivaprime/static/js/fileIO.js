@@ -251,6 +251,7 @@ const FileIO = new class {
                 // All the feature properties
                 const featureInfo = {}
                 featureInfo["type"] = featureXML.getAttribute('type'); // Type (CDS, RBS etc)
+                if (featureInfo["type"] == "source") {continue};
                 featureInfo["label"] = featureXML.getAttribute('name'); // Display name
                 // Get feature directionaliy, fwd, rev, or null
                 featureInfo["directionality"] = {"1": "fwd", "2": "rev"}[featureXML.getAttribute('directionality')] || null;
@@ -343,14 +344,49 @@ const FileIO = new class {
                 featuresDict[primerId] = primerInfo;
             };
             //#endregion
-
             const fileFeatures = sortBySpan(featuresDict);
+
+
+            /**
+             * Notes
+             */
+            //#region Notes
+            let fileAdditionalInfo = [];
+
+            const treeName = "Notes"
+            let notesXMLString = fileContent.slice(fileContent.indexOf(`<${treeName}>`), fileContent.indexOf(`</${treeName}>`) + treeName.length + 3);
+            const notesXMLDoc = xmlParser.parseFromString(notesXMLString, 'text/xml');
+            const notesElement = notesXMLDoc.querySelector("Notes");
+            for (let child of notesElement.children) {
+                let key = child.tagName;
+                let value = child.textContent;
+                
+                if (key == "Created") {
+                    key = "CREATED";
+                    const dateParts = value.split(".").map(Number);
+                    value = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
+                    
+                    const time = child.getAttribute("UTC");
+                    const timeParts = time.split(":").map(Number);
+                    value.setUTCHours(timeParts[0], timeParts[1], timeParts[2], 0);
+                };
+                console.log(`FileIO.parsers.dna -> Notes k=${key} v=${value}`);
+                
+
+                fileAdditionalInfo.push(
+                    {
+                        "name": key,
+                        "entry": value
+                    }
+                );
+            };
+            //#endregion
+
 
             /**
              * Additional info to keep when exporting back to .dna
              */
             // TO DO: Keep unknown bytes, restriction enzyme list, notes info, primers etc
-            let fileAdditionalInfo = {};
             return {
                 fileSequence,
                 fileComplementarySequence,
