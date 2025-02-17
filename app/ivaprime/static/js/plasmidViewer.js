@@ -694,6 +694,8 @@ const PlasmidViewer = new class {
             const groupStrandFwd = this.createShapeElement("g");
             groupStrandFwd.setAttribute("id", "strand-fwd");
             for (let i = 0; i < basesPerLine; i++) {
+                if (!segment["sequenceFwd"][i]) {continue};
+
                 const baseBox = this.createShapeElement("rect");
                 baseBox.setAttribute("x", basesPositions[i] - basesWidth/2);
                 baseBox.setAttribute("y", 0);
@@ -702,6 +704,7 @@ const PlasmidViewer = new class {
                 baseBox.classList.add("svg-sequence-base-box");
                 baseBox.setAttribute("base-index", segments.indexOf(segment)*basesPerLine + i + 1)
                 groupStrandFwd.appendChild(baseBox);
+                
                 const base = this.text(
                     [basesPositions[i], sequenceFwdHeight],
                     segment["sequenceFwd"][i],
@@ -717,6 +720,8 @@ const PlasmidViewer = new class {
             const groupStrandRev = this.createShapeElement("g");
             groupStrandRev.setAttribute("id", "strand-rev")
             for (let i = 0; i < basesPerLine; i++) {
+                if (!segment["sequenceRev"][i]) {continue};
+
                 const baseBox = this.createShapeElement("rect");
                 baseBox.setAttribute("x", basesPositions[i] - basesWidth/2);
                 baseBox.setAttribute("y", sequenceAxisHeight);
