@@ -494,51 +494,59 @@ const PlasmidViewer = new class {
 
         //#region Event listeners
         svgWrapper.addEventListener("mousedown", (e) => {
-            console.log(`PlasmidViewer.svgWrapper.Event.mousedown ->`)
-            const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
-            this.elementsAtMouseDown = elementsAtPoint;
-            const nearestRect = elementsAtPoint.find((el) => el.tagName === 'rect');
-            if (nearestRect) {
-                const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
-                if (e.shiftKey) {
-                    this.selectBases(this.combineSpans(baseIndex));
-                } else {
-                    this.selectBase(baseIndex);
+            if (e.button === 0) {
+                console.log(`PlasmidViewer.svgWrapper.Event.mousedown -> Left click`)
+                const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+                this.elementsAtMouseDown = elementsAtPoint;
+                const nearestRect = elementsAtPoint.find((el) => el.tagName === 'rect');
+                if (nearestRect) {
+                    const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
+                    if (e.shiftKey) {
+                        this.selectBases(this.combineSpans(baseIndex));
+                    } else {
+                        this.selectBase(baseIndex);
+                    };
+    
+                    this.currentlySelecting = true;
+                    this.selectionStartIndex = baseIndex;
                 };
-
-                this.currentlySelecting = true;
-                this.selectionStartIndex = baseIndex;
             };
-
         });
         svgWrapper.addEventListener("mouseup", (e) => {
-            console.log(`PlasmidViewer.svgWrapper.Event.mouseup ->`)
-            this.currentlySelecting = false;
-
-            //Click events
-            const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
-            const clicked = elementsAtPoint.every((ele, i) => ele === this.elementsAtMouseDown[i]);
-            console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> clicked=${clicked}`);
-            //console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> elementsAtPoint (${elementsAtPoint.length}) ${elementsAtPoint}`);
-            //console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> this.elementsAtMouseDown (${this.elementsAtMouseDown.length}) ${this.elementsAtMouseDown}`);
-            if (clicked) {
-                this.elementsAtMouseDown = null;
-
-                const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
-
-                if (shapesAtPoint.length == 0) {
-                    console.log(`PlasmidViewer.svgWrapper.Event.click -> Deselecting`);
-                    PlasmidViewer.deselectBases();
-                    return;
-                };
+            if (e.button === 0) {
+                // Left mouse button
+                console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> Left button`)
+                this.currentlySelecting = false;
     
-                console.log(`PlasmidViewer.svgWrapper.Event.click -> shapesAtPoint${shapesAtPoint}`)
-                if (shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
-                    const featureId = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id")
-                    console.log(`PlasmidViewer.svgWrapper.Event.click -> featureId=${featureId}`);
+                //Click events
+                const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+                const clicked = elementsAtPoint.every((ele, i) => ele === this.elementsAtMouseDown[i]);
+                console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> clicked=${clicked}`);
+                //console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> elementsAtPoint (${elementsAtPoint.length}) ${elementsAtPoint}`);
+                //console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> this.elementsAtMouseDown (${this.elementsAtMouseDown.length}) ${this.elementsAtMouseDown}`);
+                if (clicked) {
+                    console.log(`PlasmidViewer.svgWrapper.Event.click -> Left click`);
+                    this.elementsAtMouseDown = null;
     
-                    this.selectFeature(featureId, e.shiftKey);
+                    const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
+    
+                    if (shapesAtPoint.length == 0) {
+                        console.log(`PlasmidViewer.svgWrapper.Event.click -> Deselecting`);
+                        PlasmidViewer.deselectBases();
+                        return;
+                    };
+        
+                    console.log(`PlasmidViewer.svgWrapper.Event.click -> shapesAtPoint${shapesAtPoint}`)
+                    if (shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
+                        const featureId = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id")
+                        console.log(`PlasmidViewer.svgWrapper.Event.click -> featureId=${featureId}`);
+        
+                        this.selectFeature(featureId, e.shiftKey);
+                    };
                 };
+            } else if (e.button === 2) {
+                // Right click
+                console.log(`PlasmidViewer.svgWrapper.Event.click -> Right click`);
             };
         });
 
