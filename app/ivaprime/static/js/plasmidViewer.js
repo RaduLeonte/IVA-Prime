@@ -368,9 +368,11 @@ const PlasmidViewer = new class {
          * Settings
          */
         const basesPerLine = 60;
-        const sequenceFwdHeight = 20;
-        const sequenceAxisHeight = 34;
-        const sequenceRevHeight = 59;
+        const singleStrandHeight = 38;
+        const baseTextOffset = 12;
+        const strandFeatureSpacing = 25;
+        const featureAnnotationHeight = 34;
+        const featureAnnotationsSpacing = 8;
         const gridMargin = 50; // margin on each side
         
         /**
@@ -580,6 +582,7 @@ const PlasmidViewer = new class {
                         shape.querySelector("#arrow").classList.add("svg-feature-arrow-hover")
                     });
 
+                    this.deselectFeaturePreview(featureId);
                     this.selectFeaturePreview(featureId);
                 } else {
                     const containerDiv = document.getElementById('grid-view-container');
@@ -666,12 +669,17 @@ const PlasmidViewer = new class {
             basesPositions.push(basesWidth/2 + i*basesWidth + gridMargin)
         };
 
-        const featuresLevelStart = 100;
-        const featuresLevelOffset = 25;
-        const featuresLevelsNr = 3;
+        const featuresLevelStart = singleStrandHeight*2 + strandFeatureSpacing;
+        let maxFeatureLevel = 0;
+        for (const [uuid, featureDict] of Object.entries(features)) {
+            if (featureDict["level"] > maxFeatureLevel) {
+                maxFeatureLevel = featureDict["level"]
+            };
+        };
+        console.log(`PlasmidViewer.drawGrid -> maxFeatureLevel=${maxFeatureLevel}`);
         let featuresLevels = [];
-        for (let i = 0; i < featuresLevelsNr; i++) {
-            featuresLevels.push(featuresLevelStart + i*featuresLevelOffset)
+        for (let i = 0; i <= maxFeatureLevel; i++) {
+            featuresLevels.push(featuresLevelStart + i*(featureAnnotationHeight + featureAnnotationsSpacing))
         };
 
         /**
@@ -684,7 +692,22 @@ const PlasmidViewer = new class {
             // Canvas
             const svgCanvas = this.createShapeElement("svg");
             svgCanvas.setAttribute("version", "1.2");
-            svgCanvas.setAttribute("width", maxWidth + gridMargin*2); // add margin for strokes back in
+            svgCanvas.setAttribute("width", maxWidth + gridMargin*2); // add margin for strokes back in 
+            
+            let maxFeatureLevelInSegment = 0;
+            if (Object.keys(segment["features"]).length !== 0) {
+                for (const [uuid, featureDict] of Object.entries(segment["features"])) {
+                    if (featureDict["level"] > maxFeatureLevelInSegment) {
+                        maxFeatureLevelInSegment = featureDict["level"]
+                    };
+                };
+                maxFeatureLevelInSegment++;
+            };
+            maxFeatureLevelInSegment = Math.max(maxFeatureLevelInSegment, 1);
+            console.log(`PlasmidViewer.drawGrid -> segment maxFeatureLevelInSegment=${maxFeatureLevelInSegment}`);
+            const svgHeight = singleStrandHeight*2 + strandFeatureSpacing + (featureAnnotationHeight + featureAnnotationsSpacing)*maxFeatureLevelInSegment;
+            svgCanvas.setAttribute("height", svgHeight);
+
             svgCanvas.setAttribute("indices", [segmentIndexStart+1, segmentIndexEnd])
             svgWrapper.appendChild(svgCanvas);
 
@@ -707,14 +730,14 @@ const PlasmidViewer = new class {
                 const baseBox = this.createShapeElement("rect");
                 baseBox.setAttribute("x", basesPositions[i] - basesWidth/2);
                 baseBox.setAttribute("y", 0);
-                baseBox.setAttribute("height", sequenceAxisHeight);
+                baseBox.setAttribute("height", singleStrandHeight);
                 baseBox.setAttribute("width", basesWidth);
                 baseBox.classList.add("svg-sequence-base-box");
                 baseBox.setAttribute("base-index", segments.indexOf(segment)*basesPerLine + i + 1)
                 groupStrandFwd.appendChild(baseBox);
                 
                 const base = this.text(
-                    [basesPositions[i], sequenceFwdHeight],
+                    [basesPositions[i], singleStrandHeight - baseTextOffset],
                     segment["sequenceFwd"][i],
                     null,
                     "svg-sequence-bases-text",
@@ -732,14 +755,14 @@ const PlasmidViewer = new class {
 
                 const baseBox = this.createShapeElement("rect");
                 baseBox.setAttribute("x", basesPositions[i] - basesWidth/2);
-                baseBox.setAttribute("y", sequenceAxisHeight);
-                baseBox.setAttribute("height", sequenceAxisHeight+4);
+                baseBox.setAttribute("y", singleStrandHeight);
+                baseBox.setAttribute("height", singleStrandHeight);
                 baseBox.setAttribute("width", basesWidth);
                 baseBox.classList.add("svg-sequence-base-box");
                 baseBox.setAttribute("base-index", segments.indexOf(segment)*basesPerLine + i + 1)
                 groupStrandRev.appendChild(baseBox);
                 const base = this.text(
-                    [basesPositions[i], sequenceRevHeight],
+                    [basesPositions[i], singleStrandHeight*2  - baseTextOffset],
                     segment["sequenceRev"][i],
                     null,
                     "svg-sequence-bases-text",
@@ -756,15 +779,15 @@ const PlasmidViewer = new class {
             if (topology === "circular" && segments.indexOf(segment) == 0){
                 for (let i = 0; i < 3; i++){
                     groupSequence.appendChild(this.line(
-                        [gridMargin - startingOffset - i*dotsOffset, sequenceAxisHeight],
-                        [gridMargin - startingOffset - i*dotsOffset - dotsWidth, sequenceAxisHeight],
+                        [gridMargin - startingOffset - i*dotsOffset, singleStrandHeight],
+                        [gridMargin - startingOffset - i*dotsOffset - dotsWidth, singleStrandHeight],
                         null,
                         "svg-sequence-axis-grid"
                     ));
                 };
             } else {
                 groupSequence.appendChild(this.text(
-                    [gridMargin - 8, sequenceAxisHeight],
+                    [gridMargin - 8, singleStrandHeight],
                     `${segmentIndexStart + 1}`,
                     null,
                     "svg-sequence-indices",
@@ -775,8 +798,8 @@ const PlasmidViewer = new class {
             
             // Sequence axis
             groupSequence.appendChild(this.line(
-                [0 + gridMargin, sequenceAxisHeight],
-                [(segment["sequenceFwd"].length/basesPerLine)*maxWidth + gridMargin, sequenceAxisHeight],
+                [0 + gridMargin, singleStrandHeight],
+                [(segment["sequenceFwd"].length/basesPerLine)*maxWidth + gridMargin, singleStrandHeight],
                 null,
                 "svg-sequence-axis-grid"
             ));
@@ -786,15 +809,15 @@ const PlasmidViewer = new class {
             if (topology === "circular" && segments.indexOf(segment) == segments.length - 1){
                 for (let i = 0; i < 3; i++) {
                     groupSequence.appendChild(this.line(
-                        [startX + startingOffset + i*dotsOffset, sequenceAxisHeight],
-                        [startX + startingOffset + i*dotsOffset + dotsWidth, sequenceAxisHeight],
+                        [startX + startingOffset + i*dotsOffset, singleStrandHeight],
+                        [startX + startingOffset + i*dotsOffset + dotsWidth, singleStrandHeight],
                         null,
                         "svg-sequence-axis-grid"
                     ));
                 };
             } else {
                 groupSequence.appendChild(this.text(
-                    [startX + 8, sequenceAxisHeight],
+                    [startX + 8, singleStrandHeight],
                     `${segmentIndexEnd}`,
                     null,
                     "svg-sequence-indices",
@@ -810,8 +833,8 @@ const PlasmidViewer = new class {
                 if (num - segmentIndexStart === 0) {continue};
                 if (num - segmentIndexStart > segment["sequenceFwd"].length) {continue}
                 groupTicks.appendChild(this.line(
-                    [basesPositions[num - segmentIndexStart - 1], sequenceAxisHeight-ticksLength10s/2],
-                    [basesPositions[num - segmentIndexStart - 1], sequenceAxisHeight+ticksLength10s/2],
+                    [basesPositions[num - segmentIndexStart - 1], singleStrandHeight-ticksLength10s/2],
+                    [basesPositions[num - segmentIndexStart - 1], singleStrandHeight+ticksLength10s/2],
                     null,
                     "svg-sequence-axis-grid"
                 ));
@@ -822,8 +845,8 @@ const PlasmidViewer = new class {
                 if (num - segmentIndexStart === 0) {continue};
                 if (num - segmentIndexStart > segment["sequenceFwd"].length) {continue}
                 groupTicks.appendChild(this.line(
-                    [basesPositions[num - segmentIndexStart - 1], sequenceAxisHeight-ticksLength5s/2],
-                    [basesPositions[num - segmentIndexStart - 1], sequenceAxisHeight+ticksLength5s/2],
+                    [basesPositions[num - segmentIndexStart - 1], singleStrandHeight-ticksLength5s/2],
+                    [basesPositions[num - segmentIndexStart - 1], singleStrandHeight+ticksLength5s/2],
                     null,
                     "svg-sequence-axis-grid"
                 ));
@@ -837,8 +860,8 @@ const PlasmidViewer = new class {
             groupSequenceBox.setAttribute("points", [
                 [0, 0],
                 [(segment["sequenceFwd"].length/basesPerLine)*maxWidth, 0],
-                [(segment["sequenceFwd"].length/basesPerLine)*maxWidth, sequenceAxisHeight*2],
-                [0, sequenceAxisHeight*2]
+                [(segment["sequenceFwd"].length/basesPerLine)*maxWidth, singleStrandHeight*2],
+                [0, singleStrandHeight*2]
             ])
             groupSequenceBox.setAttribute("fill", "black");
             groupSequenceBox.classList.add("svg-sequence-group-bounding-box");
@@ -878,6 +901,7 @@ const PlasmidViewer = new class {
                         seqToPixel(featureDict["span"][1])
                     ],
                     featuresLevels[featureDict["level"]],
+                    featureAnnotationHeight,
                     featureDict["shape-left"],
                     featureDict["shape-right"],
                     featureLabel,
@@ -1164,10 +1188,10 @@ const PlasmidViewer = new class {
      * @returns 
      */
     //#region Grid feature
-    gridFeature(featureId, span, levelHeight, featureShapeLeft, featureShapeRight, label, color, elementId, cssClass) {
+    gridFeature(featureId, span, levelHeight, featureHeight, featureShapeLeft, featureShapeRight, label, color, elementId, cssClass) {
         console.log("PlasmidViewer.gridFeature ->", label, featureShapeLeft, featureShapeRight)
         
-        const featureArrowWidth = 30; //px
+        const featureArrowWidth = featureHeight; //px
         const featureHeadMinWidth = 10; //px
         const featureBodyHeadRatio = 0.9;
 
@@ -1185,43 +1209,43 @@ const PlasmidViewer = new class {
         featureArrowGroup.setAttribute("id", "arrow")
 
         const featureHeadWidth = Math.min(featureHeadMinWidth, (span[1] - span[0])*featureBodyHeadRatio)
-        const featureHeight = levelHeight - featureArrowWidth/2;
+        const featureY = levelHeight - featureArrowWidth/2;
 
         // Shapes are drawn clockwise
         const shapesLeft = {
             // Blunt end
             null: [
-                [span[0], featureHeight + featureArrowWidth],
-                [span[0], featureHeight]
+                [span[0], featureY + featureArrowWidth],
+                [span[0], featureY]
             ],
             // Arrow
             "arrow": [
-                [span[0] + featureHeadWidth, featureHeight + featureArrowWidth],
-                [span[0], featureHeight + featureArrowWidth/2],
-                [span[0] + featureHeadWidth, featureHeight]
+                [span[0] + featureHeadWidth, featureY + featureArrowWidth],
+                [span[0], featureY + featureArrowWidth/2],
+                [span[0] + featureHeadWidth, featureY]
             ],
             // Break
             "break": [
-                [span[0] + featureHeadWidth, featureHeight + featureArrowWidth],
-                [span[0], featureHeight]
+                [span[0] + featureHeadWidth, featureY + featureArrowWidth],
+                [span[0], featureY]
             ]
         };
         const shapesRight = {
             // Blunt end
             null: [
-                [span[1], featureHeight],
-                [span[1], featureHeight + featureArrowWidth]
+                [span[1], featureY],
+                [span[1], featureY + featureArrowWidth]
             ],
             // Arrow
             "arrow": [
-                [span[1] - featureHeadWidth, featureHeight],
-                [span[1], featureHeight + featureArrowWidth/2],
-                [span[1] - featureHeadWidth, featureHeight + featureArrowWidth]
+                [span[1] - featureHeadWidth, featureY],
+                [span[1], featureY + featureArrowWidth/2],
+                [span[1] - featureHeadWidth, featureY + featureArrowWidth]
             ],
             // Break
             "break": [
-                [span[1] - featureHeadWidth, featureHeight],
-                [span[1], featureHeight + featureArrowWidth]
+                [span[1] - featureHeadWidth, featureY],
+                [span[1], featureY + featureArrowWidth]
             ]
         };
 
@@ -1239,9 +1263,9 @@ const PlasmidViewer = new class {
         if (featureShapeLeft == "break") {
             const breakDecorationLeft = this.createShapeElement("polygon");
             breakDecorationLeft.setAttribute("points", [
-                [span[0], featureHeight + featureArrowWidth],
-                [span[0] + featureHeadWidth, featureHeight],
-                [span[0] + featureHeadWidth, featureHeight + featureArrowWidth]
+                [span[0], featureY + featureArrowWidth],
+                [span[0] + featureHeadWidth, featureY],
+                [span[0] + featureHeadWidth, featureY + featureArrowWidth]
             ]);
             breakDecorationLeft.setAttribute("fill", color);
             breakDecorationLeft.classList.add("svg-feature-arrow-decoration");
@@ -1252,9 +1276,9 @@ const PlasmidViewer = new class {
         if (featureShapeRight == "break") {
             const breakDecorationRight = this.createShapeElement("polygon");
             breakDecorationRight.setAttribute("points", [
-                [span[1] - featureHeadWidth, featureHeight],
-                [span[1], featureHeight],
-                [span[1] - featureHeadWidth, featureHeight + featureArrowWidth]
+                [span[1] - featureHeadWidth, featureY],
+                [span[1], featureY],
+                [span[1] - featureHeadWidth, featureY + featureArrowWidth]
             ]);
             breakDecorationRight.setAttribute("fill", color);
             breakDecorationRight.classList.add("svg-feature-arrow-decoration");
@@ -1273,7 +1297,7 @@ const PlasmidViewer = new class {
         const textBoxStart = (featureShapeLeft == null) ? span[0]: span[0] + featureHeadWidth;
         const textBoxEnd = (featureShapeRight == null) ? span[1]: span[1] - featureHeadWidth;
         featureGroup.appendChild(this.text(
-            [textBoxStart + (textBoxEnd - textBoxStart)/2, featureHeight+(featureArrowWidth/2)],
+            [textBoxStart + (textBoxEnd - textBoxStart)/2, featureY+(featureArrowWidth/2)],
             label,
             null,
             `svg-feature-label-${this.getTextColorBasedOnBg(color)}`,
