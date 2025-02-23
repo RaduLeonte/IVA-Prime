@@ -494,7 +494,7 @@ const PlasmidViewer = new class {
         const svgWrapper = document.createElement("DIV");
         svgWrapper.classList.add("svg-wrapper-grid");
 
-        //#region Event listeners
+        // #region Event_listeners
         svgWrapper.addEventListener("mousedown", (e) => {
             if (e.button === 0) {
                 console.log(`PlasmidViewer.svgWrapper.Event.mousedown -> Left click`)
@@ -660,7 +660,7 @@ const PlasmidViewer = new class {
                 };
             };
         });
-        //#endregion
+        // #endregion Event_listeners
 
 
         const basesWidth = maxWidth/basesPerLine;
@@ -685,15 +685,24 @@ const PlasmidViewer = new class {
         /**
          * Iterate over segments and draw
          */
+        // #region Draw_segments
         segments.forEach((segment) => {
             const segmentIndexStart = segment["segmentIndexStart"];
             const segmentIndexEnd = segment["segmentIndexEnd"];
             
-            // Canvas
+
+            // #region SVG_canvas
             const svgCanvas = this.createShapeElement("svg");
             svgCanvas.setAttribute("version", "1.2");
             svgCanvas.setAttribute("width", maxWidth + gridMargin*2); // add margin for strokes back in 
+            svgCanvas.setAttribute("indices", [segmentIndexStart+1, segmentIndexEnd])
+            svgWrapper.appendChild(svgCanvas);
+            // #endregion SVG_canvas
             
+
+            // Calculate the maximum amount of feature stacking in this segment to
+            // set an appropriate height
+            // #region Feature_stacking
             let maxFeatureLevelInSegment = 0;
             if (Object.keys(segment["features"]).length !== 0) {
                 for (const [uuid, featureDict] of Object.entries(segment["features"])) {
@@ -707,23 +716,25 @@ const PlasmidViewer = new class {
             console.log(`PlasmidViewer.drawGrid -> segment maxFeatureLevelInSegment=${maxFeatureLevelInSegment}`);
             const svgHeight = singleStrandHeight*2 + strandFeatureSpacing + (featureAnnotationHeight + featureAnnotationsSpacing)*maxFeatureLevelInSegment;
             svgCanvas.setAttribute("height", svgHeight);
+            //#endregion Feature_stacking
 
-            svgCanvas.setAttribute("indices", [segmentIndexStart+1, segmentIndexEnd])
-            svgWrapper.appendChild(svgCanvas);
 
-            // Main group
+            // #region Main_group
             const groupMain = this.createShapeElement("g");
-            groupMain.setAttribute("transform", `translate(${0} ${0})`);
+            groupMain.setAttribute("id", "strand-group");
             svgCanvas.appendChild(groupMain);
     
-            // Sequence group (fwd strand + axis + rev strand)
+
+            // #region Sequence_group
             const groupSequence = this.createShapeElement("g");
             groupSequence.setAttribute("id", "sequence-group");
+            groupMain.appendChild(groupSequence);
             
 
-            // Forward strand
+            // #region Forward_strand
             const groupStrandFwd = this.createShapeElement("g");
             groupStrandFwd.setAttribute("id", "strand-fwd");
+            groupSequence.appendChild(groupStrandFwd);
             for (let i = 0; i < basesPerLine; i++) {
                 if (!segment["sequenceFwd"][i]) {continue};
 
@@ -745,11 +756,13 @@ const PlasmidViewer = new class {
                 );
                 groupStrandFwd.appendChild(base);
             };
-            groupSequence.appendChild(groupStrandFwd);
+            // #endregion Forward_strand
 
-            // Reverse strand
+
+            // #region Reverse_strand
             const groupStrandRev = this.createShapeElement("g");
-            groupStrandRev.setAttribute("id", "strand-rev")
+            groupStrandRev.setAttribute("id", "strand-rev");
+            groupSequence.appendChild(groupStrandRev);
             for (let i = 0; i < basesPerLine; i++) {
                 if (!segment["sequenceRev"][i]) {continue};
 
@@ -770,15 +783,63 @@ const PlasmidViewer = new class {
                 );
                 groupStrandRev.appendChild(base);
             };
-            groupSequence.appendChild(groupStrandRev);
+            // #endregion Reverse_strand
 
-            // Dots on each side of the axis for circular plasmids
+            
+            // #region Axis
+            groupSequence.appendChild(this.line(
+                [0 + gridMargin, singleStrandHeight],
+                [(segment["sequenceFwd"].length/basesPerLine)*maxWidth + gridMargin, singleStrandHeight],
+                null,
+                "svg-sequence-axis-grid"
+            ));
+            // #endregion Axis
+
+
+            // #region Ticks
+            const groupTicks = this.createShapeElement("g");
+            groupSequence.appendChild(groupTicks);
+
+            const ticksIncrement = [10, 5];
+            const ticksLength = [14, 7];
+            for (let i = 0; i < 2; i++) {
+                for (
+                    let num = Math.ceil(segmentIndexStart / ticksIncrement[i]) * ticksIncrement[i];
+                    num <= segmentIndexEnd;
+                    num += ticksIncrement[i]
+                ) {
+                    if (num - segmentIndexStart === 0) {continue};
+                    if (num - segmentIndexStart > segment["sequenceFwd"].length) {continue}
+                    groupTicks.appendChild(this.line(
+                        [
+                            basesPositions[num - segmentIndexStart - 1],
+                            singleStrandHeight-ticksLength[i]/2
+                        ],
+                        [
+                            basesPositions[num - segmentIndexStart - 1],
+                            singleStrandHeight+ticksLength[i]/2
+                        ],
+                        null,
+                        "svg-sequence-axis-grid"
+                    ));
+                };
+            };
+            // #endregion Ticks
+
+
+            // #region Sequence_indices
+            // Sequence indices or
+            // dots on each side of the axis for circular plasmids
+            const groupStrandIndices = this.createShapeElement("g");
+            groupStrandIndices.setAttribute("id", "strand-indices");
+            groupSequence.appendChild(groupStrandIndices);
+
             const dotsOffset = 8;
             const dotsWidth = 4;
             const startingOffset = 4;
             if (topology === "circular" && segments.indexOf(segment) == 0){
                 for (let i = 0; i < 3; i++){
-                    groupSequence.appendChild(this.line(
+                    groupStrandIndices.appendChild(this.line(
                         [gridMargin - startingOffset - i*dotsOffset, singleStrandHeight],
                         [gridMargin - startingOffset - i*dotsOffset - dotsWidth, singleStrandHeight],
                         null,
@@ -786,7 +847,7 @@ const PlasmidViewer = new class {
                     ));
                 };
             } else {
-                groupSequence.appendChild(this.text(
+                groupStrandIndices.appendChild(this.text(
                     [gridMargin - 8, singleStrandHeight],
                     `${segmentIndexStart + 1}`,
                     null,
@@ -795,14 +856,6 @@ const PlasmidViewer = new class {
                     5
                 ));
             };
-            
-            // Sequence axis
-            groupSequence.appendChild(this.line(
-                [0 + gridMargin, singleStrandHeight],
-                [(segment["sequenceFwd"].length/basesPerLine)*maxWidth + gridMargin, singleStrandHeight],
-                null,
-                "svg-sequence-axis-grid"
-            ));
 
             // Dots on each side of the axis for circular plasmids
             const startX = gridMargin + (segment["sequenceFwd"].length/basesPerLine)*maxWidth
@@ -825,40 +878,11 @@ const PlasmidViewer = new class {
                     5
                 ));
             };
-
-            const groupTicks = this.createShapeElement("g");
-            // Ticks 10s (every 10 bases)
-            const ticksLength10s = 14;
-            for (let num = Math.ceil(segmentIndexStart / 10) * 10; num <= segmentIndexEnd; num += 10) {
-                if (num - segmentIndexStart === 0) {continue};
-                if (num - segmentIndexStart > segment["sequenceFwd"].length) {continue}
-                groupTicks.appendChild(this.line(
-                    [basesPositions[num - segmentIndexStart - 1], singleStrandHeight-ticksLength10s/2],
-                    [basesPositions[num - segmentIndexStart - 1], singleStrandHeight+ticksLength10s/2],
-                    null,
-                    "svg-sequence-axis-grid"
-                ));
-            };
-            // Ticks 5s (every 5 bases)
-            const ticksLength5s = 7;
-            for (let num = Math.ceil(segmentIndexStart / 5) * 5; num <= segmentIndexEnd; num += 5) {
-                if (num - segmentIndexStart === 0) {continue};
-                if (num - segmentIndexStart > segment["sequenceFwd"].length) {continue}
-                groupTicks.appendChild(this.line(
-                    [basesPositions[num - segmentIndexStart - 1], singleStrandHeight-ticksLength5s/2],
-                    [basesPositions[num - segmentIndexStart - 1], singleStrandHeight+ticksLength5s/2],
-                    null,
-                    "svg-sequence-axis-grid"
-                ));
-            };
-            groupSequence.appendChild(groupTicks);
-
-            groupMain.appendChild(groupSequence);
+            // #endregion Sequence_indices
+            // #endregion Sequence_group
 
 
-            /**
-             * Features
-             */
+            // #region Features
             const segmentFeatures = this.createShapeElement("g");
             segmentFeatures.setAttribute("id", "svg-features");
             groupMain.appendChild(segmentFeatures);
@@ -895,7 +919,22 @@ const PlasmidViewer = new class {
                     "svg-feature-arrow"
                 ));
             };
+            //#endregion Features
+            // #endregion Main_group
+
+
+            //#region Cursors_groups 
+            const groupSelectionPreviewCursor = this.createShapeElement("g");
+            groupSelectionPreviewCursor.setAttribute("id", "selection-preview-cursor-group");
+            svgCanvas.appendChild(groupSelectionPreviewCursor);
+
+            const groupSelectionCursor = this.createShapeElement("g");
+            groupSelectionCursor.setAttribute("id", "selection-cursor-group");
+            svgCanvas.appendChild(groupSelectionCursor);
+            //#endregion Cursors_groups
+
         });
+        // #endregion
 
         return svgWrapper;
     };
@@ -1498,7 +1537,12 @@ const PlasmidViewer = new class {
             const posX = baseRect.getAttribute("x");
             const cursorHeight = svgMatch.getBoundingClientRect().height;
 
-            svgMatch.appendChild(this.line(
+
+            const cursorGroup = svgMatch.getElementById(
+                cssClass.includes("preview") ? 'selection-preview-cursor-group': 'selection-cursor-group'
+            );
+
+            cursorGroup.appendChild(this.line(
                 [posX, 0],
                 [posX, cursorHeight],
                 null,
