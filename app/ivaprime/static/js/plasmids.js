@@ -482,7 +482,6 @@ class Plasmid {
         plasmidTab.firstElementChild.innerText = this.name + this.extension
         
         if (Session.activePlasmidIndex == this.index) {
-            //TO DO: Only redraw circular and linear views
             PlasmidViewer.redraw(["circular", "linear"]);
         };
 

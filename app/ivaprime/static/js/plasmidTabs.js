@@ -67,27 +67,17 @@ const PlasmidTabs = new class {
         const newPlasmidTab = document.getElementById("plasmid-tab-" + plasmidIndex);
         newPlasmidTab.classList.add("plasmid-tab-selected");
     
-        // Save side bar and grid of previous plasmid
-        //saveSidebarAndGrid();
     
         // Update currently active plasmid
         Session.activePlasmidIndex = plasmidIndex;
         
-        // Repopulate sidebar and grid
-        // Check if the grid needs to be redrawn because the gridWidth has changed
-        //const newGridWidth = Session.activePlasmid().contentGrid.rows[0].cells.length;
-        //const remakeContentGrid = gridWidth !== newGridWidth;
-        //if (remakeContentGrid) {
-        //    Session.activePlasmid().makeContentGrid();
-        //};
 
         PlasmidViewer.redraw();
 
+        this.updateSidebarPrimers();
         this.updateFeaturesTable();
 
         return;
-        // Update primers
-        updateSidebarPrimers();
     
         // Refresh undo buttons and set disabled/enabled states
         refreshUndoRedoButtons();
@@ -106,6 +96,53 @@ const PlasmidTabs = new class {
         } else {
             clearAllSubcloningSelections(clearVariables=false);
         };
+    };
+
+
+    /**
+     * Close a specific plasmid tab
+     * 
+     * @param {int} plasmidIndex - Index of plasmid to be closed 
+     */
+    close(plasmidIndex) {
+        // If we're closing the currently open tab
+        if (plasmidIndex === Session.activePlasmidIndex) {
+            // Check if we have another tab we can switch to
+            if (Object.keys(Session.plasmids).length > 1) {
+                this.switch(
+                    (plasmidIndex !== 0) ? plasmidIndex - 1: plasmidIndex + 1
+                );
+            } else {
+                // No tab to switch to, clear everything
+
+                // Clear sidebar
+                const featuresTable = document.getElementById("features-table");
+                if (featuresTable) {
+                    featuresTable.parentElement.removeChild(featuresTable);
+                };
+
+                // Clear views
+                ["circular", "linear", "grid"].forEach(view => {
+                    const container = document.getElementById(`${view}-view-container`);
+                    if (container.firstElementChild) {
+                        container.removeChild(container.firstElementChild);
+                    };
+                });
+
+                Session.activePlasmidIndex = null;
+
+                this.disableSwitchViewButtons();
+                this.showWelcomeDisclaimer();
+            };
+        };
+
+        // Delete plasmid from session
+        delete Session.plasmids[plasmidIndex];
+
+        // Remove plasmid tab
+        // TO DO: removal animation?
+        const plasmidTab = document.getElementById("plasmid-tab-" + plasmidIndex);
+        plasmidTab.parentNode.removeChild(plasmidTab);
     };
 
 
@@ -162,7 +199,15 @@ const PlasmidTabs = new class {
 
 
     /**
-     * Update the sidebar and content with the 
+     * Update the sidebar with the current primers.
+     */
+    updateSidebarPrimers() {
+        return;
+    };
+
+
+    /**
+     * Update the sidebar with the current features table.
      */
     updateFeaturesTable() {
         // Update sidebar table
@@ -172,19 +217,14 @@ const PlasmidTabs = new class {
             featuresTableContainer.removeChild(currFeaturesTable)
         };
         featuresTableContainer.appendChild(Session.activePlasmid().featuresTable);
-        
-        // Update content grid
-        //const contentGridContainer = document.getElementById('file-content');
-        //contentGridContainer.innerHTML = "";
-        //contentGridContainer.appendChild(Project.activePlasmid().contentGrid);
-        //addHoverPopupToTable();
     };
 
 
     /**
+     * Show the dropdown menu for a specific plasmid tab.
      * 
-     * @param {*} event 
-     * @param {*} plasmidIndex 
+     * @param {Event} event - Click event
+     * @param {int} plasmidIndex - Plasmid index of the corresponding plasmid tab
      */
     togglePlasmidTabDropdownMenu(e, plasmidIndex) {
         // Prevent default context menu on right click
@@ -213,6 +253,12 @@ const PlasmidTabs = new class {
     };
 
 
+    /**
+     * Create the dropdown menu for a specific plasmid tab.
+     * 
+     * @param {int} plasmidIndex - Plasmid index
+     * @returns 
+     */
     createPlasmidTabDropdownMenu(plasmidIndex) {
         const dropdownMenu = document.createElement('ul');
         dropdownMenu.className = 'plasmid-tab-dropdown-menu';
@@ -242,9 +288,10 @@ const PlasmidTabs = new class {
         </ul>
         <h3>Close plasmids</h3>
         <ul>
-            <li><a href="#" onclick="closePlasmid(${plasmidIndex})">Close plasmid</a></li>
-            <li><a href="#" onclick="closeOtherPlasmids(${plasmidIndex})">Close all other plasmids</a></li>
-            <li><a href="#" onclick="closePlasmidsToTheRight(${plasmidIndex})">Close plasmids to the right</a></li>
+            <li><a href="#" onclick="PlasmidTabs.close(${plasmidIndex})">Close plasmid</a></li>
+            <li><a href="#" onclick="PlasmidTabs.closeOthers(${plasmidIndex})">Close all other plasmids</a></li>
+            <li><a href="#" onclick="PlasmidTabs.closeToTheRight(${plasmidIndex})">Close plasmids to the right</a></li>
+            <li><a href="#" onclick="PlasmidTabs.closeToTheLeft(${plasmidIndex})">Close plasmids to the right</a></li>
         </ul>
         `;
 
@@ -252,6 +299,12 @@ const PlasmidTabs = new class {
     };
 
 
+    /**
+     * Position dropdown menu relative to the parent tab.
+     * 
+     * @param {HTMLElement} parentTab - Parent tab to anchor dropdown menu to
+     * @param {HTMLElement} dropdownMenu - Dropdown menu to reposition
+     */
     positionPlasmidTabDropdownMenu(parentTab, dropdownMenu) {
         const rectTab = parentTab.getBoundingClientRect();
         const rectHeader = document.querySelectorAll("div .header")[0].getBoundingClientRect();
@@ -286,6 +339,11 @@ const PlasmidTabs = new class {
     };
     
 
+    /**
+     * Rename specific plasmid through a modal window.
+     * 
+     * @param {int} plasmidIndex - Index of plasmid to be renamed 
+     */
     renamePlasmid(plasmidIndex) {
         const targetPlasmid = Session.getPlasmid(plasmidIndex);
         createModalWindow(
@@ -300,11 +358,21 @@ const PlasmidTabs = new class {
     };
 
 
+    /**
+     * Flip plasmid sequence.
+     * 
+     * @param {int} plasmidIndex - Index of plasmid to be flipped 
+     */
     flipPlasmid(plasmidIndex) {
         Session.getPlasmid(plasmidIndex).flip()
     };
 
 
+    /**
+     * Set new plasmid origin through a modal window.
+     * 
+     * @param {int} plasmidIndex - Index of plasmid to be shifted
+     */
     setPlasmidOrigin(plasmidIndex) {
         const targetPlasmid = Session.getPlasmid(plasmidIndex);
         createModalWindow(
@@ -364,12 +432,20 @@ function navigateFileHistory(direction) {
  * CTRL + Z or CTRL + SHIFT + Z key combination listener to undo and redo actions
  */
 document.addEventListener('keydown', function(event) {
-    if ((event.ctrlKey || event.metaKey) && !event.shiftKey && (event.key === 'Z' || event.key === 'z')) {
-        navigateFileHistory(-1);
+    if (
+        (event.ctrlKey || event.metaKey) &&
+        !event.shiftKey &&
+        (event.key === 'Z' || event.key === 'z')
+    ) {
+        Session.activePlasmid().undo();
     };
 
-    if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'Z' || event.key === 'z')) {
-        navigateFileHistory(1);
+    if (
+        (event.ctrlKey || event.metaKey) &&
+        event.shiftKey &&
+        (event.key === 'Z' || event.key === 'z')
+    ) {
+        Session.activePlasmid().redo();
     };
 });
 
@@ -425,17 +501,6 @@ function updateSidebarPrimers() {
     sidebarContainer.removeChild(oldPrimers);
 
     enablePrimerIDEditing();
-};
-
-
-function saveSidebarAndGrid() {
-    if (document.getElementById('sidebar-table') && document.getElementById('sequence-grid-' + Project.activePlasmidIndex)) {
-        // Sidebar
-        Project.activePlasmid().sidebarTable = document.getElementById('sidebar-table');
-
-        // Content grid
-        Project.activePlasmid().contentGrid = document.getElementById('sequence-grid-' + Project.activePlasmidIndex);
-    };
 };
 
 
