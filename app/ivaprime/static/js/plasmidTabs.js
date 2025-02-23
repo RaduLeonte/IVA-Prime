@@ -165,6 +165,33 @@ const PlasmidTabs = new class {
         });
     };
 
+    
+    closeToTheRight(plasmidIndex) {
+        if (plasmidIndex < Session.activePlasmidIndex) {
+            this.switch(plasmidIndex);
+        };
+
+        Object.keys(Session.plasmids).forEach(index => {
+            index = parseInt(index);
+            if (index > plasmidIndex) {
+                this.close(index);
+            };
+        });
+    };
+
+    closeToTheLeft(plasmidIndex) {
+        if (Session.activePlasmidIndex < plasmidIndex) {
+            this.switch(plasmidIndex);
+        };
+
+        Object.keys(Session.plasmids).forEach(index => {
+            index = parseInt(index);
+            if (index < plasmidIndex) {
+                this.close(index);
+            };
+        });
+    };
+
 
     /**
      * Show and hide the welcome disclaimer
@@ -309,9 +336,9 @@ const PlasmidTabs = new class {
         <h3>Close plasmids</h3>
         <ul>
             <li><a href="#" onclick="PlasmidTabs.close(${plasmidIndex})">Close plasmid</a></li>
-            <li><a href="#" onclick="PlasmidTabs.closeOthers(${plasmidIndex})">Close all other plasmids</a></li>
-            <li><a href="#" onclick="PlasmidTabs.closeToTheRight(${plasmidIndex})">Close plasmids to the right</a></li>
-            <li><a href="#" onclick="PlasmidTabs.closeToTheLeft(${plasmidIndex})">Close plasmids to the right</a></li>
+            <li><a href="#" onclick="PlasmidTabs.closeOthers(${plasmidIndex})">Close all OTHER plasmids</a></li>
+            <li><a href="#" onclick="PlasmidTabs.closeToTheRight(${plasmidIndex})">Close plasmids to the RIGHT</a></li>
+            <li><a href="#" onclick="PlasmidTabs.closeToTheLeft(${plasmidIndex})">Close plasmids to the LEFT</a></li>
         </ul>
         `;
 
