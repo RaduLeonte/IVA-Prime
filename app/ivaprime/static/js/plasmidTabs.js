@@ -147,6 +147,26 @@ const PlasmidTabs = new class {
 
 
     /**
+     * Close all other tabs but the specified index
+     * 
+     * @param {int} plasmidIndex - Index of plasmid to keep open 
+     */
+    closeOthers(plasmidIndex) {
+        if (plasmidIndex !== Session.activePlasmidIndex) {
+            this.switch(plasmidIndex);
+        };
+
+        Object.keys(Session.plasmids).forEach(index => {
+            index = parseInt(index);
+            console.log(`PlasmidTabs.closeOthers -> ${plasmidIndex} ${index} (${index !== plasmidIndex})`)
+            if (index !== plasmidIndex) {
+                this.close(index);
+            };
+        });
+    };
+
+
+    /**
      * Show and hide the welcome disclaimer
      */
     showWelcomeDisclaimer() {
