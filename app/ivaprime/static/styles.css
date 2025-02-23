@@ -143,6 +143,8 @@ html, body {
 .round-button {
   display: block;
 
+  cursor: pointer;
+
   border-radius: 5px;
   padding: 10px 20px;
   text-align: center;
@@ -152,6 +154,10 @@ html, body {
   background-color: #4CAF50;
   
   transition: all .25s;
+
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 .round-button:hover {
   background-color: #45a049;
@@ -221,7 +227,8 @@ input[type="checkbox"] {
   flex-grow: 1;
 
   display: flex;
-  align-items: center;
+  align-items: stretch;
+  justify-content: center;
   gap: 10px;
   
   width: 500px;
@@ -236,41 +243,59 @@ input[type="checkbox"] {
 .plasmid-tabs-scroll-button:hover {
   background-color: var(--header-btn-hover);
 }
+.plasmid-tabs-scroll-button[disabled] {
+  cursor: auto;
+  opacity: 15%;
+
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+.plasmid-tabs-scroll-button[disabled]:hover {
+  background-color: transparent;
+}
+
 
 .plasmid-tabs-container-wrapper {
   flex-grow: 1;
 
   max-width: 100%;
+  /* height: 100%; */
   overflow-y: hidden;
-  overflow-x: scroll;
+  overflow-x: auto;
   scroll-behavior: smooth;
 
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.193) transparent;
+
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
 }
 
 
 .plasmid-tabs-container {
   display: flex;
+  align-items: stretch;
   gap: 10px;
-  margin: 10px 0px 2px 0px;
 }
 
 
 .plasmid-tab {
   border-radius: 5px;
-  padding: 10px 10px 10px 30px;
+  /* padding: 10px 10px 10px 30px; */
   text-align: center;
   background-color: transparent;
   
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: stretch;
+  justify-content: center;
 
   white-space:nowrap;
 
   transition: all .25s;
 }
+
 .plasmid-tab:hover {
   background-color: var(--header-btn-hover);
 }
@@ -282,17 +307,25 @@ input[type="checkbox"] {
   background-color: #4CAF50;
 }
 
-.plasmid-tab a {
-  display: inline-block;
-
+.plasmid-tab-button {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
   color: white;
-  text-decoration: none;
+
+  padding: 0 10px 0 20px;
 }
 
 
 .plasmid-tab-dropdown-button {
-  padding: 3px;
-	border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: white;
+
+  padding: 0 10px 0 10px;
+	border-radius: 5px;
 }
 .plasmid-tab-dropdown-button:hover {
 	background: #DAE0E7;

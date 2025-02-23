@@ -140,14 +140,23 @@ class Plasmid {
     /**
      * Creates the different views and saves them
      */
-    generateViews() {
-        this.views = PlasmidViewer.draw(
-            this.name,
-            this.sequence,
-            this.complementarySequence,
-            this.features,
-            this.topology
-        );
+    generateViews(views=null) {
+        views = (views != null) ? views: ["circular", "linear", "grid"];
+
+        const drawFunctions = {
+            "circular": PlasmidViewer.drawCircular.bind(PlasmidViewer),
+            "linear": PlasmidViewer.drawLinear.bind(PlasmidViewer),
+            "grid": PlasmidViewer.drawGrid.bind(PlasmidViewer),
+        };
+        views.forEach(view => {
+            this.views[view] = drawFunctions[view](
+                this.name,
+                this.sequence,
+                this.complementarySequence,
+                this.features,
+                this.topology
+            );
+        });
     };
 
 
@@ -474,7 +483,7 @@ class Plasmid {
         
         if (Session.activePlasmidIndex == this.index) {
             //TO DO: Only redraw circular and linear views
-            PlasmidViewer.redraw();
+            PlasmidViewer.redraw(["circular", "linear"]);
         };
 
         this.saveState("Rename plasmid")
@@ -510,9 +519,9 @@ class Plasmid {
         this.features = sortBySpan(this.features);
 
         if (Session.activePlasmidIndex == this.index) {
-            //TO DO: Update feature table
             PlasmidViewer.deselectBases();
             PlasmidViewer.redraw();
+            PlasmidTabs.updateFeaturesTable();
         };
 
         this.saveState("Flip plasmid")
@@ -545,9 +554,9 @@ class Plasmid {
         this.features = sortBySpan(this.features);
 
         if (Session.activePlasmidIndex == this.index) {
-            //TO DO: Update feature table
             PlasmidViewer.deselectBases();
             PlasmidViewer.redraw();
+            PlasmidTabs.updateFeaturesTable();
         };
 
         this.saveState("Change plasmid origin")

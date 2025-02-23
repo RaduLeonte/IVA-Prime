@@ -97,20 +97,30 @@
                 <div class="header">
                     <!-- Import buttons -->
                     <div class="header-import-buttons">
-                        <a href="#" class="round-button" title="Import a plasmid file from your computer" onclick="FileIO.importFileButton(event)">Import File</a>
-                        <a href="#" class="round-button new-file-button" title="Create a new plasmid file from a DNA sequence" onclick="PopupWindow.show('new-file-window')">New File</a>
-                        <a href="#" class="round-button demo-file-button" title="Import a pET-28a plasmid" onclick="FileIO.importDemoFile()">Demo File</a>
+                        <span class="round-button" title="Import a plasmid file from your computer" onclick="FileIO.importFileButton(event)">Import File</span>
+                        <span class="round-button new-file-button" title="Create a new plasmid file from a DNA sequence" onclick="PopupWindow.show('new-file-window')">New File</span>
+                        <span class="round-button demo-file-button" title="Import a pET-28a plasmid" onclick="FileIO.importDemoFile()">Demo File</span>
                     </div>
 
                     <!-- Plasmid tabs -->
                     <div class="plasmid-tabs-wrapper">
-                        <a href="#"  class="round-button plasmid-tabs-scroll-button">‹</a>
+                        <span
+                        class="round-button plasmid-tabs-scroll-button"
+                        onclick="PlasmidTabs.scrollTabs(-1, this)"
+                        disabled
+                        >‹</span>
+
                         <div id="plasmid-tabs-container-wrapper" class="plasmid-tabs-container-wrapper">
                             <div class="plasmid-tabs-container" id="plasmid-tabs-container">
                                 
                             </div>
                         </div>
-                        <a href="#" class="round-button plasmid-tabs-scroll-button">›</a>
+
+                        <span
+                        class="round-button plasmid-tabs-scroll-button"
+                        onclick="PlasmidTabs.scrollTabs(1, this)"
+                        disabled
+                        >›</span>
                     </div>
                 </div>
                 <!-- End Header -->
@@ -189,30 +199,70 @@
                 <div class="toolbar">
                     <!-- Undo Redo -->
                     <div class="toolbar-group">
-                        <span href="#" class="toolbar-button toolbar-undo-button" disabled title="Undo action (Ctrl + Z)"></span>
-                        <span href="#" class="toolbar-button toolbar-redo-button" disabled title="Redo action (Ctrl + Shift + Z)"></span>
+                        <span
+                            class="toolbar-button toolbar-undo-button"
+                            disabled
+                            title="Undo action (Ctrl + Z)"
+                        ></span>
+
+                        <span
+                            class="toolbar-button toolbar-redo-button"
+                            disabled
+                            title="Redo action (Ctrl + Shift + Z)"
+                        ></span>
                     </div>
                     
                     <div class="toolbar-divider"></div>
                     
                     <!-- Tm calculator -->
                     <div class="toolbar-group">
-                        <span href="#" class="toolbar-button toolbar-calculator-button" title="Primer Tm calculator"></span>
+                        <span
+                            class="toolbar-button
+                            toolbar-calculator-button"
+                            title="Primer Tm calculator"
+                        ></span>
                     </div>
                     
                     <div class="toolbar-divider"></div>
                     
                     <!-- Plasmid view options -->
                     <div class="toolbar-group">
-                        <span id="circular-view-button" class="toolbar-button toolbar-plasmid-circular-button" disabled title="Circular plasmid view" onclick='PlasmidViewer.switchView("circular", this, event)'></span>
-                        <span id="linear-view-button" class="toolbar-button toolbar-plasmid-linear-button" disabled title="Linear plasmid view" onclick='PlasmidViewer.switchView("linear", this, event)'></span>
-                        <span id="grid-view-button" class="toolbar-button toolbar-plasmid-grid-button" disabled title="Grid plasmid view" onclick='PlasmidViewer.switchView("grid", this, event)'></span>
+                        <span
+                            id="circular-view-button"
+                            class="toolbar-button toolbar-plasmid-circular-button"
+                            disabled
+                            title="Circular plasmid view"
+                            onclick='PlasmidViewer.switchView("circular", this)'
+                        ></span>
+
+                        <span
+                            id="linear-view-button"
+                            class="toolbar-button toolbar-plasmid-linear-button"
+                            disabled
+                            title="Linear plasmid view"
+                            onclick='PlasmidViewer.switchView("linear", this)'
+                        ></span>
+
+                        <span
+                            id="grid-view-button"
+                            class="toolbar-button toolbar-plasmid-grid-button"
+                            disabled
+                            title="Grid plasmid view"
+                            onclick='PlasmidViewer.switchView("grid", this)'
+                        ></span>
                     </div>
 
                     <!-- Settings & help -->
                     <div class="toolbar-group">
-                        <a href="#" class="toolbar-button toolbar-settings-button" title="Settings"></a>
-                        <a href="#" class="toolbar-button toolbar-help-button" title="Help"></a>
+                        <span
+                            class="toolbar-button toolbar-settings-button"
+                            title="Settings"
+                        ></span>
+
+                        <span
+                            class="toolbar-button toolbar-help-button"
+                            title="Help"
+                        ></span>
                     </div>
                 </div>
                 <!-- End Toolbar -->

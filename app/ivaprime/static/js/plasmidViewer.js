@@ -8,22 +8,6 @@ const PlasmidViewer = new class {
     // Shortname
     svgNameSpace = "http://www.w3.org/2000/svg";
 
-    /**
-     * Redraw all views and return svgs to class that called it
-     * 
-     * @param {string} sequence - Plasmid sequence
-     * @param {string} complementarySequence - Plasmid complementary sequence
-     * @param {Object} features - Dictionary of features
-     * @param {*} topology - 
-     * @returns 
-     */
-    draw(plasmidName, sequence, complementarySequence, features, topology) {
-        return {
-            "circular": this.drawCircular(plasmidName, sequence, complementarySequence, features, topology),
-            "linear": this.drawLinear(plasmidName, sequence, complementarySequence, features, topology),
-            "grid": this.drawGrid(plasmidName, sequence, complementarySequence, features, topology)
-        };
-    };
 
     /**
      * Draw the circular view
@@ -1450,11 +1434,11 @@ const PlasmidViewer = new class {
     /**
      * 
      */
-    redraw() {
+    redraw(views=null) {
         //TO DO: Keep selection when redrawing
         const activePlasmid = Session.activePlasmid()
         if (activePlasmid) {
-            activePlasmid.generateViews();
+            activePlasmid.generateViews(views);
             PlasmidViewer.updateViewer();
         };
     };

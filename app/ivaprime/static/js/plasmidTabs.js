@@ -7,6 +7,7 @@ const PlasmidTabs = new class {
         const plasmidTabsContainer = document.getElementById("plasmid-tabs-container");
         const newPlasmidTabId = "plasmid-tab-" + plasmidIndex;
         let newPlasmidTab = document.getElementById(newPlasmidTabId);
+        
         // Check if tab element does not exist yet, then add it
         if (!newPlasmidTab) {
             newPlasmidTab = document.createElement("DIV");
@@ -14,10 +15,20 @@ const PlasmidTabs = new class {
         };
         newPlasmidTab.id = newPlasmidTabId;
         newPlasmidTab.innerHTML = `
-        <a href="#" onclick="PlasmidTabs.switch(${plasmidIndex})" oncontextmenu="PlasmidTabs.togglePlasmidTabDropdownMenu(event, ${plasmidIndex})">${plasmidFileName}</a>
-        <a class="plasmid-tab-dropdown-button" href="#" onclick="PlasmidTabs.togglePlasmidTabDropdownMenu(event, ${plasmidIndex})" oncontextmenu="PlasmidTabs.togglePlasmidTabDropdownMenu(event, ${plasmidIndex})">▼</a>
+        <span
+            class="plasmid-tab-button"
+            onclick="PlasmidTabs.switch(${plasmidIndex})"
+            oncontextmenu="PlasmidTabs.togglePlasmidTabDropdownMenu(event, ${plasmidIndex})"
+        >${plasmidFileName}</span>
+        <span
+            class="plasmid-tab-dropdown-button"
+            onclick="PlasmidTabs.togglePlasmidTabDropdownMenu(event, ${plasmidIndex})"
+            oncontextmenu="PlasmidTabs.togglePlasmidTabDropdownMenu(event, ${plasmidIndex})"
+        >▼</span>
         `;
         newPlasmidTab.classList.add("plasmid-tab");
+
+        this.checkForPlasmidTabsScrollbar();
 
         // If this is the first tab added, make it the currently
         // selected one
@@ -106,6 +117,32 @@ const PlasmidTabs = new class {
     };
     hideWelcomeDisclaimer() {
         document.getElementById("welcome-disclaimer").style.display = "none";
+    };
+
+
+    /**
+     * Enable or disable scroll buttons based on whether there is a scroll bar present
+     */
+    checkForPlasmidTabsScrollbar() {
+        const wrapper = document.getElementById("plasmid-tabs-container-wrapper");
+        if (wrapper.scrollWidth > wrapper.clientWidth) {
+            // scrollbar is visible
+            this.enableScrollButtons();
+        } else {
+            this.disableScrollButtons();
+        };
+    };
+    enableScrollButtons() {
+        console.log("PlasmidTabs.enableScrollButtons => ");
+        document.querySelectorAll(".plasmid-tabs-scroll-button").forEach(button => {
+            button.removeAttribute('disabled');
+        });
+    };
+    disableScrollButtons() {
+        console.log("PlasmidTabs.disableScrollButtons => ");
+        document.querySelectorAll(".plasmid-tabs-scroll-button").forEach(button => {
+            button.setAttribute('disabled', '');
+        });
     };
 
 
@@ -233,6 +270,20 @@ const PlasmidTabs = new class {
             element.parentNode.removeChild(element);
         });
     };
+
+
+    /**
+     * Scroll tabs in specified direction.
+     * 
+     * @param {int} direction - Direction to scroll towards (1 or -1)
+     */
+    scrollTabs(direction, sender) {
+        if (sender.hasAttribute("disabled")) {return};
+
+        const container = document.getElementById('plasmid-tabs-container-wrapper');
+        const scrollAmount = 200;
+        container.scrollLeft += scrollAmount * direction;
+    };
     
 
     renamePlasmid(plasmidIndex) {
@@ -264,17 +315,6 @@ const PlasmidTabs = new class {
             "Set",
             targetPlasmid.setOrigin.bind(targetPlasmid)
         );
-    };
-};
-
-
-function scrollTabs(direction) {
-    const container = document.getElementById('plasmid-tabs-container');
-    const scrollAmount = 200; // Adjust as needed
-    if (direction === 'left') {
-        container.scrollLeft -= scrollAmount;
-    } else if (direction === 'right') {
-        container.scrollLeft += scrollAmount;
     };
 };
 

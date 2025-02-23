@@ -70,12 +70,33 @@ function createModalWindow(id, title, inputLabel, inputValue, actionLabel, actio
     modal.style.display = "block";
     modal.appendChild(modalWindow);
 
+
     document.getElementById(`${id}-action-button`).addEventListener("click", function (event) {
         event.preventDefault();
         const inputValue = document.getElementById(`${id}-input`).value;
         actionFunction(inputValue);
         removeModalWindow(id);
     });
+
+
+    const modalInput = document.getElementById(`${id}-input`);
+    modalInput.focus();
+    modalInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            document.getElementById(`${id}-action-button`).click();
+        };
+    });
+
+
+    function onEscapeKey(event) {
+        if (event.key === "Escape") {
+            event.preventDefault();
+            removeModalWindow(id);
+            document.removeEventListener("keydown", onEscapeKey);
+        };
+    };
+    document.addEventListener("keydown", onEscapeKey);
 };
 
 
