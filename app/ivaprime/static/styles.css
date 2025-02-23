@@ -976,6 +976,8 @@ input, select, textarea {
   font-size: 14px;
   pointer-events: none;
 
+  z-index: 9999;
+
   opacity: 0;
 }
 
