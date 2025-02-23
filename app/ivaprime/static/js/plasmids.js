@@ -137,6 +137,7 @@ class Plasmid {
         this.saveState("Create plasmid")
     };
 
+
     /**
      * Creates the different views and saves them
      */
@@ -376,7 +377,9 @@ class Plasmid {
             featuresTableContainer.appendChild(featureDiv);
 
 
-            collapsibleHeader.onclick = function() {FeaturesTable.toggleCollapsibleHeader(this)}
+            collapsibleHeader.onclick = function() {
+                Sidebar.toggleCollapsibleHeader(this)
+            };
         };
 
         this.featuresTable = featuresTableContainer;
@@ -520,7 +523,7 @@ class Plasmid {
         if (Session.activePlasmidIndex == this.index) {
             PlasmidViewer.deselectBases();
             PlasmidViewer.redraw();
-            PlasmidTabs.updateFeaturesTable();
+            Sidebar.update();
         };
 
         this.saveState("Flip plasmid")
@@ -555,7 +558,7 @@ class Plasmid {
         if (Session.activePlasmidIndex == this.index) {
             PlasmidViewer.deselectBases();
             PlasmidViewer.redraw();
-            PlasmidTabs.updateFeaturesTable();
+            Sidebar.update();
         };
 
         this.saveState("Change plasmid origin")

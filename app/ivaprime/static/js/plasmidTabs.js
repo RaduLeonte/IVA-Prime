@@ -74,8 +74,7 @@ const PlasmidTabs = new class {
 
         PlasmidViewer.redraw();
 
-        this.updateSidebarPrimers();
-        this.updateFeaturesTable();
+        Sidebar.update();
 
         return;
     
@@ -244,27 +243,6 @@ const PlasmidTabs = new class {
         });
     };
 
-
-    /**
-     * Update the sidebar with the current primers.
-     */
-    updateSidebarPrimers() {
-        return;
-    };
-
-
-    /**
-     * Update the sidebar with the current features table.
-     */
-    updateFeaturesTable() {
-        // Update sidebar table
-        const featuresTableContainer = document.getElementById("features-table-container");
-        const currFeaturesTable = document.getElementById("features-table");
-        if (currFeaturesTable) {
-            featuresTableContainer.removeChild(currFeaturesTable)
-        };
-        featuresTableContainer.appendChild(Session.activePlasmid().featuresTable);
-    };
 
 
     /**
