@@ -746,6 +746,7 @@ input, select, textarea {
   height: 100%;
 }
 
+
 .svg-wrapper {
   padding: 20px;
 
@@ -821,6 +822,10 @@ input, select, textarea {
 .svg-sequence-indices {
   font-weight: bold;
   fill: var(--border-color);
+
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 .svg-sequence-group-bounding-box {
