@@ -503,7 +503,7 @@ const FileIO = new class {
             additionalInfoSection = additionalInfoSection.split("\n");
             additionalInfoSection = additionalInfoSection.slice(1, -1);
             additionalInfoSection = additionalInfoSection.join("\n") + "\n";
-            console.log(`FileIO.parsers.gb -> Additional info additionalInfoSection=\n${additionalInfoSection}`);
+            //console.log(`FileIO.parsers.gb -> Additional info additionalInfoSection=\n${additionalInfoSection}`);
             
             const fileAdditionalInfo = [];
 
@@ -538,32 +538,34 @@ const FileIO = new class {
                     const subPropertiesString = matches[3];
                     
                     const subPropertyStringMatches = [...subPropertiesString.matchAll(/^\s{2}\S+\s+/gm)];
-                    let currentIndex = subPropertyStringMatches[0].index;
-                    for (let i = 0; i < subPropertyStringMatches.length; i++) {
-                        const nextIndex = (i != subPropertyStringMatches.length - 1) ? subPropertyStringMatches[i+1].index: -1;
-                        const subPropertyString = subPropertiesString.slice(currentIndex, nextIndex);
-                        //console.log(`FileIO.parsers.gb -> Additional info subPropertyString=\n${subPropertyString}`);
-                        
-                        const subPropertyName = subPropertyString.slice(0, 12).trim();
-                        
-                        let subPropertyEntry = subPropertyString.slice(12);
-                        if (subPropertyEntry.includes("\n")) {
-                            subPropertyEntry = subPropertyEntry.split("\n")
-                                                               .map( (s) => s.trim())
-                                                               .join(" ")
-                                                               .trim();
+                    if (subPropertyStringMatches && subPropertyStringMatches[0]) {
+                        let currentIndex = subPropertyStringMatches[0].index;
+                        for (let i = 0; i < subPropertyStringMatches.length; i++) {
+                            const nextIndex = (i != subPropertyStringMatches.length - 1) ? subPropertyStringMatches[i+1].index: -1;
+                            const subPropertyString = subPropertiesString.slice(currentIndex, nextIndex);
+                            //console.log(`FileIO.parsers.gb -> Additional info subPropertyString=\n${subPropertyString}`);
+                            
+                            const subPropertyName = subPropertyString.slice(0, 12).trim();
+                            
+                            let subPropertyEntry = subPropertyString.slice(12);
+                            if (subPropertyEntry.includes("\n")) {
+                                subPropertyEntry = subPropertyEntry.split("\n")
+                                                                   .map( (s) => s.trim())
+                                                                   .join(" ")
+                                                                   .trim();
+                            };
+                            
+                            subProperties.push(
+                                {
+                                    "name": subPropertyName,
+                                    "entry": subPropertyEntry
+                                }
+                            );
+                            //console.log(`FileIO.parsers.gb -> Additional info ${propertyName}--${subPropertyName}=${subPropertyEntry}`);
+                            currentIndex = nextIndex;
                         };
-                        
-                        subProperties.push(
-                            {
-                                "name": subPropertyName,
-                                "entry": subPropertyEntry
-                            }
-                        );
-                        //console.log(`FileIO.parsers.gb -> Additional info ${propertyName}--${subPropertyName}=${subPropertyEntry}`);
-                        currentIndex = nextIndex;
+                        propertyDict["subProperties"] = subProperties;
                     };
-                    propertyDict["subProperties"] = subProperties;
                 };
                 fileAdditionalInfo.push(propertyDict)
             });

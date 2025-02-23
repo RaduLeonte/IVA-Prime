@@ -25,9 +25,10 @@ const PlasmidTabs = new class {
             this.hideWelcomeDisclaimer();
 
             newPlasmidTab.classList.add("plasmid-tab-selected");
-            Session.activePlasmidIndex = plasmidIndex;
 
             this.switch(plasmidIndex);
+
+            this.enableSwitchViewButtons();
         };
     };
 
@@ -39,10 +40,17 @@ const PlasmidTabs = new class {
     switch(plasmidIndex) {
         // Close dropdown menus
         this.removeAllPlasmidTabDropdownMenus();
+
+        console.log(`PlasmidTabs.switch -> plasmidIndex=${plasmidIndex} (active=${Session.activePlasmidIndex}, ${(Session.activePlasmidIndex !== null && Session.activePlasmidIndex === plasmidIndex)})`)
+        if (Session.activePlasmidIndex !== null && Session.activePlasmidIndex === plasmidIndex) {
+            return;
+        };
         
         // Deselect plasmid tab
         const previousPlasmidTab = document.getElementById("plasmid-tab-" + Session.activePlasmidIndex);
-        previousPlasmidTab.classList.remove("plasmid-tab-selected");
+        if (previousPlasmidTab) {
+            previousPlasmidTab.classList.remove("plasmid-tab-selected");
+        };
         
         // Select new tab
         const newPlasmidTab = document.getElementById("plasmid-tab-" + plasmidIndex);
@@ -98,6 +106,21 @@ const PlasmidTabs = new class {
     };
     hideWelcomeDisclaimer() {
         document.getElementById("welcome-disclaimer").style.display = "none";
+    };
+
+
+    /**
+     * Enable or disable the switch view buttons in the toolbar
+     */
+    enableSwitchViewButtons() {
+        ["circular", "linear", "grid"].forEach(view => {
+            document.getElementById(`${view}-view-button`).removeAttribute('disabled');
+        });
+    };
+    disableSwitchViewButtons() {
+        ["circular", "linear", "grid"].forEach(view => {
+            document.getElementById(`${view}-view-button`).setAttribute('disabled', '');
+        });
     };
 
 
@@ -398,6 +421,8 @@ function closePlasmid(plasmidIndex) {
             const contentGridContainer = document.getElementById('file-content');
             contentGridContainer.innerHTML = "";
             Project.activePlasmidIndex = null;
+
+            this.disableSwitchViewButtons();
         };
     }
     // Delete plasmid info and tab

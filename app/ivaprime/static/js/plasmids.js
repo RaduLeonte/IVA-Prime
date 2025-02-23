@@ -178,8 +178,8 @@ class Plasmid {
 
         // Create feature table container
         const featuresTableContainer = document.createElement("DIV");
-        featuresTableContainer.id = "feature-table";
-        featuresTableContainer.classList.add("feature-table");
+        featuresTableContainer.id = "features-table";
+        featuresTableContainer.classList.add("features-table");
 
         // Iterate over the features and populate the container
         for (const featureID in currFeatures) {

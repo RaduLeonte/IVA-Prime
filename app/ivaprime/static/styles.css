@@ -411,6 +411,11 @@ input[type="checkbox"] {
   cursor: auto;
 }
 
+.toolbar-button[disabled] {
+  opacity: 15%;
+  cursor: auto;
+}
+
 
 /* Toolbar icon svgs */
 .toolbar-plasmid-circular-button {
@@ -799,9 +804,6 @@ input, select, textarea {
 .svg-wrapper-grid {
   padding: 20px;
 }
-
-
-
 
 .svg-plasmid-title {
   font-weight: bold;

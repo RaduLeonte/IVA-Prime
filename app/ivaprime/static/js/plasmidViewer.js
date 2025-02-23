@@ -375,31 +375,18 @@ const PlasmidViewer = new class {
         const featureAnnotationsSpacing = 8;
         const gridMargin = 50; // margin on each side
         
+
         /**
          * Figure out how wide the drawable area is
          */
-        const svgContainer = document.getElementById("grid-view-container");
-        svgContainer.style.display = "flex";
+        const viewerContainer = document.getElementById("viewer");
+        const svgWrapperPadding = 40;
+        const scrollBarWidth = 20;
+        let maxWidth = viewerContainer.clientWidth - svgWrapperPadding - scrollBarWidth;
         
-        const svgWrapperDummy = document.createElement("DIV");
-        svgWrapperDummy.classList.add("svg-wrapper");
-        svgContainer.appendChild(svgWrapperDummy);
-        const svgWrapperStyle = getComputedStyle(svgWrapperDummy);
-        
-        let maxWidth = svgContainer.offsetWidth - (parseFloat(svgWrapperStyle.paddingLeft) + parseFloat(svgWrapperStyle.paddingRight));
-        
-        const mainViewer = svgContainer.parentElement;
-        mainViewer.style.overflowY = "scroll";
-        const scrollbarWidth = mainViewer.offsetWidth - svgContainer.offsetWidth;
-        mainViewer.style.overflowY = "";
-        console.log("drawGrid", scrollbarWidth)
-
-        maxWidth -= scrollbarWidth;
         maxWidth -= gridMargin*2;
-        console.log("drawGrid", maxWidth);
+        console.log(`PlasmidViewer.drawGrid -> maxWidth: ${viewerContainer.clientWidth}=>${maxWidth}`);
 
-        svgContainer.style.display = "";
-        svgContainer.removeChild(svgWrapperDummy);
 
         // Sequence coordinate to pixel in axis
         let seqToPixel = (s) => (s / basesPerLine)*(maxWidth) + gridMargin;
@@ -1373,13 +1360,18 @@ const PlasmidViewer = new class {
 
 
     /**
+     * Display a specific view.
      * 
-     * @param {*} targetView 
+     * @param {String} targetView  - Target view to display ("circular", "linear", "grid")
+     * @param {HTMLElement} sender 
      * @returns 
      */
-    switchView(targetView) {
-        // Return immediately if we're already in target view
-        if (this.activeView === targetView) {return};
+    switchView(targetView, sender=null) {
+        console.log(`PlasmidViewer.switchView -> targetView=${targetView}, sender=${sender}`);
+        
+        // Return immediately if the button is disabled
+        if (sender && sender.hasAttribute("disabled")) {return};
+        
 
         // Get parent group
         const button = document.getElementById(`${targetView}-view-button`);
@@ -1391,14 +1383,13 @@ const PlasmidViewer = new class {
                 e.classList.remove("toolbar-button-selected")
             );
         };
-
         // Select button that was just clicked
-        button.classList.add("toolbar-button-selected")
-        
-        if (this.activeView) {
-            const currentViewContainer = document.getElementById(`${this.activeView}-view-container`);
-            currentViewContainer.style.display = "none";
-        };
+        button.classList.add("toolbar-button-selected");
+
+
+        ["circular", "linear", "grid"].forEach(view => {
+            document.getElementById(`${view}-view-container`).style.display = "none";
+        });
 
         const targetViewContainer = document.getElementById(`${targetView}-view-container`);
         targetViewContainer.style.display = "flex";
@@ -1440,23 +1431,17 @@ const PlasmidViewer = new class {
      * 
      */
     updateViewer() {
-        let targetView;
-        if (PlasmidViewer.activeView) {
-            targetView = PlasmidViewer.activeView;
-        } else {
-            targetView = "grid";
-        };
+        const targetView = PlasmidViewer.activeView ? PlasmidViewer.activeView: "grid";
 
-        const views = ["circular", "linear", "grid"]
-        for (let i in views) {
-            const svgContainer = document.getElementById(`${views[i]}-view-container`);
+
+        ["circular", "linear", "grid"].forEach(view => {
+            const svgContainer = document.getElementById(`${view}-view-container`);
             if (svgContainer.firstElementChild) {
                 svgContainer.removeChild(svgContainer.firstElementChild)
             };
 
-            svgContainer.appendChild(Session.activePlasmid().views[views[i]]);
-        };
-
+            svgContainer.appendChild(Session.activePlasmid().views[view]);
+        });
 
         this.switchView(targetView);
     };
