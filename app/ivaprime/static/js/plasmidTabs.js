@@ -315,11 +315,11 @@ const PlasmidTabs = new class {
         dropdownMenu.innerHTML = `
         <h3>Export primers</h3>
         <ul>
-            <li><a href="#" fileType="txt" onclick="exportPrimers(this, ${plasmidIndex})">Plaint text (.txt)</a></li>
-            <li><a href="#" fileType="doc" onclick="exportPrimers(this, ${plasmidIndex})">MS Word file (.doc)</a></li>
-            <li><a href="#" fileType="csv" onclick="exportPrimers(this, ${plasmidIndex})">CSV file (.csv)</a></li>
-            <li><a href="#" fileType="xlsx" onclick="exportPrimers(this, ${plasmidIndex})">Excel file (.xlsx)</a></li>
-            <li><a href="#" fileType="microsynth" onclick="exportPrimers(this, ${plasmidIndex})">Microsynth order form (.xlsx)</a></li>
+            <li><a href="#" fileType="txt" onclick="FileIO.primerExporters['txt'](${plasmidIndex})">Plaint text (.txt)</a></li>
+            <li><a href="#" fileType="doc" onclick="FileIO.primerExporters['doc'](${plasmidIndex})">MS Word file (.doc)</a></li>
+            <li><a href="#" fileType="csv" onclick="FileIO.primerExporters['csv'](${plasmidIndex})">CSV file (.csv)</a></li>
+            <li><a href="#" fileType="xlsx" onclick="FileIO.primerExporters['xlsx'](${plasmidIndex})">Excel file (.xlsx)</a></li>
+            <li><a href="#" fileType="microsynth" onclick="FileIO.primerExporters['microsynth'](${plasmidIndex})">Microsynth order form (.xlsx)</a></li>
         </ul>
         <h3>Export plasmid file</h3>
         <ul>
@@ -385,6 +385,17 @@ const PlasmidTabs = new class {
         container.scrollLeft += scrollAmount * direction;
     };
     
+
+    /**
+     * 
+     * @param {*} fileType 
+     * @param {*} plasmidIndex 
+     */
+    exportPrimers(fileType, plasmidIndex) {
+        FileIO.primerExporters[fileType](plasmidIndex);
+    };
+
+
 
     /**
      * Rename specific plasmid through a modal window.
@@ -548,59 +559,6 @@ function updateSidebarPrimers() {
     sidebarContainer.removeChild(oldPrimers);
 
     enablePrimerIDEditing();
-};
-
-
-function closePlasmid(plasmidIndex) {
-    const entriesList = Object.keys(Project.plasmids);
-    // Check if were deleting the currently displayed plasmid
-    if (Project.activePlasmidIndex === plasmidIndex) {
-        // If we can switch to another tab, do it
-        if (entriesList.length > 1) {
-            const index = entriesList.indexOf("" + plasmidIndex)
-            if (index !== 0) {
-                switchPlasmidTab(entriesList[index - 1])
-            } else {
-                switchPlasmidTab(entriesList[index + 1])
-            };
-        // Other wise clear everything
-        } else {
-            // Clear sidebar
-            const sidebarContainer = document.getElementById('sidebar-container');
-            sidebarContainer.innerHTML = "<div class=\"sidebar-content\"><h2 id=\"primers-div-headline\">Primers will appear here.</h2></div>";
-    
-            // Clear content grid
-            const contentGridContainer = document.getElementById('file-content');
-            contentGridContainer.innerHTML = "";
-            Project.activePlasmidIndex = null;
-
-            this.disableSwitchViewButtons();
-        };
-    }
-    // Delete plasmid info and tab
-    delete Project.plasmids[plasmidIndex];
-    const plasmidTabElement = document.getElementById("plasmid-tab-" + plasmidIndex);
-    plasmidTabElement.parentNode.removeChild(plasmidTabElement);
-};
-
-
-function closeOtherPlasmids(plasmidIndex) {
-    switchPlasmidTab(plasmidIndex);
-    for (const [plasmid, ] of Object.entries(Project.plasmids)) {
-        const pIndex = parseInt(plasmid);
-        if (pIndex !== plasmidIndex) {closePlasmid(pIndex)}
-    };
-};
-
-
-function closePlasmidsToTheRight(plasmidIndex) {
-    if (plasmidIndex < Project.activePlasmidIndex) {
-        switchPlasmidTab(plasmidIndex);
-    };
-    for (const [plasmid, ] of Object.entries(Project.plasmids)) {
-        const pIndex = parseInt(plasmid);
-        if (pIndex > plasmidIndex) {closePlasmid(pIndex)}
-    };
 };
 
 

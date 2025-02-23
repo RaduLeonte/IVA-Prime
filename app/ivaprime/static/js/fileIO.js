@@ -677,25 +677,25 @@ const FileIO = new class {
     /**
      * Dictionary of exporters.
      */
-    //#region File exporters
+    // #region File_exporters
     exporters = {
         /**
          * Snapgene .dna file exporter.
          * 
          * @param {int} plasmidIndex - Index of plasmid to be exported.
          */
-        //#region SNAPGENE (.DNA) 
+        // #region SNAPGENE (.DNA) 
         dna: (plasmidIndex) => {
             const targetPlasmid = Session.getPlasmid(plasmidIndex);
         },
-
+        // #endregion SNAPGENE
 
         /**
          * Genbank .gb file exporter.
          * 
          * @param {int} plasmidIndex - Index of plasmid to be exported.
          */
-        //#region GENBANK (.GB) 
+        // #region GENBANK (.GB) 
         gb: (plasmidIndex) => {
             const targetPlasmid = Session.getPlasmid(plasmidIndex);
             const dateCreated = (targetPlasmid.additionalInfo["CREATED"]) ? targetPlasmid.additionalInfo["CREATED"]: new Date();
@@ -703,10 +703,7 @@ const FileIO = new class {
             let fileContent = ""
 
 
-            /**
-             * Header
-             */
-            //#region Header
+            // #region Header
             // LOCUS
             fileContent += `LOCUS       `;
             fileContent += targetPlasmid.name;
@@ -719,13 +716,10 @@ const FileIO = new class {
             fileContent += " ".repeat(5);
             fileContent += this.formatToGBDate(dateCreated);
             fileContent += "\n"
-            //#endregion
+            // #endregion Header
 
 
-            /**
-             * Additional info
-             */
-            //#region Additional info
+            // #region Additional_info
             let leftColumnWidth = 12;
             let rightColumnWidth = 50;
             targetPlasmid.additionalInfo.forEach( property => {
@@ -742,13 +736,10 @@ const FileIO = new class {
                     });
                 };
             });
-            //#endregion
+            // #endregion Additional_info
 
 
-            /**
-             * Features
-             */
-            //#region Features
+            // #region Features
             leftColumnWidth = 21;
             rightColumnWidth = 60;
             fileContent += "FEATURES             Location/Qualifiers\n";
@@ -779,13 +770,10 @@ const FileIO = new class {
                     fileContent += "\n";
                 });
             };
-            //#endregion
+            // #endregion Features
 
 
-            /**
-             * Sequence
-             */
-            //#region Sequence
+            // #region Sequence
             fileContent += "ORIGIN\n";
             const nrSequenceIndexSpaces = 9;
             const nrBasesInSegment = 10;
@@ -805,7 +793,7 @@ const FileIO = new class {
             };
             fileContent += "//"
             console.log(`FileIO.exporters.gb -> fileContent=\n${fileContent}`)
-            //#endregion
+            // #endregion Sequence
 
 
             this.downloadFile(
@@ -813,6 +801,7 @@ const FileIO = new class {
                 fileContent
             );
         },
+        // #endregion GENBANK
 
 
         /**
@@ -820,7 +809,7 @@ const FileIO = new class {
          * 
          * @param {int} plasmidIndex - Index of plasmid to be exported.
          */
-        //#region FASTA (.FASTA) 
+        // #region FASTA (.FASTA) 
         fasta: (plasmidIndex) => {
             const targetPlasmid = Session.getPlasmid(plasmidIndex);
             console.log(`FileIO.exports.fasta -> ${plasmidIndex} ${targetPlasmid.name}`)
@@ -830,7 +819,77 @@ const FileIO = new class {
                 `>${targetPlasmid.name}\n${targetPlasmid.sequence}`
             );
         }
+        // #endregion FASTA
     };
+    // #endregion File_exporters
+
+
+    /**
+     * Dictionary of primers exporters.
+     */
+    // #region Primers_exporters
+    primerExporters = {
+        /**
+         * Txt format.
+         * 
+         * @param {int} plasmidIndex - Index of plasmid to export primers for.
+         */
+        // #region txt 
+        txt: (plasmidIndex) => {
+            console.log(`FileIO.primerExporters.txt -> ${plasmidIndex}`);
+            return
+        },
+        // #endregion txt
+
+        /**
+         * Doc format.
+         * 
+         * @param {int} plasmidIndex - Index of plasmid to export primers for.
+         */
+        // #region doc 
+        doc: (plasmidIndex) => {
+            console.log(`FileIO.primerExporters.doc -> ${plasmidIndex}`);
+            return
+        },
+        // #endregion doc
+
+        /**
+         * Csv format.
+         * 
+         * @param {int} plasmidIndex - Index of plasmid to export primers for.
+         */
+        // #region csv 
+        csv: (plasmidIndex) => {
+            console.log(`FileIO.primerExporters.csv -> ${plasmidIndex}`);
+            return
+        },
+        // #endregion csv
+
+        /**
+         * Xlsx format.
+         * 
+         * @param {int} plasmidIndex - Index of plasmid to export primers for.
+         */
+        // #region xlsx 
+        xlsx: (plasmidIndex) => {
+            console.log(`FileIO.primerExporters.xlsx -> ${plasmidIndex}`);
+            return
+        },
+        // #endregion xlsx
+
+        /**
+         * Microsynth format.
+         * 
+         * @param {int} plasmidIndex - Index of plasmid to export primers for.
+         */
+        // #region microsynth 
+        microsynth: (plasmidIndex) => {
+            console.log(`FileIO.primerExporters.microsynth -> ${plasmidIndex}`);
+            return
+        },
+        // #endregion microsynth
+    };
+    // #endregion Primers_exporters
 
 
     /**
