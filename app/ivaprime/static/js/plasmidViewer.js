@@ -852,21 +852,6 @@ const PlasmidViewer = new class {
                 ));
             };
             groupSequence.appendChild(groupTicks);
-    
-
-
-            // Group sequence bounding box for events
-            const groupSequenceBox = this.createShapeElement("polygon");
-            groupSequenceBox.setAttribute("points", [
-                [0, 0],
-                [(segment["sequenceFwd"].length/basesPerLine)*maxWidth, 0],
-                [(segment["sequenceFwd"].length/basesPerLine)*maxWidth, singleStrandHeight*2],
-                [0, singleStrandHeight*2]
-            ])
-            groupSequenceBox.setAttribute("fill", "black");
-            groupSequenceBox.classList.add("svg-sequence-group-bounding-box");
-            
-            groupSequence.appendChild(groupSequenceBox);
 
             groupMain.appendChild(groupSequence);
 
