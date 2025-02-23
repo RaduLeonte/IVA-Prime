@@ -16,7 +16,12 @@ const FileIO = new class {
 
             // Check if file type is supported.
             if (![".gbk", ".gb", ".dna", ".fasta"].includes(fileExtension)) {
+                Alerts.error(
+                    `Unsupported file type: ${fileNameExtension}`,
+                    "The file type you selected is not supported. Please upload a file with one of the following extensions: .gbk, .gb, .dna, or .fasta."
+                );
                 console.error("Unsupported file type.");
+                resolve();
                 return;
             };
 
@@ -419,6 +424,10 @@ const FileIO = new class {
             const originSection = fileContent.match(/ORIGIN[\s\S]*?\n([\s\S]*?)\n\/\//);
             //console.log(`FileIO.parsers.gb -> originSection=${originSection}`)
             if (!originSection) {
+                Alerts.error(
+                    "Parsing error",
+                    "No sequence could be found in the uploaded file."
+                );
                 console.error("No sequence found in .gb file");
                 return;
             };
@@ -589,12 +598,22 @@ const FileIO = new class {
             console.log(`FileIO.parser.fasta -> fileContent=${fileContent}`);
             const lines = fileContent.split("\n");
 
-            if (lines.length < 2) {console.error("Could not read sequence in FASTA file.")};
+            if (lines.length < 2) {
+                Alerts.error(
+                    "Parsing error",
+                    "No sequence found in FASTA file."
+                );
+                console.error("No sequence found in FASTA file.")
+            };
 
             console.log(`FileIO.parser.fasta -> lines=${lines}`);
             const fileSequence = lines[1];
 
             if (!nucleotides.isNucleotideSequence(fileSequence)) {
+                Alerts.error(
+                    "Parsing error",
+                    "FASTA sequence contains non-nucleotide codes."
+                );
                 console.error("FASTA sequence contains non-nucleotide codes.");
                 return;
             };

@@ -11,8 +11,8 @@ const Alerts = new class {
         this.showAlert(
             title,
             body,
+            lifetime,
             color,
-            lifetime
         );
     };
 
@@ -29,8 +29,8 @@ const Alerts = new class {
         this.showAlert(
             title,
             body,
+            lifetime,
             color,
-            lifetime
         );
     };
 
