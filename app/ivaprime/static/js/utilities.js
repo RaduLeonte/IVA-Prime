@@ -86,4 +86,26 @@ const Utilities = new class {
         // Convert the sorted array back to a dictionary and return
         return Object.fromEntries(features);
     };
+
+
+    /**
+     * Find width of the scrollbar by generating a temporary div.
+     * 
+     * @returns {Number} - Width of scrollbar.
+     */
+    getScrollbarWidth() {
+        const tempDiv = document.createElement('div');
+        tempDiv.style.visibility = 'hidden';
+        tempDiv.style.overflow = 'scroll';
+        document.body.appendChild(tempDiv);
+      
+        const innerTempDiv = document.createElement('div');
+        tempDiv.appendChild(innerTempDiv);
+        
+        const scrollbarWidth = (tempDiv.offsetWidth - innerTempDiv.offsetWidth);
+      
+        tempDiv.parentNode.removeChild(tempDiv);
+      
+        return scrollbarWidth;
+      };
 };

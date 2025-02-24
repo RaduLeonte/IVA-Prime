@@ -365,7 +365,7 @@ const PlasmidViewer = new class {
          */
         const viewerContainer = document.getElementById("viewer");
         const svgWrapperPadding = 40;
-        const scrollBarWidth = 20;
+        const scrollBarWidth = Utilities.getScrollbarWidth();
         let maxWidth = viewerContainer.clientWidth - svgWrapperPadding - scrollBarWidth;
         
         maxWidth -= gridMargin*2;
