@@ -5,7 +5,6 @@ const FileIO = new class {
      * @param {Object} file - File object. 
      * @param {int} plasmidIndex - Plasmid index to be assigned.
      */
-    //#region Import single file
     importFile(file, plasmidIndex=null) {
         return new Promise((resolve, reject) => {
             // Get filename+extension from path
@@ -61,11 +60,9 @@ const FileIO = new class {
         });
     };
 
-
     /**
      * Imports the demo pET-28a(+).dna file.
      */
-    //#region Import the demo file
     async importDemoFile() {
         const filePath = "\\static\\plasmids\\pET-28a(+).dna"
         const response = await fetch(filePath);
@@ -82,7 +79,6 @@ const FileIO = new class {
      * 
      * @param {*} event 
      */
-    //#region "Import File" button callback
     importFileButton(event) {
         event.preventDefault();
         const fileInput = document.createElement('input');
@@ -123,7 +119,6 @@ const FileIO = new class {
      * 
      * @param {Array} filesList - List of files to import.
      */
-    //#region Import queue
     importQueue(filesList) {
         // Change cursor to loading
         this.addLoadingCursor();
@@ -149,7 +144,6 @@ const FileIO = new class {
     /**
      * Dictionary of parsers.
      */
-    //#region File parsers
     parsers = {
         /**
          * Snapgene .dna file parser.
@@ -163,7 +157,6 @@ const FileIO = new class {
          *      fileAdditionalInfo
          * }
          */
-        //#region SNAPGENE (.DNA) 
         dna : (fileArrayBuffer) => {
             // Read array as list of 8 bit integers
             const arrayBuf = new Uint8Array(fileArrayBuffer);
@@ -173,10 +166,7 @@ const FileIO = new class {
             const xmlParser = new DOMParser();
             
 
-            /**
-             * Sequence
-             */
-            //#region Sequence
+            // #region Sequence
             // Read file sequence length from bytes [20,23]
             const sequenceLengthHex = Array.from(arrayBuf.slice(20, 24)).map(byte => (byte.toString(16)));
             const sequenceLength = parseInt(sequenceLengthHex.join(" ").replace(/\s/g, ''), 16);
@@ -192,12 +182,9 @@ const FileIO = new class {
             let fileSequence = new TextDecoder().decode(sequenceBytes);
             fileSequence = Nucleotides.sanitizeSequence(fileSequence);
             let fileComplementarySequence = Nucleotides.complementary(fileSequence);
-            //#endregion
+            // #endregion Sequence
 
 
-            /**
-             * Features
-             */
             //#region Features
             // Extract XML tree
             let featuresXMLString = fileContent.slice(fileContent.indexOf("<Features"), fileContent.indexOf("</Feature></Features>") + "</Feature></Features>".length);
@@ -313,13 +300,11 @@ const FileIO = new class {
                 // Append feature info dict the corresponding feature in the dict
                 featuresDict[featureId] = featureInfo;
             };
-            //#endregion
+            // #endregion Features
 
 
-            /**
-             * Primers
-             */
-            //#region Primers
+
+            // #region Primers
             // Extract XML tree string
             let primersXMLString = fileContent.slice(fileContent.indexOf("<Primers"), fileContent.indexOf("</Primer></Primers>") + "</Primer></Primers>".length);
             // Parse string to XML tree
@@ -348,14 +333,15 @@ const FileIO = new class {
                 // Append feature info the corresponding feature in the dict
                 featuresDict[primerId] = primerInfo;
             };
-            //#endregion
+            // #endregion Primers
+            
             const fileFeatures = Utilities.sortFeaturesDictBySpan(featuresDict);
 
 
             /**
              * Notes
              */
-            //#region Notes
+            // #region Notes
             let fileAdditionalInfo = [];
 
             const treeName = "Notes"
@@ -385,7 +371,7 @@ const FileIO = new class {
                     }
                 );
             };
-            //#endregion
+            // #endregion Notes
 
 
             /**
@@ -400,7 +386,6 @@ const FileIO = new class {
                 fileAdditionalInfo
             };
         },
-        
 
         /**
          * Genbank .dna file parser.
@@ -414,13 +399,9 @@ const FileIO = new class {
         *      fileAdditionalInfo
         * }
         */
-       //#region GENBANK (.GB) 
         gb : (fileContent) => {
             //console.log(`FileIO.parsers.gb -> fileContent=${fileContent}`)
-            /**
-             * Sequence
-             */
-            //#region Sequence
+            // #region Sequence
             const originSection = fileContent.match(/ORIGIN[\s\S]*?\n([\s\S]*?)\n\/\//);
             //console.log(`FileIO.parsers.gb -> originSection=${originSection}`)
             if (!originSection) {
@@ -434,12 +415,10 @@ const FileIO = new class {
             const sequenceSegments = originSection[0].match(/(?<=\s)[a-z]{1,10}(?=\s)/gi)
             let fileSequence = sequenceSegments.join("").toUpperCase();
             const fileComplementarySequence = Nucleotides.complementary(fileSequence);
-            //#endregion
+            // #endregion Sequence
 
-            /**
-             * #region Features
-             */
-            //#region Features
+
+            // #region Features
             const fileFeatures = {};
 
             let featuresSection = fileContent.match(/FEATURES[\s\S]*ORIGIN/)[0];
@@ -489,16 +468,13 @@ const FileIO = new class {
 
                 fileFeatures[Utilities.newUUID()] = featureDict;
             });
-            //#endregion
+            // #endregion Features
 
 
             const fileTopology = (fileContent.split("")[0].includes("linear")) ? "linear": "circular";
             
             
-            /**
-             * Additional info
-             */
-            //#region Additional info
+            // #region Additional_info
             let additionalInfoSection = fileContent.match(/LOCUS[\s\S]*FEATURES/)[0];
             additionalInfoSection = additionalInfoSection.split("\n");
             additionalInfoSection = additionalInfoSection.slice(1, -1);
@@ -570,8 +546,8 @@ const FileIO = new class {
                 fileAdditionalInfo.push(propertyDict)
             });
             //console.log(`FileIO.parsers.gb -> fileAdditionalInfo=\n${fileAdditionalInfo}`);
-            //#endregion
-
+            // #endregion Additional_info
+            
             return {
                 fileSequence,
                 fileComplementarySequence,
@@ -594,7 +570,6 @@ const FileIO = new class {
         *      fileAdditionalInfo
         * }
         */
-       //#region FASTA (.FASTA)
        //TO DO: Prompt user to specify topology and if they want common feature annotated
         fasta : (fileContent) => {
             console.log(`FileIO.parser.fasta -> fileContent=${fileContent}`);
@@ -637,7 +612,6 @@ const FileIO = new class {
         }
     };
 
-
     /**
      * Convert Genbank style date to a date object.
      * 
@@ -677,25 +651,21 @@ const FileIO = new class {
     /**
      * Dictionary of exporters.
      */
-    // #region File_exporters
     exporters = {
         /**
          * Snapgene .dna file exporter.
          * 
          * @param {int} plasmidIndex - Index of plasmid to be exported.
          */
-        // #region SNAPGENE (.DNA) 
         dna: (plasmidIndex) => {
             const targetPlasmid = Session.getPlasmid(plasmidIndex);
         },
-        // #endregion SNAPGENE
 
         /**
          * Genbank .gb file exporter.
          * 
          * @param {int} plasmidIndex - Index of plasmid to be exported.
          */
-        // #region GENBANK (.GB) 
         gb: (plasmidIndex) => {
             const targetPlasmid = Session.getPlasmid(plasmidIndex);
             const dateCreated = (targetPlasmid.additionalInfo["CREATED"]) ? targetPlasmid.additionalInfo["CREATED"]: new Date();
@@ -801,7 +771,6 @@ const FileIO = new class {
                 fileContent
             );
         },
-        // #endregion GENBANK
 
 
         /**
@@ -809,7 +778,6 @@ const FileIO = new class {
          * 
          * @param {int} plasmidIndex - Index of plasmid to be exported.
          */
-        // #region FASTA (.FASTA) 
         fasta: (plasmidIndex) => {
             const targetPlasmid = Session.getPlasmid(plasmidIndex);
             console.log(`FileIO.exports.fasta -> ${plasmidIndex} ${targetPlasmid.name}`)
@@ -819,77 +787,63 @@ const FileIO = new class {
                 `>${targetPlasmid.name}\n${targetPlasmid.sequence}`
             );
         }
-        // #endregion FASTA
     };
-    // #endregion File_exporters
 
 
     /**
      * Dictionary of primers exporters.
      */
-    // #region Primers_exporters
     primerExporters = {
         /**
          * Txt format.
          * 
          * @param {int} plasmidIndex - Index of plasmid to export primers for.
          */
-        // #region txt 
         txt: (plasmidIndex) => {
             console.log(`FileIO.primerExporters.txt -> ${plasmidIndex}`);
             return
         },
-        // #endregion txt
 
         /**
          * Doc format.
          * 
          * @param {int} plasmidIndex - Index of plasmid to export primers for.
          */
-        // #region doc 
         doc: (plasmidIndex) => {
             console.log(`FileIO.primerExporters.doc -> ${plasmidIndex}`);
             return
         },
-        // #endregion doc
 
         /**
          * Csv format.
          * 
          * @param {int} plasmidIndex - Index of plasmid to export primers for.
          */
-        // #region csv 
         csv: (plasmidIndex) => {
             console.log(`FileIO.primerExporters.csv -> ${plasmidIndex}`);
             return
         },
-        // #endregion csv
 
         /**
          * Xlsx format.
          * 
          * @param {int} plasmidIndex - Index of plasmid to export primers for.
          */
-        // #region xlsx 
         xlsx: (plasmidIndex) => {
             console.log(`FileIO.primerExporters.xlsx -> ${plasmidIndex}`);
             return
         },
-        // #endregion xlsx
 
         /**
          * Microsynth format.
          * 
          * @param {int} plasmidIndex - Index of plasmid to export primers for.
          */
-        // #region microsynth 
         microsynth: (plasmidIndex) => {
             console.log(`FileIO.primerExporters.microsynth -> ${plasmidIndex}`);
             return
         },
-        // #endregion microsynth
     };
-    // #endregion Primers_exporters
 
 
     /**
@@ -949,7 +903,6 @@ const FileIO = new class {
      * 
      * @returns 
      */
-    //#region New file from sequence
     newFileFromSequence() {
         // Get sequence info
         const newFileName = document.getElementById("new-file-name-input").value;
