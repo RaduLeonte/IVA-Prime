@@ -1515,7 +1515,7 @@ function parseDNAFile(fileArrayBuffer) {
   const arrayBuf = new Uint8Array(fileArrayBuffer);
   let fileContent = new TextDecoder().decode(arrayBuf);
 
-  const sequenceLengthHex = Array.from(arrayBuf.slice(20, 24)).map(byte => (byte.toString(16)));
+  const sequenceLengthHex = Array.from(arrayBuf.slice(20, 24), byte => byte.toString(16).padStart(2, "0"))
   const sequenceLength = parseInt(sequenceLengthHex.join(" ").replace(/\s/g, ''), 16);
   console.log("parseDNAFile ->", sequenceLength, sequenceLengthHex, arrayBuf.slice(20, 24));
   
