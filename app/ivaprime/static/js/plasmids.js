@@ -235,10 +235,10 @@ class Plasmid {
             labelDiv.innerHTML = `
             <label class="collapsible-content-hgroup-label">Label</label>
             <div class="collapsible-content-hgroup-input">
-            <input id="labelInput" value="${feature.label}">
+            <input id="label-input" value="${feature.label}">
             <div class="clr-field" style="color: ${currFeatureColor};">
                 <button type="button" aria-labelledby="clr-open-label"></button>
-                <input id="colorInput" type="text" class="coloris" data-coloris value="${currFeatureColor}"></div>
+                <input id="color-input" type="text" class="coloris" data-coloris value="${currFeatureColor}"></div>
             </div>
             </div>
             `;
@@ -255,9 +255,9 @@ class Plasmid {
             spanDiv.innerHTML = `
             <label class="collapsible-content-hgroup-label">Span</label>
             <div class="collapsible-content-hgroup-input">
-            <input type="number" id="spanStartInput" min="1" max="${spanEndMax}" value="${spanStart}">
+            <input type="number" id="span-start-input" min="1" max="${spanEndMax}" value="${spanStart}">
             <span> .. </span> 
-            <input type="number" id="spanEndInput" min="1" max="${spanEndMax}" value="${spanEnd}">
+            <input type="number" id="span-end-input" min="1" max="${spanEndMax}" value="${spanEnd}">
             </div>
             `;
             collapsibleContent.appendChild(spanDiv);
@@ -270,7 +270,7 @@ class Plasmid {
             directionDiv.innerHTML = `
             <label class="collapsible-content-hgroup-label">Direction</label>
             <div class="collapsible-content-hgroup-input">
-            <select id="directionSelect">
+            <select id="directionality-select">
                 <option value="fwd">Forward</option>
                 <option value="rev">Reverse</option>
             </select>
@@ -294,7 +294,7 @@ class Plasmid {
             translateDiv.innerHTML = `
             <label class="collapsible-content-hgroup-label">Translate</label>
             <div class="collapsible-content-hgroup-input">
-            <input type="checkbox" id="translateCheckbox" checked="${(feature.translation === "" || feature.translation === null || (typeof feature.translation) === 'undefined') ? false: true}">
+            <input type="checkbox" id="translated-checkbox" checked="${(feature.translation === "" || feature.translation === null || (typeof feature.translation) === 'undefined') ? false: true}">
             </div>
             `;
             translateDiv.getElementsByTagName("input")[0].checked = (feature.translation === "" || feature.translation === null  || (typeof feature.translation) === 'undefined') ? false: true;
@@ -309,12 +309,12 @@ class Plasmid {
             typeDiv.innerHTML = `
             <label class="collapsible-content-hgroup-label">Feature type</label>
             <div class="collapsible-content-hgroup-input">
-            <select id="typeSelect" onchange="
+            <select id="type-select" onchange="
             if (this.options[this.selectedIndex].value=='customOption') {
                 toggleInputInSelect(this, this.nextElementSibling);
                 this.selectedIndex='0'}
                 ">
-            </select><input id="typeInput" name="browser" style="display: none;" disabled="disabled" onblur="
+            </select><input id="type-input" name="browser" style="display: none;" disabled="disabled" onblur="
             if (this.value === '') {
                 toggleInputInSelect(this, this.previousElementSibling);}
             ">
@@ -355,7 +355,7 @@ class Plasmid {
             noteDiv.innerHTML = `
             <label class="collapsible-content-hgroup-label">Note</label>
             <div class="collapsible-content-hgroup-input">
-            <textarea id="noteTextArea" spellcheck="false">${feature.note}</textarea>
+            <textarea id="note-text-area" spellcheck="false">${feature.note}</textarea>
             </div>
             `;
             collapsibleContent.appendChild(noteDiv);
@@ -366,8 +366,8 @@ class Plasmid {
             const updateButtonDiv = document.createElement("DIV");
             updateButtonDiv.classList.add("collapsible-content-hgroup");
             updateButtonDiv.innerHTML = `
-            <a href="#" class="round-button update-feature-button" onClick="updateFeatureProperties(this)">Update</a>
-            <a href="#" class="round-button remove-feature-button" onClick="removeFeatureButton(this)">Remove</a>
+            <span class="round-button update-feature-button" onClick="Session.getPlasmid(${this.index}).updateFeatureProperties('${featureID}')">Update</span>
+            <span class="round-button remove-feature-button" onClick="Session.getPlasmid(${this.index}).removeFeature('${featureID}')">Remove</span>
             `;
             collapsibleContent.appendChild(updateButtonDiv);
 
@@ -561,7 +561,87 @@ class Plasmid {
             Sidebar.update();
         };
 
-        this.saveState("Change plasmid origin")
+        this.saveState("Change plasmid origin");
+    };
+
+
+    /**
+     * Update feature properties from fields in the collapsible header.
+     * 
+     * @param {String} featureID - UUID of feature to be updated
+     */
+    updateFeatureProperties(featureID) {
+        const collapsibleContent = document.getElementById(featureID).querySelector(".collapsible-content");
+        
+        // Label
+        this.features[featureID].label = collapsibleContent.querySelector("#label-input").value;
+
+        // Color
+        this.features[featureID].color = collapsibleContent.querySelector("#color-input").value;
+
+        // Directionality
+        this.features[featureID].directionality = collapsibleContent.querySelector("#directionality-select").value;
+
+        // Span
+        this.features[featureID].span = [
+            collapsibleContent.querySelector("#span-start-input").value,
+            collapsibleContent.querySelector("#span-end-input").value,
+        ];
+
+        // Translated
+        if (collapsibleContent.querySelector("#translated-checkbox").checked === true) {
+            const targetSequence = (this.features[featureID].directionality === "fwd")
+            ? this.sequence.slice(
+                this.features[featureID].span[0] - 1,
+                this.features[featureID].span[1]
+            )
+            : nucleotides.complementary(
+                this.sequence.slice(
+                    this.features[featureID].span[0] - 1,
+                    this.features[featureID].span[1]
+                )
+            ).split("").reverse().join("");
+
+            this.features[featureID].translation = nucleotides.translate(targetSequence);
+        } else {
+            delete this.features[featureID].translation;
+        };
+
+        // Type
+        this.features[featureID].type = 
+            (collapsibleContent.querySelector("#type-select").disabled === false)
+            ? collapsibleContent.querySelector("#type-select").value
+            : collapsibleContent.querySelector("#type-input").value;
+
+        // Note
+        this.features[featureID].note = collapsibleContent.querySelector("#note-text-area").value;
+
+        if (Session.activePlasmidIndex == this.index) {
+            PlasmidViewer.deselectBases();
+            PlasmidViewer.redraw();
+            Sidebar.update();
+        };
+
+        this.saveState(`Changed feature properties.`);
+    };
+
+
+    /**
+     * Delete a feature from the features dict and reload plasmid.
+     * 
+     * @param {String} featureID - UUID of feature to be deleted
+     */
+    removeFeature(featureID) {
+        const featureLabel = this.features[featureID].label;
+        delete this.features[featureID];
+
+        if (Session.activePlasmidIndex == this.index) {
+            PlasmidViewer.deselectBases();
+            PlasmidViewer.redraw();
+            Sidebar.update();
+        };
+
+        this.saveState(`Delete feature: "${featureLabel}"`);
     };
 };
 
