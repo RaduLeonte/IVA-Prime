@@ -1659,6 +1659,41 @@ const PlasmidViewer = new class {
             Math.max(...combinedIndices)
         ];
     };
+
+
+    /**
+     * Update footer selection info with the current selection.
+     */
+    updateFooterSelectionInfo() {
+        const selectionSpan = Session.activePlasmid().getSelectionIndices();
+
+        const footerSelectionInfo = document.getElementById("footer-selection-info");
+        const selectionLengthSpan = footerSelectionInfo.querySelector("#footer-selection-info-length");
+        const selectionRemainder = footerSelectionInfo.querySelector("#footer-selection-info-remainder");
+        const selectionRange = footerSelectionInfo.querySelector("#footer-selection-info-range");
+        const selectionTm = footerSelectionInfo.querySelector("#footer-selection-info-tm");
+
+        if (!selectionSpan[0] | !selectionSpan[1]) {
+            selectionLengthSpan.innerText = 0;
+            selectionRemainder.innerText = "";
+            selectionRange.innerText = "";
+            selectionTm.innerText = "";
+            return;
+        };
+
+        const selectionLength = (selectionSpan[1] + 1) - selectionSpan[0]
+        selectionLengthSpan.innerText = selectionLength;
+
+        const remainder = selectionLength % 3;
+        const remainderString = (remainder !== 0) ? "+" + remainder: ""
+        const nrAA = (selectionLength - remainder)/3
+        const nrAAString = (selectionLength >= 3) ? "3x" + nrAA: nrAA
+        selectionRemainder.innerText = "(" + nrAAString + remainderString + ")";
+
+        selectionRange.innerText = `[${selectionSpan[0]}, ${selectionSpan[1]}]` 
+
+        selectionTm.innerText = Nucleotides.getMeltingTemperature(Session.activePlasmid().selectionSequence).toFixed(2);
+    };
 };
 
 /**

@@ -79,7 +79,7 @@ const Nucleotides = new class {
     /**
      * Create the complementary sequence to a given DNA/RNA sequence.
      * 
-     * @param {string} inputSequence - Template sequence.
+     * @param {String} inputSequence - Template sequence.
      * @returns - Complementary sequence.
      */
     complementary(inputSequence) {
@@ -95,8 +95,8 @@ const Nucleotides = new class {
     /**
      * Translates a DNA/RNA sequence. Extra nucleotides are ignored.
      * 
-     * @param {string} inputSequence - Sequence to be translated.
-     * @returns {string} - Translated sequence.
+     * @param {String} inputSequence - Sequence to be translated.
+     * @returns {String} - Translated sequence.
      */
     translate(inputSequence) {
         // Sanitize then convert RNA to DNA
@@ -109,4 +109,184 @@ const Nucleotides = new class {
         };
         return outputSequence;
     };
+
+
+    /**
+     * Calculate fraction of GC content of a given sequence.
+     * 
+     * @param {String} inputSequence 
+     * @returns {Number} GC fraction
+     */
+    fractionGC(inputSequence) {
+        const gcCount = (inputSequence.match(/[GC]/g) || []).length;
+        return gcCount / inputSequence.length;
+    };
+
+
+    /**
+     * Calculate melting temperature of a DNA duplex with specified sequence.
+     * 
+     * @param {String} seq - Sequence
+     * @param {String} method - Melting temperature algorithm (oligoCalc, nnSantaLucia)
+     * @returns {number} - Melting temperature
+     */
+    getMeltingTemperature(seq, method=null) {
+        method = (method) ? method: meltingTempAlgorithmChoice;
+
+        // Convert global primer concentration from nM to M
+        const primerConcentrationM = primerConcentration * 1E-9;
+
+        const tm = this.meltingTemperatureAlgorithms[method](seq, primerConcentrationM);
+
+        const tmCorrectedSalt = (method !== "oligoCalc" && saltConc &&  saltConc !== NaN && saltConc !== 0)
+        ? saltCorrectionEquationDict[saltCorrectionEquation](tm, seq, saltConc)
+        : tm;
+
+        const tmCorrectedSaltDMSO = (method !== "oligoCalc" && dmsoConc && dmsoConc !== NaN && dmsoConc !== 0)
+        ? tmCorrectedSalt - 0.6*dmsoConcentration
+        : tmCorrectedSalt;
+
+        // Clamp output to absolute zero
+        return Math.max(tmCorrectedSaltDMSO, -273.15); 
+    };
+
+    meltingTemperatureAlgorithms = {
+        /**
+         * Nearest-neighbour algorithm as described by SantaLucia (1998).
+         * 
+         * @param {String} seq - Primer sequence 
+         * @param {Number} C - Primer concentration
+         * @returns {Number} - Melting temperature
+         */
+        nnSantaLucia: (seq, C) => {
+            // Enthalpy data (cal mol-1)
+            const deltaH_dict = {
+                "AA": -7.9E3,
+                "TT": -7.9E3,
+                "AT": -7.2E3,
+                "TA": -7.2E3,
+                "CA": -8.5E3,
+                "TG": -8.5E3,
+                "GT": -8.4E3,
+                "AC": -8.4E3,
+                "CT": -7.8E3,
+                "AG": -7.8E3,
+                "GA": -8.2E3,
+                "TC": -8.2E3,
+                "CG": -10.6E3,
+                "GC": -9.8E3,
+                "GG": -8.0E3,
+                "CC": -8.0E3,
+            }; 
+
+            // Entropy data (cal K-1 mol-1)
+            const deltaS_dict = {
+                "AA": -22.2,
+                "TT": -22.2,
+                "AT": -20.4,
+                "TA": -21.3,
+                "CA": -22.7,
+                "TG": -22.7,
+                "GT": -22.4,
+                "AC": -22.4,
+                "CT": -21.0,
+                "AG": -21.0,
+                "GA": -22.2,
+                "TC": -22.2,
+                "CG": -27.2,
+                "GC": -24.4,
+                "GG": -19.9,
+                "CC": -19.9
+            };
+
+            let deltaH0 = 0; // cal mol-1 enthalpy
+            let deltaS0 = 0; // cal K-1 mol-1 entropy
+
+            /**
+             * Symmetry correction
+             * If the primer is completely symmetric, there is an
+             * entropy gain and the symmetry fraction is different.
+             */
+            let symmFraction = 4;
+            if (seq === Utilities.complementary(seq)) {
+                deltaS0 += -1.4;
+                symmFraction = 1;
+            };
+
+            /**
+             * Nucleation term
+             * The first pair to anneal is the nucleation point, but
+             * since G-C bonds are so strong it basically always starts
+             * annealing there. If there is a G or C anywhere in the sequence
+             * add GC contributions otherwise, the AT contributions.
+             */
+            if (seq.includes("G") || seq.includes("C")) {
+                deltaH0 += 0.1E3;
+                deltaS0 += -2.8;
+            } else {
+                deltaH0 += 2.3E3;
+                deltaS0 += 4.1;
+            };
+
+            // Loop over the possible pairs and add the contributions
+            for (let pair in deltaH_dict) {
+                const pairCount = Utilities.countSubstringOccurences(pair, seq);
+                deltaH0 += pairCount * deltaH_dict[pair];
+                deltaS0 += pairCount * deltaS_dict[pair];
+            };
+
+            // Ideal gas constant
+            const R = 1.987; // cal mol-1 K-1
+
+            return (deltaH0 / (deltaS0 + R * Math.log(C / symmFraction))) - 273.15;
+        },
+
+        /**
+         * Algorithm from the Oligo Calc online calculator (http://biotools.nubic.northwestern.edu/oligocalc.html)
+         * 
+         * @param {String} seq - Primer sequence
+         * @param {Number} C - Not used
+         * @returns {Number} - Melting temperature
+         */
+        oligoCalc: (seq, C) => {
+            if (seq.length == 0) {
+                return -273.15;
+            };
+
+            const nrBases = {};
+            ["G", "C"].forEach(base => {
+                nrBases[base] = Utilities.countSubstringOccurences(base, seq);
+            });
+            return 64.9 + 41 * (((nrBases["G"] + nrBases["C"]) - 16.4) / seq.length);
+        }
+    };
+
+
+    saltCorrections = {
+        /**
+         * Schildkraut and Lifosn salt correction
+         * 
+         * @param {Number} T1 - Initial melting temperature
+         * @param {Number} seq - Primer sequence
+         * @param {Number} C - Salt concentration
+         * @returns {Number} Corrected melting tempeature
+         */
+        SchildkrautLifson : (T1, seq, C) => {
+            return T1 + 16.6 * Math.log(C);
+        },
+
+        /**
+         * Owczarzy salt correction
+         * 
+         * @param {Number} T1 - Initial melting temperature
+         * @param {Number} seq - Primer sequence
+         * @param {Number} C - Salt concentration
+         * @returns {Number} Corrected melting tempeature
+         */
+        Owczarzy : (T1, seq, C) => {
+            const fGC = fractionGC(seq);
+            const reciprocT2 = (1/T1) + ((4.29*fGC - 3.95)*1E-5*Math.log(C)) + 9.4*1E-6*(Math.log(C)**2);
+            return 1/reciprocT2;
+        }
+    }
 };

@@ -105,7 +105,7 @@ class Plasmid {
         this.topology = topology;
         this.translations = {"forward": [], "reverse": []};
         
-        this.selectedText = "";
+        this.selectionSequence = "";
         this.selectionIndices = null;
         
         this.primers = null;
@@ -167,6 +167,9 @@ class Plasmid {
      */
     setSelectionIndices(indices) {
         this.selectionIndices = indices;
+        this.selectionSequence = this.sequence.slice(this.selectionIndices[0] - 1, this.selectionIndices[1])
+
+        PlasmidViewer.updateFooterSelectionInfo();
     };
 
 

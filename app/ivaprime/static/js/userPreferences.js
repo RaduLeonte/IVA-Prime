@@ -93,11 +93,11 @@ const defaultSetingsDict = {
     "homoRegionSubcloningTm": 55,
     "tempRegionTm": 60,
     "upperBoundShortInsertions": 49.5,
-    "primerConc": 100,
+    "primerConcentration": 100,
     "meltingTempAlgorithmChoice": "oligoCalc",
-    "saltConc": 0,
+    "saltConcentration": 0,
     "saltCorrectionEquation": "SchildkrautLifson",
-    "dmsoConc": 0,
+    "dmsoConcentration": 0,
     "gridWidth": 60,
     "preferredOrganism" : "Escherichia coli"
 };

@@ -98,14 +98,32 @@ const Utilities = new class {
         tempDiv.style.visibility = 'hidden';
         tempDiv.style.overflow = 'scroll';
         document.body.appendChild(tempDiv);
-      
+        
         const innerTempDiv = document.createElement('div');
         tempDiv.appendChild(innerTempDiv);
         
         const scrollbarWidth = (tempDiv.offsetWidth - innerTempDiv.offsetWidth);
-      
+        
         tempDiv.parentNode.removeChild(tempDiv);
-      
+        
         return scrollbarWidth;
-      };
+    };
+
+
+    /**
+     * Count occurrences of a substring in an input string.
+     * 
+     * @param {String} subString - String to be searched for
+     * @param {String} inputString - String to search inside for substring
+     * @returns {Number} - Number of occurences
+     */
+    countSubstringOccurences(subString, inputString) {
+        let count = 0;
+        let currentIndex = inputString.indexOf(subString);
+        while (currentIndex !== -1) {
+          count++;
+          currentIndex = inputString.indexOf(subString, currentIndex + 1);
+        };
+        return count;
+    };
 };
