@@ -378,6 +378,7 @@ const PlasmidViewer = new class {
         /**
          * Prepare segments
          */
+        console.log(`PlasmidViewer.drawGrid -> sequence.length=${sequence.length}`)
         const nrOfSegments = Math.ceil(sequence.length/basesPerLine);
         const segments = [];
         for (let i = 0; i < nrOfSegments; i++) {
@@ -396,6 +397,8 @@ const PlasmidViewer = new class {
                 }
             );
         };
+        console.log(`PlasmidViewer.drawGrid -> segments=${JSON.stringify(segments, null, 2)}`);
+        console.log(`PlasmidViewer.drawGrid -> features=${JSON.stringify(features, null, 2)}`);
 
         // Figure out which features are drawn on which segments
         for (const [featureID, featureDict] of Object.entries(features)) {
@@ -404,9 +407,16 @@ const PlasmidViewer = new class {
             const featureDirectionality = featureDict["directionality"];
             const segmentListIndexStart = Math.floor(featureSpanStart / basesPerLine);
             const segmentListIndexEnd = Math.floor(featureSpanEnd / basesPerLine);
-            //console.log("PlasmidViewer.drawGrid", featureDict["label"], [featureSpanStart, featureSpanEnd], [segmentIndexStart, segmentIndexEnd]);
+            console.log(
+                "PlasmidViewer.drawGrid",
+                featureID,
+                JSON.stringify(featureDict),
+                [featureSpanStart, featureSpanEnd],
+                [segmentListIndexStart, segmentListIndexEnd]
+            );
 
             for (let i = segmentListIndexStart; i <= segmentListIndexEnd; i++) {
+                //console.log(`PlasmidViewer.drawGrid -> {}`)
                 segments[i]["features"][featureID] = JSON.parse(JSON.stringify(featureDict));
 
                 const featureSegmentSpanStart = Math.max((segments[i]["segmentIndexStart"] + 1), featureSpanStart);
