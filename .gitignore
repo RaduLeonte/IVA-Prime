@@ -1,2 +1,4 @@
 .DS_store
 .CNAME
+
+**/__pycache__/
