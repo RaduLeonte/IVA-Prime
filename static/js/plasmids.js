@@ -174,7 +174,7 @@ class Plasmid {
             collapsibleHeader.type = "button";
             collapsibleHeader.classList.add("collapsible-header");
             const currFeatureColor = (feature.color) ? feature.color: feature.ivaprimeColor;
-            collapsibleHeader.style.color = PlasmidViewer.getTextColorBasedOnBg(currFeatureColor) // Text color
+            collapsibleHeader.style.color = Utilities.getTextColorBasedOnBg(currFeatureColor) // Text color
             collapsibleHeader.style.backgroundColor = currFeatureColor;
             collapsibleHeader.innerText = feature.label;
 
@@ -383,28 +383,4 @@ class Plasmid {
             };
         };
     };
-};
-
-
-/**
- * Sort the features dict by span so that the features appear
- * in order in the sidebar.
- * 
- * @param {Object} inputDict - Dictionary to be sorted.
- * @returns {Object} - Sorted dictionary.
- */
-function sortBySpan(inputDict) {
-    // Convert the dictionary to an array of key-value pairs
-    const valueKey = "span";
-    const features = Object.entries(inputDict);
-
-    // Sort the array based on the first number in the value key
-    features.sort((a, b) => {
-        const rangeStartA = a[1][valueKey][0];
-        const rangeStartB = b[1][valueKey][0];
-        return rangeStartA - rangeStartB;
-    });
-
-    // Convert the sorted array back to a dictionary and return
-    return Object.fromEntries(features);
 };

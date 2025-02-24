@@ -109,7 +109,7 @@ const Alerts = new class {
         // Create temporary css class to set the height of the alert
         // to its current height
         const currentHeight = alert.offsetHeight;
-        const tempClass = 'alter-temp-fixed-height-' + getUUID();
+        const tempClass = 'alter-temp-fixed-height-' + Utilities.newUUID();
         const styleEl = document.createElement('style');
         styleEl.innerHTML = `.${tempClass} { height: ${currentHeight}px; }`;
         document.head.appendChild(styleEl);

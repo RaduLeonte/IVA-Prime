@@ -1,4 +1,4 @@
-const nucleotides = new class {
+const Nucleotides = new class {
     /**
      * MAP of complementary single letter codes.
      */
@@ -85,9 +85,9 @@ const nucleotides = new class {
     complementary(inputSequence) {
         // Convert to uppercase, make into list, map to complementary base,
         // then turn back into string
-        return nucleotides.sanitizeSequence(inputSequence)
+        return Nucleotides.sanitizeSequence(inputSequence)
             .split('')
-            .map(nucleotide => nucleotides.complements[nucleotide])
+            .map(nucleotide => Nucleotides.complements[nucleotide])
             .join('');
     };
 
@@ -100,12 +100,12 @@ const nucleotides = new class {
      */
     translate(inputSequence) {
         // Sanitize then convert RNA to DNA
-        inputSequence = nucleotides.sanitizeSequence(inputSequence).replace("U", "T")
+        inputSequence = Nucleotides.sanitizeSequence(inputSequence).replace("U", "T")
         // Iterate over the string and add translated amino acid
         // 1 letter codes to a string.
         let outputSequence = "";
         for (let i = 0; i < inputSequence.length - (inputSequence.length % 3); i += 3) {
-            outputSequence += nucleotides.codonTable[inputSequence.slice(i, i+3)]
+            outputSequence += Nucleotides.codonTable[inputSequence.slice(i, i+3)]
         };
         return outputSequence;
     };

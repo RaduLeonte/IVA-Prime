@@ -1045,7 +1045,7 @@ const PlasmidViewer = new class {
             [span[0] + (span[1] - span[0])/2, featureHeight+featureArrowWidth*0.8],
             label,
             null,
-            `svg-feature-label-${this.getTextColorBasedOnBg(color)}`,
+            `svg-feature-label-${Utilities.getTextColorBasedOnBg(color)}`,
             "middle"
         ));
 
@@ -1150,7 +1150,7 @@ const PlasmidViewer = new class {
             [0, 0],
             label,
             null,
-            `svg-feature-label-${this.getTextColorBasedOnBg(color)}`,
+            `svg-feature-label-${Utilities.getTextColorBasedOnBg(color)}`,
             "middle"
         );
         const pos = span[0] + (span[1] - span[0])/2
@@ -1295,7 +1295,7 @@ const PlasmidViewer = new class {
             [textBoxStart + (textBoxEnd - textBoxStart)/2, featureY+(featureArrowWidth/2)],
             label,
             null,
-            `svg-feature-label-${this.getTextColorBasedOnBg(color)}`,
+            `svg-feature-label-${Utilities.getTextColorBasedOnBg(color)}`,
             "middle",
             "0.4em"
         ));
@@ -1387,27 +1387,6 @@ const PlasmidViewer = new class {
             const viewerDiv = document.querySelector(".viewer");
             viewerDiv.classList.remove("viewer-grid-view");
         };
-    };
-
-    /**
-     * 
-     * @param {*} bgColor 
-     * @returns 
-     */
-    getTextColorBasedOnBg(bgColor) {
-        // Remove the '#' if present
-        const hex = bgColor.replace('#', '');
-    
-        // Parse the HEX color into RGB components
-        const r = parseInt(hex.substring(0, 2), 16);
-        const g = parseInt(hex.substring(2, 4), 16);
-        const b = parseInt(hex.substring(4, 6), 16);
-    
-        // Calculate relative luminance
-        const luminance = (r / 255) * 0.2126 + (g / 255) * 0.7152 + (b / 255) * 0.0722;
-    
-        // Return white for dark backgrounds and black for light backgrounds
-        return luminance > 0.5 ? 'black' : 'white';
     };
 
 

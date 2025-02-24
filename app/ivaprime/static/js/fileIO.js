@@ -190,8 +190,8 @@ const FileIO = new class {
             const sequenceStartIndex = 25;
             let sequenceBytes = arrayBuf.slice(sequenceStartIndex, sequenceStartIndex + sequenceLength);
             let fileSequence = new TextDecoder().decode(sequenceBytes);
-            fileSequence = nucleotides.sanitizeSequence(fileSequence);
-            let fileComplementarySequence = nucleotides.complementary(fileSequence);
+            fileSequence = Nucleotides.sanitizeSequence(fileSequence);
+            let fileComplementarySequence = Nucleotides.complementary(fileSequence);
             //#endregion
 
 
@@ -251,7 +251,7 @@ const FileIO = new class {
             const xmlFeaturesEntries = featuresXMLDoc.getElementsByTagName('Feature');
             for (let i = 0; i < xmlFeaturesEntries.length; i++) {
                 const featureXML = xmlFeaturesEntries[i]; // Current feature
-                const featureId = getUUID(); // Create UUID
+                const featureId = Utilities.newUUID(); // Create UUID
 
                 // All the feature properties
                 const featureInfo = {}
@@ -328,7 +328,7 @@ const FileIO = new class {
             const primersList = primersXMLDoc.getElementsByTagName('Primer');
             for (let i = 0; i < primersList.length; i++) {
                 const primer = primersList[i]; // Current feature
-                const primerId = getUUID();
+                const primerId = Utilities.newUUID();
 
                 // All the feature properties
                 const primerInfo = {};
@@ -349,7 +349,7 @@ const FileIO = new class {
                 featuresDict[primerId] = primerInfo;
             };
             //#endregion
-            const fileFeatures = sortBySpan(featuresDict);
+            const fileFeatures = Utilities.sortFeaturesDictBySpan(featuresDict);
 
 
             /**
@@ -433,7 +433,7 @@ const FileIO = new class {
             };
             const sequenceSegments = originSection[0].match(/(?<=\s)[a-z]{1,10}(?=\s)/gi)
             let fileSequence = sequenceSegments.join("").toUpperCase();
-            const fileComplementarySequence = nucleotides.complementary(fileSequence);
+            const fileComplementarySequence = Nucleotides.complementary(fileSequence);
             //#endregion
 
             /**
@@ -460,7 +460,7 @@ const FileIO = new class {
                 if (featureDict["type"] == "source") {return};
                 
                 featureDict["label"] = featureDict["type"];
-                featureDict["color"] = generateRandomUniqueColor();
+                featureDict["color"] = Utilities.getRandomDefaultColor();
                 
                 const featureSpanString = firstLineMatches[2];
                 featureDict["span"] = [parseInt(firstLineMatches[3]), parseInt(firstLineMatches[4])]
@@ -487,7 +487,7 @@ const FileIO = new class {
                 
                 console.log(`FileIO.parsers.gb -> featureDict=${JSON.stringify(featureDict)}`);
 
-                fileFeatures[getUUID()] = featureDict;
+                fileFeatures[Utilities.newUUID()] = featureDict;
             });
             //#endregion
 
@@ -611,7 +611,7 @@ const FileIO = new class {
             console.log(`FileIO.parser.fasta -> lines=${lines}`);
             const fileSequence = lines[1];
 
-            if (!nucleotides.isNucleotideSequence(fileSequence)) {
+            if (!Nucleotides.isNucleotideSequence(fileSequence)) {
                 Alerts.error(
                     "Parsing error",
                     "FASTA sequence contains non-nucleotide codes."
@@ -620,7 +620,7 @@ const FileIO = new class {
                 return;
             };
 
-            const fileComplementarySequence = nucleotides.complementary(fileSequence);
+            const fileComplementarySequence = Nucleotides.complementary(fileSequence);
             
             const fileFeatures = {};
             
@@ -963,10 +963,10 @@ const FileIO = new class {
          * Generate plasmid object
          */
         // Sanitize sequence
-        const newFileSequence = nucleotides.sanitizeSequence(newFileSequenceInput);
+        const newFileSequence = Nucleotides.sanitizeSequence(newFileSequenceInput);
         
         // Get complementary sequence 3'->5'!
-        const newFileComplementarySequence = nucleotides.complementary(newFileSequence);
+        const newFileComplementarySequence = Nucleotides.complementary(newFileSequence);
         
         // Initialize features dict with default
         let newFileFeatures = {
@@ -1015,16 +1015,16 @@ const FileIO = new class {
                     if (featureSequenceType === "AA") {
                         // Generate reading frames offset by 1 nucleotide
                         const readingFrames = [
-                            nucleotides.translate(currentSequence),
-                            nucleotides.translate(currentSequence.slice(1) + currentSequence.slice(0, 1)),
-                            nucleotides.translate(currentSequence.slice(2) + currentSequence.slice(0, 2))
+                            Nucleotides.translate(currentSequence),
+                            Nucleotides.translate(currentSequence.slice(1) + currentSequence.slice(0, 1)),
+                            Nucleotides.translate(currentSequence.slice(2) + currentSequence.slice(0, 2))
                         ];
                         // Iterate over reading frames and check for features
                         for (let j = 0; j < 3; j++) {
                             // While there are matches
                             while ((match = regex.exec(readingFrames[j])) !== null) {
                                 // Generate new feature info
-                                const newFeatureId = getUUID();
+                                const newFeatureId = Utilities.newUUID();
                                 const newFeatureDirectionality = (i === 0) ? "fwd": "rev";
                                 const newFeatureSpanStart = (i === 0) ? match.index*3 + j + 1: currentSequence.length - j - match.index*3 - featureSequence.length*3 + 1;
                                 const newFeaturSpanEnd = newFeatureSpanStart + featureSequence.length*3 - 1;
@@ -1049,7 +1049,7 @@ const FileIO = new class {
                                         span: newFeatureSpan,
                                         translation: featureSequence,
                                         note: (commonFeatureDict["note"] !== null) ? commonFeatureDict["note"]: "",
-                                        color: generateRandomUniqueColor()
+                                        color: Utilities.getRandomDefaultColor()
                                     };
                                 };
                             };
@@ -1062,7 +1062,7 @@ const FileIO = new class {
                         // While there are matches
                         while ((match = regex.exec(currentSequence)) !== null) {
                             // Generate new feature info
-                            const newFeatureId = getUUID();
+                            const newFeatureId = Utilities.newUUID();
                             const newFeatureDirectionality = (i === 0) ? "fwd": "rev";
                             const newFeatureSpanStart = (i === 0) ? match.index + 1: currentSequence.length - match.index - featureSequence.length + 1;
                             const newFeaturSpanEnd = newFeatureSpanStart + featureSequence.length - 1;
@@ -1087,7 +1087,7 @@ const FileIO = new class {
                                     directionality: newFeatureDirectionality,
                                     span: newFeatureSpan,
                                     note: (commonFeatureDict["note"] !== null) ? commonFeatureDict["note"]: "",
-                                    color: generateRandomUniqueColor()
+                                    color: Utilities.getRandomDefaultColor()
                                 };
                             };
                         };
@@ -1095,7 +1095,7 @@ const FileIO = new class {
                 };
             };
     
-            newFileFeatures = sortBySpan(newFileFeatures);
+            newFileFeatures = Utilities.sortFeaturesDictBySpan(newFileFeatures);
         };
     
         // Add plasmid object to project
@@ -1160,44 +1160,3 @@ fetch('static/commonFeatures.json')
     .then(json => {
         commonFeatures = json;
     });
-
-
-/**
- * Generates a random UUID.
- * 
- * @returns - UUID string
- */
-function getUUID() {
-    const uuidSegments = [];
-    
-    for (let i = 0; i < 36; i++) {
-        if (i === 8 || i === 13 || i === 18 || i === 23) {
-            uuidSegments[i] = '-';
-        } else if (i === 14) {
-            uuidSegments[i] = '4'; // The version 4 UUID identifier
-        } else if (i === 19) {
-            // The first character of this segment should be 8, 9, A, or B
-            uuidSegments[i] = (Math.random() * 4 + 8 | 0).toString(16);
-        } else {
-            // Generate a random hex digit
-            uuidSegments[i] = (Math.random() * 16 | 0).toString(16);
-        };
-    };
-    
-    // Combine the segments into a single string
-    return uuidSegments.join('');
-};
-
-
-/**
- * 
- * @param {*} recentColor 
- * @returns 
- */
-function generateRandomUniqueColor(recentColor="") {
-    const remainingColors = defaultAnnotationColors.filter(color => color !== recentColor);
-    const randomIndex = Math.floor(Math.random() * remainingColors.length);
-    const randomColor = remainingColors[randomIndex];
-
-    return randomColor;
-};

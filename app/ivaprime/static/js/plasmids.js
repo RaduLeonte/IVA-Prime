@@ -100,7 +100,7 @@ class Plasmid {
         this.extension = extension;
         this.additionalInfo = additionalInfo;
         this.sequence = sequence;
-        this.complementarySequence = nucleotides.complementary(sequence);
+        this.complementarySequence = Nucleotides.complementary(sequence);
         this.features = features;
         this.topology = topology;
         this.translations = {"forward": [], "reverse": []};
@@ -216,7 +216,7 @@ class Plasmid {
             collapsibleHeader.type = "button";
             collapsibleHeader.classList.add("collapsible-header");
             const currFeatureColor = (feature.color) ? feature.color: feature.ivaprimeColor;
-            collapsibleHeader.style.color = PlasmidViewer.getTextColorBasedOnBg(currFeatureColor) // Text color
+            collapsibleHeader.style.color = Utilities.getTextColorBasedOnBg(currFeatureColor) // Text color
             collapsibleHeader.style.backgroundColor = currFeatureColor;
             collapsibleHeader.innerText = feature.label;
 
@@ -518,7 +518,7 @@ class Plasmid {
             this.features[featureId]["span"] = newSpan;
             this.features[featureId]["directionality"] = (featureDict["directionality"] == "fwd") ? "rev": "fwd";
         });
-        this.features = sortBySpan(this.features);
+        this.features = Utilities.sortFeaturesDictBySpan(this.features);
 
         if (Session.activePlasmidIndex == this.index) {
             PlasmidViewer.deselectBases();
@@ -541,7 +541,7 @@ class Plasmid {
 
 
         this.sequence = this.sequence.slice(newOrigin) + this.sequence.slice(0, newOrigin);
-        this.complementarySequence = nucleotides.complementary(this.sequence);
+        this.complementarySequence = Nucleotides.complementary(this.sequence);
 
         Object.entries(this.features).forEach(([featureId, featureDict]) => {
             const currentSpan = featureDict["span"];
@@ -553,7 +553,7 @@ class Plasmid {
 
             this.features[featureId]["span"] = newSpan;
         });
-        this.features = sortBySpan(this.features);
+        this.features = Utilities.sortFeaturesDictBySpan(this.features);
 
         if (Session.activePlasmidIndex == this.index) {
             PlasmidViewer.deselectBases();
@@ -595,14 +595,14 @@ class Plasmid {
                 this.features[featureID].span[0] - 1,
                 this.features[featureID].span[1]
             )
-            : nucleotides.complementary(
+            : Nucleotides.complementary(
                 this.sequence.slice(
                     this.features[featureID].span[0] - 1,
                     this.features[featureID].span[1]
                 )
             ).split("").reverse().join("");
 
-            this.features[featureID].translation = nucleotides.translate(targetSequence);
+            this.features[featureID].translation = Nucleotides.translate(targetSequence);
         } else {
             delete this.features[featureID].translation;
         };
@@ -643,28 +643,4 @@ class Plasmid {
 
         this.saveState(`Delete feature: "${featureLabel}"`);
     };
-};
-
-
-/**
- * Sort the features dict by span so that the features appear
- * in order in the sidebar.
- * 
- * @param {Object} inputDict - Dictionary to be sorted.
- * @returns {Object} - Sorted dictionary.
- */
-function sortBySpan(inputDict) {
-    // Convert the dictionary to an array of key-value pairs
-    const valueKey = "span";
-    const features = Object.entries(inputDict);
-
-    // Sort the array based on the first number in the value key
-    features.sort((a, b) => {
-        const rangeStartA = a[1][valueKey][0];
-        const rangeStartB = b[1][valueKey][0];
-        return rangeStartA - rangeStartB;
-    });
-
-    // Convert the sorted array back to a dictionary and return
-    return Object.fromEntries(features);
 };
