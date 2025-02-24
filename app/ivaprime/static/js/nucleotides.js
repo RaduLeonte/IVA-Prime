@@ -54,7 +54,7 @@ const Nucleotides = new class {
         fetch('static/codonWeights.json')
         .then(response => response.json())
         .then(json => {
-            this.codonWeights = json;
+            Nucleotides.codonWeights = json;
             //populateOrganismDropdown();
         });
     };

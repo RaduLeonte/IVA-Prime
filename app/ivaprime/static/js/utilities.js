@@ -126,4 +126,28 @@ const Utilities = new class {
         };
         return count;
     };
+
+
+    /**
+     * Modified slice() function that allows for negative indices or indices longer than the string length by assuming
+     * the string loops.
+     * 
+     * Example:
+     *         startIndex            endIndex
+     *             ▼                    ▼
+     *         -3 -2 -1 0 1 2 3 4 5 6 7 8 9
+     * str ->    _  _  _ A B C D E F G _ _ _
+     * 
+     * Result -> FGABCDEFGA
+     * 
+     * @param {string} str - String to be sliced
+     * @param {number} startIndex - Start index
+     * @param {number} endIndex - End index
+     * @returns {string}
+     */
+    repeatingSlice(str, startIndex, endIndex) {
+        const repeatedStr = str.repeat(3); // Copy the string 3 times: ABC_ABC_ABC
+        // Remap indices to new string then return
+        return repeatedStr.slice(startIndex + str.length, endIndex + str.length);
+    };
 };

@@ -47,18 +47,20 @@ const Primers = new class {
         plasmidSequence = (targetStrand === "top") ? plasmidSequence : Nucleotides.reverseComplementary(plasmidSequence);
         
         // Adjust starting index
-        startingIndex = (targetStrand === 'bottom') ? startingIndex - 1: plasmidSequence.length - startingIndex + 1;
+        startingIndex = (targetStrand === 'top') ? startingIndex: plasmidSequence.length - startingIndex + 1;
+
+        console.log("here1", targetStrand, startingIndex)
 
         // Initial extension length minus the initial sequence
         let extensionLength = minimumLength - initialSequence.length;
         
         // Initial primer sequence, initial sequence + initial extension
         let prevPrimerSequence =  (direction === "fwd")
-        ? initialSequence + repeatingSlice(plasmidSequence, startingIndex, startingIndex + extensionLength - 1)
-        : repeatingSlice(plasmidSequence, startingIndex - extensionLength + 1, startingIndex) + initialSequence;
+        ? initialSequence + Utilities.repeatingSlice(plasmidSequence, startingIndex, startingIndex + extensionLength - 1)
+        : Utilities.repeatingSlice(plasmidSequence, startingIndex - extensionLength + 1, startingIndex) + initialSequence;
         
         // Initial melting temperature
-        let prevTM = Utilities.getMeltingTemperature(prevPrimerSequence, tmMethod);
+        let prevTM = Nucleotides.getMeltingTemperature(prevPrimerSequence, tmMethod);
         
         // Extend primer until target melting temperature is reached, or the maximum amount of iterations is reached
         let primerSequence = prevPrimerSequence;
@@ -90,10 +92,10 @@ const Primers = new class {
                 extensionLength += 1;
                 
                 primerSequence = (direction === "fwd")
-                ? initialSequence + repeatingSlice(plasmidSequence, startingIndex, startingIndex + extensionLength - 1)
-                : repeatingSlice(plasmidSequence, startingIndex - extensionLength + 1, startingIndex) + initialSequence;
+                ? initialSequence + Utilities.repeatingSlice(plasmidSequence, startingIndex, startingIndex + extensionLength - 1)
+                : Utilities.repeatingSlice(plasmidSequence, startingIndex - extensionLength + 1, startingIndex) + initialSequence;
                 
-                currTM = getMeltingTemperature(primerSequence, tmMethod);
+                currTM = Nucleotides.getMeltingTemperature(primerSequence, tmMethod);
             };
         };
     };
@@ -117,10 +119,17 @@ const Primers = new class {
         const targetTMHR = (operationType !== "Subcloning") ? homoRegionTm: homoRegionSubcloningTm;
 
         // Make sure indices are sorted
-        operationRange = [
-            Math.min(...operationRange),
-            Math.max(...operationRange)
-        ];
+        if (operationRange[1] === null) {
+            operationRange = [
+                operationRange[0] - 1,
+                operationRange[0] - 1
+            ];
+        } else {
+            operationRange = [
+                Math.min(...operationRange),
+                Math.max(...operationRange)
+            ];
+        };
 
         // Optimise AA sequence if one is given, else use DNA sequence
         const seqToInsert = (aaToInsert && aaToInsert !== "" && targetOrganism !== null)
@@ -180,7 +189,6 @@ const Primers = new class {
         operationType,
         primerColors
     ) {
-        const operationTypeTagline = (operationType !== "Deletion") ? `Short ${operationType}` : operationType;
         /**
          * Symmetric primers, add bases to 5' and 3' end of sequence to add, or to nothing in case of deletions
          */
@@ -188,7 +196,7 @@ const Primers = new class {
         let homoFragmentLength1 = 0;
         let homoFragmentLength2 = 0;
         // Extend more than we need
-        let homoFwd1 = primerExtension(
+        let homoFwd1 = this.extendSequence(
             plasmidSequence,
             operationRange[0],
             "fwdStrand",
@@ -197,7 +205,7 @@ const Primers = new class {
             "oligoCalc",
             homoRegionMinLength,
         );
-        let homoFwd2 = primerExtension(
+        let homoFwd2 = this.extendSequence(
             plasmidSequence,
             operationRange[1],
             "fwdStrand",
@@ -237,39 +245,36 @@ const Primers = new class {
         homoFwd1 = homoFwd1.slice(homoFragmentLength1, homoFwd1.length);
         homoFwd2 = homoFwd2.slice(0, homoFwd2.length - homoFragmentLength2 + 1);
         // Get reverse complementary sequences of the added fragments
-        let homoRev1 = Nucleotides.reverseComplementary(homoFwd2);
-        let homoRev2 = Nucleotides.reverseComplementary(homoFwd1);
+        const homoRev1 = Nucleotides.reverseComplementary(homoFwd2);
+        //const homoRev2 = Nucleotides.reverseComplementary(homoFwd1);
 
-        const homologousRegionLength = homoFwd1.length + seqToInsert.length + homoRev1.length
+        const hrLength = homoFwd1.length + seqToInsert.length + homoRev1.length;
 
-        return [
-            {
-                "primerName": "Forward Primer",
-                "homologousRegionLengths": homologousRegionLength,
-                "nextBases": [
-                    operationRange[0] - homoFwd1.length - 1,
-                    operationRange[0] + seqToInsert.length + tempFwd.length
-                ],
-                "primerRegions": [
-                    [homoFwd1, primerColors["HR"]],
-                    [seqToInsert, primerColors["insertion"]],
-                    [tempFwd, primerColors["TBR"]]
-                ]
-            },
-            {
-                "primerName": "Reverse Primer",
-                "homologousRegionLengths": homologousRegionLength,
-                "nextBases": [
-                    operationRange[0] + seqToInsert.length + homoRev1.length,
-                    operationRange[0] - tempRev.length - 1 
-                ],
-                "primerRegions": [
-                    [homoRev1, primerColors["HR"]],
-                    [Nucleotides.reverseComplementary(seqToInsert), primerColors["insertion"]],
-                    [tempRev, primerColors["TBR"]]
-                ]
-            }
-        ];
+        return {
+            "title": (operationType !== "Deletion") ? `Short ${operationType}` : operationType,
+            "operationType": operationType,
+            "hrLength": hrLength,
+            "primersPositions": [operationRange[0], operationRange[0] + seqToInsert.length],
+            "type": "symmetric",
+            "primers": [
+                {
+                    "name": "Forward Primer",
+                    "regions": [
+                        {"sequence": homoFwd1, "color": primerColors["HR"]},
+                        {"sequence": seqToInsert, "color": primerColors["insertion"]},
+                        {"sequence": tempFwd, "color": primerColors["TBR"]}
+                    ],
+                },
+                {
+                    "name": "Reverse Primer",
+                    "regions": [
+                        {"sequence": homoRev1, "color": primerColors["HR"]},
+                        {"sequence": Nucleotides.reverseComplementary(seqToInsert), "color": primerColors["insertion"]},
+                        {"sequence": tempRev, "color": primerColors["TBR"]}
+                    ],
+                },
+            ],
+        };
     };
 
 
@@ -283,9 +288,7 @@ const Primers = new class {
         operationType,
         primerColors
     ) {
-        const operationTypeTagline = (operationType !== "Deletion") ? `Short ${operationType}` : operationType;
-
-        const homoFwd = primerExtension(
+        const homoFwd = this.extendSequence(
             plasmidSequence,
             operationRange[0],
             "top",
@@ -295,34 +298,29 @@ const Primers = new class {
             homoRegionMinLength
         );
 
-        return [
-            {
-                "primerName": "Forward Primer",
-                "homologousRegionLengths": homoFwd.length,
-                "nextBases": [
-                    operationRange[0] - homoFwd.length - 1,
-                    operationRange[0] + seqToInsert.length + tempFwd.length
-                ],
-                "primerRegions": [
-                    [homoFwd, primerColors["HR"]],
-                    [seqToInsert, primerColors["insertion"]],
-                    [tempFwd, primerColors["TBR"]]
-                ]
-            },
-            {
-                "primerName": "Reverse Primer",
-                "homologousRegionLengths": homoFwd.length,
-                "nextBases": [
-                    null,
-                    operationRange[0] - tempRev.length - 1 
-                ],
-                "primerRegions": [
-                    null,
-                    null,
-                    [tempRev, primerColors["TBR"]]
-                ]
-            }
-        ];
+        return {
+            "title": (operationType !== "Deletion") ? `Short ${operationType}` : operationType,
+            "operationType": operationType,
+            "hrLength": homoFwd.length,
+            "primersPositions": [operationRange[0], operationRange[0] + seqToInsert.length],
+            "type": "asymmetric",
+            "primers": [
+                {
+                    "name": "Forward Primer",
+                    "regions": [
+                        {"sequence": homoFwd, "color": primerColors["HR"]},
+                        {"sequence": seqToInsert, "color": primerColors["insertion"]},
+                        {"sequence": tempFwd, "color": primerColors["TBR"]}
+                    ],
+                },
+                {
+                    "name": "Reverse Primer",
+                    "regions": [
+                        {"sequence": tempRev, "color": primerColors["TBR"]}
+                    ],
+                },
+            ],
+        };
     };
 
 

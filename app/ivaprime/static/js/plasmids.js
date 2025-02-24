@@ -645,4 +645,35 @@ class Plasmid {
 
         this.saveState(`Delete feature: "${featureLabel}"`);
     };
+
+
+    IVAOperation(operationType, insertionDNA="", insertionAA="", targetOrganism=null, translateFeature=false) {
+        if (this.selectionIndices === null) {return};
+        console.log(`Plasmid.IVAOperation -> this.selectionIndices=${this.selectionIndices}`);
+
+        let primerSet;
+        switch (operationType) {
+            case "Deletion":
+                primerSet = Primers.generateSet(
+                    this.sequence,
+                    "",
+                    "",
+                    null,
+                    this.selectionIndices,
+                    "Deletion"
+                );
+            case "Insertion":
+                primerSet = Primers.generateSet(
+                    this.sequence,
+                    insertionDNA,
+                    insertionAA,
+                    targetOrganism,
+                    this.selectionIndices,
+                    "Insertion",
+                    translateFeature
+                );
+        };
+
+        console.log(`Plasmid.IVAOperation -> primerSet=\n${JSON.stringify(primerSet, null, 2)}`);
+    };
 };
