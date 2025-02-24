@@ -87,7 +87,7 @@ function getUserPreference(preferenceName) {
  */
 const defaultSetingsDict = {
     "colorTheme": "lightTheme",
-    "primerDistribution": true,
+    "symmetricPrimers": false,
     "homoRegionMinLength": 18,
     "homoRegionTm": 50,
     "homoRegionSubcloningTm": 55,

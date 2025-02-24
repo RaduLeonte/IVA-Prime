@@ -1649,75 +1649,7 @@ function updateFeatures(operationType, translateFeature, newFeatureSequence, seg
 };
 
 
-/**
- * Sort the features dict by span so that the features appear in order in the sidebar.
- * 
- * @param {Object} dict - Dictionary to be sorted
- * @returns {Object}
- */
-function sortBySpan(dict) {
-    // Convert the dictionary to an array of key-value pairs
-    const valueKey = "span";
-    const entries = Object.entries(dict);
 
-    // Sort the array based on the first number in the value key
-    entries.sort((a, b) => {
-        const spanListA = removeNonNumeric(a[1][valueKey]);
-        const rangeA = spanListA.split("..").map(Number);
-        const rangeStartA = rangeA[0];
-
-        const spanListB = removeNonNumeric(b[1][valueKey]);
-        const rangeB = spanListB.split("..").map(Number);
-        const rangeStartB = rangeB[0];
-
-        return rangeStartA - rangeStartB;
-    });
-
-    // Convert the sorted array back to a dictionary and return
-    return Object.fromEntries(entries);
-};
-
-
-/**
- * MAP of complementary single letter codes.
- */
-const nucleotideComplements = {
-    'A': 'T',
-    'C': 'G',
-    'G': 'C',
-    'T': 'A',
-    'R': 'Y', // A or G -> T or C
-    'Y': 'R', // T or C -> A or G
-    'S': 'S', // G or C -> G or C
-    'W': 'W', // A or T -> A or T
-    'K': 'M', // G or T -> A or C
-    'M': 'K', // A or C -> G or T
-    'B': 'V', // C or G or T -> G or C or A
-    'D': 'H', // A or G or T -> T or C or A
-    'H': 'D', // A or C or T -> T or G or A
-    'V': 'B', // A or C or G -> T or G or C
-    'N': 'N', // any
-    '.': '-', // gap
-    '-': '-'  // gap
-};
-
-
-/**
- * Create the complementary strand to a given DNA sequence.
- * 
- * @param {string} inputSequence - Template sequence for the complementary strand
- * @returns 
- */
-function getComplementaryStrand(inputSequence) {
-    // Convert to uppercase, make into list, map to complementary base, then turn back into string
-    const complementaryStrand = inputSequence.toUpperCase()
-        .replace(/[^ACGTRYSWKMBDHVN.-]+/g, '')
-        .split('')
-        .map(nucleotide => nucleotideComplements[nucleotide])
-        .join('');
-
-    return complementaryStrand;
-};
 
 
 /**

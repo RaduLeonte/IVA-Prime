@@ -49,6 +49,16 @@ const Nucleotides = new class {
         'TAA': '*', 'TAG': '*', 'TGA': '*'
     };
 
+    codonWeights = null;
+    loadCodonWeights() {
+        fetch('static/codonWeights.json')
+        .then(response => response.json())
+        .then(json => {
+            this.codonWeights = json;
+            //populateOrganismDropdown();
+        });
+    };
+
 
     /**
      * Check if a given sequence is a purely nucleotide sequence
@@ -93,9 +103,20 @@ const Nucleotides = new class {
 
 
     /**
+     * Create the reverse complementary sequence to a given DNA/RNA sequence.
+     * 
+     * @param {String} inputSequence - Template sequence
+     * @returns - Reverse complementary sequence
+     */
+    reverseComplementary(inputSequence) {
+        return this.complementary(inputSequence).split("").reverse().join("")
+    };
+
+
+    /**
      * Translates a DNA/RNA sequence. Extra nucleotides are ignored.
      * 
-     * @param {String} inputSequence - Sequence to be translated.
+     * @param {String} inputSequence - DNA/RNA Sequence to be translated.
      * @returns {String} - Translated sequence.
      */
     translate(inputSequence) {
@@ -108,6 +129,39 @@ const Nucleotides = new class {
             outputSequence += Nucleotides.codonTable[inputSequence.slice(i, i+3)]
         };
         return outputSequence;
+    };
+
+
+    /**
+     * Optimise amino acid sequence using codon frequency tables
+     * for the specified organism
+     * 
+     * @param {string} inputAA - Amino acid sequence to optimise
+     * @param {string} targetOrganism - Organism for which the codons should be optimised
+     * @returns {string} - Optimised DNA sequence
+     */
+    optimizeAA(inputAA, targetOrganism) {
+        preferredOrganism = targetOrganism;
+        saveUserPreference("preferredOrganism", targetOrganism);
+        //updateOrganismSelectorDefault();
+
+        return inputAA
+        .split("")
+        .map(aa => {
+            const possibilities = Object.entries(codonWeights[targetOrganism][aa]).map(([value, weight]) => ({
+                weight: parseFloat(weight),
+                value
+            }));
+
+            const totalWeight = possibilities.reduce((sum, p) => sum + p.weight, 0);
+
+            let rand = Math.random() * totalWeight;
+            for (const p of possibilities) {
+                rand -= p.weight;
+                if (rand <= 0) return p.value;
+            };
+        })
+        .join("");
     };
 
 
@@ -149,6 +203,7 @@ const Nucleotides = new class {
         // Clamp output to absolute zero
         return Math.max(tmCorrectedSaltDMSO, -273.15); 
     };
+
 
     meltingTemperatureAlgorithms = {
         /**
@@ -288,5 +343,8 @@ const Nucleotides = new class {
             const reciprocT2 = (1/T1) + ((4.29*fGC - 3.95)*1E-5*Math.log(C)) + 9.4*1E-6*(Math.log(C)**2);
             return 1/reciprocT2;
         }
-    }
+    };
 };
+
+// Load codon weights once document is loaded
+document.addEventListener('DOMContentLoaded', Nucleotides.loadCodonWeights);

@@ -103,12 +103,11 @@ class Plasmid {
         this.complementarySequence = Nucleotides.complementary(sequence);
         this.features = features;
         this.topology = topology;
-        this.translations = {"forward": [], "reverse": []};
         
         this.selectionSequence = "";
         this.selectionIndices = null;
         
-        this.primers = null;
+        this.primers = [];
         this.operationNr = 1;
 
         // Check feature overlap and assign feature levels
