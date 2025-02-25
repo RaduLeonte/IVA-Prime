@@ -1433,7 +1433,7 @@ const PlasmidViewer = new class {
     };
 
 
-    //#region Selection
+    // #region Selection
     /**
      * Show the sequence tooltip and set its position
      * 
@@ -1597,6 +1597,39 @@ const PlasmidViewer = new class {
 
     /**
      * 
+     * @param {*} featureID 
+     */
+    scrollToFeature(featureID) {
+        if (PlasmidViewer.activeView !== "grid") {return};
+
+        const gridViewContainer = document.getElementById("grid-view-container");
+        const featureSegments = Array.from(gridViewContainer.querySelectorAll(`g[feature-id="${featureID}"]`));
+    
+        if (featureSegments.length === 0) {return};
+
+        featureSegments.sort((a, b) => {
+            const yA = a.getBoundingClientRect().top;
+            const yB = b.getBoundingClientRect().top;
+            return yA - yB;
+        });
+
+        const featureDirectionality = Session.activePlasmid().features[featureID]["directionality"];
+
+        const targetSegment = featureDirectionality === "fwd" 
+        ? featureSegments[featureSegments.length - 1]
+        : featureSegments[0];
+
+        targetSegment.scrollIntoView(
+            {
+                behavior: "smooth",
+                block: "center",
+            }
+        );
+    };
+
+
+    /**
+     * 
      * @param {*} index 
      */
     selectBase(index) {
@@ -1669,6 +1702,8 @@ const PlasmidViewer = new class {
             Math.max(...combinedIndices)
         ];
     };
+
+    // #endregion Selection
 
 
     /**

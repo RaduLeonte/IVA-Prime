@@ -372,10 +372,29 @@ input[type="checkbox"] {
  */
 .sidebar {
   background-color: var(--bg-color2);
-  border-right: 2px var(--border-color) solid;
+  border-right: 3px var(--border-color) solid;
 
-  overflow-x: hidden;
-  overflow-y: scroll;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+
+  overflow: hidden;
+}
+
+#features-table-container {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.features-table {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+
+  padding: 3px;
 }
 
 /* 
@@ -390,7 +409,7 @@ input[type="checkbox"] {
  */
 .toolbar {
   background-color: var(--bg-color2);
-  border-left: 2px var(--border-color) solid;
+  border-left: 3px var(--border-color) solid;
 
   display: flex;
   flex-direction: column;
@@ -489,7 +508,7 @@ input[type="checkbox"] {
  */
 .footer {
   background-color: var(--bg-color2);
-  border-top: 2px var(--border-color) solid;
+  border-top: 3px var(--border-color) solid;
 
   display: flex;
   flex-direction: row;
@@ -647,7 +666,6 @@ input[type="checkbox"] {
 .collapsible-header {
   cursor: pointer;
   padding: 10px;
-  margin: 2px;
   width: 100%;
   border: none;
   text-align: left;
@@ -660,12 +678,12 @@ input[type="checkbox"] {
 .collapsible-header:hover {
   cursor: pointer;
   padding: 10px;
-  margin: 2px;
   width: 100%;
-  border: none;
   text-align: left;
-  outline: none;
   font-size: 18px;
+
+  filter: brightness(1.1);
+  outline: 3px solid red;
 }
 
 .collapsible-header:after {
@@ -1121,4 +1139,30 @@ input, select, textarea {
 
 .alert-close-button:hover {
   background-color: var(--sequence-grid-cell-hover);
+}
+
+/*
+ * MARK: Primers table
+ */
+
+#primers-table-container {
+  max-height: 50%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+#primers-table-container:has(div.primers-set) {
+  border-bottom: 3px var(--border-color) solid;
+}
+
+.primers-table:has(div.primers-set) {
+  padding: 10px;
+}
+
+.primers-table {
+  padding: 0px;
+}
+
+.primer-sequence {
+  color: white;
+  font-weight: bold;
 }

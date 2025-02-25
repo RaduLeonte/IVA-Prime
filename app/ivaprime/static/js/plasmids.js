@@ -222,6 +222,33 @@ class Plasmid {
             collapsibleHeader.style.backgroundColor = currFeatureColor;
             collapsibleHeader.innerText = feature.label;
 
+            collapsibleHeader.addEventListener("mouseenter", () => {
+                PlasmidViewer.selectFeaturePreview(featureID);
+            });
+
+            collapsibleHeader.addEventListener("mouseleave", () => {
+                PlasmidViewer.deselectFeaturePreview(featureID);
+            });
+
+            let collapsibleHeaderClickTimeout;
+            collapsibleHeader.addEventListener("click", (e) => {
+                if (collapsibleHeaderClickTimeout) {return};
+
+                const targetElement = e.currentTarget;
+
+                collapsibleHeaderClickTimeout = setTimeout(() => {
+                    Sidebar.toggleCollapsibleHeader(targetElement);
+                    collapsibleHeaderClickTimeout = null;
+                }, 250);
+            });
+
+            collapsibleHeader.addEventListener("dblclick", () => {
+                clearTimeout(collapsibleHeaderClickTimeout);
+                collapsibleHeaderClickTimeout = null;
+                PlasmidViewer.selectFeature(featureID);
+                PlasmidViewer.scrollToFeature(featureID);
+            });
+
             /**
              * Collapsible content
              */
@@ -378,10 +405,6 @@ class Plasmid {
             featureDiv.appendChild(collapsibleContent);
             featuresTableContainer.appendChild(featureDiv);
 
-
-            collapsibleHeader.onclick = function() {
-                Sidebar.toggleCollapsibleHeader(this)
-            };
         };
 
         this.featuresTable = featuresTableContainer;
@@ -647,33 +670,22 @@ class Plasmid {
     };
 
 
-    IVAOperation(operationType, insertionDNA="", insertionAA="", targetOrganism=null, translateFeature=false) {
+    IVAOperation(operationType, insertionSeqDNA="", insertionSeqAA="", targetOrganism=null, translateFeature=false) {
         if (this.selectionIndices === null) {return};
         console.log(`Plasmid.IVAOperation -> this.selectionIndices=${this.selectionIndices}`);
 
-        let primerSet;
-        switch (operationType) {
-            case "Deletion":
-                primerSet = Primers.generateSet(
-                    this.sequence,
-                    "",
-                    "",
-                    null,
-                    this.selectionIndices,
-                    "Deletion"
-                );
-            case "Insertion":
-                primerSet = Primers.generateSet(
-                    this.sequence,
-                    insertionDNA,
-                    insertionAA,
-                    targetOrganism,
-                    this.selectionIndices,
-                    "Insertion",
-                    translateFeature
-                );
-        };
+        const primersSet = Primers.generateSet(
+            operationType,
+            this.selectionIndices,
+            this.sequence,
+            insertionSeqDNA,
+            insertionSeqAA,
+            targetOrganism,
+            translateFeature
+        );
 
-        console.log(`Plasmid.IVAOperation -> primerSet=\n${JSON.stringify(primerSet, null, 2)}`);
+        Session.activePlasmid().primers.push(primersSet);
+    
+        Sidebar.update();
     };
 };

@@ -48,8 +48,8 @@ const Primers = new class {
         
         // Adjust starting index
         startingIndex = (targetStrand === 'top') ? startingIndex: plasmidSequence.length - startingIndex + 1;
-
-        console.log("here1", targetStrand, startingIndex)
+        
+        console.log(`Primers.extendSequence -> startingIndex=${startingIndex} [${plasmidSequence.slice(startingIndex, startingIndex+3)}...]`);
 
         // Initial extension length minus the initial sequence
         let extensionLength = minimumLength - initialSequence.length;
@@ -101,18 +101,18 @@ const Primers = new class {
     };
 
     generateSet(
-        plasmidSequence,
-        dnaToInsert,
-        aaToInsert,
-        targetOrganism,
+        operationType,
         operationRange,
-        operationType
+        plasmidSequence,
+        insertionSeqDNA,
+        insertionSeqAA,
+        targetOrganism,
     ) {
         // Colors
-        const primerColors = {
-            "insertion": "primer-span-red",
-            "HR": (operationType !== "Subcloning") ? "primer-span-orange": "primer-span-cyan",
-            "TBR": (operationType !== "Subcloning") ? "primer-span-green": "primer-span-purple"
+        const primerClasses = {
+            "insertion": "primer-sequence-red",
+            "HR": (operationType !== "Subcloning") ? "primer-sequence-orange": "primer-sequence-cyan",
+            "TBR": (operationType !== "Subcloning") ? "primer-sequence-green": "primer-sequence-purple"
         }
 
         // Target Tm for homologous region
@@ -121,7 +121,7 @@ const Primers = new class {
         // Make sure indices are sorted
         if (operationRange[1] === null) {
             operationRange = [
-                operationRange[0] - 1,
+                operationRange[0],
                 operationRange[0] - 1
             ];
         } else {
@@ -132,9 +132,9 @@ const Primers = new class {
         };
 
         // Optimise AA sequence if one is given, else use DNA sequence
-        const seqToInsert = (aaToInsert && aaToInsert !== "" && targetOrganism !== null)
-        ? Nucleotides.optimizeAA(aaToInsert, targetOrganism)
-        : dnaToInsert;
+        const seqToInsert = (insertionSeqAA && insertionSeqAA !== null && insertionSeqAA !== "" && targetOrganism !== null)
+        ? Nucleotides.optimizeAA(insertionSeqAA, targetOrganism)
+        : insertionSeqDNA;
 
         // #region TBR Template binding region
         // Forward template binding region, extend forward on the forward strand from the end position
@@ -163,17 +163,40 @@ const Primers = new class {
         // #region HR Homologous region
         const isShortInsertion = Nucleotides.getMeltingTemperature(seqToInsert, "oligoCalc") < upperBoundShortInsertions;
 
-        let primersSet;
-        if (isShortInsertion) {
-            primersSet = (symmetricPrimers)
-            ? this.generateSymShortSet(plasmidSequence, tempFwd, tempRev, seqToInsert, operationRange, targetTMHR, operationType, primerColors)
-            : this.generateAsymShortSet(plasmidSequence, tempFwd, tempRev, seqToInsert, operationRange, targetTMHR, operationType, primerColors);
-        } else {
-            primersSet = (symmetricPrimers)
-            ? this.generateSymLongSet(plasmidSequence, tempFwd, tempRev, seqToInsert, operationRange, targetTMHR, operationType, primerColors)
-            : this.generateAsymLongSet(plasmidSequence, tempFwd, tempRev, seqToInsert, operationRange, targetTMHR, operationType, primerColors);
-        }
+
+        const generator = (isShortInsertion)
+        ? (symmetricPrimers)
+            ? this.generateSymShortSet.bind(this)
+            : this.generateAsymShortSet.bind(this)
+        : (symmetricPrimers)
+            ? this.generateSymLongSet.bind(this)
+            : this.generateAsymLongSet.bind(this)
+
+        console.log(`Primers.generateSet.${generator.name} -> `,
+            //plasmidSequence.slice(0, 20),
+            operationRange,
+            tempFwd,
+            tempRev,
+            seqToInsert,
+            targetTMHR,
+            operationType,
+            //primerColors
+        );
+
+        const primersSet = generator(
+            plasmidSequence,
+            operationRange,
+            tempFwd,
+            tempRev,
+            seqToInsert,
+            targetTMHR,
+            operationType,
+            primerClasses,
+        );
+
         // #endregion HR
+
+        console.log(`Primers.generateSet -> primersSet=\n${JSON.stringify(primersSet, null, 2)}`);
 
         return primersSet;
     };
@@ -181,13 +204,13 @@ const Primers = new class {
 
     generateSymShortSet(
         plasmidSequence,
+        operationRange,
         tempFwd,
         tempRev,
         seqToInsert,
-        operationRange,
         targetTMHR,
         operationType,
-        primerColors
+        primerClasses,
     ) {
         /**
          * Symmetric primers, add bases to 5' and 3' end of sequence to add, or to nothing in case of deletions
@@ -260,17 +283,17 @@ const Primers = new class {
                 {
                     "name": "Forward Primer",
                     "regions": [
-                        {"sequence": homoFwd1, "color": primerColors["HR"]},
-                        {"sequence": seqToInsert, "color": primerColors["insertion"]},
-                        {"sequence": tempFwd, "color": primerColors["TBR"]}
+                        {"sequence": homoFwd1, "class": primerClasses["HR"]},
+                        {"sequence": seqToInsert, "class": primerClasses["insertion"]},
+                        {"sequence": tempFwd, "class": primerClasses["TBR"]}
                     ],
                 },
                 {
                     "name": "Reverse Primer",
                     "regions": [
-                        {"sequence": homoRev1, "color": primerColors["HR"]},
-                        {"sequence": Nucleotides.reverseComplementary(seqToInsert), "color": primerColors["insertion"]},
-                        {"sequence": tempRev, "color": primerColors["TBR"]}
+                        {"sequence": homoRev1, "class": primerClasses["HR"]},
+                        {"sequence": Nucleotides.reverseComplementary(seqToInsert), "class": primerClasses["insertion"]},
+                        {"sequence": tempRev, "class": primerClasses["TBR"]}
                     ],
                 },
             ],
@@ -280,13 +303,13 @@ const Primers = new class {
 
     generateAsymShortSet(
         plasmidSequence,
+        operationRange,
         tempFwd,
         tempRev,
         seqToInsert,
-        operationRange,
         targetTMHR,
         operationType,
-        primerColors
+        primerClasses
     ) {
         const homoFwd = this.extendSequence(
             plasmidSequence,
@@ -308,15 +331,15 @@ const Primers = new class {
                 {
                     "name": "Forward Primer",
                     "regions": [
-                        {"sequence": homoFwd, "color": primerColors["HR"]},
-                        {"sequence": seqToInsert, "color": primerColors["insertion"]},
-                        {"sequence": tempFwd, "color": primerColors["TBR"]}
+                        {"sequence": homoFwd, "class": primerClasses["HR"]},
+                        {"sequence": seqToInsert, "class": primerClasses["insertion"]},
+                        {"sequence": tempFwd, "class": primerClasses["TBR"]}
                     ],
                 },
                 {
                     "name": "Reverse Primer",
                     "regions": [
-                        {"sequence": tempRev, "color": primerColors["TBR"]}
+                        {"sequence": tempRev, "class": primerClasses["TBR"]}
                     ],
                 },
             ],
@@ -326,10 +349,10 @@ const Primers = new class {
 
     generateSymLongSet(
         plasmidSequence,
+        operationRange,
         tempFwd,
         tempRev,
         seqToInsert,
-        operationRange,
         targetTMHR,
         operationType,
         primerColors
@@ -412,10 +435,10 @@ const Primers = new class {
 
     generateAsymLongSet(
         plasmidSequence,
+        operationRange,
         tempFwd,
         tempRev,
         seqToInsert,
-        operationRange,
         targetTMHR,
         operationType,
         primerColors

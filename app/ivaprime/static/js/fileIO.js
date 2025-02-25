@@ -56,7 +56,7 @@ const FileIO = new class {
             
             setTimeout(() => {
               resolve();
-            }, 1); 
+            }, 1000); 
         });
     };
 
