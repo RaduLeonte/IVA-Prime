@@ -26,4 +26,4 @@ jobs:
     - id: "deploy"
       run: |
         gcloud config set project iva-prime
-        gcloud app deploy --format json app.yaml --project iva-prime --promote --no-cache
+        gcloud app deploy --format json app.yaml --project iva-prime --promote --no-cache --set-env-vars DEBUG=0

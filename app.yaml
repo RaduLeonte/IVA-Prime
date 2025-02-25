@@ -1,6 +1,9 @@
 runtime: python310
 entrypoint: gunicorn -b :$PORT --chdir app/ app.wsgi:application
 
+env_variables:
+  DEBUG: "0"
+
 handlers:
   - url: /static
     static_dir: static/

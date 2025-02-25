@@ -7,6 +7,10 @@
     <html>
         <head>
             <title>IVA Prime</title>
+            {% if DEBUG %}
+                {% load livereload_tags %}
+                {% livereload_script %}
+            {% endif %}
             
             <!-- Styling -->
             <link rel="shortcut icon" href="{% static 'favicon.ico' %}">
