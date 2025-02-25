@@ -953,6 +953,27 @@ const PlasmidViewer = new class {
                     null,
                     "svg-feature-arrow"
                 ));
+
+
+                if (featureDict["translation"]) {
+                    const featureSpan = features[featureID]["span"]
+                    const featureSegmentSpan = [
+                        featureDict["span"][0] + segmentIndexStart,
+                        featureDict["span"][1] + segmentIndexStart,
+                    ]
+                    console.log(
+                        `PlasmidViewer.drawGrid -> translation ${featureDict["label"]}: ${featureDict["translation"]} ${featureSegmentSpan} ${featureSpan}`
+                    );
+                
+                    const translation = this.createShapeElement("g");
+                    translation.setAttribute("id", "svg-feature-translation");
+                    segmentFeatures.appendChild(translation);
+
+                    const featureStartIndex = (featureDict["directionality"] === "fwd") ? featureSpan[0]: featureSpan[1];
+                    const featureEndIndex = (featureDict["directionality"] === "fwd") ? featureSpan[1]: featureSpan[0];
+                    let translationStartIndex = (featureDict["directionality"] === "fwd") ? featureSegmentSpan[0]: featureSegmentSpan[1];
+
+                };
             };
             //#endregion Features
             // #endregion Main_group
