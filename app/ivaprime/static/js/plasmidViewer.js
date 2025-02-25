@@ -910,6 +910,7 @@ const PlasmidViewer = new class {
                 ));
             };
             // #endregion Sequence_indices
+            
             // #endregion Sequence_group
 
 
@@ -927,13 +928,16 @@ const PlasmidViewer = new class {
                     featureDict
                 );
 
-                const featureLength = featureDict["span"][1] - featureDict["span"][0];
-                let featureLabel = featureDict["label"];
-                if (featureLength <= 2) {
-                    featureLabel = ""
-                } else if (featureLength > 2 && (featureLength*2) < featureLabel.length) {
-                    featureLabel = featureLabel.slice(0,3) + "..."
-                }
+
+
+                let featureLengthPixels = seqToPixel(featureDict["span"][1]) - seqToPixel(featureDict["span"][0]-1);
+                featureLengthPixels -= (featureDict["shape-left"] !== null) ? 10: 0;
+                featureLengthPixels -= (featureDict["shape-right"] !== null) ? 10: 0;
+                const featureLabel = this.fitTextInRectangle(
+                    featureDict["label"],
+                    featureLengthPixels,
+                    "svg-feature-label-black",
+                );
                 segmentFeatures.appendChild(this.gridFeature(
                     featureID,
                     [
@@ -1005,6 +1009,56 @@ const PlasmidViewer = new class {
         
         return textElement;
     };
+
+
+    /**
+     * Truncates strings to fit wihin an area.
+     * 
+     * @param {String} text - Input string
+     * @param {Number} maxWidth - Max width of string in pixels
+     * @param {String} cssClass - CSS class to pull styling from
+     * @returns  {String} - Original string or truncated string
+     */
+    fitTextInRectangle(text, maxWidth, cssClass) {
+        const tempSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        tempSvg.style.position = "absolute";
+        tempSvg.style.visibility = "hidden";
+        tempSvg.style.width = "0";
+        tempSvg.style.height = "0";
+        document.body.appendChild(tempSvg);
+    
+        const tempText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        tempText.setAttribute("class", cssClass);
+        tempText.textContent = text;
+        tempSvg.appendChild(tempText);
+    
+
+        const computedStyle = window.getComputedStyle(tempText);
+        tempText.setAttribute("font-size", computedStyle.fontSize);
+        tempText.setAttribute("font-family", computedStyle.fontFamily);
+    
+
+        let textWidth = tempText.getComputedTextLength();
+        
+        //console.log(`PlasmidViewer.fitTextInRectangle -> ${text} ${maxWidth} ${textWidth}`);
+    
+
+        if (textWidth <= maxWidth) {
+            document.body.removeChild(tempSvg);
+            return text;
+        };
+    
+        let truncatedText = text;
+        while (textWidth > maxWidth && truncatedText.length > 0) {
+            truncatedText = truncatedText.slice(0, -1);
+            tempText.textContent = truncatedText + "...";
+            textWidth = tempText.getComputedTextLength();
+        };
+    
+        document.body.removeChild(tempSvg);
+        return truncatedText.length > 0 ? truncatedText + "..." : "";
+    };
+    
 
 
     /**
