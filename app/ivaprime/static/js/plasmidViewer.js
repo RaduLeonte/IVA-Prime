@@ -554,26 +554,70 @@ const PlasmidViewer = new class {
 
 
                 if (shapesAtPoint[0] && shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
-                    const featureId = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id")
-                    console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Feature preview selection featureId=${featureId}`);
+                    const featureID = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id")
+                    console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Feature preview selection featureID=${featureID}`);
                     
                     const containerDiv = document.getElementById('grid-view-container');
-                    const shapesWithAttribute = containerDiv.querySelectorAll(`svg [feature-id="${featureId}"]`);
+                    const shapesWithAttribute = containerDiv.querySelectorAll(`svg [feature-id="${featureID}"]`);
                     shapesWithAttribute.forEach((shape) => {
                         shape.querySelector("#arrow").classList.add("svg-feature-arrow-hover")
                     });
 
-                    this.deselectFeaturePreview(featureId);
-                    this.selectFeaturePreview(featureId);
+                    const featureDict = Session.activePlasmid().features[featureID];
+
+                    const tooltipBody = document.createElement("DIV");
+
+                    const title = document.createElement("DIV");
+                    title.innerText = featureDict["label"];
+                    title.classList.add("sequence-tooltip-title");
+                    tooltipBody.appendChild(title);
+
+                    const featureLength = featureDict["span"][1] - featureDict["span"][0];
+                    const remainder = featureLength % 3;
+                    const remainderString = (remainder !== 0) ? "+" + remainder: "";
+                    const nrAA = (featureLength - remainder)/3;
+                    const nrAAString = (featureLength >= 3) ? "3x" + nrAA: nrAA;
+                    const properties = {
+                        "Type": featureDict["type"],
+                        "Span": `${featureLength} bp (${nrAAString}${remainderString}) [${featureDict["span"][0]}, ${featureDict["span"][1]}]`,
+                        "Note": (featureDict["note"] && featureDict["note"].length !== 0) ? featureDict["note"]: null,
+                        "Translation": (featureDict["translation"] && featureDict["translation"].length !== 0) ? featureDict["translation"]: null,
+                    }
+
+                    for (const [key, value] of Object.entries(properties)) {
+                        if (value === null || value.length === 0) {continue};
+
+                        const propertyDiv = document.createElement("DIV");
+                        propertyDiv.classList.add("sequence-tooltip-row");
+
+                        const propertyKey = document.createElement("DIV");
+                        propertyKey.classList.add("sequence-tooltip-row-key");
+                        propertyKey.innerText = key;
+                        propertyDiv.appendChild(propertyKey);
+
+                        const propertyValue = document.createElement("DIV");
+                        propertyValue.classList.add("sequence-tooltip-row-value");
+                        propertyValue.innerText = value;
+                        propertyDiv.appendChild(propertyValue);
+
+                        tooltipBody.appendChild(propertyDiv);
+                    };
+
+
+                    this.showSequenceTooltip(e.pageX, e.pageY);
+                    this.setSequenceTooltip(tooltipBody.innerHTML);
+
+                    this.deselectFeaturePreview(featureID);
+                    this.selectFeaturePreview(featureID);
                 } else {
                     const containerDiv = document.getElementById('grid-view-container');
                     const shapesWithAttribute = containerDiv.querySelectorAll(`svg #arrow.svg-feature-arrow-hover`);
                     console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Feature removing preview selection shapesWithAttribute=${shapesWithAttribute}`);
                     shapesWithAttribute.forEach((shape) => {
                         shape.classList.remove("svg-feature-arrow-hover");
-                        const featureId = shape.parentElement.getAttribute("feature-id");
-                        console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Feature removing preview selection featureId=${featureId}`);
-                        this.deselectFeaturePreview(featureId);
+                        const featureID = shape.parentElement.getAttribute("feature-id");
+                        console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Feature removing preview selection featureID=${featureID}`);
+                        this.deselectFeaturePreview(featureID);
                     });
                 };
 
@@ -1467,9 +1511,9 @@ const PlasmidViewer = new class {
      * 
      * @param {string} text 
      */
-    setSequenceTooltip(text) {
+    setSequenceTooltip(body) {
         const tooltip = document.getElementById("sequence-tooltip");
-        tooltip.innerText = text;
+        tooltip.innerHTML = body;
     };
 
 

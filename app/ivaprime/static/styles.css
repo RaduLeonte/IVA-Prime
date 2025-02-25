@@ -1050,12 +1050,40 @@ input, select, textarea {
 
   padding: 5px 10px;
   border-radius: 5px;
-  font-size: 14px;
+  font-size: 11px;
   pointer-events: none;
 
   z-index: 9999;
 
   opacity: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 5px;
+
+  max-width: 300px;
+}
+
+.sequence-tooltip-title {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.sequence-tooltip-row {
+  width: 100%;
+  display: flex;
+  gap: 5px
+}
+
+.sequence-tooltip-row-key {
+  min-width: 30px;
+  font-weight: bold;
+}
+
+.sequence-tooltip-row-value {
+  word-break: break-all;
 }
 
 
