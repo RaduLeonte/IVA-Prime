@@ -291,32 +291,32 @@ const PlasmidTabs = new class {
         dropdownMenu.style.display = 'block'; // Display the menu initially
 
         dropdownMenu.innerHTML = `
-        <h3>Export primers</h3>
+        <div class="plasmid-tab-dropdown-menu-section-title">Export primers</div>
         <ul>
-            <li><a href="#" fileType="txt" onclick="FileIO.primerExporters['txt'](${plasmidIndex})">Plaint text (.txt)</a></li>
-            <li><a href="#" fileType="doc" onclick="FileIO.primerExporters['doc'](${plasmidIndex})">MS Word file (.doc)</a></li>
-            <li><a href="#" fileType="csv" onclick="FileIO.primerExporters['csv'](${plasmidIndex})">CSV file (.csv)</a></li>
-            <li><a href="#" fileType="xlsx" onclick="FileIO.primerExporters['xlsx'](${plasmidIndex})">Excel file (.xlsx)</a></li>
-            <li><a href="#" fileType="microsynth" onclick="FileIO.primerExporters['microsynth'](${plasmidIndex})">Microsynth order form (.xlsx)</a></li>
+            <li><span fileType="txt" onclick="FileIO.primerExporters['txt'](${plasmidIndex})">Plaint text (.txt)</span></li>
+            <li><span fileType="doc" onclick="FileIO.primerExporters['doc'](${plasmidIndex})">MS Word file (.doc)</span></li>
+            <li><span fileType="csv" onclick="FileIO.primerExporters['csv'](${plasmidIndex})">CSV file (.csv)</span></li>
+            <li><span fileType="xlsx" onclick="FileIO.primerExporters['xlsx'](${plasmidIndex})">Excel file (.xlsx)</span></li>
+            <li><span fileType="microsynth" onclick="FileIO.primerExporters['microsynth'](${plasmidIndex})">Microsynth order form (.xlsx)</span></li>
         </ul>
-        <h3>Export plasmid file</h3>
+        <div class="plasmid-tab-dropdown-menu-section-title">Export plasmid file</div>
         <ul>
-            <li><a href="#" onclick="FileIO.exporters['gb'](${plasmidIndex})">GenBank file (.gb)</a></li>
-            <li><a href="#" onclick="FileIO.exporters['dna'](${plasmidIndex})">SnapGene file (.dna)</a></li>
-            <li><a href="#" onclick="FileIO.exporters['fasta'](${plasmidIndex})">Fasta file (.fasta)</a></li>
+            <li><span href="#" onclick="FileIO.exporters['gb'](${plasmidIndex})">GenBank file (.gb)</span></li>
+            <li><span href="#" onclick="FileIO.exporters['dna'](${plasmidIndex})">SnapGene file (.dna)</span></li>
+            <li><span href="#" onclick="FileIO.exporters['fasta'](${plasmidIndex})">Fasta file (.fasta)</span></li>
         </ul>
-        <h3>Edit plasmid</h3>
+        <div class="plasmid-tab-dropdown-menu-section-title">Edit plasmid</div>
         <ul>
-            <li><a href="#" onclick="PlasmidTabs.renamePlasmid(${plasmidIndex})">Rename plasmid</a></li>
-            <li><a href="#" onclick="PlasmidTabs.flipPlasmid(${plasmidIndex})">Flip plasmid</a></li>
-            <li><a href="#" onclick="PlasmidTabs.setPlasmidOrigin(${plasmidIndex})">Set plasmid origin</a></li>
+            <li><span href="#" onclick="PlasmidTabs.renamePlasmid(${plasmidIndex})">Rename plasmid</span></li>
+            <li><span href="#" onclick="PlasmidTabs.flipPlasmid(${plasmidIndex})">Flip plasmid</span></li>
+            <li><span href="#" onclick="PlasmidTabs.setPlasmidOrigin(${plasmidIndex})">Set plasmid origin</span></li>
         </ul>
-        <h3>Close plasmids</h3>
+        <div class="plasmid-tab-dropdown-menu-section-title">Close plasmids</div>
         <ul>
-            <li><a href="#" onclick="PlasmidTabs.close(${plasmidIndex})">Close plasmid</a></li>
-            <li><a href="#" onclick="PlasmidTabs.closeOthers(${plasmidIndex})">Close all OTHER plasmids</a></li>
-            <li><a href="#" onclick="PlasmidTabs.closeToTheRight(${plasmidIndex})">Close plasmids to the RIGHT</a></li>
-            <li><a href="#" onclick="PlasmidTabs.closeToTheLeft(${plasmidIndex})">Close plasmids to the LEFT</a></li>
+            <li><span href="#" onclick="PlasmidTabs.close(${plasmidIndex})">Close plasmid</span></li>
+            <li><span href="#" onclick="PlasmidTabs.closeOthers(${plasmidIndex})">Close all OTHER plasmids</span></li>
+            <li><span href="#" onclick="PlasmidTabs.closeToTheRight(${plasmidIndex})">Close plasmids to the RIGHT</span></li>
+            <li><span href="#" onclick="PlasmidTabs.closeToTheLeft(${plasmidIndex})">Close plasmids to the LEFT</span></li>
         </ul>
         `;
 

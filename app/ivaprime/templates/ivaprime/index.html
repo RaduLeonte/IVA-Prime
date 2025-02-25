@@ -85,8 +85,8 @@
                     
                     
                     <div class="popup-window-hgroup">
-                        <a class="round-button" href="#" onclick="FileIO.newFileFromSequence()">Create File</a>
-                        <a class="round-button" href="#" onclick="FileIO.resetNewFilePopupWindow()">Cancel</a>
+                        <span class="round-button" onclick="FileIO.newFileFromSequence()">Create File</span>
+                        <span class="round-button modal-button-cancel" onclick="FileIO.resetNewFilePopupWindow()">Cancel</span>
                     </div>
                 </div>
             </div>
@@ -282,9 +282,11 @@
                     <div class="footer-search">
                         <input type="text" placeholder="Search sequence">
                         
-                        <a href="#" class="toolbar-button footer-reset-search-button" title="Reset search query"></a>
-                        <a href="#" class="toolbar-button footer-search-up-button" title="Go to previous occurence"></a>
-                        <a href="#" class="toolbar-button footer-search-down-button" title="Go to next occurence"></a>
+                        <div class="footer-search-controls">
+                            <span class="toolbar-button footer-reset-search-button" title="Reset search query"></span>
+                            <span class="toolbar-button footer-search-up-button" title="Go to previous occurence"></span>
+                            <span class="toolbar-button footer-search-down-button" title="Go to next occurence"></span>
+                        </div>
                     
                         <div>
                             <input type="checkbox" name="search-comp-strand">

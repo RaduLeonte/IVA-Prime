@@ -351,12 +351,12 @@ const PlasmidViewer = new class {
         /**
          * Settings
          */
-        const basesPerLine = 60;
+        const basesPerLine = 50;
         const singleStrandHeight = 38;
         const baseTextOffset = 12;
         const strandFeatureSpacing = 25;
-        const featureAnnotationHeight = 34;
-        const featureAnnotationsSpacing = 8;
+        const featureAnnotationHeight = 25;
+        const featureAnnotationsSpacing = 5;
         const gridMargin = 50; // margin on each side
         
 
@@ -640,6 +640,12 @@ const PlasmidViewer = new class {
                     this.selectBases(selectionSpan);
                 };
             };
+        });
+
+        svgWrapper.addEventListener("mouseleave", (e) => {
+            this.hideSequenceTooltip();
+            this.removeCursors("svg-sequence-cursor-preview");
+            this.unhighlightBases("svg-sequence-base-box-hover");
         });
         // #endregion Event_listeners
 

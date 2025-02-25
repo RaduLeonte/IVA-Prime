@@ -25,31 +25,42 @@ const Sidebar = new class {
             primersSetContainer.classList.add("primers-set");
             primersTable.appendChild(primersSetContainer);
 
-            const setTitle = document.createElement("DIV");
-            setTitle.innerHTML = `<span>${primersSetCounter}.</span> <span>${primersSet["title"]}</span>`;
-            setTitle.classList.add("primers-set-title");
-            primersSetContainer.appendChild(setTitle);
+            const primerSetTitle = document.createElement("DIV");
+            primerSetTitle.innerHTML = `<span>${primersSetCounter}.</span> <span>${primersSet["title"]}</span>`;
+            primerSetTitle.classList.add("primers-set-title");
+            primersSetContainer.appendChild(primerSetTitle);
+
+            const primerSetBody = document.createElement("DIV");
+            primerSetBody.classList.add("primers-set-body");
+            primersSetContainer.appendChild(primerSetBody);
 
             const hrInfo = document.createElement("DIV");
+            hrInfo.classList.add("primers-set-hr-info");
             hrInfo.innerHTML = "<span>HR Info</span>";
-            primersSetContainer.appendChild(hrInfo);
+            primerSetBody.appendChild(hrInfo);
 
             const primersContainer = document.createElement("DIV");
-            primersSetContainer.appendChild(primersContainer);
+            primersContainer.classList.add("primers-container"); 
+            primerSetBody.appendChild(primersContainer);
 
             primersSet["primers"].forEach(primer => {
                 const primerContainer = document.createElement("DIV");
+                primerContainer.classList.add("primer-container");
                 primersContainer.appendChild(primerContainer);
 
                 const primerTitle = document.createElement("DIV");
+                primerTitle.classList.add("primer-title");
                 primerTitle.innerText = primer["name"]
                 primerContainer.appendChild(primerTitle);
 
                 const primerSequence = document.createElement("DIV");
-                primersContainer.appendChild(primerSequence);
+                primerSequence.classList.add("primer-sequence-regions");
+                primerContainer.appendChild(primerSequence);
 
                 let totalPrimerLength = 0;
                 primer["regions"].forEach(region => {
+                    if (region["sequence"].length === 0) {return};
+
                     const regionSequence = document.createElement("span");
                     regionSequence.classList.add("primer-sequence");
                     regionSequence.classList.add(region["class"]);
@@ -60,6 +71,7 @@ const Sidebar = new class {
                 });
 
                 const primerInfo = document.createElement("DIV");
+                primerInfo.classList.add("primer-info")
                 const TBRSequence = primer["regions"][primer["regions"].length - 1]["sequence"];
                 primerInfo.innerHTML = `
                 <div>
@@ -69,7 +81,7 @@ const Sidebar = new class {
                     <span>Total</span> ${totalPrimerLength} nt
                 </div>
                 `;
-                primersContainer.appendChild(primerInfo);
+                primerContainer.appendChild(primerInfo);
                 
 
                 
@@ -120,6 +132,8 @@ const Sidebar = new class {
         /**
          * Expand.
          */
+        targetContent.toggleAttribute("visible");
+        return;
         if (targetContent.style.display === "none") {
             // Close all others.
             //FeaturesTable.closeAllCollapsibleHeaders();

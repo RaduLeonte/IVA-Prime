@@ -254,7 +254,7 @@ class Plasmid {
              */
             const collapsibleContent = document.createElement("DIV");
             collapsibleContent.classList.add("collapsible-content");
-            collapsibleContent.style.display = "none";
+            //collapsibleContent.style.display = "none";
 
             /**
              * Label
