@@ -185,19 +185,21 @@ const Nucleotides = new class {
      * @returns {number} - Melting temperature
      */
     getMeltingTemperature(seq, method=null) {
-        method = (method) ? method: meltingTempAlgorithmChoice;
+        method = (method) ? method: UserPreferences.get("TmAlgorithm");
 
         // Convert global primer concentration from nM to M
-        const primerConcentrationM = primerConcentration * 1E-9;
+        const primerConcentrationM = UserPreferences.get("primerConc") * 1E-9;
 
         const tm = this.meltingTemperatureAlgorithms[method](seq, primerConcentrationM);
 
+        const saltConc = UserPreferences.get("saltConc");
         const tmCorrectedSalt = (method !== "oligoCalc" && saltConc &&  saltConc !== NaN && saltConc !== 0)
-        ? saltCorrectionEquationDict[saltCorrectionEquation](tm, seq, saltConc)
+        ? saltCorrections[UserPreferences.get("saltCorr")](tm, seq, saltConc)
         : tm;
 
+        const dmsoConc = UserPreferences.get("dmsoConc");
         const tmCorrectedSaltDMSO = (method !== "oligoCalc" && dmsoConc && dmsoConc !== NaN && dmsoConc !== 0)
-        ? tmCorrectedSalt - 0.6*dmsoConcentration
+        ? tmCorrectedSalt - 0.6*dmsoConc
         : tmCorrectedSalt;
 
         // Clamp output to absolute zero

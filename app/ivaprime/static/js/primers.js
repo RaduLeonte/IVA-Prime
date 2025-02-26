@@ -116,7 +116,7 @@ const Primers = new class {
         }
 
         // Target Tm for homologous region
-        const targetTMHR = (operationType !== "Subcloning") ? homoRegionTm: homoRegionSubcloningTm;
+        const targetTMHR = (operationType !== "Subcloning") ? UserPreferences.get("HRTm"): UserPreferences.get("HRSubcloningTm");
 
         // Make sure indices are sorted
         if (operationRange[1] === null) {
@@ -143,8 +143,8 @@ const Primers = new class {
             operationRange[1],
             "top",
             "fwd",
-            tempRegionTm,
-            meltingTempAlgorithmChoice,
+            UserPreferences.get("TBRTm"),
+            UserPreferences.get("TmAlgorithm"),
             7
         );
         // Reverse template binding region, extend forward on the complementary strand from the start position
@@ -153,16 +153,16 @@ const Primers = new class {
             operationRange[0],
             "bottom",
             "fwd",
-            tempRegionTm,
-            meltingTempAlgorithmChoice,
+            UserPreferences.get("TBRTm"),
+            UserPreferences.get("TmAlgorithm"),
             7
         );
         // #endregion TBR
 
 
         // #region HR Homologous region
-        const isShortInsertion = Nucleotides.getMeltingTemperature(seqToInsert, "oligoCalc") < upperBoundShortInsertions;
-
+        const isShortInsertion = Nucleotides.getMeltingTemperature(seqToInsert, "oligoCalc") < UserPreferences.get("maxTmSi");
+        const symmetricPrimers = UserPreferences.get("symmetricPrimers");
 
         const generator = (isShortInsertion)
         ? (symmetricPrimers)
@@ -226,7 +226,7 @@ const Primers = new class {
             "backward",
             targetTMHR,
             "oligoCalc",
-            homoRegionMinLength,
+            UserPreferences.get("HRMinLength"),
         );
         let homoFwd2 = this.extendSequence(
             plasmidSequence,
@@ -235,7 +235,7 @@ const Primers = new class {
             "forward",
             targetTMHR,
             "oligoCalc",
-            homoRegionMinLength,
+            UserPreferences.get("HRMinLength"),
         );
 
         let overlappingSeq = homoFwd1 + seqToInsert + homoFwd2;
@@ -248,7 +248,7 @@ const Primers = new class {
             // Check conditions
             const stillAboveTargetTM = Nucleotides.getMeltingTemperature(overlappingSeq.slice(...sliceIndices), "oligoCalc") > targetTMHR;
             const slicingGetsUsCloser = Math.abs(targetTMHR - Nucleotides.getMeltingTemperature(overlappingSeq.slice(...sliceIndices), "oligoCalc")) <= Math.abs(targetTMHR - Nucleotides.getMeltingTemperature(overlappingSeq, "oligoCalc"));
-            const minimumLengthNotReached = overlappingSeq.length > homoRegionMinLength;
+            const minimumLengthNotReached = overlappingSeq.length > UserPreferences.get("HRMinLength");
             
             if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
                 // If the minimum length has not been reached, and if we are still above the target tm or 
@@ -318,7 +318,7 @@ const Primers = new class {
             "rev",
             targetTMHR,
             "oligoCalc",
-            homoRegionMinLength
+            UserPreferences.get("HRMinLength")
         );
 
         return {
@@ -377,7 +377,7 @@ const Primers = new class {
             const sliceIndices = (turnHomoFwd1 === true) ? [1, overlappingSeq.length]: [0, -1]
             const stillAboveTargetTM = Nucleotides.getMeltingTemperature(overlappingSeq.slice(...sliceIndices), "oligoCalc") > targetTMHR;
             const slicingGetsUsCloser = Math.abs(targetTMHR - Nucleotides.getMeltingTemperature(overlappingSeq.slice(...sliceIndices), "oligoCalc")) <= Math.abs(targetTMHR - Nucleotides.getMeltingTemperature(overlappingSeq, "oligoCalc"));
-            const minimumLengthNotReached = overlappingSeq.length > homoRegionMinLength;
+            const minimumLengthNotReached = overlappingSeq.length > UserPreferences.get("HRMinLength");
             if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
                 overlappingSeq = overlappingSeq.slice(...sliceIndices);
                 if (turnHomoFwd1 === true) {homoFragmentLength1++} else {homoFragmentLength2++};
@@ -457,7 +457,7 @@ const Primers = new class {
         while (true) {
             const stillAboveTargetTM = Nucleotides.getMeltingTemperature(overlappingSeq.slice(1), "oligoCalc") > targetTMHR;
             const slicingGetsUsCloser = Math.abs(targetTMHR - Nucleotides.getMeltingTemperature(overlappingSeq.slice(1), "oligoCalc")) <= Math.abs(targetTMHR - Nucleotides.getMeltingTemperature(overlappingSeq, "oligoCalc"));
-            const minimumLengthNotReached = overlappingSeq.length > homoRegionMinLength;
+            const minimumLengthNotReached = overlappingSeq.length > UserPreferences.get("HRMinLength");
             if ((stillAboveTargetTM || slicingGetsUsCloser) && minimumLengthNotReached) {
                 overlappingSeq = overlappingSeq.slice(1);
             } else {

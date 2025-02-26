@@ -1,4 +1,16 @@
 const Utilities = new class {
+    constructor () {
+        this.updateTheme();
+
+        this.defaultAnnotationColors = [
+            "#ff7a8e", "#bc99ee", "#ff8756", "#5aa8d9", "#f45ba8", "#74e374", "#ffcc5c",
+            "#7ec8e3", "#ffa07a", "#c3a6ff", "#ff6699", "#80ffdb", "#ffb3e6", "#a5f2e3",
+            "#ff9a8a", "#95b8d1", "#ffad5a", "#91d18b", "#ff6b6b", "#c4e17f", "#a29bfe",
+            "#fdcb6e", "#6c5ce7", "#00cec9", "#fab1a0", "#ff7675", "#55efc4", "#e17055",
+            "#fd79a8", "#81ecec", "#ff9ff3", "#a8e6cf"
+        ];
+    };
+
     /**
      * Generates a random UUID.
      * 
@@ -34,7 +46,7 @@ const Utilities = new class {
      * @returns {String}
      */
     getRandomDefaultColor(recentColor="") {
-        const remainingColors = defaultAnnotationColors.filter(color => color !== recentColor);
+        const remainingColors = this.defaultAnnotationColors.filter(color => color !== recentColor);
         const randomIndex = Math.floor(Math.random() * remainingColors.length);
 
         return remainingColors[randomIndex];
@@ -243,4 +255,29 @@ const Utilities = new class {
 
         this.copyToClipboard(selection);
     };
+
+
+    /**
+     * Update current theme.
+     */
+    updateTheme() {
+        document.querySelector("html").setAttribute("data-theme", UserPreferences.get("theme"));
+        Coloris({
+            themeMode: 'dark',
+            alpha: false
+        });
+    };
 };
+
+
+/**
+ * Configure Coloris color picker
+ */
+Coloris({
+    el: '.coloris',
+    wrap: true,
+    theme: 'polaroid',
+    swatches: Utilities.defaultAnnotationColors,
+    closeButton: true,
+    closeLabel: 'Save',
+});
