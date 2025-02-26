@@ -1567,9 +1567,10 @@ const PlasmidViewer = new class {
      */
     showSequenceTooltip(posX, posY) {
         const tooltip = document.getElementById("sequence-tooltip");
-        tooltip.style.left = `${posX + 12}px`; // Add a small offset
+        tooltip.style.left = `${posX + 12}px`;
         tooltip.style.top = `${posY + 15}px`;
-        tooltip.style.opacity = 1;
+        
+        tooltip.setAttribute("visible", "");
     };
 
 
@@ -1577,7 +1578,7 @@ const PlasmidViewer = new class {
      *  Hide the sequence tooltip
      */
     hideSequenceTooltip() {
-        document.getElementById("sequence-tooltip").style.opacity = 0;
+        document.getElementById("sequence-tooltip").removeAttribute("visible");
     };
 
 
@@ -1835,29 +1836,97 @@ const PlasmidViewer = new class {
     initializeContextMenu() {
         const menuStructure = [
             { section: "IVA Cloning Operations", items: [
-                { item: "Insert here", conditions: {all: ["single"]}, action: () => Alerts.warning("Insert here") },
-                { item: "Delete selection", conditions: {all: ["range"]}, action: () => Alerts.warning("Delete selection") },
-                { item: "Mutate selection", conditions: {all: ["range"]}, action: () => Alerts.warning("Mutate selection") },
+                {
+                    item: "Insert here",
+                    conditions: {all: ["single"]},
+                    action: () => Alerts.warning("Insert here")
+                },
+                {
+                    item: "Delete selection",
+                    conditions: {any: ["range", "feature"]},
+                    action: () => Session.activePlasmid().IVAOperation("Deletion")
+                },
+                {
+                    item: "Mutate selection",
+                    conditions: {any: ["range", "feature"]},
+                    action: () => Alerts.warning("Mutate selection")
+                },
+
                 { separator: "" },
-                { item: "Mark selection for subcloning", conditions:  {all: ["range"]}, action: () => Alerts.warning("Mark selection for subcloning") },
-                { item: "Subclone into selection", conditions: {any: ["single", "range"], all: ["subcloningTarget"]}, action: () => Alerts.warning("Subclone into selection") },
-                { item: "Subclone with insertion(s) into selection", conditions:  {any: ["single", "range"], all: ["subcloningTarget"]}, action: () => Alerts.warning("Subclone with insertion(s) into selection") },
+
+                {
+                    item: "Mark selection for subcloning",
+                    conditions:  {any: ["range", "feature"]},
+                    action: () => Alerts.warning("Mark selection for subcloning")
+                },
+                {
+                    item: "Subclone into selection",
+                    conditions: {any: ["single", "range", "feature"], all: ["subcloningTarget"]},
+                    action: () => Alerts.warning("Subclone into selection")
+                },
+                {
+                    item: "Subclone with insertion(s) into selection",
+                    conditions:  {any: ["single", "range", "feature"], all: ["subcloningTarget"]},
+                    action: () => Alerts.warning("Subclone with insertion(s) into selection")
+                },
             ]},
+
             { separator: "" },
-            { item: "Annotate selection", conditions: {all: ["range"]}, action: () => Alerts.warning("Annotate selection") },
-            { item: "Delete feature annotation", conditions: {all: ["feature"]}, action: () => Alerts.warning("Delete feature annotation") },
+
+            {
+                item: "Annotate selection",
+                conditions: {all: ["range"]},
+                action: () => Alerts.warning("Annotate selection")
+            },
+            {
+                item: "Delete feature annotation",
+                conditions: {all: ["feature"]},
+                action: () => Alerts.warning("Delete feature annotation")
+            },
+
             { separator: "" },
-            { item: "Copy selection", conditions: {all: ["range"]}, action: () => Alerts.warning("Copy selection") },
+
+            {
+                item: "Copy selection",
+                conditions: {any: ["range", "feature"]},
+                action: () => Utilities.copySequence()
+            },
             { submenu: "Copy special", items: [
-                { item: "<p>Copy reverse</p><p>(top strand, 3'->5')</p>", conditions: {all: ["range"]}, action: () => Alerts.warning("Copy reverse (top strand, 3'->5')") },
-                { item: "<p>Copy reverse complement</p><p>(bottom strand, 5'->3')</p>", conditions: {all: ["range"]}, action: () => Alerts.warning("Copy reverse complement (bottom strand, 5'->3')") },
-                { item: "<p>Copy complement</p><p>(bottom strand, 3'->5')</p>", conditions: {all: ["range"]}, action: () => Alerts.warning("Copy complement (bottom strand, 3'->5')") },
+                {
+                    item: "<p>Copy reverse</p><p>(top strand, 3'->5')</p>",
+                    conditions: {any: ["range", "feature"]},
+                    action: () => Utilities.copySequence("reverse")
+                },
+                {
+                    item: "<p>Copy reverse complement</p><p>(bottom strand, 5'->3')</p>",
+                    conditions: {any: ["range", "feature"]},
+                    action: () => Utilities.copySequence("reverse complement")
+                },
+                {
+                    item: "<p>Copy complement</p><p>(bottom strand, 3'->5')</p>",
+                    conditions: {any: ["range", "feature"]},
+                    action: () => Utilities.copySequence("complement")
+                },
             ] },
+
             { separator: "" },
+
             { submenu: "Translate", items: [
-                { item: "Begin translation at first START codon", conditions: {all: ["single"]}, action: () => Alerts.warning("Begin translation at first START codon") },
-                { item: "Translate selection (5'->3')", conditions: {all: ["range"]}, action: () => Alerts.warning("Translate selection (5'->3')") },
-                { item: "Translate selection (3'->5')", conditions: {all: ["range"]}, action: () => Alerts.warning("Translate selection (3'->5')") },
+                {
+                    item: "Begin translation at first START codon",
+                    conditions: {all: ["single"]},
+                    action: () => Alerts.warning("Begin translation at first START codon")
+                },
+                {
+                    item: "Translate selection (5'->3')",
+                    conditions: {any: ["range", "feature"]},
+                    action: () => Alerts.warning("Translate selection (5'->3')")
+                },
+                {
+                    item: "Translate selection (3'->5')",
+                    conditions: {any: ["range", "feature"]},
+                    action: () => Alerts.warning("Translate selection (3'->5')")
+                },
             ] },
         ];
 
@@ -1899,7 +1968,10 @@ const PlasmidViewer = new class {
                     menuItem.setAttribute("conditions", JSON.stringify(entry.conditions))
 
                     // Attach click event for regular menu items
-                    menuItem.addEventListener("click", entry.action);
+                    menuItem.addEventListener("click", () => {
+                        PlasmidViewer.hideContextMenu();
+                        entry.action();
+                    });
 
                     parent.appendChild(menuItem);
 

@@ -1038,7 +1038,7 @@ input, select, textarea {
 
   z-index: 9999;
 
-  opacity: 0;
+  visibility: hidden;
 
   display: flex;
   flex-direction: column;
@@ -1047,6 +1047,10 @@ input, select, textarea {
   gap: 5px;
 
   max-width: 300px;
+}
+
+.sequence-tooltip[visible] {
+  visibility: visible;
 }
 
 .sequence-tooltip-title {
@@ -1346,14 +1350,15 @@ input, select, textarea {
   box-shadow: 0px 2px 10px var(--shadow-color);
   border: 2px solid var(--border-color);
 
-  visibility: visible;
   display: block;
-  flex-direction: column;
+
+  visibility: visible;
 }
 
 .context-menu:not([visible]) {
   visibility: hidden;
 }
+
 
 .context-menu-section-title {
   padding: 5px;

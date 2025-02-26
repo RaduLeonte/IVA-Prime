@@ -150,4 +150,97 @@ const Utilities = new class {
         // Remap indices to new string then return
         return repeatedStr.slice(startIndex + str.length, endIndex + str.length);
     };
+
+
+    /**
+     * Get user browser and version
+     */
+    getBrowserInfo() {
+        const userAgent = navigator.userAgent;
+        let browserName = "Unknown";
+        let browserVersion = "Unknown";
+
+        if (/Edg\/(\d+\.\d+)/.test(userAgent)) {
+            // Edge (Chromium-based)
+            browserName = "Edge";
+            browserVersion = userAgent.match(/Edg\/(\d+\.\d+)/)[1];
+        } else if (/Chrome\/(\d+\.\d+)/.test(userAgent) && !/Edg|OPR|Brave/.test(userAgent)) {
+            // Chrome (not Edge or Opera or Brave)
+            browserName = "Chrome";
+            browserVersion = userAgent.match(/Chrome\/(\d+\.\d+)/)[1];
+        } else if (/Firefox\/(\d+\.\d+)/.test(userAgent)) {
+            // Firefox
+            browserName = "Firefox";
+            browserVersion = userAgent.match(/Firefox\/(\d+\.\d+)/)[1];
+        } else if (/Safari\/(\d+\.\d+)/.test(userAgent) && !/Chrome|Edg|OPR|Brave/.test(userAgent)) {
+            // Safari (not Chrome, Edge, Opera, or Brave)
+            browserName = "Safari";
+            browserVersion = userAgent.match(/Version\/(\d+\.\d+)/)[1];
+        } else if (/OPR\/(\d+\.\d+)/.test(userAgent)) {
+            // Opera
+            browserName = "Opera";
+            browserVersion = userAgent.match(/OPR\/(\d+\.\d+)/)[1];
+        } else if (/MSIE (\d+\.\d+)|rv:(\d+\.\d+)/.test(userAgent)) {
+            // Internet Explorer
+            browserName = "Internet Explorer";
+            browserVersion = userAgent.match(/MSIE (\d+\.\d+)|rv:(\d+\.\d+)/)[1];
+        };
+
+        return { browserName, browserVersion };
+    };
+
+
+    /**
+     * 
+     * @param {*} string 
+     * @param {*} html 
+     */
+    copyToClipboard(string, html="") {
+        if (this.getBrowserInfo().browserName !== "Safari") {
+            function dummyCopyListener(event) {
+                event.clipboardData.setData("text/html", (html === "") ? string: html);
+                event.clipboardData.setData("text/plain", string);
+                event.preventDefault();
+            };
+        
+            document.addEventListener("copy", dummyCopyListener);
+            document.execCommand("copy");
+            document.removeEventListener("copy", dummyCopyListener);
+        } else {
+            const el = document.createElement('textarea');
+            el.value = inputString;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+        };
+    };
+
+
+    /**
+     * 
+     * @param {*} mode 
+     * @returns 
+     */
+    copySequence(mode="") {
+        const activePlasmid = Session.activePlasmid()
+        const selectionIndices = activePlasmid.getSelectionIndices()
+        if (!selectionIndices || selectionIndices === null || selectionIndices.filter(i => i !== null).length !== 2) {return};
+        
+        let selection = activePlasmid.sequence.slice(selectionIndices[0] - 1, selectionIndices[1]);
+
+        switch (mode) {
+            case "reverse":
+                selection = selection.split("").reverse().join("");
+                break;
+            case "complement":
+                selection = Nucleotides.complementary(selection);
+                break;
+            case "reverse complement":
+                selection = Nucleotides.reverseComplementary(selection);
+                break;
+        };
+
+        this.copyToClipboard(selection);
+    };
 };
