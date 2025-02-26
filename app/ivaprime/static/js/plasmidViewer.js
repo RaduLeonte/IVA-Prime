@@ -1831,6 +1831,242 @@ const PlasmidViewer = new class {
     // #endregion Selection
 
 
+    // #region Context_menu 
+    initializeContextMenu() {
+        const menuStructure = [
+            { section: "IVA Cloning Operations", items: [
+                { item: "Insert here", conditions: {all: ["single"]}, action: () => Alerts.warning("Insert here") },
+                { item: "Delete selection", conditions: {all: ["range"]}, action: () => Alerts.warning("Delete selection") },
+                { item: "Mutate selection", conditions: {all: ["range"]}, action: () => Alerts.warning("Mutate selection") },
+                { separator: "" },
+                { item: "Mark selection for subcloning", conditions:  {all: ["range"]}, action: () => Alerts.warning("Mark selection for subcloning") },
+                { item: "Subclone into selection", conditions: {any: ["single", "range"], all: ["subcloningTarget"]}, action: () => Alerts.warning("Subclone into selection") },
+                { item: "Subclone with insertion(s) into selection", conditions:  {any: ["single", "range"], all: ["subcloningTarget"]}, action: () => Alerts.warning("Subclone with insertion(s) into selection") },
+            ]},
+            { separator: "" },
+            { item: "Annotate selection", conditions: {all: ["range"]}, action: () => Alerts.warning("Annotate selection") },
+            { item: "Delete feature annotation", conditions: {all: ["feature"]}, action: () => Alerts.warning("Delete feature annotation") },
+            { separator: "" },
+            { item: "Copy selection", conditions: {all: ["range"]}, action: () => Alerts.warning("Copy selection") },
+            { submenu: "Copy special", items: [
+                { item: "<p>Copy reverse</p><p>(top strand, 3'->5')</p>", conditions: {all: ["range"]}, action: () => Alerts.warning("Copy reverse (top strand, 3'->5')") },
+                { item: "<p>Copy reverse complement</p><p>(bottom strand, 5'->3')</p>", conditions: {all: ["range"]}, action: () => Alerts.warning("Copy reverse complement (bottom strand, 5'->3')") },
+                { item: "<p>Copy complement</p><p>(bottom strand, 3'->5')</p>", conditions: {all: ["range"]}, action: () => Alerts.warning("Copy complement (bottom strand, 3'->5')") },
+            ] },
+            { separator: "" },
+            { submenu: "Translate", items: [
+                { item: "Begin translation at first START codon", conditions: {all: ["single"]}, action: () => Alerts.warning("Begin translation at first START codon") },
+                { item: "Translate selection (5'->3')", conditions: {all: ["range"]}, action: () => Alerts.warning("Translate selection (5'->3')") },
+                { item: "Translate selection (3'->5')", conditions: {all: ["range"]}, action: () => Alerts.warning("Translate selection (3'->5')") },
+            ] },
+        ];
+
+        function createMenuItems(menuStructure, parent) {
+            menuStructure.forEach(entry => {
+                if (entry.section) {
+                    // Create section container
+                    const sectionContainer = document.createElement("div");
+                    sectionContainer.classList.add("context-menu-section");
+        
+                    // Create section title
+                    const sectionTitle = document.createElement("div");
+                    sectionTitle.classList.add("context-menu-section-title");
+                    sectionTitle.textContent = entry.section;
+                    sectionContainer.appendChild(sectionTitle);
+        
+                    // Create section items container
+                    const sectionItemsContainer = document.createElement("div");
+                    sectionItemsContainer.classList.add("context-menu-section-items");
+        
+                    // Recursively create menu items inside the section items container
+                    createMenuItems(entry.items, sectionItemsContainer);
+                    
+                    sectionContainer.appendChild(sectionItemsContainer);
+                    parent.appendChild(sectionContainer);
+
+                } else if (entry.separator !== undefined) {
+                    // Create separator (only if explicitly defined)
+                    const separator = document.createElement("div");
+                    separator.classList.add("context-menu-separator");
+                    parent.appendChild(separator);
+
+                } else if (entry.item) {
+                    // Create menu item
+                    const menuItem = document.createElement("div");
+                    menuItem.classList.add("context-menu-item");
+                    menuItem.innerHTML = entry.item;
+
+                    menuItem.setAttribute("conditions", JSON.stringify(entry.conditions))
+
+                    // Attach click event for regular menu items
+                    menuItem.addEventListener("click", entry.action);
+
+                    parent.appendChild(menuItem);
+
+                } else if (entry.submenu) {
+                    // Create parent item for submenu
+                    const menuItem = document.createElement("div");
+                    menuItem.classList.add("context-menu-item", "context-menu-has-submenu");
+                    menuItem.textContent = entry.submenu;
+
+                    // Create submenu container
+                    const submenu = document.createElement("div");
+                    submenu.classList.add("context-menu");
+                    submenu.classList.add("context-submenu");
+
+                    // Recursively create submenu items
+                    createMenuItems(entry.items, submenu);
+
+                    // Append submenu to the menu item
+                    menuItem.appendChild(submenu);
+                    parent.appendChild(menuItem);
+
+                    // Handle dynamic submenu positioning
+                    menuItem.addEventListener("mouseenter", function () {
+                        positionSubmenu(menuItem, submenu);
+                        submenu.setAttribute("visible", "");
+                    });
+                    menuItem.addEventListener("mouseleave", function () {
+                        submenu.removeAttribute("visible");
+                    });
+                }
+            });
+        }
+
+        function positionSubmenu(menuItem, submenu) {
+            // Get dimensions
+            const menuRect = menuItem.getBoundingClientRect();
+            const submenuWidth = submenu.offsetWidth;
+            const submenuHeight = submenu.offsetHeight;
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+        
+            let leftPos = menuRect.width;
+            let topPos = 0;
+            
+            if (menuRect.right + submenuWidth > viewportWidth) {
+                leftPos = -submenuWidth;
+            };
+            if (menuRect.bottom + submenuHeight > viewportHeight) {
+                topPos = -submenuHeight + menuRect.height + 2;
+            };
+        
+            // Set final position
+            submenu.style.left = `${leftPos}px`;
+            submenu.style.top = `${topPos}px`;
+        };
+        
+        
+        
+
+        const contextMenu = document.getElementById("context-menu");
+        createMenuItems(menuStructure, contextMenu);
+
+        const gridViewContainer = document.getElementById("grid-view-container");
+        gridViewContainer.addEventListener("contextmenu", function (e) {
+            console.log(`PlasmidViewer -> clicked on gridViewContainer (context menu)`)
+            e.preventDefault();
+            e.stopPropagation();
+            PlasmidViewer.showContextMenu(e);
+        });
+    
+        document.addEventListener("click", function (e) {
+            console.log(`PlasmidViewer -> clicked on document`)
+            if (contextMenu.contains(e.target)) {
+                return;
+            };
+
+            PlasmidViewer.hideContextMenu();
+        });
+
+        document.addEventListener("contextmenu", function (e) {
+            console.log(`PlasmidViewer -> clicked on document (context menu)`)
+            if (gridViewContainer.contains(e.target) || contextMenu.contains(e.target)) {
+                return;
+            };
+            
+            PlasmidViewer.hideContextMenu();
+        });
+    };
+
+
+    showContextMenu(e) {
+        const contextMenu = document.getElementById("context-menu");
+        
+        // Enable/disable menu options based on selection state
+        const selectionIndices = Session.activePlasmid().selectionIndices;
+        const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+        const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
+        let clickedOnFeature = false;
+        if (shapesAtPoint && shapesAtPoint.length !== 0 && shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
+            const featureId = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id");
+            this.selectFeature(featureId);
+            clickedOnFeature = true;
+        };
+
+        const selectionState = {
+            "single": (selectionIndices !== null && selectionIndices.filter(i => i !== null).length === 1 && !clickedOnFeature) ? true: false,
+            "range": (selectionIndices !== null && selectionIndices.filter(i => i !== null).length > 1 && !clickedOnFeature) ? true: false,
+            "feature": clickedOnFeature,
+        };
+        console.log(`PlasmidViewer.showContextMenu -> ${selectionIndices} ${JSON.stringify(selectionState, null, 2)}`);
+
+        
+        const menuItems = contextMenu.querySelectorAll(".context-menu-item");
+        menuItems.forEach(menuItem => {
+            if (!menuItem.hasAttribute("conditions")) {return};
+
+            const conditions = [JSON.parse(menuItem.getAttribute("conditions"))];
+            console.log(`PlasmidViewer.showContextMenu -> ${menuItem.innerHTML} ${typeof conditions} ${JSON.stringify(conditions, null, 2)}`)
+            
+            const conditionsMet = conditions.every(condition => {
+                // If "any" exists, at least one of the conditions must be true
+                const anyValid = condition.any ? condition.any.some(key => selectionState[key]) : true;
+                // If "all" exists, all of them must be true
+                const allValid = condition.all ? condition.all.every(key => selectionState[key]) : true;
+                // The condition is valid if both rules are satisfied
+                return anyValid && allValid;
+            });
+
+            if (conditionsMet) {
+                menuItem.removeAttribute("disabled");
+            } else {
+                menuItem.setAttribute("disabled", "")
+            };
+        });
+
+
+        // Position context menu
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        const menuWidth = contextMenu.offsetWidth;
+        const menuHeight = contextMenu.offsetHeight;
+
+        let posX = e.clientX;
+        let posY = e.clientY
+        ;
+        if (posX + menuWidth > viewportWidth) {
+            posX -= menuWidth;
+        };
+        if (posY + menuHeight > viewportHeight) {
+            posY -= menuHeight;
+        };
+
+        posX = Math.max(0, posX);
+        posY = Math.max(0, posY);
+
+        contextMenu.style.top = `${posY}px`;
+        contextMenu.style.left = `${posX}px`;
+        contextMenu.setAttribute("visible", "");
+    };
+
+
+    hideContextMenu() {
+        document.getElementById("context-menu").removeAttribute("visible");
+    };
+    // #endregion Context_menu
+
     /**
      * Update footer selection info with the current selection.
      */
@@ -1879,4 +2115,8 @@ window.addEventListener('resize', function () {
         document.getElementById("viewer").style.display = "block";
         PlasmidViewer.redraw();
     }, 500);
-  });
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    PlasmidViewer.initializeContextMenu();
+});
