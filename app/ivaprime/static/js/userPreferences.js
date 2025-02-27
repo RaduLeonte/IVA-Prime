@@ -18,7 +18,7 @@ const UserPreferences = new class {
             "saltCorr": "SchildkrautLifson",
             "dmsoConc": 0,
 
-            "basesPerLine": 60,
+            "baseWidth": 16,
 
             "preferredOrganism": "Escherichia coli"
         };

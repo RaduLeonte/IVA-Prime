@@ -351,7 +351,6 @@ const PlasmidViewer = new class {
         /**
          * Settings
          */
-        const basesPerLine = 50;
         const singleStrandHeight = 38;
         const baseTextOffset = 12;
         const strandFeatureSpacing = 25;
@@ -370,6 +369,10 @@ const PlasmidViewer = new class {
         
         maxWidth -= gridMargin*2;
         console.log(`PlasmidViewer.drawGrid -> maxWidth: ${viewerContainer.clientWidth}=>${maxWidth}`);
+
+        const baseWidth = UserPreferences.get("baseWidth");
+
+        const basesPerLine = Math.floor(maxWidth / baseWidth)
 
 
         // Sequence coordinate to pixel in axis
@@ -2186,7 +2189,7 @@ window.addEventListener('resize', function () {
     resizeTimeout = setTimeout(() => {
         document.getElementById("viewer").style.display = "block";
         PlasmidViewer.redraw();
-    }, 500);
+    }, 100);
 });
 
 document.addEventListener("DOMContentLoaded", function () {
