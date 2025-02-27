@@ -165,6 +165,7 @@ class Plasmid {
         this.selectionIndices = indices;
         this.selectionSequence = this.sequence.slice(this.selectionIndices[0] - 1, this.selectionIndices[1])
 
+        Utilities.removeUserSelection();
         PlasmidViewer.updateFooterSelectionInfo();
     };
 

@@ -152,7 +152,7 @@ const Sidebar = new class {
                 collapsibleHeaderClickTimeout = setTimeout(() => {
                     Sidebar.toggleCollapsibleHeader(targetElement);
                     collapsibleHeaderClickTimeout = null;
-                }, 250);
+                }, 150);
             });
 
             collapsibleHeader.addEventListener("dblclick", () => {

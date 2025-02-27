@@ -9,6 +9,22 @@ const Utilities = new class {
             "#fdcb6e", "#6c5ce7", "#00cec9", "#fab1a0", "#ff7675", "#55efc4", "#e17055",
             "#fd79a8", "#81ecec", "#ff9ff3", "#a8e6cf"
         ];
+
+
+        /**
+         * CTRL+C
+         */
+        document.addEventListener("keydown", function(event) {
+            if ((event.ctrlKey || event.metaKey) && (event.key === "c" || event.key === "C")) {
+                event.preventDefault();
+
+                if (event.altKey) {
+                    Utilities.copySequence("reverse complement");
+                } else {
+                    Utilities.copySequence();
+                };
+            };
+        });
     };
 
     /**
@@ -253,8 +269,22 @@ const Utilities = new class {
                 break;
         };
 
+        console.log("Utilities.copySequence ->", selection, mode);
         this.copyToClipboard(selection);
     };
+
+
+    /**
+     * Remove traditionally made selections
+     */
+    removeUserSelection() {
+        if (window.getSelection) {
+            window.getSelection().removeAllRanges();
+        } else if (document.selection) { // IE
+            document.selection.empty();
+        };
+    };
+
 
 
     /**

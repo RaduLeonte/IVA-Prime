@@ -1,12 +1,13 @@
 const PlasmidViewer = new class {
     constructor () {
         // Init viewer variables
-        let activeView = null;
-        let currentlySelecting = false;
-        let elementsAtMouseDown = null;
+        this.activeView = null;
+        this.currentlySelecting = false;
+        this.elementsAtMouseDown = null;
 
         // Shortname
-        const svgNameSpace = "http://www.w3.org/2000/svg";
+        this.svgNameSpace = "http://www.w3.org/2000/svg";
+
 
         /**
          * Redraw views on window resize
@@ -51,7 +52,7 @@ const PlasmidViewer = new class {
 
 
         document.addEventListener("keydown", function(event) {
-            if (event.ctrlKey && event.key === "f") {
+            if ((event.ctrlKey || event.metaKey) && event.key === "f") {
                 event.preventDefault();
                 document.getElementById("search-bar").focus();
             };
@@ -610,7 +611,7 @@ const PlasmidViewer = new class {
         svgWrapper.addEventListener("mousemove", (e) => {
             const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
             const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
-            console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> shapesAtPoint ${shapesAtPoint}`)
+            //console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> shapesAtPoint ${shapesAtPoint}`)
 
             Array.from(svgWrapper.children).forEach((svgEl) => {
                 svgEl.querySelectorAll('.base-hover').forEach((el) => {
@@ -628,7 +629,7 @@ const PlasmidViewer = new class {
 
                 if (shapesAtPoint[0] && shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
                     const featureID = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id")
-                    console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Feature preview selection featureID=${featureID}`);
+                    //console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Feature preview selection featureID=${featureID}`);
                     
                     const containerDiv = document.getElementById('grid-view-container');
                     const shapesWithAttribute = containerDiv.querySelectorAll(`svg [feature-id="${featureID}"]`);
@@ -685,11 +686,11 @@ const PlasmidViewer = new class {
                 } else {
                     const containerDiv = document.getElementById('grid-view-container');
                     const shapesWithAttribute = containerDiv.querySelectorAll(`svg #arrow.svg-feature-arrow-hover`);
-                    console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Feature removing preview selection shapesWithAttribute=${shapesWithAttribute}`);
+                    //console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Feature removing preview selection shapesWithAttribute=${shapesWithAttribute}`);
                     shapesWithAttribute.forEach((shape) => {
                         shape.classList.remove("svg-feature-arrow-hover");
                         const featureID = shape.parentElement.getAttribute("feature-id");
-                        console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Feature removing preview selection featureID=${featureID}`);
+                        //console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Feature removing preview selection featureID=${featureID}`);
                         this.deselectFeaturePreview(featureID);
                     });
                 };
@@ -763,6 +764,13 @@ const PlasmidViewer = new class {
             this.hideSequenceTooltip();
             this.removeCursors("sequence-cursor-hover");
             this.unhighlightBases("base-hover");
+        });
+
+        document.addEventListener("click", function (e) {
+            if (document.getElementById("viewer").contains(e.target)) {
+                return;
+            };
+            PlasmidViewer.deselectBases();
         });
         // #endregion Event_listeners
 
@@ -1674,7 +1682,7 @@ const PlasmidViewer = new class {
         const indices = Array.isArray(input) ? input : [input];
 
         indices.forEach((index) => {
-            console.log(`PlasmidViewer.placeCursor -> Placing cursor at: ${index}`);
+            //console.log(`PlasmidViewer.placeCursor -> Placing cursor at: ${index}`);
             // Find svg segment that contains the bases with the specified index
             const gridViewContainer = document.getElementById("grid-view-container");
             const svgElements = gridViewContainer.querySelectorAll('svg');
@@ -1771,7 +1779,6 @@ const PlasmidViewer = new class {
             };
         };
     };
-    
 
 
     /**
@@ -1793,7 +1800,7 @@ const PlasmidViewer = new class {
      */
     selectFeaturePreview(featureID) {
         const span = Session.activePlasmid().features[featureID]["span"];
-        console.log(`selectFeaturePreview.selectFeaturePreview -> ${span} ${featureID}`);
+        //console.log(`selectFeaturePreview.selectFeaturePreview -> ${span} ${featureID}`);
         
         this.placeCursor([span[0], span[1] + 1]);
 
@@ -1805,7 +1812,7 @@ const PlasmidViewer = new class {
      * 
      */
     deselectFeaturePreview() {
-        console.log(`selectFeaturePreview.deselectFeaturePreview`);
+        //console.log(`selectFeaturePreview.deselectFeaturePreview`);
         
         this.removeCursors("sequence-cursor-hover");
         this.unhighlightBases();
@@ -2140,14 +2147,12 @@ const PlasmidViewer = new class {
 
         const gridViewContainer = document.getElementById("grid-view-container");
         gridViewContainer.addEventListener("contextmenu", function (e) {
-            console.log(`PlasmidViewer -> clicked on gridViewContainer (context menu)`)
             e.preventDefault();
             e.stopPropagation();
             PlasmidViewer.showContextMenu(e);
         });
     
         document.addEventListener("click", function (e) {
-            console.log(`PlasmidViewer -> clicked on document`)
             if (contextMenu.contains(e.target)) {
                 return;
             };
@@ -2156,7 +2161,6 @@ const PlasmidViewer = new class {
         });
 
         document.addEventListener("contextmenu", function (e) {
-            console.log(`PlasmidViewer -> clicked on document (context menu)`)
             if (gridViewContainer.contains(e.target) || contextMenu.contains(e.target)) {
                 return;
             };
@@ -2185,7 +2189,7 @@ const PlasmidViewer = new class {
             "range": (selectionIndices !== null && selectionIndices.filter(i => i !== null).length > 1 && !clickedOnFeature) ? true: false,
             "feature": clickedOnFeature,
         };
-        console.log(`PlasmidViewer.showContextMenu -> ${selectionIndices} ${JSON.stringify(selectionState, null, 2)}`);
+        //console.log(`PlasmidViewer.showContextMenu -> ${selectionIndices} ${JSON.stringify(selectionState, null, 2)}`);
 
         
         const menuItems = contextMenu.querySelectorAll(".context-menu-item");
@@ -2193,7 +2197,7 @@ const PlasmidViewer = new class {
             if (!menuItem.hasAttribute("conditions")) {return};
 
             const conditions = [JSON.parse(menuItem.getAttribute("conditions"))];
-            console.log(`PlasmidViewer.showContextMenu -> ${menuItem.innerHTML} ${typeof conditions} ${JSON.stringify(conditions, null, 2)}`)
+            //console.log(`PlasmidViewer.showContextMenu -> ${menuItem.innerHTML} ${typeof conditions} ${JSON.stringify(conditions, null, 2)}`)
             
             const conditionsMet = conditions.every(condition => {
                 // If "any" exists, at least one of the conditions must be true
