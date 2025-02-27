@@ -104,9 +104,7 @@ const Primers = new class {
         operationType,
         operationRange,
         plasmidSequence,
-        insertionSeqDNA,
-        insertionSeqAA,
-        targetOrganism,
+        seqToInsert,
     ) {
         // Colors
         const primerClasses = {
@@ -131,10 +129,6 @@ const Primers = new class {
             ];
         };
 
-        // Optimise AA sequence if one is given, else use DNA sequence
-        const seqToInsert = (insertionSeqAA && insertionSeqAA !== null && insertionSeqAA !== "" && targetOrganism !== null)
-        ? Nucleotides.optimizeAA(insertionSeqAA, targetOrganism)
-        : insertionSeqDNA;
 
         // #region TBR Template binding region
         // Forward template binding region, extend forward on the forward strand from the end position
@@ -355,10 +349,8 @@ const Primers = new class {
         seqToInsert,
         targetTMHR,
         operationType,
-        primerColors
+        primerClasses
     ) {
-        const operationTypeTagline = "Long Insertion";
-
         let overlappingSeq = "";
 
         /**
@@ -392,44 +384,29 @@ const Primers = new class {
         const seqToInsertRevComp = Nucleotides.reverseComplementary(seqToInsert);
         const homoRev = seqToInsertRevComp.slice(homoFragmentLength2, seqToInsertRevComp.length);
 
-        return [
-            {
-                "primerName": "Forward Primer",
-                "homologousRegionLengths": overlappingSeq.length,
-                "nextBases": [
-                    operationRange[0] + seqToInsert.length - homoFwd.length - 1,
-                    operationRange[0] + seqToInsert.length + tempFwd.length 
-                ],
-                "maxLengths": [
-                    Infinity,
-                    seqToInsert.length,
-                    Infinity
-                ],
-                "primerRegions": [
-                    null,
-                    [homoFwd, primerColors["insertion"]],
-                    [tempFwd, primerColors["TBR"]]
-                ]
-            },
-            {
-                "primerName": "Reverse Primer",
-                "homologousRegionLengths": overlappingSeq.length,
-                "nextBases": [
-                    operationRange[0] + homoRev.length,
-                    operationRange[0] - tempRev.length - 1 
-                ],
-                "maxLengths": [
-                    Infinity,
-                    seqToInsert.length,
-                    Infinity
-                ],
-                "primerRegions": [
-                    null,
-                    [homoRev, primerColors["insertion"]],
-                    [tempRev, primerColors["TBR"]]
-                ]
-            }
-        ];
+        return {
+            "title": (operationType !== "Deletion") ? `Long ${operationType}` : operationType,
+            "operationType": operationType,
+            "hrLength": overlappingSeq.length,
+            "primersPositions": [operationRange[0], operationRange[0] + seqToInsert.length],
+            "type": "symmetric",
+            "primers": [
+                {
+                    "name": "Forward Primer",
+                    "regions": [
+                        {"sequence": homoFwd, "class": primerClasses["insertion"]},
+                        {"sequence": tempFwd, "class": primerClasses["TBR"]},
+                    ],
+                },
+                {
+                    "name": "Reverse Primer",
+                    "regions": [
+                        {"sequence": homoRev, "class": primerClasses["insertion"]},
+                        {"sequence": tempRev, "class": primerClasses["TBR"]},
+                    ],
+                },
+            ],
+        };
     };
 
 
@@ -441,10 +418,8 @@ const Primers = new class {
         seqToInsert,
         targetTMHR,
         operationType,
-        primerColors
+        primerClasses
     ) {
-        const operationTypeTagline = "Long Insertion";
-
         let overlappingSeq = "";
 
         /**
@@ -468,44 +443,28 @@ const Primers = new class {
         // Set homologous sequences
         const homoFwd = seqToInsert;
         const homoRev = overlappingSeq;
-
-        return [
-            {
-                "primerName": "Forward Primer",
-                "homologousRegionLengths": overlappingSeq.length,
-                "nextBases": [
-                    null,
-                    operationRange[0] + seqToInsert.length + tempFwd.length 
-                ],
-                "maxLengths": [
-                    Infinity,
-                    seqToInsert.length,
-                    Infinity
-                ],
-                "primerRegions": [
-                    null,
-                    [homoFwd, primerColors["insertion"]],
-                    [tempFwd, primerColors["TBR"]]
-                ]
-            },
-            {
-                "primerName": "Reverse Primer",
-                "homologousRegionLengths": overlappingSeq.length,
-                "nextBases": [
-                    operationRange[0] + homoRev.length,
-                    operationRange[0] - tempRev.length - 1 
-                ],
-                "maxLengths": [
-                    Infinity,
-                    seqToInsert.length,
-                    Infinity
-                ],
-                "primerRegions": [
-                    null,
-                    [homoRev, primerColors["insertion"]],
-                    [tempRev, primerColors["TBR"]]
-                ]
-            }
-        ];
+        return {
+            "title": (operationType !== "Deletion") ? `Long ${operationType}` : operationType,
+            "operationType": operationType,
+            "hrLength": overlappingSeq.length,
+            "primersPositions": [operationRange[0], operationRange[0] + seqToInsert.length],
+            "type": "asymmetric",
+            "primers": [
+                {
+                    "name": "Forward Primer",
+                    "regions": [
+                        {"sequence": homoFwd, "class": primerClasses["insertion"]},
+                        {"sequence": tempFwd, "class": primerClasses["TBR"]},
+                    ],
+                },
+                {
+                    "name": "Reverse Primer",
+                    "regions": [
+                        {"sequence": homoRev, "class": primerClasses["insertion"]},
+                        {"sequence": tempRev, "class": primerClasses["TBR"]},
+                    ],
+                },
+            ],
+        };
     };
 };

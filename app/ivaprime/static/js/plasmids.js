@@ -311,7 +311,8 @@ class Plasmid {
             this.features[featureId]["span"] = newSpan;
             this.features[featureId]["directionality"] = (featureDict["directionality"] == "fwd") ? "rev": "fwd";
         });
-        this.features = Utilities.sortFeaturesDictBySpan(this.features);
+
+        this.sortFeatures();
 
         if (Session.activePlasmidIndex == this.index) {
             PlasmidViewer.deselectBases();
@@ -346,7 +347,8 @@ class Plasmid {
 
             this.features[featureId]["span"] = newSpan;
         });
-        this.features = Utilities.sortFeaturesDictBySpan(this.features);
+
+        this.sortFeatures();
 
         if (Session.activePlasmidIndex == this.index) {
             PlasmidViewer.deselectBases();
@@ -420,6 +422,42 @@ class Plasmid {
 
 
     /**
+     * Sorts the plasmid's features by span
+     */
+    sortFeatures() {
+        this.features = Utilities.sortFeaturesDictBySpan(this.features);
+        this.checkFeatureOverlap();
+    };
+
+
+    newFeature(span, directionality="fwd", label=null, type=null, color=null, translated=false, note="") {
+        const newFeatureDict = {
+            label: (label) ? label: "New feature",
+            type: (type) ? type: (translated) ? "CDS": "misc_feature",
+            directionality: directionality,
+            span: span,
+            color: (color) ? color: Utilities.getRandomDefaultColor(),
+            note: note,
+        };
+
+        if (translated) {
+            newFeatureDict.translation = Nucleotides.translate(
+                directionality === "fwd"
+                ? this.sequence.slice(...span)
+                : Nucleotides.reverseComplementary(this.sequence).slice(...span)
+            );
+        };
+
+        this.features[Utilities.newUUID()] = newFeatureDict;
+        this.sortFeatures();
+
+        PlasmidViewer.deselectBases();
+        PlasmidViewer.redraw();
+        Sidebar.update();
+    };
+
+
+    /**
      * Delete a feature from the features dict and reload plasmid.
      * 
      * @param {String} featureID - UUID of feature to be deleted
@@ -442,18 +480,140 @@ class Plasmid {
         if (this.selectionIndices === null) {return};
         console.log(`Plasmid.IVAOperation -> this.selectionIndices=${this.selectionIndices}`);
 
+        const seqToInsert = (insertionSeqAA && insertionSeqAA !== null && insertionSeqAA !== "" && targetOrganism !== null)
+        ? Nucleotides.optimizeAA(insertionSeqAA, targetOrganism)
+        : insertionSeqDNA;
+
         const primersSet = Primers.generateSet(
             operationType,
             this.selectionIndices,
             this.sequence,
-            insertionSeqDNA,
-            insertionSeqAA,
-            targetOrganism,
-            translateFeature
+            seqToInsert,
         );
 
-        Session.activePlasmid().primers.push(primersSet);
+        this.primers.push(primersSet);
+
+        this.sliceSequence(this.selectionIndices, seqToInsert);
+
+        this.shiftFeatures(this.selectionIndices, seqToInsert);
+
+        if (operationType !== "Deletion") {
+            this.newFeature(
+                [this.selectionIndices[0], this.selectionIndices[0]+seqToInsert.length-1],
+                "fwd",
+                operationType,
+                null,
+                "#c83478",
+                translateFeature,
+                ""
+            );
+        } else {
+            PlasmidViewer.deselectBases();
+            PlasmidViewer.redraw();
+            Sidebar.update();
+        };
+    };
+
+
+    /**
+     * Insert new sequence into plasmid sequence
+     * 
+     * @param {Array<Number>} sliceRange - Section to delete 
+     * @param {String} newSequence - New sequence to insert
+     */
+    sliceSequence(sliceRange, newSequence) {
+        if (sliceRange[1] === null) sliceRange = [sliceRange[0], sliceRange[0]];
+
+        this.sequence = this.sequence.slice(0, sliceRange[0] - 1) + newSequence + this.sequence.slice(sliceRange[1]);
+        this.complementarySequence = Nucleotides.complementary(this.sequence);
+    };
+
+
+    shiftFeatures(sliceRange, newSequence) {
+        if (sliceRange[1] === null) sliceRange = [sliceRange[0], sliceRange[0]];
+
+        const [sliceRangeStart, sliceRangeEnd] = sliceRange;
+        const isSimpleInsertion = (sliceRangeStart === sliceRangeEnd)
+
+        for (let featureID in this.features) {
+            const featureSpan = this.features[featureID]["span"];
+            const [spanStart, spanEnd] = featureSpan;
     
-        Sidebar.update();
+            //// Adjust indices for pure insertions
+            //if (sliceRangeStart === sliceRangeEnd) {
+            //    sliceRangeStart++;
+            //    sliceRangeEnd++;
+            //} else {
+            //    sliceRangeStart++;
+            //};
+    
+            let overlapType = null;
+            if (isSimpleInsertion) {
+                if (sliceRangeStart <= spanStart) overlapType = "shift";
+                else if (sliceRangeStart < spanEnd) overlapType = "inside";
+            } else {
+                if (sliceRangeStart === spanStart && sliceRangeEnd === spanEnd) {
+                    overlapType = "delete"; // Exact replacement
+                } else if (sliceRangeEnd < spanStart) {
+                    overlapType = "shift"; // New feature is completely before old
+                } else if (sliceRangeStart > spanEnd) {
+                    overlapType = null; // New feature is completely after old
+                } else if (sliceRangeStart >= spanStart && sliceRangeEnd <= spanEnd) {
+                    overlapType = "inside"; // Fully inside old feature
+                } else if (sliceRangeStart <= spanStart && sliceRangeEnd >= spanEnd) {
+                    overlapType = "delete"; // Encompasses old feature
+                } else {
+                    overlapType = "delete"; // Overlapping cases
+                };
+            };
+    
+            // Apply the determined action
+            const shiftAmount = (isSimpleInsertion)
+            ? newSequence.length
+            : newSequence.length - (sliceRange[1] - sliceRange[0] + 1);
+            switch (overlapType) {
+                case "shift":
+                    // Shift feature position based on inserted length
+                    this.features[featureID]["span"] = [spanStart + shiftAmount, spanEnd + shiftAmount];
+                    console.log(
+                        "Plasmid.shiftFeatures ->",
+                        this.features[featureID]["label"],
+                        overlapType,
+                        featureSpan,
+                        this.features[featureID]["span"],
+                    )
+                    break;
+    
+                case "inside":
+                    this.features[featureID]["span"] = [spanStart, spanEnd + shiftAmount];
+                    console.log(
+                        "Plasmid.shiftFeatures ->",
+                        this.features[featureID]["label"],
+                        overlapType,
+                        featureSpan,
+                        this.features[featureID]["span"],
+                    )
+                    break;
+    
+                case "delete":
+                    console.log(
+                        "Plasmid.shiftFeatures ->",
+                        this.features[featureID]["label"],
+                        overlapType,
+                        featureSpan,
+                    )
+                    delete this.features[featureID];
+                    break;
+
+                default:
+                    console.log(
+                        "Plasmid.shiftFeatures ->",
+                        this.features[featureID]["label"],
+                        "leave alone",
+                        featureSpan,
+                    )
+                    break;
+            };
+        };
     };
 };
