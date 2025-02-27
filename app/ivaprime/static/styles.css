@@ -368,7 +368,18 @@ input[type="checkbox"] {
  */
 .sidebar {
   background-color: var(--bg-color2);
-  border-right: 2px var(--border-color) solid;
+
+  max-height: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-start;
+
+  overflow: hidden;
+}
+
+.sidebar-content {
+  flex-grow: 1;
 
   max-height: 100%;
   display: flex;
@@ -377,6 +388,36 @@ input[type="checkbox"] {
   justify-content: flex-start;
 
   overflow: hidden;
+}
+
+.sidebar-resizer {
+  width: 5px;
+  cursor: ew-resize;
+  background-color: var(--bg-color2);
+  border-left: 2px solid var(--border-color);
+  border-right: 2px solid var(--border-color);
+
+  position: relative;
+}
+
+.sidebar-resizer::after {
+  content: "|";
+  font-weight: bold;
+  font-size: 18px;
+  color: var(--border-color);
+
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-resizer:hover::after {
+  filter: brightness(0.8);
 }
 
 #features-table-container {

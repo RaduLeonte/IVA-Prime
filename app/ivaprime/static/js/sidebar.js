@@ -1,4 +1,39 @@
 const Sidebar = new class {
+    constructor() {
+        this.isResizing = false;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById("sidebar-resizer").addEventListener("mousedown", function () {
+                Sidebar.isResizing = true;
+                document.getElementById("viewer").style.display = "none";
+                console.log(`Sidebar.resizeSidebar -> started`);
+                document.addEventListener("mousemove", Sidebar.resizeSidebar);
+                document.addEventListener("mouseup", Sidebar.stopResizeSidebar);
+            });
+        });
+    };
+
+    resizeSidebar(event) {
+        if (!Sidebar.isResizing) return;
+
+        let minWidth = window.innerWidth * 0.15;
+        let maxWidth = window.innerWidth * 0.5;
+
+        let newWidth = event.clientX;
+        if (newWidth < minWidth) newWidth = minWidth;
+        if (newWidth > maxWidth) newWidth = maxWidth;
+        
+        document.getElementById("content-wrapper").style.gridTemplateColumns = `${newWidth}px auto 45px`;
+    };
+
+    stopResizeSidebar() {
+        Sidebar.isResizing = false;
+        document.getElementById("viewer").style.display = "block";
+        PlasmidViewer.redraw();
+        Utilities.removeUserSelection();
+        console.log(`Sidebar.resizeSidebar -> done`);
+    };
+
 
     /**
      * Update sidebar.
