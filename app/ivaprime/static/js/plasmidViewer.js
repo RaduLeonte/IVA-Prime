@@ -1,12 +1,43 @@
 const PlasmidViewer = new class {
+    constructor () {
+        // Init viewer variables
+        let activeView = null;
+        let currentlySelecting = false;
+        let elementsAtMouseDown = null;
 
-    // Init viewer variables
-    activeView = null;
-    currentlySelecting = false;
-    elementsAtMouseDown = null;
+        // Shortname
+        const svgNameSpace = "http://www.w3.org/2000/svg";
 
-    // Shortname
-    svgNameSpace = "http://www.w3.org/2000/svg";
+        /**
+         * Redraw views on window resize
+         */
+        let resizeTimeout;
+        window.addEventListener('resize', function () {
+            document.getElementById("viewer").style.display = "none";
+            
+            clearTimeout(resizeTimeout);
+        
+            resizeTimeout = setTimeout(() => {
+                document.getElementById("viewer").style.display = "block";
+                PlasmidViewer.redraw();
+            }, 100);
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            PlasmidViewer.initializeContextMenu();
+        });
+
+
+        /**
+         * Search bar event listener
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById("search-bar").addEventListener("input", function() {
+                const searchAASeq = document.getElementById("search-aa").checked;
+                PlasmidViewer.search(this.value, searchAASeq);
+            });
+        });
+    };
 
 
     /**
@@ -543,8 +574,8 @@ const PlasmidViewer = new class {
             console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> shapesAtPoint ${shapesAtPoint}`)
 
             Array.from(svgWrapper.children).forEach((svgEl) => {
-                svgEl.querySelectorAll('.svg-sequence-base-box-hover').forEach((el) => {
-                    el.classList.remove('svg-sequence-base-box-hover');
+                svgEl.querySelectorAll('.base-hover').forEach((el) => {
+                    el.classList.remove('base-hover');
                 });
             });
 
@@ -552,7 +583,7 @@ const PlasmidViewer = new class {
             if (!this.currentlySelecting) {
                 if (shapesAtPoint.length == 0) {
                     this.hideSequenceTooltip();
-                    this.removeCursors("svg-sequence-cursor-preview");
+                    this.removeCursors("sequence-cursor-hover");
                 };
 
 
@@ -628,13 +659,13 @@ const PlasmidViewer = new class {
                 const nearestRect = elementsAtPoint.find((el) => el.tagName === 'rect');
                 //console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> nearestRect ${nearestRect}`)
                 if (nearestRect) {
-                    nearestRect.classList.add("svg-sequence-base-box-hover");
+                    nearestRect.classList.add("base-hover");
                     const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
     
                     this.showSequenceTooltip(e.pageX, e.pageY);
                     this.setSequenceTooltip(baseIndex);
             
-                    this.removeCursors("svg-sequence-cursor-preview");
+                    this.removeCursors("sequence-cursor-hover");
                     this.placeCursor(baseIndex);
                 };
             } else if (this.currentlySelecting) {
@@ -642,7 +673,7 @@ const PlasmidViewer = new class {
                 let rects = [];
                 svgElements.forEach(svg => {
                     // Get all <rect> elements inside the current SVG
-                    const rectElements = svg.querySelectorAll('.svg-sequence-base-box');
+                    const rectElements = svg.querySelectorAll('.base');
                     rects = rects.concat(Array.from(rectElements));
                 });
             
@@ -691,8 +722,8 @@ const PlasmidViewer = new class {
 
         svgWrapper.addEventListener("mouseleave", (e) => {
             this.hideSequenceTooltip();
-            this.removeCursors("svg-sequence-cursor-preview");
-            this.unhighlightBases("svg-sequence-base-box-hover");
+            this.removeCursors("sequence-cursor-hover");
+            this.unhighlightBases("base-hover");
         });
         // #endregion Event_listeners
 
@@ -777,7 +808,7 @@ const PlasmidViewer = new class {
                 baseBox.setAttribute("y", 0);
                 baseBox.setAttribute("height", singleStrandHeight);
                 baseBox.setAttribute("width", basesWidth);
-                baseBox.classList.add("svg-sequence-base-box");
+                baseBox.classList.add("base");
                 baseBox.setAttribute("base-index", segments.indexOf(segment)*basesPerLine + i + 1)
                 groupStrandFwd.appendChild(baseBox);
                 
@@ -785,7 +816,7 @@ const PlasmidViewer = new class {
                     [basesPositions[i], singleStrandHeight - baseTextOffset],
                     segment["sequenceFwd"][i],
                     null,
-                    "svg-sequence-bases-text",
+                    "base-text",
                     "middle"
                 );
                 groupStrandFwd.appendChild(base);
@@ -805,14 +836,14 @@ const PlasmidViewer = new class {
                 baseBox.setAttribute("y", singleStrandHeight);
                 baseBox.setAttribute("height", singleStrandHeight);
                 baseBox.setAttribute("width", basesWidth);
-                baseBox.classList.add("svg-sequence-base-box");
+                baseBox.classList.add("base");
                 baseBox.setAttribute("base-index", segments.indexOf(segment)*basesPerLine + i + 1)
                 groupStrandRev.appendChild(baseBox);
                 const base = this.text(
                     [basesPositions[i], singleStrandHeight*2  - baseTextOffset],
                     segment["sequenceRev"][i],
                     null,
-                    "svg-sequence-bases-text",
+                    "base-text",
                     "middle"
                 );
                 groupStrandRev.appendChild(base);
@@ -1600,7 +1631,7 @@ const PlasmidViewer = new class {
      * 
      * @param {*} input 
      */
-    placeCursor(input, cssClass="svg-sequence-cursor-preview") {
+    placeCursor(input, cssClass="sequence-cursor-hover") {
         const indices = Array.isArray(input) ? input : [input];
 
         indices.forEach((index) => {
@@ -1633,7 +1664,7 @@ const PlasmidViewer = new class {
                 [posX, 0],
                 [posX, cursorHeight],
                 null,
-                ["svg-sequence-cursor", cssClass]
+                ["sequence-cursor", cssClass]
             ));
         });
     };
@@ -1644,7 +1675,7 @@ const PlasmidViewer = new class {
      * @param {*} cssClassSelector 
      */
     removeCursors(cssClassSelector=null) {
-        const selector = (cssClassSelector) ? cssClassSelector: "svg-sequence-cursor";
+        const selector = (cssClassSelector) ? cssClassSelector: "sequence-cursor";
 
         document.querySelectorAll('svg').forEach((svg) => {
             const lineElements = svg.querySelectorAll(`line.${selector}`);
@@ -1660,24 +1691,55 @@ const PlasmidViewer = new class {
      * @param {Array<number>} span 
      * @param {string} cssClass 
      */
-    highlightBases(span, cssClass="svg-sequence-base-box-selected-preview") {
-        document.querySelectorAll('svg').forEach((svg) => {
-            const rects = svg.querySelectorAll('rect[base-index]');
-            rects.forEach((rect) => {
-                const baseIndex = parseInt(rect.getAttribute('base-index'));
-                if (baseIndex >= span[0] && baseIndex <= span[1]) {
-                    rect.classList.add(cssClass);
+    highlightBases(span, cssClass = "base-hover", strand=null) {
+        const [start, end] = span;
+    
+        const svgs = document.getElementById("grid-view-container").getElementsByTagName('svg');
+        for (let i = 0; i < svgs.length; i++) {
+            const svg = svgs[i];
+            const [svgStart, svgEnd] = svg.getAttribute('indices').split(',').map(Number);
+    
+            // Skip this SVG if it doesn't contain relevant bases
+            if (svgEnd < start || svgStart > end) continue;
+    
+            let targetGroups = [];
+            if (strand === "fwd") {
+                targetGroups = [
+                    svg.getElementById("strand-fwd"),
+                ]
+            } else if (strand === "rev") {
+                targetGroups = [
+                    svg.getElementById("strand-rev")
+                ]
+            } else {
+                targetGroups = [
+                    svg.getElementById("strand-fwd"),
+                    svg.getElementById("strand-rev")
+                ];
+            };
+
+            for (let g = 0; g < targetGroups.length; g++) {
+                const rects = targetGroups[g].getElementsByTagName('rect'); // Faster than querySelectorAll
+    
+                for (let j = 0; j < rects.length; j++) {
+                    const rect = rects[j];
+                    const baseIndex = parseInt(rect.getAttribute('base-index'), 10);
+                    
+                    if (baseIndex >= start && baseIndex <= end) {
+                        rect.classList.add(cssClass);
+                    };
                 };
-            });
-        });
+            };
+        };
     };
+    
 
 
     /**
      * 
      * @param {string} cssClass 
      */
-    unhighlightBases(cssClass="svg-sequence-base-box-selected-preview") {
+    unhighlightBases(cssClass="base-hover") {
         document.querySelectorAll('svg').forEach((svg) => {
             svg.querySelectorAll(`rect.${cssClass}`).forEach((rect) => {
                 rect.classList.remove(cssClass);
@@ -1706,7 +1768,7 @@ const PlasmidViewer = new class {
     deselectFeaturePreview() {
         console.log(`selectFeaturePreview.deselectFeaturePreview`);
         
-        this.removeCursors("svg-sequence-cursor-preview");
+        this.removeCursors("sequence-cursor-hover");
         this.unhighlightBases();
     };
 
@@ -1765,7 +1827,7 @@ const PlasmidViewer = new class {
         console.log(`PlasmidViewer.selectBase -> ${index}`);
         this.deselectBases();
 
-        this.placeCursor(index, "svg-sequence-cursor-selection");
+        this.placeCursor(index, "sequence-cursor-selection");
         Session.activePlasmid().setSelectionIndices([index, null]);
     };
 
@@ -1779,8 +1841,8 @@ const PlasmidViewer = new class {
         console.log(`PlasmidViewer.selectBases -> ${span}`);
         this.deselectBases();
 
-        this.placeCursor([span[0], span[1] + 1], "svg-sequence-cursor-selection");
-        this.highlightBases(span, "svg-sequence-base-box-selected");
+        this.placeCursor([span[0], span[1] + 1], "sequence-cursor-selection");
+        this.highlightBases(span, "base-selected");
 
         Session.activePlasmid().setSelectionIndices(span);
     };
@@ -1788,7 +1850,7 @@ const PlasmidViewer = new class {
 
     deselectBases() {
         this.removeCursors();
-        this.unhighlightBases("svg-sequence-base-box-selected");
+        this.unhighlightBases("base-selected");
     };
 
 
@@ -2142,6 +2204,8 @@ const PlasmidViewer = new class {
     };
     // #endregion Context_menu
 
+
+    // #region Footer
     /**
      * Update footer selection info with the current selection.
      */
@@ -2175,23 +2239,69 @@ const PlasmidViewer = new class {
 
         selectionTm.innerText = Nucleotides.getMeltingTemperature(Session.activePlasmid().selectionSequence).toFixed(2);
     };
+
+
+    /**
+     * Search for DNA or AA sequence in plasmid
+     * 
+     * @param {String} query - DNA or AA sequence to look for
+     * @param {Boolean} searchAASeq - Specifies if query is AA
+     * @returns 
+     */
+    search(query, searchAASeq=false) {
+        this.unhighlightBases("base-search");
+
+        if (!query || query === null || query.length === 0) {return};
+
+        if (searchAASeq) {
+            this.searchAA(query);
+        } else {
+            this.searchDNA(query);
+        };
+    };
+
+
+    /**
+     * Search for DNA sequence in plasmid
+     * 
+     * @param {String} query - DNA Sequence
+     */
+    searchDNA(query) {
+        console.log(`PlasmidViewer.searchDNA -> ${query}`);
+
+        const activePlasmid = Session.activePlasmid();
+        const sequences = [activePlasmid.sequence, activePlasmid.complementarySequence];
+        const queries = [query, query.split("").reverse().join("")];
+
+        for (let i = 0; i < 2; i++) {
+            const query = queries[i]
+            const sequence = sequences[i];
+            const strand = ["fwd", "rev"][i]
+            let indices = [];
+            let index = sequence.indexOf(query);
+            while (index !== -1) {
+                indices.push(index);
+                index = sequence.indexOf(query, index + 1);
+            };
+        
+            for (let j = 0; j < indices.length; j++) {
+                this.highlightBases(
+                    [indices[j]+1, indices[j]+query.length],
+                    "base-search",
+                    strand,
+                );
+            }
+        };
+    };
+
+
+    /**
+     * Search for AA sequence in plasmid
+     * 
+     * @param {String} query - AA sequence
+     */
+    searchAA(query) {
+        return;
+    };
+    // #endregion Footer
 };
-
-/**
- * Redraw views on window resize
- */
-let resizeTimeout;
-window.addEventListener('resize', function () {
-    document.getElementById("viewer").style.display = "none";
-    
-    clearTimeout(resizeTimeout);
-  
-    resizeTimeout = setTimeout(() => {
-        document.getElementById("viewer").style.display = "block";
-        PlasmidViewer.redraw();
-    }, 100);
-});
-
-document.addEventListener("DOMContentLoaded", function () {
-    PlasmidViewer.initializeContextMenu();
-});

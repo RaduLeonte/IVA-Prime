@@ -749,7 +749,7 @@ input, select, textarea {
 
 
 
-.svg-sequence-bases-text {
+.base-text {
   pointer-events: none;
   -webkit-user-select: none;
   -moz-user-select: none;

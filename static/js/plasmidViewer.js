@@ -542,7 +542,7 @@ const PlasmidViewer = new class {
                     [basesPositions[i], sequenceFwdHeight],
                     segment["sequenceFwd"][i],
                     null,
-                    "svg-sequence-bases-text",
+                    "base-text",
                     "middle"
                 ));
             };
@@ -591,7 +591,7 @@ const PlasmidViewer = new class {
                     [basesPositions[i], sequenceRevHeight],
                     segment["sequenceRev"][i],
                     null,
-                    "svg-sequence-bases-text",
+                    "base-text",
                     "middle"
                 ));
             };
