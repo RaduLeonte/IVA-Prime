@@ -568,6 +568,25 @@ const PlasmidViewer = new class {
         });
 
 
+        svgWrapper.addEventListener("dblclick", (e) => {
+            const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+            const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
+            if (shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
+                const featureID = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id");
+                const targetDiv = document.getElementById(featureID)
+                const targetHeader = targetDiv.firstElementChild;
+                const targetContent = targetHeader.nextElementSibling;
+        
+                Sidebar.toggleCollapsibleHeader(targetHeader);
+
+                targetContent.addEventListener("transitionend", function scrollAfterTransition() {
+                    targetContent.scrollIntoView({ behavior: "smooth", block: "center" });
+                    targetContent.removeEventListener("transitionend", scrollAfterTransition);
+                }, { once: true });
+            };
+        });
+
+
         svgWrapper.addEventListener("mousemove", (e) => {
             const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
             const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
