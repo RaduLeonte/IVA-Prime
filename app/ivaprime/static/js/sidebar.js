@@ -4,9 +4,9 @@ const Sidebar = new class {
 
         document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("sidebar-resizer").addEventListener("mousedown", function () {
+                console.log(`Sidebar.resizeSidebar -> started`);
                 Sidebar.isResizing = true;
                 document.getElementById("viewer").style.display = "none";
-                console.log(`Sidebar.resizeSidebar -> started`);
                 document.addEventListener("mousemove", Sidebar.resizeSidebar);
                 document.addEventListener("mouseup", Sidebar.stopResizeSidebar);
             });
@@ -31,6 +31,9 @@ const Sidebar = new class {
         document.getElementById("viewer").style.display = "block";
         PlasmidViewer.redraw();
         Utilities.removeUserSelection();
+
+        document.removeEventListener("mousemove", Sidebar.resizeSidebar);
+        document.removeEventListener("mouseup", Sidebar.stopResizeSidebar);
         console.log(`Sidebar.resizeSidebar -> done`);
     };
 
