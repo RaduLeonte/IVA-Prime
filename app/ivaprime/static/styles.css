@@ -989,7 +989,7 @@ input, select, textarea {
   opacity: 1;
 }
 
-.base-search-highlight {
+.base-search-focus {
   fill: var(--base-search-highlight);
   opacity: 1;
 }

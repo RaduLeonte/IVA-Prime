@@ -291,14 +291,18 @@
                         <input id="search-bar" type="text" placeholder="Search sequence">
                         
                         <div class="footer-search-controls">
-                            <span class="toolbar-button footer-reset-search-button" title="Reset search query"></span>
-                            <span class="toolbar-button footer-search-up-button" title="Go to previous occurence"></span>
-                            <span class="toolbar-button footer-search-down-button" title="Go to next occurence"></span>
+                            <span class="toolbar-button footer-reset-search-button" title="Reset search query" onclick='PlasmidViewer.clearSearch()'></span>
+                            <span class="toolbar-button footer-search-up-button" title="Go to previous occurence" onclick='PlasmidViewer.navigateSearchResults(-1)'></span>
+                            <span class="toolbar-button footer-search-down-button" title="Go to next occurence" onclick='PlasmidViewer.navigateSearchResults(1)'></span>
+                        </div>
+
+                        <div>
+                            <span id="search-bar-info"></span>
                         </div>
                     
                         <div class="footer-search-options">
                             <div>
-                                <input type="checkbox" id="search-aa" name="search-aa">
+                                <input type="checkbox" id="search-aa" name="search-aa" onclick='PlasmidViewer.search()'>
                                 <label for="search-aa">Amino acid sequence</label>
                             </div>
                         </div>

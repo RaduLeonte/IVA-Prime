@@ -29,14 +29,34 @@ const PlasmidViewer = new class {
 
 
         /**
-         * Search bar event listener
+         * Search bar
          */
+        this.searchResults = [];
+        this.searchFocusIndex = null;
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById("search-bar").addEventListener("input", function() {
-                const searchAASeq = document.getElementById("search-aa").checked;
-                PlasmidViewer.search(this.value, searchAASeq);
+                PlasmidViewer.search();
+            });
+
+            document.getElementById("search-bar").addEventListener("keydown", function(event) {
+                if (event.key === "ArrowUp") {
+                    event.preventDefault();
+                    PlasmidViewer.navigateSearchResults(-1);
+                } else if (event.key === "ArrowDown") {
+                    event.preventDefault();
+                    PlasmidViewer.navigateSearchResults(1);
+                };
             });
         });
+
+
+        document.addEventListener("keydown", function(event) {
+            if (event.ctrlKey && event.key === "f") {
+                event.preventDefault();
+                document.getElementById("search-bar").focus();
+            };
+        });
+        
     };
 
 
@@ -2261,14 +2281,28 @@ const PlasmidViewer = new class {
 
 
     /**
-     * Search for DNA or AA sequence in plasmid
-     * 
-     * @param {String} query - DNA or AA sequence to look for
-     * @param {Boolean} searchAASeq - Specifies if query is AA
-     * @returns 
+     * Clears the search bar
      */
-    search(query, searchAASeq=false) {
+    clearSearch(clearInput=true) {
+        if (clearInput) {
+            document.getElementById("search-bar").value = "";
+        };
         this.unhighlightBases("base-search");
+        this.unhighlightBases("base-search-focus");
+        this.searchResults = [];
+        this.searchFocusIndex = null;
+        this.updateSearchBarInfo();
+    };
+
+
+    /**
+     * Search for DNA or AA sequence in plasmid
+     */
+    search() {
+        const query = document.getElementById("search-bar").value;
+        const searchAASeq = document.getElementById("search-aa").checked;
+
+        this.clearSearch(false);
 
         if (!query || query === null || query.length === 0) {return};
 
@@ -2304,13 +2338,20 @@ const PlasmidViewer = new class {
             };
         
             for (let j = 0; j < indices.length; j++) {
+                const span = [indices[j]+1, indices[j]+query.length];
                 this.highlightBases(
-                    [indices[j]+1, indices[j]+query.length],
+                    span,
                     "base-search",
                     strand,
                 );
-            }
+
+                this.searchResults.push({strand: strand, span: span});
+            };
         };
+
+        this.findNearestSearchResult();
+        this.focusSearchResult();
+        this.updateSearchBarInfo();
     };
 
 
@@ -2320,7 +2361,158 @@ const PlasmidViewer = new class {
      * @param {String} query - AA sequence
      */
     searchAA(query) {
-        return;
+        console.log(`PlasmidViewer.searchAA -> ${query}`);
+
+        const activePlasmid = Session.activePlasmid()
+        const sequences = [activePlasmid.sequence, Nucleotides.reverseComplementary(activePlasmid.sequence)];
+        const strands = ["fwd", "rev"];
+        for (let i = 0; i < 2; i++) {
+            const sequence = sequences[i];
+            const strand = strands[i];
+            const dnaFrames = [
+                sequence,
+                sequence.slice(-1) + sequence.slice(0, -1),
+                sequence.slice(-2) + sequence.slice(0, -2)
+            ];
+            console.log(`PlasmidViewer.searchAA -> ${strand} ${dnaFrames.map(f => f.slice(0, 10) + "..." + f.slice(-10))}`);
+    
+            for (let j = 0; j < 3; j++) {
+                const dnaFrame = dnaFrames[j];
+                let aaFrame = "";
+                for (let k = 0; k+3 <= dnaFrame.length; k += 3) {
+                    aaFrame += Nucleotides.codonTable[dnaFrame.slice(k, k+3)]
+                };
+
+    
+                let indices = [];
+                let index = aaFrame.indexOf(query);
+                while (index !== -1) {
+                    if (strand === "fwd") {
+                        indices.push(index*3 + j);
+                    } else {
+                        indices.push(dnaFrame.length - (index*3 + j))
+                    }
+                    index = aaFrame.indexOf(query, index + 1);
+                };
+            
+                console.log(`PlasmidViewer.searchAA -> ${strand} ${j} "${dnaFrame.slice(0, 9) + "..." + dnaFrame.slice(-9)}" [${dnaFrame.length}] "${aaFrame.slice(0, 3) + "..." + aaFrame.slice(-3)}" [${aaFrame.length}] ${indices}`);
+                for (let k = 0; k < indices.length; k++) {
+                    const span = (strand === "fwd")
+                    ? [indices[k] + 1, indices[k] + query.length*3]
+                    : [indices[k] - query.length*3 + 1, indices[k]]
+                    
+                    this.highlightBases(
+                        span,
+                        "base-search",
+                        strand,
+                    );
+
+                    this.searchResults.push({strand: strand, span: span});
+                };
+            };
+        };
+
+        this.findNearestSearchResult();
+        this.focusSearchResult();
+        this.updateSearchBarInfo();
+    };
+
+
+    findNearestSearchResult() {
+        const gridViewContainer = document.getElementById("grid-view-container");
+
+        const bases = Array.from(gridViewContainer.getElementsByClassName("base-search"));
+
+        const containerRect = gridViewContainer.getBoundingClientRect();
+        let firstBaseInView;
+        for (let i = 0; i < bases.length; i++) {
+            const base = bases[i]
+            const rect = base.getBoundingClientRect();
+            if (
+                rect.top >= containerRect.top &&
+                rect.bottom <= containerRect.bottom
+            ) {
+                firstBaseInView = base;
+            };
+        };
+
+        const targetBase = (firstBaseInView) ? firstBaseInView: bases[0];
+        if (!targetBase) return;
+
+        const targetBaseIndex = parseInt(targetBase.getAttribute("base-index"));
+
+        this.searchResults.sort((a, b) => a.span[0] - b.span[0]);
+        for (let i = 0; i < this.searchResults.length; i++) {
+            const resultSpan = this.searchResults[i].span;
+            if (resultSpan[0] <= targetBaseIndex <= resultSpan[1]) {
+                this.searchFocusIndex = i;
+                break;
+            };
+        };
+    };
+
+
+    navigateSearchResults(increment) {
+        this.unhighlightBases("base-search-focus");
+        if (this.searchFocusIndex + increment < 0) {
+            this.searchFocusIndex = this.searchResults.length - 1;
+        } else if (this.searchFocusIndex + increment >= this.searchResults.length) {
+            this.searchFocusIndex = 0;
+        } else {
+            this.searchFocusIndex += increment;
+        };
+        this.focusSearchResult();
+        this.updateSearchBarInfo();
+    };
+
+
+    focusSearchResult() {
+        const searchResult = this.searchResults[this.searchFocusIndex];
+        this.highlightBases(searchResult.span, "base-search-focus", searchResult.strand);
+
+        const container = document.getElementById("viewer");
+        const containerRect = container.getBoundingClientRect();
+        const basesInSearchResult = Array.from(container.querySelectorAll(".base-search-focus")).sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+
+        
+        const basesHeightDifference = basesInSearchResult[basesInSearchResult.length - 1].getBoundingClientRect().bottom
+                                    - basesInSearchResult[0].getBoundingClientRect().top
+        
+        const targetBase = searchResult.strand === "fwd" 
+            ? basesInSearchResult[0] 
+            : basesInSearchResult.at(-1);
+
+        const targetSVG = targetBase.closest("svg");
+        const targetSVGRect = targetSVG.getBoundingClientRect();
+        const targetTop = targetSVGRect.top - containerRect.top + container.scrollTop;
+        const targetBottom = targetSVGRect.bottom - containerRect.top + container.scrollTop;
+        const halfContainer = containerRect.height / 2;
+        const halfBases = basesHeightDifference / 2;
+        
+        let targetHeight;
+        
+        if (basesHeightDifference > containerRect.height) {
+            targetHeight = searchResult.strand === "fwd" 
+                ? targetTop 
+                : targetBottom - containerRect.height;
+        } else {
+            targetHeight = searchResult.strand === "fwd" 
+                ? targetTop - halfContainer + halfBases 
+                : targetBottom - halfContainer - halfBases;
+        };
+
+        document.getElementById("viewer").scrollTo({ top: targetHeight, behavior: "smooth" });
+    };
+
+
+    updateSearchBarInfo() {
+        const infoSpan = document.getElementById("search-bar-info");
+
+        if (this.searchResults.length === 0) {
+            infoSpan.innerText = "";
+        } else {
+            infoSpan.innerText = (this.searchFocusIndex+1) + "/" + this.searchResults.length;
+        };
     };
     // #endregion Footer
 };
