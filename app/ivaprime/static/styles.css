@@ -21,8 +21,8 @@
   --base-selected: rgba(0, 150, 255, 0.2);
   --base-search: #dcf29d;
   --base-search-highlight: #df63dd;;
-  --base-subcloning: rgba(128, 0, 128, 0.2);
-  --base-subcloning-border: #ae70ae; 
+  --base-sub: #ffa0ff8c;
+  --base-sub-border: #ae70ae; 
   
   --selection-cursor: purple;
   
@@ -52,8 +52,8 @@
   --base-selected: rgba(62, 175, 255, 0.2);
   --base-search: #932b21;
   --base-search-highlight: #932191;
-  --base-subcloning: rgba(255, 70, 255, 0.2);
-  --base-subcloning-border: #a652a6;
+  --base-sub: rgba(255, 70, 255, 0.2);
+  --base-sub-border: #a652a6;
 
   --selection-cursor: #ce59ce;
   
@@ -1040,6 +1040,25 @@ input, select, textarea {
   fill: var(--base-search-highlight);
   opacity: 1;
 }
+
+.subcloning-rect {
+  opacity: 1;
+  fill: var(--base-sub);
+  stroke: var(--base-sub-border);
+  stroke-width: 2px;
+  stroke-dasharray: 10px 10px;
+  animation: dash-move 40s linear infinite;
+}
+
+@keyframes dash-move {
+  from {
+      stroke-dashoffset: 0;
+  }
+  to {
+      stroke-dashoffset: -520px; /* Moves dashes along the perimeter */
+  }
+}
+
 
 .base-primer-hr,
 .base-primer-ins,

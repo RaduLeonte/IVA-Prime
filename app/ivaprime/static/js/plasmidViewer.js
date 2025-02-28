@@ -696,7 +696,7 @@ const PlasmidViewer = new class {
                 };
 
     
-                const nearestRect = elementsAtPoint.find((el) => el.tagName === 'rect');
+                const nearestRect = elementsAtPoint.find((el) => el.tagName === 'rect' && el.classList.contains("base"));
                 //console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> nearestRect ${nearestRect}`)
                 if (nearestRect) {
                     nearestRect.classList.add("base-hover");
@@ -834,6 +834,7 @@ const PlasmidViewer = new class {
             // #region Main_group
             const groupMain = this.createShapeElement("g");
             groupMain.setAttribute("id", "strand-group");
+            groupMain.setAttribute("transform", "translate(0, 5)");
             svgCanvas.appendChild(groupMain);
     
 
@@ -847,6 +848,12 @@ const PlasmidViewer = new class {
             const groupStrandFwd = this.createShapeElement("g");
             groupStrandFwd.setAttribute("id", "strand-fwd");
             groupSequence.appendChild(groupStrandFwd);
+
+            const groupStrandFwdRects = this.createShapeElement("g");
+            groupStrandFwd.appendChild(groupStrandFwdRects);
+            const groupStrandFwdText = this.createShapeElement("g");
+            groupStrandFwd.appendChild(groupStrandFwdText);
+
             for (let i = 0; i < basesPerLine; i++) {
                 if (!segment["sequenceFwd"][i]) {continue};
 
@@ -857,7 +864,7 @@ const PlasmidViewer = new class {
                 baseBox.setAttribute("width", basesWidth);
                 baseBox.classList.add("base");
                 baseBox.setAttribute("base-index", segments.indexOf(segment)*basesPerLine + i + 1)
-                groupStrandFwd.appendChild(baseBox);
+                groupStrandFwdRects.appendChild(baseBox);
                 
                 const base = this.text(
                     [basesPositions[i], singleStrandHeight - baseTextOffset],
@@ -866,7 +873,7 @@ const PlasmidViewer = new class {
                     "base-text",
                     "middle"
                 );
-                groupStrandFwd.appendChild(base);
+                groupStrandFwdText.appendChild(base);
             };
             // #endregion Forward_strand
 
@@ -875,6 +882,12 @@ const PlasmidViewer = new class {
             const groupStrandRev = this.createShapeElement("g");
             groupStrandRev.setAttribute("id", "strand-rev");
             groupSequence.appendChild(groupStrandRev);
+
+            const groupStrandRevRects = this.createShapeElement("g");
+            groupStrandFwd.appendChild(groupStrandRevRects);
+            const groupStrandRevText = this.createShapeElement("g");
+            groupStrandFwd.appendChild(groupStrandRevText);
+
             for (let i = 0; i < basesPerLine; i++) {
                 if (!segment["sequenceRev"][i]) {continue};
 
@@ -885,7 +898,7 @@ const PlasmidViewer = new class {
                 baseBox.setAttribute("width", basesWidth);
                 baseBox.classList.add("base");
                 baseBox.setAttribute("base-index", segments.indexOf(segment)*basesPerLine + i + 1)
-                groupStrandRev.appendChild(baseBox);
+                groupStrandRevRects.appendChild(baseBox);
                 const base = this.text(
                     [basesPositions[i], singleStrandHeight*2  - baseTextOffset],
                     segment["sequenceRev"][i],
@@ -893,7 +906,7 @@ const PlasmidViewer = new class {
                     "base-text",
                     "middle"
                 );
-                groupStrandRev.appendChild(base);
+                groupStrandRevText.appendChild(base);
             };
             // #endregion Reverse_strand
 
@@ -1679,14 +1692,14 @@ const PlasmidViewer = new class {
      * @param {*} input 
      */
     placeCursor(input, cssClass="sequence-cursor-hover") {
-        //console.log(`PlasmidViewer.placeCursor ->`, input, cssClass);
+        console.log(`PlasmidViewer.placeCursor ->`, input, cssClass);
         const indices = Array.isArray(input) ? input : [input];
 
         indices.forEach((index) => {
             //console.log(`PlasmidViewer.placeCursor -> Placing cursor at: ${index}`);
             // Find svg segment that contains the bases with the specified index
             const gridViewContainer = document.getElementById("grid-view-container");
-            const svgElements = gridViewContainer.querySelectorAll('svg');
+            const svgElements = gridViewContainer.getElementsByTagName('svg');
 
             let svgMatch = null;
             for (let svg of svgElements) {
@@ -1792,6 +1805,72 @@ const PlasmidViewer = new class {
                 rect.classList.remove(cssClass);
             });
         });
+    };
+
+
+    highlightSubcloningTarget() {
+        this.unhighlightSubcloningTarget();
+        console.log("PlasmidViewer.highlightSubcloningTarget ->")
+        if (
+            Session.subcloningOriginPlasmidIndex === null ||
+            Session.subcloningOriginPlasmidIndex !== Session.activePlasmidIndex
+        ) {
+            return;
+        };
+        console.log("PlasmidViewer.highlightSubcloningTarget ->", Session.subcloningOriginSpan)
+        //this.highlightBases(Session.subcloningOriginSpan, "base-sub-target", "fwd")
+
+        const [start, end] = Session.subcloningOriginSpan;
+    
+        const svgs = document.getElementById("grid-view-container").getElementsByTagName('svg');
+        for (let i = 0; i < svgs.length; i++) {
+            const svg = svgs[i];
+            const [svgStart, svgEnd] = svg.getAttribute('indices').split(',').map(Number);
+            // Skip this SVG if it doesn't contain relevant bases
+            if (svgEnd < start || svgStart > end) continue;
+    
+            const rects = svg.getElementById("strand-fwd").getElementsByTagName('rect');
+
+            let basesInSubSpan = []
+            for (let j = 0; j < rects.length; j++) {
+                const rect = rects[j];
+                const baseIndex = parseInt(rect.getAttribute('base-index'), 10);
+                
+                if (baseIndex >= start && baseIndex <= end) {
+                    basesInSubSpan.push(rect)
+                };
+            };
+
+            if (basesInSubSpan.length === 0) continue;
+
+            const firstRect = basesInSubSpan[0];
+            const lastRect = basesInSubSpan[basesInSubSpan.length - 1];
+
+            const X1 = parseFloat(firstRect.getAttribute('x'));
+            const Y = parseFloat(firstRect.getAttribute('y'));
+
+            const X2 = parseFloat(lastRect.getAttribute('x'));
+            const cellWidth = parseFloat(lastRect.getAttribute('width'));
+            const cellHeight = parseFloat(firstRect.getAttribute('height'));
+
+            const subcloningRect = this.createShapeElement("rect");
+            subcloningRect.setAttribute("id", "subcloning-rect");
+            subcloningRect.setAttribute("class", "subcloning-rect");
+
+            subcloningRect.setAttribute("x", X1);
+            subcloningRect.setAttribute("y", Y);
+            subcloningRect.setAttribute("width", X2 + cellWidth - X1);
+            subcloningRect.setAttribute("height", cellHeight);
+
+            firstRect.parentElement.insertBefore(subcloningRect, firstRect.parentElement.firstChild);
+        };
+    };
+
+    unhighlightSubcloningTarget() {
+        this.unhighlightBases("base-sub-target");
+        document.getElementById("grid-view-container")
+                .querySelectorAll("rect.subcloning-rect")
+                .forEach(rect => rect.remove());
     };
 
 
@@ -1971,7 +2050,7 @@ const PlasmidViewer = new class {
                 {
                     item: "Mark selection for subcloning",
                     conditions:  {any: ["range", "feature"]},
-                    action: () => Alerts.warning("Mark selection for subcloning")
+                    action: () => Session.markForSubcloning()
                 },
                 {
                     item: "Subclone into selection",

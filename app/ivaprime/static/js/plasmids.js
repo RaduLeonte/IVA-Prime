@@ -10,7 +10,7 @@ const Session = new class {
         this.activePlasmidIndex = null;
   
         // Index of plasmid from where the subcloning originates
-        this.subcloningOriginIndex = null;
+        this.subcloningOriginPlasmidIndex = null;
         // Span of subcloning target in origin plasmid
         this.subcloningOriginSpan = null;
     };
@@ -68,6 +68,23 @@ const Session = new class {
      */
     getPlasmid(index) {
       return this.plasmids[index];
+    };
+
+
+    markForSubcloning(span=null) {
+        if (span === null) span = Session.activePlasmid().getSelectionIndices();
+        this.subcloningOriginPlasmidIndex = Session.activePlasmidIndex;
+        this.subcloningOriginSpan = span;
+
+        PlasmidViewer.highlightSubcloningTarget();
+    };
+
+
+    removeMarkForSubcloning() {
+        this.subcloningOriginPlasmidIndex = null;
+        this.subcloningOriginSpan = null;
+
+        PlasmidViewer.highlightSubcloningTarget();
     };
 };
   
