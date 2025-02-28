@@ -800,6 +800,46 @@ const FileIO = new class {
     };
 
 
+    primersToTable(primerSets, includeColumnNames=false) {
+        let table = [];
+        if (includeColumnNames) table.push(["Primer Name", "Primer Sequence"]);
+
+        for (let i = 0; i < primerSets.length; i++) {
+            const set = primerSets[i];
+            for (let j = 0; j < set.primers.length; j++) {
+                const primer = set.primers[j];
+                let primerSequence = ""
+                for (let k = 0; k < primer.regions.length; k++) {
+                    primerSequence += primer.regions[k].sequence;
+                };
+                table.push([primer.name, primerSequence]);
+            };
+        };
+
+        return table;
+    };
+
+
+    /**
+     * Converts integer to spreadsheet style column index
+     * 1 -> A
+     * 2 -> B
+     * 27 -> AA etc
+     * 
+     * @param {number} index 
+     * @returns {string}
+     */
+    intToSpreadsheetColumn(index) {
+        let columnIndex = '';
+        while (index > 0) {
+            let remainder = (index - 1) % 26;
+            columnIndex = String.fromCharCode(65 + remainder) + columnIndex;
+            index = Math.floor((index - remainder) / 26);
+        };
+        return columnIndex;
+    };
+
+
     /**
      * Dictionary of primers exporters.
      */
@@ -888,17 +928,25 @@ const FileIO = new class {
             document.body.removeChild(tempContainer);
             saveAs(blob, `${plasmidName} primers.docx`);
         },
-        
-        
 
         /**
          * Csv format.
-         * 
-         * @param {int} plasmidIndex - Index of plasmid to export primers for.
          */
-        csv: (plasmidIndex) => {
-            console.log(`FileIO.primerExporters.csv -> ${plasmidIndex}`);
-            return
+        csv: (plasmidIndex, plasmidName, primerSets) => {
+            const table = this.primersToTable(primerSets, true);
+            console.log("FileIO.primerExports.csv ->", table);
+
+            let csvLines = table.map(function(row) {
+                return row.map(function(cell) {
+                    return '"' + String(cell).replace(/"/g, '""') + '"';
+                }).join(',');
+            });
+            const fileText = csvLines.join('\n');
+
+            this.downloadFile(
+                plasmidName + " primers" + ".csv",
+                fileText
+            );
         },
 
         /**
@@ -906,8 +954,26 @@ const FileIO = new class {
          * 
          * @param {int} plasmidIndex - Index of plasmid to export primers for.
          */
-        xlsx: (plasmidIndex) => {
-            console.log(`FileIO.primerExporters.xlsx -> ${plasmidIndex}`);
+        xlsx: (plasmidIndex, plasmidName, primerSets) => {
+            const table = this.primersToTable(primerSets, true);
+            console.log("FileIO.primerExports.xlsx ->", table);
+
+            XlsxPopulate.fromBlankAsync()
+                        .then((workbook) => {
+                            // Iterate over primers and add the entries to the sheet
+                            for (let i = 0; i < table.length; i++) {
+                                const currentRow = table[i]
+                                for (let j = 0; j < currentRow.length; j++) {
+                                    const targetCell = this.intToSpreadsheetColumn(j + 1) + (i + 1);
+                                    workbook.sheet(0).cell(targetCell).value(currentRow[j]);
+                                };
+                            };
+                            // Return blob
+                            return workbook.outputAsync();
+                        })
+                        .then((blob) => {
+                            saveAs(blob, plasmidName + " primers" + ".xlsx");
+                        })
             return
         },
 
