@@ -163,61 +163,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 /**
- * 
- */
-function updateTranslateNewFeatureCheckbox(event) {
-  if (document.getElementById("subcloningInput").style.display === "none") {
-    if (isAminoAcidSequence(document.getElementById("amino-acid-sequence-input").value) === true) {
-      document.getElementById("translate-new-feature-checkbox").checked = true;
-    };
-  } else {
-    if (isAminoAcidSequence(document.getElementById("amino-acid-sequence-input-5").value) === true && isAminoAcidSequence(document.getElementById("amino-acid-sequence-input-3").value) === true) {
-      document.getElementById("translate-new-feature-checkbox").checked = true;
-    };
-  };
-};
-
-
-/**
- * Display pop up window and change its header.
- */
-function showPopupWindow(headerText, operationType) {
-  const popupWindow = document.querySelector('.popup-window');
-  popupWindow.style.display = 'block';
-
-  const popupWindowHeader = document.getElementById('popUpWindowHeader');
-  popupWindowHeader.innerText = headerText;
-  
-  const createPrimersButton = popupWindow.querySelector('#create-primers-button');
-  createPrimersButton.setAttribute("operation-type", operationType);
-
-  if (operationType === "Subcloning") {
-    const insertionInput = document.getElementById("insertionInput");
-    insertionInput.style.display = "none";
-
-    const subcloningInput = document.getElementById("subcloningInput");
-    subcloningInput.style.display = "block";
-  } else {
-    const insertionInput = document.getElementById("insertionInput");
-    insertionInput.style.display = "block";
-
-    const subcloningInput = document.getElementById("subcloningInput");
-    subcloningInput.style.display = "none";
-  }
-};
-
-
-/**
- * Hide pop up window.
- */
-function hidePopupWindow() {
-  document.querySelectorAll('.popup-window').forEach(function(element) {
-    element.style.display = 'none';
-  });
-};
-
-
-/**
  * Update the default selection in the organism selector
  */
 function updateOrganismSelectorDefault() {

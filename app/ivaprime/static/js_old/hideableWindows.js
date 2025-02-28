@@ -209,58 +209,6 @@ function repositionHideableWindow(windowID) {
     targetWindow.style.top = rectHeader.bottom + "px";
 };
 
-
-/**
- * Hide all hideable windows.
- */
-function hideAllHideableWindows() {
-    const popupWindows = document.querySelectorAll('.hideable-window');
-    for (const popupWindow of popupWindows) {
-        popupWindow.style.display = 'none';
-    };
-};
-
-
-/**
- * On Esc, hide all windows
- */
-document.addEventListener('keydown', function(event) {
-    if (event.key === "Escape") {
-        event.preventDefault();
-        event.stopPropagation();
-        hideAllHideableWindows();
-        hidePopupWindow();
-    };
-});
-
-
-/**
- * Slide settings tab
- */
-function slideTab(e, direction) {
-    if (e.getAttribute("disabled") !== "true") {
-        const tabsList = document.querySelectorAll(".tab");
-        let translate = (direction === "advanced") ? -100 : 100;
-
-        tabsList.forEach((tabElement) => {
-            const matches = tabElement.style.transform.match(/translateX\(([^)]+)\)/);
-            const currTransformValue = matches ? parseFloat(matches[1]) : 0;
-            tabElement.style.transform = `translateX(${currTransformValue + translate}%)`;
-            tabElement.style.position = (tabElement.style.position !== "absolute") ? "absolute": "static";
-        });
-
-        const tabBtns = document.querySelectorAll(".settings-tab-button");
-        tabBtns.forEach((tabBtn) => {
-            tabBtn.setAttribute("disabled", "false");
-            tabBtn.classList.remove("settings-tab-button-highlighted");
-        });
-
-        e.setAttribute("disabled", "true");
-        e.classList.add("settings-tab-button-highlighted");
-    };
-};
-
-
 /**
  * Button listener.
  */
@@ -309,24 +257,3 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     };
 });
-
-
-/**
- * Update the CSS theme
- */
-function updateCSSTheme() {
-    if (colorTheme === "darkTheme") {
-        document.querySelector("html").setAttribute("data-theme", "dark");
-        Coloris({
-            themeMode: 'dark',
-            alpha: false
-          });
-    } else if (colorTheme === "lightTheme") {
-        document.querySelector("html").setAttribute("data-theme", "light");
-        Coloris({
-            themeMode: 'light',
-            alpha: false
-          });
-    };
-};
-updateCSSTheme();
