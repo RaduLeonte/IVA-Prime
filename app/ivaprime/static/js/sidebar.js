@@ -314,18 +314,52 @@ const Sidebar = new class {
              * Span
              */
             const spanDiv = document.createElement("DIV");
+            spanDiv.classList.add("collapsible-content-hgroup");
+            
             const [spanStart, spanEnd] = featureDict["span"];
             const spanEndMax = Session.activePlasmid().sequence.length;
-            spanDiv.classList.add("collapsible-content-hgroup");
-            spanDiv.innerHTML = `
-            <label class="collapsible-content-hgroup-label">Span</label>
-            <div class="collapsible-content-hgroup-input">
-            <input type="number" id="span-start-input" min="1" max="${spanEndMax}" value="${spanStart}">
-            <span> .. </span> 
-            <input type="number" id="span-end-input" min="1" max="${spanEndMax}" value="${spanEnd}">
-            </div>
-            `;
+            
+            const spanLabel = document.createElement("label");
+            spanLabel.classList.add("collapsible-content-hgroup-label");
+            spanLabel.textContent = "Span";
+
+            const inputContainer = document.createElement("DIV");
+            inputContainer.classList.add("collapsibe-content-hgroup-input");
+
+            const startInput = document.createElement("input");
+            startInput.type = "number";
+            startInput.id = "span-start-input";
+            startInput.min = "1";
+            startInput.max = spanEndMax;
+            startInput.value = spanStart;
+
+            const separator = document.createElement("span");
+            separator.textContent = " .. ";
+
+            const endInput = document.createElement("input");
+            endInput.type = "number";
+            endInput.id = "span-end-input";
+            endInput.min = "1";
+            endInput.max = spanEndMax;
+            endInput.value = spanEnd;
+
+            inputContainer.appendChild(startInput);
+            inputContainer.appendChild(separator);
+            inputContainer.appendChild(endInput);
+            spanDiv.appendChild(spanLabel);
+            spanDiv.appendChild(inputContainer);
             collapsibleContent.appendChild(spanDiv);
+
+            function validateSpanInputs() {
+                const startVal = parseInt(startInput.value, 10);
+                const endVal = parseInt(endInput.value, 10);
+            
+                if (!isNaN(startVal) && !isNaN(endVal) && endVal <= startVal) {
+                    endInput.value = startVal + 1;
+                };
+            };
+            startInput.addEventListener("input", validateSpanInputs);
+            endInput.addEventListener("input", validateSpanInputs);
 
             /**
              * Directionality
