@@ -791,17 +791,57 @@ const FileIO = new class {
     };
 
 
+    exportPrimers(plasmidIndex, fileType="txt") {
+        const primerSets = Session.getPlasmid(plasmidIndex).primers;
+        const plasmidName = Session.getPlasmid(plasmidIndex).name
+        if (primerSets.length === 0) return;
+
+        this.primerExporters[fileType](plasmidName, primerSets);
+    };
+
+
     /**
      * Dictionary of primers exporters.
      */
     primerExporters = {
         /**
          * Txt format.
-         * 
-         * @param {int} plasmidIndex - Index of plasmid to export primers for.
          */
-        txt: (plasmidIndex) => {
-            console.log(`FileIO.primerExporters.txt -> ${plasmidIndex}`);
+        txt: (plasmidName, primerSets) => {
+            console.log(`FileIO.primerExporters.txt ->\n${JSON.stringify(primerSets, null, 2)}`);
+            let lines = [];
+            for (let i = 0; i < primerSets.length; i++) {
+                const set = primerSets[i];
+                lines.push(`${i+1}. ${set.title} (${set.symmetry}; HR: ${set.hrLength} nt, ${set.hrTm.toFixed(2)} C)`);
+                
+                for (let j = 0; j < set.primers.length; j++) {
+                    const primer = set.primers[j];
+
+                    let primerSequence = ""
+                    let tbrLength = 0;
+                    let tbrTm = 0;
+                    for (let k = 0; k < primer.regions.length; k++) {
+                        const region = primer.regions[k];
+                        primerSequence += region.sequence;
+                        if (region.type === "TBR") {
+                            tbrTm = Nucleotides.getMeltingTemperature(region.sequence);
+                            tbrLength = region.sequence.length;
+                        };
+                    };
+                    lines.push(`\t${primer.name}: ${primerSequence} (Total: ${primerSequence.length} nt; TBR: ${tbrLength} nt, ${tbrTm.toFixed(2)} C)`);
+                };
+
+                lines.push("");
+            };
+
+            const fileText = lines.join("\n");
+
+            console.log(`FileIO.primerExporters.txt ->`, fileText);
+
+            this.downloadFile(
+                plasmidName + " primers" + ".txt",
+                fileText
+            );
             return
         },
 

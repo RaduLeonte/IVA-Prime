@@ -277,6 +277,7 @@ const Primers = new class {
             title: (operationType !== "Deletion") ? `Short ${operationType}` : operationType,
             type: operationType,
             hrLength: hrLength,
+            hrTm: Nucleotides.getMeltingTemperature(homoFwd1 + seqToInsert + homoRev1, "oligoCalc"),
             symmetry: "symmetric",
             primers: [
                 {
@@ -323,6 +324,7 @@ const Primers = new class {
             title: (operationType !== "Deletion") ? `Short ${operationType}` : operationType,
             type: operationType,
             hrLength: homoFwd.length,
+            hrTm: Nucleotides.getMeltingTemperature(homoFwd, "oligoCalc"),
             symmetry: "asymmetric",
             primers: [
                 {
@@ -448,6 +450,7 @@ const Primers = new class {
             title: (operationType !== "Deletion") ? `Long ${operationType}` : operationType,
             type: operationType,
             hrLength: overlappingSeq.length,
+            hrTm: Nucleotides.getMeltingTemperature(overlappingSeq, "oligoCalc"),
             symmetry: "asymmetric",
             primers: [
                 {
