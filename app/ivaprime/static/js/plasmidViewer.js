@@ -1897,6 +1897,8 @@ const PlasmidViewer = new class {
     deselectBases() {
         this.removeCursors();
         this.unhighlightBases("base-selected");
+
+        Session.activePlasmid().clearSelectionIndices();
     };
 
 
@@ -2254,6 +2256,7 @@ const PlasmidViewer = new class {
      */
     updateFooterSelectionInfo() {
         const selectionSpan = Session.activePlasmid().getSelectionIndices();
+        if (!selectionSpan) return;
 
         const footerSelectionInfo = document.getElementById("footer-selection-info");
         const selectionLengthSpan = footerSelectionInfo.querySelector("#footer-selection-info-length");
@@ -2280,7 +2283,7 @@ const PlasmidViewer = new class {
 
         selectionRange.innerText = `[${selectionSpan[0]}, ${selectionSpan[1]}]` 
 
-        selectionTm.innerText = Nucleotides.getMeltingTemperature(Session.activePlasmid().selectionSequence).toFixed(2);
+        selectionTm.innerText = Nucleotides.getMeltingTemperature(Session.activePlasmid().sequence.slice(selectionSpan[0] - 1, selectionSpan[1])).toFixed(2);
     };
 
 

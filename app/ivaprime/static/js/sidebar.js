@@ -1,5 +1,24 @@
 const Sidebar = new class {
     constructor() {
+        this.primerRegionsClasses = {
+            "INS": "primer-sequence-ins",
+            "HR": "primer-sequence-hr",
+            "TBR": "primer-sequence-tbr",
+            "subHR": "primer-sequence-subhr",
+            "subTBR": "primer-sequence-subtbr",
+        };
+        this.baseClasses = {
+            "INS": "base-primer-ins",
+            "HR": "base-primer-hr",
+            "TBR": "base-primer-tbr",
+            "subHR": "base-primer-subhr",
+            "subTBR": "base-primer-subtbr",
+        };
+
+
+        /**
+         * Sidebar resizing
+         */
         this.isResizing = false;
 
         document.addEventListener("DOMContentLoaded", function () {
@@ -49,6 +68,10 @@ const Sidebar = new class {
     /**
      * Update the sidebar with the current primers.
      */
+    // TO DO: Hr info
+    // TO DO: Extend primer sequence buttons
+    // TO DO: Primer region highlighting
+    // TO DO: download primers button
     updatePrimersTable() {
         const primersSets = Session.activePlasmid().primers;
         console.log(`Sidebar.updatePrimersTable -> primers=\n${JSON.stringify(primersSets, null, 2)}`);
@@ -64,7 +87,7 @@ const Sidebar = new class {
             primersTable.appendChild(primersSetContainer);
 
             const primerSetTitle = document.createElement("DIV");
-            primerSetTitle.innerHTML = `<span>${primersSetCounter}.</span> <span>${primersSet["title"]}</span>`;
+            primerSetTitle.innerHTML = `<span>${primersSetCounter}.</span> <span>${primersSet.title}</span>`;
             primerSetTitle.classList.add("primers-set-title");
             primersSetContainer.appendChild(primerSetTitle);
 
@@ -81,14 +104,14 @@ const Sidebar = new class {
             primersContainer.classList.add("primers-container"); 
             primerSetBody.appendChild(primersContainer);
 
-            primersSet["primers"].forEach(primer => {
+            primersSet.primers.forEach(primer => {
                 const primerContainer = document.createElement("DIV");
                 primerContainer.classList.add("primer-container");
                 primersContainer.appendChild(primerContainer);
 
                 const primerTitle = document.createElement("DIV");
                 primerTitle.classList.add("primer-title");
-                primerTitle.innerText = primer["name"]
+                primerTitle.innerText = primer.name;
                 primerContainer.appendChild(primerTitle);
 
                 const primerSequence = document.createElement("DIV");
@@ -96,21 +119,32 @@ const Sidebar = new class {
                 primerContainer.appendChild(primerSequence);
 
                 let totalPrimerLength = 0;
-                primer["regions"].forEach(region => {
-                    if (region["sequence"].length === 0) {return};
+                primer.regions.forEach(region => {
+                    if (region.sequence.length === 0) {return};
 
                     const regionSequence = document.createElement("span");
                     regionSequence.classList.add("primer-sequence");
-                    regionSequence.classList.add(region["class"]);
-                    regionSequence.innerText = region["sequence"];
+                    regionSequence.classList.add(this.primerRegionsClasses[region.type]);
+                    regionSequence.setAttribute("type", region.type);
+                    regionSequence.setAttribute("start", region.start);
+                    regionSequence.setAttribute("direction", region.direction);
+                    regionSequence.innerText = region.sequence;
                     primerSequence.appendChild(regionSequence);
 
-                    totalPrimerLength += region["sequence"].length;
+                    regionSequence.addEventListener("mouseenter", (event) => {
+                        this.highlightPrimerBindingSite(event.target);
+                    });
+
+                    regionSequence.addEventListener("mouseleave", () => {
+                        this.unhighlightPrimerBindingSites();
+                    });
+
+                    totalPrimerLength += region.sequence.length;
                 });
 
                 const primerInfo = document.createElement("DIV");
                 primerInfo.classList.add("primer-info")
-                const TBRSequence = primer["regions"][primer["regions"].length - 1]["sequence"];
+                const TBRSequence = primer.regions[primer.regions.length - 1].sequence;
                 primerInfo.innerHTML = `
                 <div>
                     <span>TBR</span> ${TBRSequence.length} nt (${Nucleotides.getMeltingTemperature(TBRSequence).toFixed(2)} °C)
@@ -136,6 +170,57 @@ const Sidebar = new class {
         primersTableContainer.appendChild(primersTable);
 
         return;
+    };
+
+
+    highlightPrimerBindingSite(primerRegionElement) {
+        const type = primerRegionElement.getAttribute("type");
+        const baseClass = this.baseClasses[type];
+        const spanStart = parseInt(primerRegionElement.getAttribute("start"));
+        const length = primerRegionElement.innerText.length;
+        const direction = primerRegionElement.getAttribute("direction");
+
+        let regionSpan;
+        switch (type) {
+            case "INS":
+            case "HR":
+            case "subHR":
+                regionSpan = (direction === "fwd")
+                ? [spanStart - length + 1, spanStart]
+                : [spanStart, spanStart + length - 1];
+                break;
+
+            case "TBR":
+            case "subTBR":
+                regionSpan = (direction === "fwd")
+                ? [spanStart, spanStart + length - 1]
+                : [spanStart - length, spanStart - 1];
+                break;
+
+            default:
+                regionSpan = null;
+                break;
+        }
+
+        console.log(
+            `Sidebar.highlightPrimerBindingSite ->`,
+            primerRegionElement,
+            type,
+            baseClass,
+            spanStart,
+            length,
+            regionSpan,
+        );
+
+        if (regionSpan) PlasmidViewer.highlightBases(regionSpan, baseClass, direction);
+    };
+
+
+    unhighlightPrimerBindingSites() {
+        const classes = Object.values(this.baseClasses);
+        for (let i = 0; i < classes.length; i++) {
+            PlasmidViewer.unhighlightBases(classes[i]);
+        };
     };
 
 

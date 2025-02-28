@@ -104,7 +104,6 @@ class Plasmid {
         this.features = features;
         this.topology = topology;
         
-        this.selectionSequence = "";
         this.selectionIndices = null;
         
         this.primers = [];
@@ -163,9 +162,14 @@ class Plasmid {
      */
     setSelectionIndices(indices) {
         this.selectionIndices = indices;
-        this.selectionSequence = this.sequence.slice(this.selectionIndices[0] - 1, this.selectionIndices[1])
 
         Utilities.removeUserSelection();
+        PlasmidViewer.updateFooterSelectionInfo();
+    };
+
+
+    clearSelectionIndices() {
+        this.selectionIndices = null;
         PlasmidViewer.updateFooterSelectionInfo();
     };
 

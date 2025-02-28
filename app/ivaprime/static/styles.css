@@ -66,6 +66,12 @@
  * MARK: Body
  */
 html, body {
+  --hr: #d9823a;
+  --ins: #c83478;
+  --tbr: #448f47;
+  --subhr: #8ccaf2;
+  --subtbr: #6b609d;
+
   margin: 0;
   padding: 0;
   width: 100vw;
@@ -1035,6 +1041,35 @@ input, select, textarea {
   opacity: 1;
 }
 
+.base-primer-hr,
+.base-primer-ins,
+.base-primer-tbr,
+.base-primer-subhr,
+.base-primer-subtbr {
+  opacity: 0.3;
+  filter: saturate(3);
+}
+
+.base-primer-hr {
+  fill: var(--hr);
+}
+
+.base-primer-ins {
+  fill: var(--ins);
+}
+
+.base-primer-tbr {
+  fill: var(--tbr);
+}
+
+.base-primer-subhr {
+  fill: var(--subhr);
+}
+
+.base-primer-subtbr {
+  fill: var(--subtbr);
+}
+
 .sequence-cursor {
   fill: none;
   stroke-width: 3;
@@ -1346,25 +1381,26 @@ input, select, textarea {
   align-items: center;
 }
 
-.primer-sequence-orange {
-  background-color: #d9823a;
+.primer-sequence-hr {
+  background-color: var(--hr);
 }
 
-.primer-sequence-red {
-  background-color: #c83478;
+.primer-sequence-ins {
+  background-color: var(--ins);
 }
 
-.primer-sequence-green {
-  background-color: #448f47;
+.primer-sequence-tbr {
+  background-color: var(--tbr);
 }
 
-.primer-sequence-purple {
-  background-color: #6b609d;
+.primer-sequence-subhr {
+  background-color: var(--subhr);
 }
 
-.primer-sequence-cyan {
-  background-color: #8ccaf2;
+.primer-sequence-subtbr {
+  background-color: var(--subtbr);
 }
+
 
 .primer-info {
   display: flex;
