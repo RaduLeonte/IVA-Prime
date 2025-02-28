@@ -526,7 +526,7 @@ class Plasmid {
      * @param {String} newSequence - New sequence to insert
      */
     sliceSequence(sliceRange, newSequence) {
-        if (sliceRange[1] === null) sliceRange = [sliceRange[0], sliceRange[0]];
+        if (sliceRange[1] === null) sliceRange = [sliceRange[0], sliceRange[0]-1];
 
         this.sequence = this.sequence.slice(0, sliceRange[0] - 1) + newSequence + this.sequence.slice(sliceRange[1]);
         this.complementarySequence = Nucleotides.complementary(this.sequence);
