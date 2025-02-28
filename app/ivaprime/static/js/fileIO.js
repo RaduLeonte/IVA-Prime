@@ -796,7 +796,7 @@ const FileIO = new class {
         const plasmidName = Session.getPlasmid(plasmidIndex).name
         if (primerSets.length === 0) return;
 
-        this.primerExporters[fileType](plasmidName, primerSets);
+        this.primerExporters[fileType](plasmidIndex, plasmidName, primerSets);
     };
 
 
@@ -807,8 +807,7 @@ const FileIO = new class {
         /**
          * Txt format.
          */
-        txt: (plasmidName, primerSets) => {
-            console.log(`FileIO.primerExporters.txt ->\n${JSON.stringify(primerSets, null, 2)}`);
+        txt: (plasmidIndex, plasmidName, primerSets) => {
             let lines = [];
             for (let i = 0; i < primerSets.length; i++) {
                 const set = primerSets[i];
@@ -842,18 +841,55 @@ const FileIO = new class {
                 plasmidName + " primers" + ".txt",
                 fileText
             );
-            return
         },
 
         /**
          * Doc format.
-         * 
-         * @param {int} plasmidIndex - Index of plasmid to export primers for.
          */
-        doc: (plasmidIndex) => {
-            console.log(`FileIO.primerExporters.doc -> ${plasmidIndex}`);
-            return
+        doc: (plasmidIndex, plasmidName, primerSets) => {
+            const tempContainer = document.createElement("div");
+            tempContainer.appendChild(Sidebar.generatePrimersTable(plasmidIndex));
+            document.body.appendChild(tempContainer);
+        
+            function applyComputedStyles(node) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    const computedStyles = window.getComputedStyle(node);
+                    let inlineStyles = "";
+        
+                    ["color", "background-color", "font-weight", "font-family", "font-size", "text-align", "border", "padding", "margin"]
+                        .forEach(style => {
+                            inlineStyles += `${style}: ${computedStyles.getPropertyValue(style)}; `;
+                        });
+        
+                    node.setAttribute("style", inlineStyles);
+        
+                    node.childNodes.forEach(applyComputedStyles);
+                };
+            };
+
+            applyComputedStyles(tempContainer);
+        
+            const extractedContent = tempContainer.innerHTML.trim();
+            const fullHTML = `<!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${plasmidName} Primers</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; }
+                    </style>
+                </head>
+                <body>
+                    ${extractedContent} <!-- Extract only the actual content -->
+                </body>
+                </html>`;
+        
+            const blob = window.htmlDocx.asBlob(fullHTML);
+            document.body.removeChild(tempContainer);
+            saveAs(blob, `${plasmidName} primers.docx`);
         },
+        
+        
 
         /**
          * Csv format.

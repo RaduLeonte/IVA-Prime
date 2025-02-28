@@ -65,15 +65,9 @@ const Sidebar = new class {
         this.updateFeaturesTable();
     };
 
-    /**
-     * Update the sidebar with the current primers.
-     */
-    // TO DO: Hr info
-    // TO DO: Extend primer sequence buttons
-    // TO DO: Primer region highlighting
-    // TO DO: download primers button
-    updatePrimersTable() {
-        const primersSets = Session.activePlasmid().primers;
+
+    generatePrimersTable(plasmidIndex) {
+        const primersSets = (plasmidIndex) ? Session.getPlasmid(plasmidIndex).primers: Session.activePlasmid().primers;
         console.log(`Sidebar.updatePrimersTable -> primers=\n${JSON.stringify(primersSets, null, 2)}`);
 
         const primersTable = document.createElement("DIV");
@@ -160,6 +154,19 @@ const Sidebar = new class {
             });
             primersSetCounter++;
         });
+
+        return primersTable;
+    };
+
+
+    /**
+     * Update the sidebar with the current primers.
+     */
+    // TO DO: Hr info
+    // TO DO: Extend primer sequence buttons
+    // TO DO: download primers button
+    updatePrimersTable() {
+        const primersTable = this.generatePrimersTable();
 
         // Update sidebar table
         const primersTableContainer = document.getElementById("primers-table-container");
