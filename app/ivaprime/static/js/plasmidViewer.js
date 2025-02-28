@@ -2328,7 +2328,7 @@ const PlasmidViewer = new class {
      * @param {String} query - DNA Sequence
      */
     searchDNA(query) {
-        console.log(`PlasmidViewer.searchDNA -> ${query}`);
+        //console.log(`PlasmidViewer.searchDNA -> ${query}`);
 
         const activePlasmid = Session.activePlasmid();
         const sequences = [activePlasmid.sequence, activePlasmid.complementarySequence];
@@ -2369,7 +2369,7 @@ const PlasmidViewer = new class {
      * @param {String} query - AA sequence
      */
     searchAA(query) {
-        console.log(`PlasmidViewer.searchAA -> ${query}`);
+        //console.log(`PlasmidViewer.searchAA -> ${query}`);
 
         const activePlasmid = Session.activePlasmid()
         const sequences = [activePlasmid.sequence, Nucleotides.reverseComplementary(activePlasmid.sequence)];

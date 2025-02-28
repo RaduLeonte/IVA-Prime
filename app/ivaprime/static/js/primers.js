@@ -217,22 +217,24 @@ const Primers = new class {
         // Extend more than we need
         let homoFwd1 = this.extendSequence(
             plasmidSequence,
-            operationRange[0],
-            "fwdStrand",
-            "backward",
+            operationRange[0] - 1,
+            "top",
+            "rev",
             targetTMHR,
             "oligoCalc",
             UserPreferences.get("HRMinLength"),
         );
+        console.log("Primers.generateSymShortSet ->", homoFwd1)
         let homoFwd2 = this.extendSequence(
             plasmidSequence,
             operationRange[1],
-            "fwdStrand",
-            "forward",
+            "top",
+            "fwd",
             targetTMHR,
             "oligoCalc",
             UserPreferences.get("HRMinLength"),
         );
+        console.log("Primers.generateSymShortSet ->", homoFwd2)
 
         let overlappingSeq = homoFwd1 + seqToInsert + homoFwd2;
 
@@ -309,7 +311,7 @@ const Primers = new class {
     ) {
         const homoFwd = this.extendSequence(
             plasmidSequence,
-            operationRange[0],
+            operationRange[0] - 1,
             "top",
             "rev",
             targetTMHR,
@@ -327,7 +329,7 @@ const Primers = new class {
                     name: "Forward Primer",
                     regions: [
                         {sequence: homoFwd, type: "HR", start: operationRange[0] - 1, direction: "fwd"},
-                        {sequence: seqToInsert, type: "INS", start: operationRange[0] + seqToInsert.length, direction: "fwd"},
+                        {sequence: seqToInsert, type: "INS", start: operationRange[0] - 1 + seqToInsert.length, direction: "fwd"},
                         {sequence: tempFwd, type: "TBR", start: operationRange[0] + seqToInsert.length, direction: "fwd"}
                     ],
                 },
@@ -388,12 +390,13 @@ const Primers = new class {
             title: (operationType !== "Deletion") ? `Long ${operationType}` : operationType,
             type: operationType,
             hrLength: overlappingSeq.length,
+            hrTm: Nucleotides.getMeltingTemperature(overlappingSeq, "oligoCalc"),
             symmetry: "symmetric",
             primers: [
                 {
                     name: "Forward Primer",
                     regions: [
-                        {sequence: homoFwd, type: "INS", start: operationRange[0] + seqToInsert.length, direction: "fwd"},
+                        {sequence: homoFwd, type: "INS", start: operationRange[0] + seqToInsert.length - 1, direction: "fwd"},
                         {sequence: tempFwd, type: "TBR", start: operationRange[0] + seqToInsert.length, direction: "fwd"},
                     ],
                 },
@@ -450,7 +453,7 @@ const Primers = new class {
                 {
                     name: "Forward Primer",
                     regions: [
-                        {sequence: homoFwd, type: "INS", start: operationRange[0] + seqToInsert.length, direction: "fwd"},
+                        {sequence: homoFwd, type: "INS", start: operationRange[0] + seqToInsert.length - 1, direction: "fwd"},
                         {sequence: tempFwd, type: "TBR", start: operationRange[0] + seqToInsert.length, direction: "fwd"},
                     ],
                 },
