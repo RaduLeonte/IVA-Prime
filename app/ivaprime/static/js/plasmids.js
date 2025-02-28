@@ -383,8 +383,8 @@ class Plasmid {
 
         // Span
         this.features[featureID].span = [
-            collapsibleContent.querySelector("#span-start-input").value,
-            collapsibleContent.querySelector("#span-end-input").value,
+            parseInt(collapsibleContent.querySelector("#span-start-input").value),
+            parseInt(collapsibleContent.querySelector("#span-end-input").value),
         ];
 
         // Translated
@@ -414,6 +414,8 @@ class Plasmid {
 
         // Note
         this.features[featureID].note = collapsibleContent.querySelector("#note-text-area").value;
+
+        this.sortFeatures();
 
         if (Session.activePlasmidIndex == this.index) {
             PlasmidViewer.deselectBases();

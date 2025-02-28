@@ -1679,6 +1679,7 @@ const PlasmidViewer = new class {
      * @param {*} input 
      */
     placeCursor(input, cssClass="sequence-cursor-hover") {
+        //console.log(`PlasmidViewer.placeCursor ->`, input, cssClass);
         const indices = Array.isArray(input) ? input : [input];
 
         indices.forEach((index) => {
