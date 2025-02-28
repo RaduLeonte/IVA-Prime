@@ -951,8 +951,6 @@ const FileIO = new class {
 
         /**
          * Xlsx format.
-         * 
-         * @param {int} plasmidIndex - Index of plasmid to export primers for.
          */
         xlsx: (plasmidIndex, plasmidName, primerSets) => {
             const table = this.primersToTable(primerSets, true);
@@ -979,12 +977,48 @@ const FileIO = new class {
 
         /**
          * Microsynth format.
-         * 
-         * @param {int} plasmidIndex - Index of plasmid to export primers for.
          */
-        microsynth: (plasmidIndex) => {
-            console.log(`FileIO.primerExporters.microsynth -> ${plasmidIndex}`);
-            return
+        microsynth: (plasmidIndex, plasmidName, primerSets) => {
+            const table = this.primersToTable(primerSets, false);
+            console.log("FileIO.primerExports.xlsx ->", table);
+
+            // Create a list of rows to append to the microsynth form
+            const primerList = table.map(([primerId, primerSeq]) => [
+                primerId, // DNA Oligo Name
+                primerSeq, // DNA Sequence (5' -> 3')
+                null, // Length
+                "DES", // DNA Purification
+                primerSeq.length <= 60 ? "GEN" : 0.04, // DNA Scale
+                null, // DNA Scale
+                null, // Inner Modification (5)
+                null, // Inner Modification (6)
+                null, // Inner Modification (7)
+                null, // Inner Modification (8)
+                null, // 3' Modification
+                "Dried", // Physical Condition
+                "Standard", // Datasheet
+                "No" // Aliquots
+            ]);
+
+            // Fetch default file and modify using xlsx-populate
+            fetch("/static/MicrosynthUploadFormDNA.xlsx")
+                .then(res => res.arrayBuffer())
+                .then(arrayBuffer => XlsxPopulate.fromDataAsync(arrayBuffer))
+                .then(workbook => {
+                    // Iterate over primers and add the entries to the sheet
+                    for (let i = 0; i < primerList.length; i++) {
+                        const currentRow = primerList[i]
+                        for (let j = 0; j < currentRow.length; j++) {
+                            if (currentRow[j] !== null) {
+                                const cellAddress = this.intToSpreadsheetColumn(j + 1) + (i + 2);
+                                workbook.sheet(1).cell(cellAddress).value(currentRow[j]);
+                            };
+                        };
+                    };
+                    // Return blob
+                    return workbook.outputAsync();
+                })
+                .then(blob => saveAs(blob, plasmidName + " microsynth order form"));
         },
     };
 
