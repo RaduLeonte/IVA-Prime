@@ -1990,7 +1990,7 @@ const PlasmidViewer = new class {
             {
                 item: "Annotate selection",
                 conditions: {all: ["range"]},
-                action: () => Alerts.warning("Annotate selection")
+                action: () => Session.activePlasmid().newFeature(Session.activePlasmid().getSelectionIndices())
             },
             {
                 item: "Delete feature annotation",
@@ -2043,6 +2043,7 @@ const PlasmidViewer = new class {
                 },
             ] },
         ];
+
 
         function createMenuItems(menuStructure, parent) {
             menuStructure.forEach(entry => {
@@ -2117,7 +2118,8 @@ const PlasmidViewer = new class {
                     });
                 }
             });
-        }
+        };
+
 
         function positionSubmenu(menuItem, submenu) {
             // Get dimensions
@@ -2141,8 +2143,6 @@ const PlasmidViewer = new class {
             submenu.style.left = `${leftPos}px`;
             submenu.style.top = `${topPos}px`;
         };
-        
-        
         
 
         const contextMenu = document.getElementById("context-menu");
@@ -2286,8 +2286,10 @@ const PlasmidViewer = new class {
 
         selectionTm.innerText = Nucleotides.getMeltingTemperature(Session.activePlasmid().sequence.slice(selectionSpan[0] - 1, selectionSpan[1])).toFixed(2);
     };
+    // #endregion Footer
 
 
+    // #region Search
     /**
      * Clears the search bar
      */
@@ -2522,5 +2524,5 @@ const PlasmidViewer = new class {
             infoSpan.innerText = (this.searchFocusIndex+1) + "/" + this.searchResults.length;
         };
     };
-    // #endregion Footer
+    // #endregion Search
 };
