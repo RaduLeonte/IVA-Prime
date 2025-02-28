@@ -482,6 +482,35 @@ class Plasmid {
     };
 
 
+    newTranslationAtFirstStart(strand="fwd") {
+        if (!this.selectionIndices || this.selectionIndices === null || this.selectionIndices[1] !== null) return;
+
+        const cursorIndex = this.selectionIndices[0];
+        
+        const sequenceToSearch = (strand === "fwd")
+        ? this.sequence.slice(cursorIndex - 1)
+        : this.complementarySequence.slice(0, cursorIndex - 1).split("").reverse().join("");
+        
+        console.log(`Plasmid.newTranslationAtFirstStart ->`, sequenceToSearch);
+
+        const pattern = /(ATG)((?:[ATCG]{3})*?)(TAA|TAG|TGA)/;
+
+        const match = pattern.exec(sequenceToSearch);
+        if (!match) {
+            Alerts.warning("Failure: New translation at first START codon", "No coding sequence was found.");
+            return;
+        };
+
+        const span = (strand === "fwd") 
+        ? [cursorIndex + match.index, cursorIndex + match.index + match[0].length - 1]
+        : [sequenceToSearch.length - match.index - match[0].length + 1, sequenceToSearch.length - match.index];
+
+        console.log(`Plasmid.newTranslationAtFirstStart ->`, strand, cursorIndex, span);
+        
+        this.newFeature(span, strand, "New translation", "CDS", null, true);
+    };
+
+
     IVAOperation(operationType, insertionSeqDNA="", insertionSeqAA="", targetOrganism=null, translateFeature=false) {
         if (this.selectionIndices === null) {return};
         console.log(`Plasmid.IVAOperation -> this.selectionIndices=${this.selectionIndices}`);

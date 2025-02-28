@@ -2027,19 +2027,38 @@ const PlasmidViewer = new class {
 
             { submenu: "Translate", items: [
                 {
-                    item: "Begin translation at first START codon",
+                    item: "Begin translation at first START codon (5'->3')",
                     conditions: {all: ["single"]},
-                    action: () => Alerts.warning("Begin translation at first START codon")
+                    action: () => Session.activePlasmid().newTranslationAtFirstStart("fwd")
+                },
+                {
+                    item: "Begin translation at first START codon (3'->5')",
+                    conditions: {all: ["single"]},
+                    action: () => Session.activePlasmid().newTranslationAtFirstStart("rev")
                 },
                 {
                     item: "Translate selection (5'->3')",
                     conditions: {any: ["range", "feature"]},
-                    action: () => Alerts.warning("Translate selection (5'->3')")
+                    action: () => Session.activePlasmid().newFeature(
+                        Session.activePlasmid().getSelectionIndices(),
+                        "fwd",
+                        "New translation",
+                        "CDS",
+                        null,
+                        true
+                    )
                 },
                 {
                     item: "Translate selection (3'->5')",
                     conditions: {any: ["range", "feature"]},
-                    action: () => Alerts.warning("Translate selection (3'->5')")
+                    action: () => Session.activePlasmid().newFeature(
+                        Session.activePlasmid().getSelectionIndices(),
+                        "rev",
+                        "New translation",
+                        "CDS",
+                        null,
+                        true
+                    )
                 },
             ] },
         ];
