@@ -164,15 +164,79 @@ const FileIO = new class {
             let fileContent = new TextDecoder().decode(arrayBuf);
             // Init XML parser
             const xmlParser = new DOMParser();
+
+            /**
+             * Section indices
+             * 00 -> sequence type unkown
+             * 01 -> enzyme recognition patterns?
+             * 02 -> unknown data block
+             * 03 -> unknown data block encompassing enzyme recognition patterns?
+             * 04 -> 
+             * 05 -> Primers xml tree
+             * 06 -> Notes xml tree
+             * 07 -> 
+             * 08 -> Additional sequence properties xml tree
+             * 09 -> 
+             * 0A -> Features xml tree
+             * 0B -> 
+             * 0C -> 
+             * 0D -> Snapgene enzyme set
+             * 0E -> Custom enzyme set xml tree
+             * 0F -> 
+             * 10 ->
+             * 11 -> Alignable sequences xml tree
+             * 12 -> 
+             * 13 -> 
+             * 14 -> Strand colors xml tree
+             * 15 -> 
+             * 16 -> 
+             * 17 -> Embedded files
+             * 18 -> 
+             * 19 -> 
+             * 1A -> 
+             * 1B -> 
+             * 1C -> Enzyme visibilities xml tree
+             */
             
 
             // #region Sequence
             // Read file sequence length from bytes [20,23]
+            /**
+             *        00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F   10 11 12 13 14 15 160 17 18 19 1A 1B 1C 1D 1E 1F 
+             * 
+             * 0x00   09 00 00 00 0E 53 6E 61 70 47 65 6E 65 00 01 00   0F 00 13 00 00 00 1B F0 03 63 67 74 74 61 63 61
+             *        |  |________|  |____________________|  |________________|  |________|  |  |________________...
+             *        |      |                 |                     |               |       |           |
+             *       tab   block          "Snapgene"              version           seq   topology    sequence
+             *             length                                                length+1   byte      starts
+             * 
+             * version bytes:
+             * 8.0.2 -> 00 01 00 0F 00 13
+             * 8.0.0 -> 00 01 00 0F 00 13
+             * 7.0.2 -> 00 01 00 0F 00 13
+             * 5.0.7 -> 00 01 00 0E 00 0E
+             * 4.1.9 -> 00 01 00 0D 00 0C
+             * 3.3.1 -> 00 01 00 0C 00 0B
+             * 3.2.1 -> 00 01 00 0C 00 0B
+             */
             //const sequenceLengthHex = Array.from(arrayBuf.slice(20, 24)).map(byte => (byte.toString(16)));
             const sequenceLengthHex = Array.from(arrayBuf.slice(20, 24), byte => byte.toString(16).padStart(2, "0"))
             const sequenceLength = parseInt(sequenceLengthHex.join(" ").replace(/\s/g, ''), 16);
             
+            /**
+             * Extract sequence type and topology
+             * 
+             * 00 -> ss linear
+             * 01 -> ss circular
+             * 02 -> ds linear
+             * 03 -> ds circular
+             * 04 -> ss linear methylated
+             * 05 -> ss circular methylated
+             * 06 -> ds linear methylated
+             * 07 -> ds circular methylated
+             */
             // Extract sequence type and topology
+            // 00 -> ss line
             // ss+lin = 00, ss+circ=01, ds+lin=02, ds+circ=03, then it repeats the same pattern
             const fileTopologyByte = arrayBuf.slice(24,25);
             const fileTopology = ([0,2].includes(fileTopologyByte % 4)) ? "linear": "circular";
