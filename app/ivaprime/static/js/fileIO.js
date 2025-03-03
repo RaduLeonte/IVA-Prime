@@ -401,11 +401,216 @@ const FileIO = new class {
         * }
         */
         gb : (fileContent) => {
-            //console.log(`FileIO.parsers.gb -> fileContent=${fileContent}`)
+            // #region Additional_info
+            const fileTopology = (fileContent.split("")[0].includes("linear")) ? "linear": "circular";
+
+            const fileAdditionalInfo = {};
+
+            const additionalInfoMatch = (fileContent.includes("FEATURES")) ? fileContent.match(/LOCUS[\s\S]*FEATURES/)[0]: fileContent.match(/LOCUS[\s\S]*ORIGIN/)[0];
+            if (additionalInfoMatch) {
+                let additionalInfoSection = additionalInfoMatch.split(/\r?\n/).slice(0,-1);
+
+                const keyRegex = /^([A-Z]+)\s+(.*)$/;
+                const subKeyRegex = /^\s{2}([A-Z]+)\s+(.*)$/;
+                const referenceRegex = /^REFERENCE\s+(\d+)\s+\(bases\s+(\d+)\s+to\s+(\d+)\)/;
+
+                const referenceList = [];
+                let currentKey = null;
+                let currentEntry = null;
+                let insideReference = false;
+                let referenceBuffer = {};
+                for (let line of additionalInfoSection) {
+                    line = line.trim();
+                    if (!line) continue;
+            
+                    let keyMatch = line.match(keyRegex);
+                    let subKeyMatch = line.match(subKeyRegex);
+                    let referenceMatch = line.match(referenceRegex);
+            
+                    if (referenceMatch) {
+                        if (Object.keys(referenceBuffer).length > 0) {
+                            referenceList.push(referenceBuffer);
+                        };
+            
+                        referenceBuffer = {
+                            span: [parseInt(referenceMatch[2], 10), parseInt(referenceMatch[3], 10)]
+                        };
+
+                        insideReference = true;
+                        continue;
+                    }
+            
+                    if (keyMatch && !insideReference) {
+
+                        if (currentKey && currentKey !== "LOCUS") {
+                            fileAdditionalInfo[currentKey] = currentEntry;
+                        };
+            
+                        currentKey = keyMatch[1];
+                        currentEntry = {
+                            value: keyMatch[2].trim(),
+                            children: null
+                        };
+                        continue;
+                    };
+            
+                    if (subKeyMatch && currentKey && !insideReference) {
+                        let subKey = subKeyMatch[1];
+                        let subValue = subKeyMatch[2];
+            
+                        if (!currentEntry.children) {
+                            currentEntry.children = {};
+                        };
+            
+                        currentEntry.children[subKey] = {
+                            value: subValue,
+                            children: null
+                        };
+                        continue;
+                    };
+            
+                    if (insideReference) {
+                        let refParts = line.split(/\s{2,}/); // Split on multiple spaces
+            
+                        if (refParts.length === 2) {
+                            let refKey = refParts[0].trim().replace(/[^A-Z]/g, "");
+                            let refValue = refParts[1].trim();
+            
+                            if (referenceBuffer[refKey]) {
+                                referenceBuffer[refKey] += " " + refValue;
+                            } else {
+                                referenceBuffer[refKey] = refValue;
+                            };
+                        } else {
+                            let lastKey = Object.keys(referenceBuffer).pop();
+                            if (lastKey) {
+                                referenceBuffer[lastKey] += " " + line;
+                            };
+                        };
+                        continue;
+                    };
+            
+                    if (currentKey && !insideReference) {
+                        currentEntry.value += " " + line;
+                    };
+                };
+            
+                // Store last entries
+                if (currentKey) {
+                    fileAdditionalInfo[currentKey] = currentEntry;
+                };
+                if (Object.keys(referenceBuffer).length > 0) {
+                    referenceList.push(referenceBuffer);
+                };
+            
+                if (referenceList.length > 0) {
+                    fileAdditionalInfo["REFERENCES"] = referenceList;
+                };
+            };
+
+            const dateCreatedMatch = fileContent.split("\n")[0].match(/\d{2}-\w{3}-\d{4}/);
+            if (dateCreatedMatch) {
+                const dateCreatedString = dateCreatedMatch[0];
+                const dateCreated = this.parseGBDate(dateCreatedString);
+                fileAdditionalInfo["CREATED"] = {
+                    "value": dateCreated,
+                    "children": null
+                };
+            };
+            // #endregion Additional_info
+            console.log(`FileIO.parsers.gb -> Additional info`, JSON.stringify(fileAdditionalInfo, null, 2))
+
+
+            // #region Features
+            const fileFeatures = {};
+
+            let featuresMatch = fileContent.match(/FEATURES[\s\S]*ORIGIN/);
+            if (featuresMatch) {
+                let featuresSection = featuresMatch[0].split("\n").slice(1, -1);
+
+                let featureTypes = [];
+                let featureData = [];
+
+                for (let i = 0, len = featuresSection.length; i < len; i++) {
+                    let line = featuresSection[i];
+                    let leftCol = line.slice(0, 21).trim();
+                    let rightCol = line.slice(21).replace("\r", "");
+
+                    if (leftCol) {
+                        featureTypes.push({ type: leftCol, startIndex: i });
+                    };
+
+                    featureData.push(rightCol);
+                };
+                featureTypes.push({ type: null, startIndex: featureData.length });
+            
+
+                for (let i = 0; i < featureTypes.length - 1; i++) {
+                    const featureDict =  {};
+                    featureDict["type"] = featureTypes[i].type;
+
+                    const featureInfoLines = featureData.slice(
+                        featureTypes[i].startIndex,
+                        featureTypes[i + 1].startIndex
+                    );
+                    
+                    const featureSpanMatch = featureInfoLines[0].match(/(\d+)\.\.(\d+)/);
+                    if (!featureSpanMatch) continue;
+
+                    featureDict["span"] = [parseInt(featureSpanMatch[1], 10), parseInt(featureSpanMatch[2], 10)];
+                    featureDict["directionality"] = featureInfoLines[0].includes("complement") ? "rev" : "fwd";
+
+                    const featureInfo = [];
+                    let currentInfoString = "";
+
+                    for (let j = 1, len = featureInfoLines.length; j < len; j++) {
+                        const currLine = featureInfoLines[j];
+
+                        if (/^\/[a-zA-Z\w]*=/.test(currLine)) {
+                            if (currentInfoString !== "") featureInfo.push(currentInfoString);
+                            currentInfoString = currLine;
+                        } else {
+                            currentInfoString += currLine;
+                        };
+                    };
+                    if (currentInfoString !== "") featureInfo.push(currentInfoString);
+
+                    console.log(`FileIO.parsers.gb -> features [${JSON.stringify(featureInfo, null, 2)}]`);
+
+                    for (let j = 0, len = featureInfo.length; j < len; j++) {
+                        let match = featureInfo[j].match(/^\/([\w\W]+)=(.*)$/);
+                        if (!match) continue;
+
+                        let key = match[1].trim();
+                        let value = match[2].trim();
+            
+                        if (value.charAt(0) === '"' && value.charAt(value.length - 1) === '"') {
+                            value = value.slice(1, -1);
+                        };
+
+                        if (!isNaN(value) && Number.isInteger(Number(value))) {
+                            value = parseInt(value, 10);
+                        };
+            
+                        featureDict[key] = value;
+                    };
+
+                    console.log(`FileIO.parsers.gb -> features featureDict=\n${JSON.stringify(featureDict, null, 2)}`)
+                    
+                    if (featureDict["type"] === "source") continue;
+
+                    featureDict["color"] ??= Utilities.getRandomDefaultColor();
+                    featureDict["label"] ??= featureDict["type"];
+
+                    fileFeatures[Utilities.newUUID()] = featureDict;
+                };
+            };
+            // #endregion Features
+
+
             // #region Sequence
-            const originSection = fileContent.match(/ORIGIN[\s\S]*?\n([\s\S]*?)\n\/\//);
-            //console.log(`FileIO.parsers.gb -> originSection=${originSection}`)
-            if (!originSection) {
+            const originMatch = fileContent.match(/ORIGIN[\s\S]*?\n([\s\S]*?)\n\/\//);
+            if (!originMatch) {
                 Alerts.error(
                     "Parsing error",
                     "No sequence could be found in the uploaded file."
@@ -413,142 +618,16 @@ const FileIO = new class {
                 console.error("No sequence found in .gb file");
                 return;
             };
-            const sequenceSegments = originSection[0].match(/(?<=\s)[a-z]{1,10}(?=\s)/gi)
-            let fileSequence = sequenceSegments.join("").toUpperCase();
+
+            const rawSequence = originMatch[1];
+
+            const sequenceSegments = rawSequence.match(/\b[a-z]+\b/gi);
+
+
+            const fileSequence = sequenceSegments.join("").toUpperCase();
             const fileComplementarySequence = Nucleotides.complementary(fileSequence);
             // #endregion Sequence
 
-
-            // #region Features
-            const fileFeatures = {};
-
-            let featuresSection = fileContent.match(/FEATURES[\s\S]*ORIGIN/)[0];
-            featuresSection = featuresSection.split("\n");
-            featuresSection = featuresSection.splice(1, featuresSection.length - 2);
-            featuresSection = featuresSection.join("\n") + "\n";
-            //console.log(`FileIO.parsers.gb -> featuresSection=${featuresSection}`);
-
-            const featuresStrings = featuresSection.match(/\s{5}\S+\s*(?:complement\()?\d+\.\.\d+\)?\s(?:\s{21}[\s\S]*?\n)*/gm)
-            //console.log(`FileIO.parsers.gb -> featuresStrings=${featuresStrings}`);
-            featuresStrings.forEach((featureString) => {
-                const featureDict = {}
-
-                const firstLineMatches = /\s{5}(\S+)\s*((?:complement\()?(\d+)\.\.(\d+)\)?)\s/.exec(featureString);
-                console.log(`FileIO.parsers.gb -> firstLineMatches=${firstLineMatches}`);
-
-                featureDict["type"] = firstLineMatches[1];
-                if (featureDict["type"] == "source") {return};
-                
-                featureDict["label"] = featureDict["type"];
-                featureDict["color"] = Utilities.getRandomDefaultColor();
-                
-                const featureSpanString = firstLineMatches[2];
-                featureDict["span"] = [parseInt(firstLineMatches[3]), parseInt(firstLineMatches[4])]
-                featureDict["directionality"] = (!featureSpanString.includes("complement")) ? "fwd" : "rev";
-            
-                let regex = /^\s{21}\/(\w+)=((?:"[\s\S]*?")|(?:[^\s]+))/gm;
-                let match;
-                while ((match = regex.exec(featureString)) !== null) {
-                    let key = match[1].trim();
-                    let value = match[2].replace(/\s+/g, " ").trim();
-                    
-                    // Remove surrounding quotes
-                    if (value.startsWith('"') && value.endsWith('"')) {
-                        value = value.slice(1, -1);
-                    };
-                    
-                    // Convert numeric values to numbers if possible
-                    if (!isNaN(value) && Number.isInteger(Number(value))) {
-                        value = parseInt(value, 10);
-                    };
-                    
-                    featureDict[key] = value;
-                };
-                
-                console.log(`FileIO.parsers.gb -> featureDict=${JSON.stringify(featureDict)}`);
-
-                fileFeatures[Utilities.newUUID()] = featureDict;
-            });
-            // #endregion Features
-
-
-            const fileTopology = (fileContent.split("")[0].includes("linear")) ? "linear": "circular";
-            
-            
-            // #region Additional_info
-            let additionalInfoSection = fileContent.match(/LOCUS[\s\S]*FEATURES/)[0];
-            additionalInfoSection = additionalInfoSection.split("\n");
-            additionalInfoSection = additionalInfoSection.slice(1, -1);
-            additionalInfoSection = additionalInfoSection.join("\n") + "\n";
-            //console.log(`FileIO.parsers.gb -> Additional info additionalInfoSection=\n${additionalInfoSection}`);
-            
-            const fileAdditionalInfo = [];
-
-            // Extract creation date
-            const dateCreatedString = fileContent.split("\n")[0].match(/\d{2}-\w{3}-\d{4}/)[0];
-            const dateCreated = this.parseGBDate(dateCreatedString);
-            fileAdditionalInfo.push(
-                {
-                    "name": "CREATED",
-                    "entry": dateCreated,
-                    "subProperties": null
-                }
-            );
-
-            additionalInfoSection.match(/(?:[A-Z]+\s*)[^\n]*\n(?:\s+[^\n]*\n)*/gm).forEach((propertyString) => {
-                const matches = /([A-Z]+\s*)([^\n]*)\n([\s\S]*)/.exec(propertyString);
-                
-                let propertyName = matches[1].trim();
-                const propertyEntry = matches[2].replace("\r", "");
-                fileAdditionalInfo[propertyName] = {"entry": propertyEntry};
-                //console.log(`FileIO.parsers.gb -> Additional info ${propertyName}=${propertyEntry}`);
-                
-                const propertyDict = {
-                    "name": propertyName,
-                    "entry": propertyEntry,
-                    "subProperties": null
-                }
-
-                if (matches[3].length != 0) {
-                    const subProperties = [];
-
-                    const subPropertiesString = matches[3];
-                    
-                    const subPropertyStringMatches = [...subPropertiesString.matchAll(/^\s{2}\S+\s+/gm)];
-                    if (subPropertyStringMatches && subPropertyStringMatches[0]) {
-                        let currentIndex = subPropertyStringMatches[0].index;
-                        for (let i = 0; i < subPropertyStringMatches.length; i++) {
-                            const nextIndex = (i != subPropertyStringMatches.length - 1) ? subPropertyStringMatches[i+1].index: -1;
-                            const subPropertyString = subPropertiesString.slice(currentIndex, nextIndex);
-                            //console.log(`FileIO.parsers.gb -> Additional info subPropertyString=\n${subPropertyString}`);
-                            
-                            const subPropertyName = subPropertyString.slice(0, 12).trim();
-                            
-                            let subPropertyEntry = subPropertyString.slice(12);
-                            if (subPropertyEntry.includes("\n")) {
-                                subPropertyEntry = subPropertyEntry.split("\n")
-                                                                   .map( (s) => s.trim())
-                                                                   .join(" ")
-                                                                   .trim();
-                            };
-                            
-                            subProperties.push(
-                                {
-                                    "name": subPropertyName,
-                                    "entry": subPropertyEntry
-                                }
-                            );
-                            //console.log(`FileIO.parsers.gb -> Additional info ${propertyName}--${subPropertyName}=${subPropertyEntry}`);
-                            currentIndex = nextIndex;
-                        };
-                        propertyDict["subProperties"] = subProperties;
-                    };
-                };
-                fileAdditionalInfo.push(propertyDict)
-            });
-            //console.log(`FileIO.parsers.gb -> fileAdditionalInfo=\n${fileAdditionalInfo}`);
-            // #endregion Additional_info
-            
             return {
                 fileSequence,
                 fileComplementarySequence,
