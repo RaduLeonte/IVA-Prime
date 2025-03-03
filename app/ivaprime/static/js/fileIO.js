@@ -220,8 +220,9 @@ const FileIO = new class {
              * 3.2.1 -> 00 01 00 0C 00 0B
              */
             //const sequenceLengthHex = Array.from(arrayBuf.slice(20, 24)).map(byte => (byte.toString(16)));
-            const sequenceLengthHex = Array.from(arrayBuf.slice(20, 24), byte => byte.toString(16).padStart(2, "0"))
+            const sequenceLengthHex = Array.from(arrayBuf.slice(20, 24), byte => byte.toString(16).padStart(2, "0").toUpperCase());
             const sequenceLength = parseInt(sequenceLengthHex.join(" ").replace(/\s/g, ''), 16);
+            console.log(`FileIO.parsers.dna ->`, sequenceLengthHex.join(" "), sequenceLength)
             
             /**
              * Extract sequence type and topology
@@ -235,18 +236,15 @@ const FileIO = new class {
              * 06 -> ds linear methylated
              * 07 -> ds circular methylated
              */
-            // Extract sequence type and topology
-            // 00 -> ss line
-            // ss+lin = 00, ss+circ=01, ds+lin=02, ds+circ=03, then it repeats the same pattern
             const fileTopologyByte = arrayBuf.slice(24,25);
             const fileTopology = ([0,2].includes(fileTopologyByte % 4)) ? "linear": "circular";
             
             // Extract sequence [25, 25+sequenceLength] 
             const sequenceStartIndex = 25;
-            let sequenceBytes = arrayBuf.slice(sequenceStartIndex, sequenceStartIndex + sequenceLength);
+            const sequenceBytes = arrayBuf.slice(sequenceStartIndex, sequenceStartIndex + sequenceLength);
             let fileSequence = new TextDecoder().decode(sequenceBytes);
             fileSequence = Nucleotides.sanitizeSequence(fileSequence);
-            let fileComplementarySequence = Nucleotides.complementary(fileSequence);
+            const fileComplementarySequence = Nucleotides.complementary(fileSequence);
             // #endregion Sequence
 
 
@@ -325,7 +323,7 @@ const FileIO = new class {
                         // span, color, type, translated
                         case "Segment":
                             // Get span and split into list
-                            let currSpan = child.getAttribute('range').split("-");
+                            const currSpan = child.getAttribute('range').split("-");
                             // Add span to feature info
                             featureInfo["span"] = currSpan.map((s) => parseInt(s));
                             
@@ -382,17 +380,23 @@ const FileIO = new class {
 
                 // All the feature properties
                 const primerInfo = {};
-                primerInfo["type"] = "primer_bind";
-                primerInfo["label"] = primer.getAttribute('name'); // Display name
-                primerInfo["note"] = (primer.getAttribute('description') && primer.getAttribute('description') !== undefined) ? primer.getAttribute('description').replace("<html><body>", "").replace("</body></html>", ""): "";
-                const primerBindingSite = primer.getElementsByTagName("BindingSite")[0];
-                const primerSpanDirection = primerBindingSite.getAttribute('boundStrand');
-                const primerSpanString = primerBindingSite.getAttribute('location').replace("-", "..");
-                const primerSpanList = removeNonNumeric(primerSpanString).split("..").map(Number);
-                console.log("parseDNAFile", primerSpanList)
 
-                primerInfo["span"] = (primerSpanDirection == "0") ? `${primerSpanList[0] + 1}..${primerSpanList[1] + 1}`: `complement(${primerSpanList[0] + 1}..${primerSpanList[1] + 1})`;
-                console.log("parseDNAFile", primerInfo["span"])
+                primerInfo["type"] = "primer_bind";
+
+                primerInfo["label"] = primer.getAttribute('name'); // Display name
+
+                primerInfo["note"] = (primer.getAttribute('description') && primer.getAttribute('description') !== undefined)
+                ? primer.getAttribute('description').replace("<html><body>", "").replace("</body></html>", "")
+                : "";
+                
+                const primerBindingSite = primer.getElementsByTagName("BindingSite")[0];
+
+                const primerSpanDirectionality = {"1": "fwd", "2": "rev"}[primerBindingSite.getAttribute('boundStrand')] || null;
+                if (!primerSpanDirectionality) continue;
+
+                primerInfo["span"] = primerBindingSite.getAttribute('location').split("-").map((s) => parseInt(s));
+                if (!primerInfo["span"]) continue;
+ 
                 primerInfo["phosphorylated"] = primer.hasAttribute("phosphorylated");
 
                 // Append feature info the corresponding feature in the dict
