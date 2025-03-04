@@ -77,6 +77,7 @@ const Utilities = new class {
      * @returns 
      */
     getTextColorBasedOnBg(bgColor) {
+        if (!bgColor) return "black";
         // Remove the '#' if present
         const hex = bgColor.replace('#', '');
     

@@ -158,16 +158,75 @@ const FileIO = new class {
          * }
          */
         dna : (fileArrayBuffer) => {
+            function bytesToString(bytes) {
+                return Array.from(bytes, byte => byte.toString(16).padStart(2, "0").toUpperCase()).join(" ");
+            }
+
+            function parseLength(bytes) {
+                return new DataView(new Uint8Array(bytes).buffer).getUint32(0);
+            };
+
+            function bytesToText(bytes) {
+                return new TextDecoder("utf-8").decode(new Uint8Array(bytes));
+            };
+
+            const xmlPrettyPrint = (xmlDoc) => {
+                const serializer = new XMLSerializer();
+                const xmlString = serializer.serializeToString(xmlDoc);
+                return xmlString.replace(/(>)(<)(\/*)/g, '$1\n$2$3');
+            };
+
+
             // Read array as list of 8 bit integers
             const arrayBuf = new Uint8Array(fileArrayBuffer);
+            const bytes = Array.from(arrayBuf);
             // Decode file content as string
             let fileContent = new TextDecoder().decode(arrayBuf);
             // Init XML parser
             const xmlParser = new DOMParser();
 
+
+            const blocks = {};
+            while (bytes.length > 6) {
+                const blockType = bytes.splice(0,1);
+                const blockLengthBytes = bytes.splice(0,4)
+                const blockLength = parseLength(blockLengthBytes);
+                const blockData = bytes.splice(0, blockLength);
+
+                console.log(`FileIO.parsers.dna -> blocks \ntype = ${blockType} [${bytesToString(blockType)}],\nlength = ${blockLength} [${bytesToString(blockLengthBytes)}],\ndata = [${bytesToString(blockData).slice(0, 20)}...]`);
+                
+                blocks[blockType] = blockData;
+            };
+
+            if (!blocks[9]) {
+                Alerts.error(
+                    "Parsing error",
+                    "Uploaded file is not a valid .dna file."
+                );
+                return;
+            };
+
+            if (!blocks[0]) {
+                Alerts.error(
+                    "Parsing error",
+                    "No sequence could be found in the uploaded file."
+                );
+                return;
+            };
+
+            console.log(`FileIO.parsers.dna -> blocks=\n${blocks[0]}`)
+
             /**
+             *        00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F   10 11 12 13 14 15 160 17 18 19 1A 1B 1C 1D 1E 1F 
+             * 
+             * 0x00   09 00 00 00 0E 53 6E 61 70 47 65 6E 65 00 01 00   0F 00 13 00 00 00 1B F0 03 63 67 74 74 61 63 61
+             *        |  |________|  |____________________|  |__|  |____|  |__|  |________|  |  |________________...
+             *        |      |                 |              |      |      |        |       |           |
+             *      block  block          "Snapgene"        seq  exported imported  seq   topology    sequence
+             *       id    length                          type  version? version? length+1  byte      starts
+             * 
              * Section indices
-             * 00 -> sequence type unkown
+             * 00 -> sequence
              * 01 -> enzyme recognition patterns?
              * 02 -> unknown data block
              * 03 -> unknown data block encompassing enzyme recognition patterns?
@@ -176,7 +235,7 @@ const FileIO = new class {
              * 06 -> Notes xml tree
              * 07 -> 
              * 08 -> Additional sequence properties xml tree
-             * 09 -> 
+             * 09 -> Snapgnee file header
              * 0A -> Features xml tree
              * 0B -> 
              * 0C -> 
@@ -200,246 +259,409 @@ const FileIO = new class {
             
 
             // #region Sequence
-            // Read file sequence length from bytes [20,23]
-            /**
-             *        00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F   10 11 12 13 14 15 160 17 18 19 1A 1B 1C 1D 1E 1F 
-             * 
-             * 0x00   09 00 00 00 0E 53 6E 61 70 47 65 6E 65 00 01 00   0F 00 13 00 00 00 1B F0 03 63 67 74 74 61 63 61
-             *        |  |________|  |____________________|  |________________|  |________|  |  |________________...
-             *        |      |                 |                     |               |       |           |
-             *       tab   block          "Snapgene"              version           seq   topology    sequence
-             *             length                                                length+1   byte      starts
-             * 
-             * version bytes:
-             * 8.0.2 -> 00 01 00 0F 00 13
-             * 8.0.0 -> 00 01 00 0F 00 13
-             * 7.0.2 -> 00 01 00 0F 00 13
-             * 5.0.7 -> 00 01 00 0E 00 0E
-             * 4.1.9 -> 00 01 00 0D 00 0C
-             * 3.3.1 -> 00 01 00 0C 00 0B
-             * 3.2.1 -> 00 01 00 0C 00 0B
-             */
-            //const sequenceLengthHex = Array.from(arrayBuf.slice(20, 24)).map(byte => (byte.toString(16)));
-            const sequenceLengthHex = Array.from(arrayBuf.slice(20, 24), byte => byte.toString(16).padStart(2, "0").toUpperCase());
-            const sequenceLength = parseInt(sequenceLengthHex.join(" ").replace(/\s/g, ''), 16);
-            console.log(`FileIO.parsers.dna ->`, sequenceLengthHex.join(" "), sequenceLength)
-            
             /**
              * Extract sequence type and topology
              * 
-             * 00 -> ss linear
-             * 01 -> ss circular
-             * 02 -> ds linear
-             * 03 -> ds circular
-             * 04 -> ss linear methylated
-             * 05 -> ss circular methylated
-             * 06 -> ds linear methylated
-             * 07 -> ds circular methylated
+             * @param {Aray} bytes 
+             * @returns 
              */
-            const fileTopologyByte = arrayBuf.slice(24,25);
-            const fileTopology = ([0,2].includes(fileTopologyByte % 4)) ? "linear": "circular";
-            
-            // Extract sequence [25, 25+sequenceLength] 
-            const sequenceStartIndex = 25;
-            const sequenceBytes = arrayBuf.slice(sequenceStartIndex, sequenceStartIndex + sequenceLength);
-            let fileSequence = new TextDecoder().decode(sequenceBytes);
-            fileSequence = Nucleotides.sanitizeSequence(fileSequence);
+            function parseSequence(bytes) {
+                /**
+                 * 00 -> ss linear
+                 * 01 -> ss circular
+                 * 02 -> ds linear
+                 * 03 -> ds circular
+                 * 04 -> ss linear methylated
+                 * 05 -> ss circular methylated
+                 * 06 -> ds linear methylated
+                 * 07 -> ds circular methylated
+                 */
+                const topologyByte = bytes.splice(0,1)[0];
+                const topology = ([0, 2].includes(topologyByte % 4)) ? "linear" : "circular";
+
+                const sequence = bytesToText(bytes);
+
+                return [topology, sequence];
+            };
+            let [fileTopology, sequence] = parseSequence(blocks[0]);
+            const fileSequence = Nucleotides.sanitizeSequence(sequence);
             const fileComplementarySequence = Nucleotides.complementary(fileSequence);
             // #endregion Sequence
 
 
-            //#region Features
-            // Extract XML tree
-            let featuresXMLString = fileContent.slice(fileContent.indexOf("<Features"), fileContent.indexOf("</Feature></Features>") + "</Feature></Features>".length);
-            const featuresXMLDoc = xmlParser.parseFromString(featuresXMLString, 'text/xml');
-
-            /**
-             * XML Structure
-             * 
-             *  <Features
-                    nextValidID="1" <- next available id/index for a new feature
-                >
-                    <Feature
-                        recentID="0" <- feature id
-                        name="thrombin site" <- label
-                        directionality="1" <- 1 for fwd; 2 for reverse; no entry for static
-                        translationMW="627.76" <- not required
-                        type="CDS" <- feature type
-                        swappedSegmentNumbering="1"
-                        allowSegmentOverlaps="0"
-                        cleavageArrows="248"
-                        readingFrame="-1"
-                        consecutiveTranslationNumbering="1"
-                        maxRunOn="123"
-                        maxFusedRunOn="123"
-                        detectionMode="exactProteinMatch"
-                    >
-                        <Segment
-                            range="243-260" <- feature span
-                            color="#cc99b2" <- feature color (usually something ugly)
-                            type="standard" <- never seen anything but standard
-                            translated="1" <- indicate if should be translated, no entry if not translated
-                        />
-                        <Q name="codon_start"> ?
-                            <V int="1"/>
-                        </Q>
-                        <Q name="product"> <- product information (not note!)
-                            <V text="&lt;html&gt;&lt;body&gt;thrombin recognition and cleavage site&lt;/body&gt;&lt;/html&gt;"/>
-                        </Q>
-                        <Q name="transl_table"> <- required if translated?
-                            <V int="1"/>
-                        </Q>
-                        <Q name="translation"> <- if translated, provide translated sequence
-                            <V text="LVPRGS"/>
-                        </Q>
-                    </Feature>
-                </Features>
-             */
+            // #region Features
             
-            // Initialize dict and iterate over all feature elements in the object
-            let featuresDict = {};
-            const xmlFeaturesEntries = featuresXMLDoc.getElementsByTagName('Feature');
-            for (let i = 0; i < xmlFeaturesEntries.length; i++) {
-                const featureXML = xmlFeaturesEntries[i]; // Current feature
-                const featureId = Utilities.newUUID(); // Create UUID
+            /**
+             * Parse features from xml tree
+             */
+            /** Info on features xml tree
+             * 
+             * 
+             * <Features>
+             *      Attributes:
+             *          nextValidID: int => id of next feature that would be added 
+             *      <Feature>
+             *          Attributes:
+             *              recentID: int => id of feature [0,n]
+             *              name: str => feature label
+             *              directionality: int => 1 -> fwd, 2 -> rev, 3 -> both, attribute missing for no directionality
+             *              
+             *              type: str => feature type (5'UTR, misc_signal, LTR, misc_recomb, enhancer, exon, promoter, 
+             *                  rep_origin, gene, polyA_signal, CDS, oriT, sig_peptide, regulatory, misc_RNA, intron, primer_bind, 
+             *                  misc_feature, ncRNA, protein_bind, RBS, tRNA, repeat_region, terminator, mobile_element, 3'UTR)
+             * 
+             *              allowSegmentOverlaps: int => ? 0
+             *              consecutiveTranslationNumbering: int => ? 0, 1
+             *              swappedSegmentNumbering: int => ? 1
+             *              translationMW: float => molecular weight of translation product in Da
+             *              readingFrame: int=> -3, -1, 3, -2, 2
+             *              hitsStopCodon: int => 1
+             *              cleavageArrows: int => position indicating a cleavage site
+             *              detectionMode: exactProteinMatch
+             *              maxRunOn: int => ?
+             *              maxFusedRunOn: int => ?
+             *              consecutiveNumberingStartsFrom: int => ? 
+             *              isFavorite: int=> 1
+             *              translateFirstCodonAsMet:int => 1
+             *              geneticCode: int => -1
+             *              originalSequence: str => ?
+             *              prioritize: int=> 1
+             *              originalName: str=> ? loxP
+             *          <Q>
+             *              Attributes:
+             *                  name: str => name of query (locus_tag, note, bound_moiety, gene, rpt_type, translation, 
+             *                      old_locus_tag, product, citation, regulatory_class, allele, label, ncRNA_class, db_xref, direction, 
+             *                      mobile_element_type, gene_synonym, codon_start, standard_name, protein_id, map, experiment, function, 
+             *                      EC_number, transl_table)
+             *              <V>
+             *                  Attributes:
+             *                      text: str => property value
+             *                      int: int => property value 
+             *                      predef: str => ? (possible values; hammerhead_ribozyme, miRNA, ribozyme, inverted, transposon,
+             *                          insertion sequence, other, GI)
+             *          <Segment>
+             *              Attributes:
+             *                  range: int-int => feature span
+             *                  color: str => hex color
+             *                  type: str => standard, gap
+             *                  translated: int => 1 if translated, attribute missing if not translated
+             *                  name: str => label of segment
+             *                  translationNumberingStartsFrom: int => value to offset start of translation 0, 241, 239, 2
+             * 
+             * @param {Array} bytes 
+             */
+            function parseFeatures(bytes) {
+                // Extract XML tree
+                const featuresXMLDoc = xmlParser.parseFromString(bytesToText(bytes), 'text/xml');
+                //console.log(`FileIO.parsers.dna.parseFeatures -> featuresXMLDoc=\n${xmlPrettyPrint(featuresXMLDoc)}`)
 
-                // All the feature properties
-                const featureInfo = {}
-                featureInfo["type"] = featureXML.getAttribute('type'); // Type (CDS, RBS etc)
-                if (featureInfo["type"] == "source") {continue};
-                featureInfo["label"] = featureXML.getAttribute('name'); // Display name
-                // Get feature directionaliy, fwd, rev, or null
-                featureInfo["directionality"] = {"1": "fwd", "2": "rev"}[featureXML.getAttribute('directionality')] || null;
-                featureInfo["span"] = "";
-                featureInfo["note"] = "";
+                const featuresDict = {};
 
-                // Iterate over xml children to find properties
-                const featureChildren = featureXML.children;
-                for (let j = 0; j < featureChildren.length; j++) {
-                    const child = featureChildren[j]; // Current child
+                // Select all <Features> nodes and iterate over them
+                const featureNodes = featuresXMLDoc.getElementsByTagName('Feature');
+                for (let i = 0; i < featureNodes.length; i++) {
+                    // Current node
+                    const featureNode = featureNodes[i]; // Current feature
+    
+                    const featureInfo = {}
 
-                    switch(child.nodeName) {
-                        // Nodes with the name "Segment" contain:
-                        // span, color, type, translated
-                        case "Segment":
-                            // Get span and split into list
-                            const currSpan = child.getAttribute('range').split("-");
-                            // Add span to feature info
-                            featureInfo["span"] = currSpan.map((s) => parseInt(s));
-                            
-        
-                            // Extract color
-                            featureInfo["color"] = child.getAttribute('color');
-        
-                            break;
+                    // Feature label
+                    featureInfo["label"] = featureNode.getAttribute('name');
 
-                        // Nodes with the name "Q" and its "V" children are "Query-Value" nodes
-                        // Basically dictionary key and value
-                        // codon_start: int (?)
-                        // product: text (string, note about gene product)
-                        // transl_table: int (boolean, ?)
-                        // translation: text (string, AA sequence of product)
-                        case "Q":
-                            // Get query name
-                            const subNoteName = child.getAttribute('name');
-        
-                            // Value node
-                            const V = child.children[0];
-                            Array.from(V.attributes).forEach((attr) => {
-                                switch(attr.name) {
-                                    case "int":
-                                        featureInfo[attr.name] = parseInt(attr.value);
-                                        break;
-                                    case "text":
-                                        // Sometimes the text has html so we need to deal with it
-                                        featureInfo[attr.name] = new DOMParser().parseFromString(attr.value, 'text/html').body.textContent.trim();
-                                        break;
-                                }
-                            });
-                            break;
+                    // Feature type
+                    featureInfo["type"] = featureNode.getAttribute('type');
+                    if (featureInfo["type"] === "source") continue;
+
+
+                    // Get feature directionaliy, fwd, rev, both, or null
+                    featureInfo["directionality"] = {"1": "fwd", "2": "rev", "3": "both"}[featureNode.getAttribute('directionality')] || null;
+    
+                    // Iterate over <Feature> node children (<Q> and <Segment>) to find properties
+                    for (let j = 0; j < featureNode.children.length; j++) {
+                        const childNode = featureNode.children[j];
+                        const childNodeName = childNode.nodeName;
+    
+                        switch(childNodeName) {
+                            /**
+                             * Nodes with the name "Q" and its "V" children are "Query-Value" nodes.
+                             * The information is not useful for us, but we keep it to maybe use it
+                             * at some later point.
+                             */
+                            case "Q":
+                                const attrNameQ = childNode.getAttribute("name");
+                                const V = childNode.children[0];
+                                Array.from(V.attributes).forEach((attr) => {
+                                    const attrNameV = attr.name;
+                                    const attrValueV = attr.value;
+                                    switch(attrNameV) {
+                                        case "int":
+                                            featureInfo[attrNameQ] = parseInt(attrValueV);
+                                            break;
+                                        case "text":
+                                            // Sometimes the text has html so we need to deal with it
+                                            featureInfo[attrNameQ] = new DOMParser().parseFromString(attrValueV, 'text/html').body.textContent.trim();
+                                            break;
+                                    };
+                                });
+                                break;
+                            /**
+                             * Nodes with the name "Segment" contain the actually interesting
+                             * information for us.
+                             */
+                            case "Segment":
+                                // Add span to feature info
+                                featureInfo["span"] = childNode.getAttribute('range').split("-").map((s) => parseInt(s));
+                                
+                                // Extract color
+                                featureInfo["color"] = (UserPreferences.get("overwriteSnapGeneColors"))
+                                ? Utilities.getRandomDefaultColor()
+                                : childNode.getAttribute('color');
+
+                                featureInfo["translated"] = {"1": true}[childNode.getAttribute('translated')] || false;
+
+                                featureInfo["translationOffset"] = childNode.getAttribute('translationNumberingStartsFrom') || 0;
+                                break;
+                        };
                     };
+    
+                    // Append feature info dict the corresponding feature in the dict
+                    featuresDict[Utilities.newUUID()] = featureInfo;
                 };
 
-                // Append feature info dict the corresponding feature in the dict
-                featuresDict[featureId] = featureInfo;
+                //console.log(`FileIO.parsers.dna.parseFeatures -> featuresDict=\n${JSON.stringify(featuresDict, null, 2)}`)
+                return featuresDict;
             };
             // #endregion Features
 
 
 
             // #region Primers
-            // Extract XML tree string
-            let primersXMLString = fileContent.slice(fileContent.indexOf("<Primers"), fileContent.indexOf("</Primer></Primers>") + "</Primer></Primers>".length);
-            // Parse string to XML tree
-            const primersXMLDoc = xmlParser.parseFromString(primersXMLString, 'text/xml');
+            
+            /**
+             * 
+             * @param {*} bytes 
+             * @returns 
+             */
+            /**Info on primers xml tree
+             * 
+             * 	<Primers>
+             *      Attributes:
+             *          recycledIDs: int => ids that have already been used
+             *          nextValidID: int => next available id for a primer
+             *      <HybridizationParams>
+             *          Attributes:
+             *              minContinuousMatchLen: int => ? 10
+             *              allowMismatch: int => ? 1
+             *              minMeltingTemperature: int => 40
+             *              showAdditionalFivePrimeMatches: int => ? 1
+             *              minimumFivePrimeAnnealing: int => ? 15
+             *      <Primer>
+             *          Attributes:
+             *              recentID: int => recently used ids
+             *              name: str => primer label
+             *              sequence: str => nucleotide sequence of primer
+             *              description: str => primer description
+             *          <BindingSite>
+             *              Attributes:
+             *                  location: int-int => Span of primer binding site
+             *                  boundStrand: int => 0 -> top strand "fwd" or 1 -> bottom strand "rev"
+             *                  annealedBases: str => ?
+             *                  meltingTemperature: int => ?
+             *                  simplified: int => ? 1
+             *              <Component>
+             *                  Attributes:
+             *                      hybridizedRange: int-int => ?
+             *                      bases: str => ?
+             */
+            function parsePrimers(bytes) {
+                // Extract XML tree
+                const primersXMLString = bytesToText(bytes);
+                console.log(`FileIO.parsers.dna.parsePrimers -> primersXMLString=\n${primersXMLString}`)
 
-            const primersList = primersXMLDoc.getElementsByTagName('Primer');
-            for (let i = 0; i < primersList.length; i++) {
-                const primer = primersList[i]; // Current feature
-                const primerId = Utilities.newUUID();
+                const primersXMLDoc = xmlParser.parseFromString(bytesToText(bytes), 'text/xml');
+                console.log(`FileIO.parsers.dna.parsePrimers -> primersXMLDoc=\n${xmlPrettyPrint(primersXMLDoc)}`)
+    
+                const primersDict = {};
 
-                // All the feature properties
-                const primerInfo = {};
+                const primerNodes = primersXMLDoc.getElementsByTagName('Primer');
+                for (let i = 0; i < primerNodes.length; i++) {
+                    // Current node
+                    const primerNode = primerNodes[i];
+    
+                    const primerInfo = {};
+    
+                    // Feature label
+                    primerInfo["label"] = primerNode.getAttribute('name');
+                    
+                    // Feture type
+                    primerInfo["type"] = "primer_bind";
 
-                primerInfo["type"] = "primer_bind";
+                    primerInfo["color"] = Utilities.getRandomDefaultColor();
+    
+                    // Feature note
+                    primerInfo["note"] = primerNode.getAttribute('description') || "";
+                    
 
-                primerInfo["label"] = primer.getAttribute('name'); // Display name
+                    const bindingSiteNode = primerNode.getElementsByTagName("BindingSite")[0];
+    
+                    primerInfo["directionality"] = {"0": "fwd", "1": "rev"}[bindingSiteNode.getAttribute('boundStrand')] || null;
+    
+                    primerInfo["span"] = bindingSiteNode.getAttribute('location').split("-").map((s) => parseInt(s));
+                    if (!primerInfo["span"]) continue;
+    
+                    primersDict[Utilities.newUUID()] = primerInfo;
+                };
 
-                primerInfo["note"] = (primer.getAttribute('description') && primer.getAttribute('description') !== undefined)
-                ? primer.getAttribute('description').replace("<html><body>", "").replace("</body></html>", "")
-                : "";
-                
-                const primerBindingSite = primer.getElementsByTagName("BindingSite")[0];
-
-                const primerSpanDirectionality = {"1": "fwd", "2": "rev"}[primerBindingSite.getAttribute('boundStrand')] || null;
-                if (!primerSpanDirectionality) continue;
-
-                primerInfo["span"] = primerBindingSite.getAttribute('location').split("-").map((s) => parseInt(s));
-                if (!primerInfo["span"]) continue;
- 
-                primerInfo["phosphorylated"] = primer.hasAttribute("phosphorylated");
-
-                // Append feature info the corresponding feature in the dict
-                featuresDict[primerId] = primerInfo;
+                //console.log(`FileIO.parsers.dna.parsePrimers -> primersDict=\n${JSON.stringify(primersDict, null, 2)}`)
+                return primersDict;
             };
             // #endregion Primers
             
-            const fileFeatures = Utilities.sortFeaturesDictBySpan(featuresDict);
 
-
-            /**
-             * Notes
-             */
-            // #region Notes
-            let fileAdditionalInfo = [];
-
-            const treeName = "Notes"
-            let notesXMLString = fileContent.slice(fileContent.indexOf(`<${treeName}>`), fileContent.indexOf(`</${treeName}>`) + treeName.length + 3);
-            const notesXMLDoc = xmlParser.parseFromString(notesXMLString, 'text/xml');
-            const notesElement = notesXMLDoc.querySelector("Notes");
-            for (let child of notesElement.children) {
-                let key = child.tagName;
-                let value = child.textContent;
-                
-                if (key == "Created") {
-                    key = "CREATED";
-                    const dateParts = value.split(".").map(Number);
-                    value = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
-                    
-                    const time = child.getAttribute("UTC");
-                    const timeParts = time.split(":").map(Number);
-                    value.setUTCHours(timeParts[0], timeParts[1], timeParts[2], 0);
-                };
-                console.log(`FileIO.parsers.dna -> Notes k=${key} v=${value}`);
-                
-
-                fileAdditionalInfo.push(
-                    {
-                        "name": key,
-                        "entry": value
-                    }
-                );
+            let fileFeatures = {};
+            if (blocks[10]) {
+                fileFeatures = {...parseFeatures(blocks[10])};
             };
+            if (blocks[5]) {
+                fileFeatures = {...fileFeatures, ...parsePrimers(blocks[5])};
+            };
+            fileFeatures = Utilities.sortFeaturesDictBySpan(fileFeatures);
+            //console.log(`FileIO.parsers.dna -> fileFeatures=\n${JSON.stringify(fileFeatures, null, 2)}`);
+
+
+            // #region Notes
+            /**
+             * Parse features from xml tree
+             * 
+             * @param {*} bytes 
+             */
+            /**Info on notes xml tree
+             * 
+             * 	<Notes>
+             *      <ConfirmedExperimentally>
+             *          Possible Values: int => 0
+             *      <TransformedInto>
+             *          Possible Values: str => "unspecified"
+             *      <SequenceClass>
+             *          Possible Values: str => ? UNA
+             *      <LastModified>
+             *          Possible Values: date => date of last modification
+             *          Attributes:
+             *              UTC: time => time of last modification
+             *      <UUID>
+             *          Possible Values: str => uuid of plasmid
+             *      <Description>
+             *          Possible Values: str => description of plasmid
+             *      <References>
+             *          <Reference>
+             *              Attributes:
+             *                  journal: str => journal of publication
+             *                  title: str => title of publication
+             *                  pages: str => ?
+             *                  volume: str => ?
+             *                  type: Journal Article
+             *                  authors: str => list of authors
+             *                  date: str => YYYY-MM-DD
+             *                  journalName: str => (Genes Dev, Nat Struct Biol, Nature, Genetics, Science)
+             *                  pubMedID: int => pubmed identifier
+             *                  issue: int => journal issue
+             *                  doi: str => doi
+             *      <Created>
+             *          Possible Values: date => creation date of plasmid
+             *          Attributes:
+             *              UTC: time => creation time of plasmid
+             *      <Type>
+             *          Possible Values: str => "Natural" || "Synthetic"
+             */
+            function parseNotes(bytes) {
+                // Extract XML tree
+                const notesXMLString = bytesToText(bytes);
+                //console.log(`FileIO.parsers.dna.parseNotes -> notesXMLString=\n${notesXMLString}`);
+
+                const notesXMLDoc = xmlParser.parseFromString(notesXMLString, 'text/xml');
+                console.log(`FileIO.parsers.dna.parseNotes -> notesXMLDoc=\n${xmlPrettyPrint(notesXMLDoc)}`)
+
+                const notesDict = {};
+
+                //console.log(`FileIO.parsers.dna.parseNotes ->`, notesXMLDoc.documentElement.nodeName)
+                const notesNodes = notesXMLDoc.querySelector("Notes");
+                for (let i = 0; i < notesNodes.children.length; i++) {
+                    const childNode = notesNodes.children[i];
+
+                    //console.log(`FileIO.parsers.dna.parseNotes ->`, notesNode.tagName)
+
+                    let key;
+                    let value;
+                    switch(childNode.tagName) {
+                        case "Description":
+                            key = "DEFINITION";
+                            value = childNode.textContent;
+                            break;
+
+                        case "References":
+                            const referencesNode = childNode;
+
+                            const referencesList = [];
+
+                            for (let j = 0, len = referencesNode.children.length; j < len; j++) {
+                                const referenceNode = childNode.children[j];
+                                
+                                const referenceDict = {};
+
+                                for (let k = 0; k < referenceNode.attributes.length; k++) {
+                                    const attribute = referenceNode.attributes[k];
+                                    const attributeName = attribute.name.toUpperCase();
+                                    const attributeValue = attribute.value;
+                                   
+                                    referenceDict[attributeName] = attributeValue;
+                                };
+
+                                referencesList.push(referenceDict);
+                            };
+
+                            key = "REFERENCES";
+                            value = referencesList;
+                            break;
+
+                        case "Created":
+                            // Parse date
+                            const dateParts = childNode.textContent.split(".").map(Number);
+                            const dateObj = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
+                            
+                            // Parse time
+                            const time = childNode.getAttribute("UTC");
+                            const timeParts = time.split(":").map(Number);
+                            dateObj.setUTCHours(timeParts[0], timeParts[1], timeParts[2], 0);
+
+                            key = "CREATED";
+                            value = dateObj;
+                            break;
+
+                        default:
+                            key = childNode.tagName;
+                            value = childNode.textContent;
+                            break;
+                    };
+    
+                    notesDict[key] = value;
+                };
+
+                //console.log(`FileIO.parsers.dna.parseNotes -> notesDict=\n${JSON.stringify(notesDict, null, 2)}`)
+                return notesDict;
+            };
+
+            let fileAdditionalInfo = {};
+            if (blocks[6]) {
+                fileAdditionalInfo = parseNotes(blocks[6]);
+            };
+
+            const accountedBlockKeys = [0, 10, 5, 6];
+            const unaccountedBlocks = Object.keys(blocks).reduce((obj, key) => {
+                return accountedBlockKeys.includes(Number(key))
+                    ? obj  // Return obj unchanged
+                    : { ...obj, [key]: blocks[key] }; // Spread and add key-value
+            }, {});
+            fileAdditionalInfo["blocks"] = unaccountedBlocks;
             // #endregion Notes
 
 
@@ -666,6 +888,8 @@ const FileIO = new class {
                     console.log(`FileIO.parsers.gb -> features featureDict=\n${JSON.stringify(featureDict, null, 2)}`)
                     
                     if (featureDict["type"] === "source") continue;
+
+                    if (featureDict["translation"]) featureDict["translated"] = true;
 
                     featureDict["color"] ??= Utilities.getRandomDefaultColor();
                     featureDict["label"] ??= featureDict["type"];

@@ -20,7 +20,9 @@ const UserPreferences = new class {
 
             "baseWidth": 16,
 
-            "preferredOrganism": "Escherichia coli"
+            "preferredOrganism": "Escherichia coli",
+
+            "overwriteSnapGeneColors": true,
         };
 
         const savedPreferences = this.loadPreferences();
@@ -90,6 +92,7 @@ const UserPreferences = new class {
      * @returns {any} - Value of entry
      */
     get(key) {
+        console.assert(key in this.preferences, `User preference "${key}" does not exist.`);
         return this.preferences[key];
     };
 };
