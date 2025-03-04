@@ -1,4 +1,10 @@
 const FileIO = new class {
+    constructor() {
+        document.addEventListener("DOMContentLoaded", function() {
+            console.log("FileIO -> Page is done loading.");
+        });
+    };
+
     /**
      * Import file, read contents and pass to appropriate parser.
      * 
@@ -137,7 +143,10 @@ const FileIO = new class {
         };
         
         // Execute tasks then remove loading cursor
-        Promise.all(importTasks).then(() => this.removeLoadingCursor())
+        Promise.all(importTasks).then(() => {
+            this.removeLoadingCursor()
+            console.log("FileIO.importQueue -> Done.")
+        });
     };
 
 
