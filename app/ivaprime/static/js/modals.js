@@ -293,4 +293,34 @@ const Modals = new class {
     
         this.create(id, body, action);
     };
+
+
+    createSetOriginModal(targetPlasmid) {
+        const body = document.createElement("div");
+        const id = "modal-window-set-origin";
+
+        const seqLength = targetPlasmid.sequence.length;
+    
+        body.innerHTML = `
+        <div class="modal-title">Set new plasmid origin</div>
+    
+        <div class="modal-vgroup">
+            <label>New origin:</label>
+            <input type="number" id="${id}-input" class="modal-input" min="1" max="${seqLength} step="1" value="1">
+        </div>
+        
+        
+        <div class="modal-hgroup">
+            <span class="round-button modal-button-action" id="${id}-action-button">Rename</span>
+            <span class="round-button modal-button-cancel" onclick="removeModalWindow('${id}')">Cancel</span>
+        </div>
+        `;
+
+        const action = () => {
+            const newOrigin = document.getElementById(`${id}-input`).value;
+            targetPlasmid.setOrigin(newOrigin);
+        };
+    
+        this.create(id, body, action);
+    };
 };

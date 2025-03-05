@@ -392,14 +392,7 @@ const PlasmidTabs = new class {
      */
     setPlasmidOrigin(plasmidIndex) {
         const targetPlasmid = Session.getPlasmid(plasmidIndex);
-        createModalWindow(
-            "modal-window-set-origin",
-            "Set new plasmid origin",
-            "Set plasmid origin to:",
-            0,
-            "Set",
-            targetPlasmid.setOrigin.bind(targetPlasmid)
-        );
+        Modals.createSetOriginModal(targetPlasmid);
     };
 };
 
