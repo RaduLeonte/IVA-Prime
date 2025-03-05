@@ -2072,7 +2072,7 @@ const PlasmidViewer = new class {
                 {
                     item: "Subclone with insertion(s) into selection",
                     conditions:  {any: ["single", "range", "feature"], all: ["subcloningTarget"]},
-                    action: () => Alerts.warning("Subclone with insertion(s) into selection")
+                    action: () => Modals.createSubcloningModal()
                 },
             ]},
 

@@ -195,4 +195,102 @@ const Modals = new class {
     
         this.create(id, body, action);
     };
+
+
+    createSubcloningModal() {
+        const body = document.createElement("div");
+        body.classList.add("modal-subcloning");
+        const id = "modal-window-subcloning";
+
+        function getOrganismOptions() {
+            let options = "";
+            const preferredOrganism = UserPreferences.get("preferredOrganism");
+            for (const key in Nucleotides.codonWeights) {
+                if (key === preferredOrganism) {
+                    options += `<option value="${key}" selected="selected">${key}</option>\n`;
+                } else {
+                    options += `<option value="${key}">${key}</option>\n`;
+                };
+            };
+            return options;
+        };
+    
+        body.innerHTML = `
+        <div class="modal-title">Subclone with insertions</div>
+
+
+        <div class="modal-subcloning-subtitle">5' end insertion:</div>
+
+        <div class="modal-vgroup">
+            <label>DNA sequence:</label>
+            <input type="text" id="insertion-input-5dna" class="modal-input" value="">
+        </div>
+
+        <div class="modal-vgroup">
+            <label>Amino acid sequence:</label>
+            <input type="text" id="insertion-input-5aa" class="modal-input" value="">
+            <div class="modal-hint">
+                Accepted STOP letter codes: "*", "-", "X".
+            </div>
+        </div>
+
+
+        <div class="modal-subcloning-subtitle">3' end insertion:</div>
+
+        <div class="modal-vgroup">
+            <label>DNA sequence:</label>
+            <input type="text" id="insertion-input-3dna" class="modal-input" value="">
+        </div>
+
+        <div class="modal-vgroup">
+            <label>Amino acid sequence:</label>
+            <input type="text" id="insertion-input-3aa" class="modal-input" value="">
+            <div class="modal-hint">
+                Accepted STOP letter codes: "*", "-", "X".
+            </div>
+        </div>
+        
+
+        <div class="modal-vgroup">
+            <div class="modal-hgroup">
+                <label>Optimize codons for:</label>
+                <select id="insertion-select-organism">${getOrganismOptions()}</select>
+            </div>
+            <div class="modal-hint">
+                Codon frequency tables from <a href="https://hive.biochemistry.gwu.edu/review/codon2" target="_blank">CoCoPUTs</a> (<a href="https://doi.org/10.1016/j.jmb.2019.04.021" target="_blank">Alexaki et al. 2019</a>).
+            </div>
+        </div>
+
+
+        <div class="modal-hgroup">
+            <label>Translate new feature:</label>
+            <input type="checkbox" id="insertion-checkbox-translate" checked="false">
+        </div>
+
+        
+        
+        <div class="modal-hgroup">
+            <span class="round-button modal-button-action" id="${id}-action-button">Create File</span>
+            <span class="round-button modal-button-cancel" onclick="removeModalWindow('${id}')">Cancel</span>
+        </div>
+        `;
+
+        const action = () => {
+            Session.activePlasmid().IVAOperation(
+                "Subcloning",
+                [
+                    document.getElementById("insertion-input-5dna").value,
+                    document.getElementById("insertion-input-3dna").value,
+                ],
+                [
+                    document.getElementById("insertion-input-5aa").value,
+                    document.getElementById("insertion-input-3aa").value,
+                ],
+                document.getElementById("insertion-select-organism").value,
+                document.getElementById("insertion-checkbox-translate").checked,
+            );
+        };
+    
+        this.create(id, body, action);
+    };
 };
