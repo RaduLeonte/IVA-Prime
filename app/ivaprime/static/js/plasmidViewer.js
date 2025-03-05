@@ -850,8 +850,10 @@ const PlasmidViewer = new class {
             groupSequence.appendChild(groupStrandFwd);
 
             const groupStrandFwdRects = this.createShapeElement("g");
+            groupStrandFwdRects.setAttribute("id", "strand-rects");
             groupStrandFwd.appendChild(groupStrandFwdRects);
             const groupStrandFwdText = this.createShapeElement("g");
+            groupStrandFwdText.setAttribute("id", "strand-text");
             groupStrandFwd.appendChild(groupStrandFwdText);
 
             for (let i = 0; i < basesPerLine; i++) {
@@ -884,9 +886,11 @@ const PlasmidViewer = new class {
             groupSequence.appendChild(groupStrandRev);
 
             const groupStrandRevRects = this.createShapeElement("g");
-            groupStrandFwd.appendChild(groupStrandRevRects);
+            groupStrandRevRects.setAttribute("id", "strand-rects");
+            groupStrandRev.appendChild(groupStrandRevRects);
             const groupStrandRevText = this.createShapeElement("g");
-            groupStrandFwd.appendChild(groupStrandRevText);
+            groupStrandRevText.setAttribute("id", "strand-text");
+            groupStrandRev.appendChild(groupStrandRevText);
 
             for (let i = 0; i < basesPerLine; i++) {
                 if (!segment["sequenceRev"][i]) {continue};
@@ -1755,6 +1759,7 @@ const PlasmidViewer = new class {
      * @param {string} cssClass 
      */
     highlightBases(span, cssClass = "base-hover", strand=null) {
+        console.log(`PlasmidViewer.highlightBases -> `, span, cssClass, strand);
         const [start, end] = span;
     
         const svgs = document.getElementById("grid-view-container").getElementsByTagName('svg');

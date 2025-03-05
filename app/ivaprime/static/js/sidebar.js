@@ -217,6 +217,7 @@ const Sidebar = new class {
             spanStart,
             length,
             regionSpan,
+            direction,
         );
 
         if (regionSpan) PlasmidViewer.highlightBases(regionSpan, baseClass, direction);
