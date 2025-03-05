@@ -339,6 +339,7 @@ class Plasmid {
      * @param {string} newName - New plasmid name 
      */
     rename(newName) {
+
         console.log(`Plasmid.rename -> ${this.index} ${newName}`)
         this.name = newName;
 

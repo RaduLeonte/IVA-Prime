@@ -1470,8 +1470,6 @@ const FileIO = new class {
         const newFileSequenceInput = document.getElementById("new-file-sequence-input").value;
         const newFileTopology = document.getElementById("new-file-topology-select").value;
         const detectCommonFeatures = document.getElementById("new-file-annotate-features-checkbox").checked;
-        // Hide and reset window
-        this.resetNewFilePopupWindow();
     
         /** 
          * Generate plasmid object

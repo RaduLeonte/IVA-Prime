@@ -371,15 +371,7 @@ const PlasmidTabs = new class {
      */
     renamePlasmid(plasmidIndex) {
         const targetPlasmid = Session.getPlasmid(plasmidIndex);
-        createModalWindow(
-            "modal-window-rename-plasmid",
-            "Rename Plasmid",
-            "New plasmid name:",
-            targetPlasmid.name,
-            "Rename",
-            targetPlasmid.rename.bind(targetPlasmid),
-            targetPlasmid.extension
-        );
+        Modals.createRenamePlasmidModal(targetPlasmid);
     };
 
 
