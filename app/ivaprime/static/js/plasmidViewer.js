@@ -1649,6 +1649,8 @@ const PlasmidViewer = new class {
             activePlasmid.generateViews(views);
             PlasmidViewer.updateViewer();
         };
+
+        this.highlightSubcloningTarget()
     };
 
 
@@ -1860,7 +1862,7 @@ const PlasmidViewer = new class {
             subcloningRect.setAttribute("x", X1);
             subcloningRect.setAttribute("y", Y);
             subcloningRect.setAttribute("width", X2 + cellWidth - X1);
-            subcloningRect.setAttribute("height", cellHeight);
+            subcloningRect.setAttribute("height", cellHeight*2);
 
             firstRect.parentElement.insertBefore(subcloningRect, firstRect.parentElement.firstChild);
         };
@@ -2051,6 +2053,11 @@ const PlasmidViewer = new class {
                     item: "Mark selection for subcloning",
                     conditions:  {any: ["range", "feature"]},
                     action: () => Session.markForSubcloning()
+                },
+                {
+                    item: "Unmark subcloning target",
+                    conditions:  {all: ["subcloningTarget"]},
+                    action: () => Session.removeMarkForSubcloning()
                 },
                 {
                     item: "Subclone into selection",
@@ -2289,6 +2296,7 @@ const PlasmidViewer = new class {
             "single": (selectionIndices !== null && selectionIndices.filter(i => i !== null).length === 1 && !clickedOnFeature) ? true: false,
             "range": (selectionIndices !== null && selectionIndices.filter(i => i !== null).length > 1 && !clickedOnFeature) ? true: false,
             "feature": clickedOnFeature,
+            "subcloningTarget": (Session.subcloningOriginPlasmidIndex !== null && Session.subcloningOriginSpan !== null) ? true: false,
         };
         //console.log(`PlasmidViewer.showContextMenu -> ${selectionIndices} ${JSON.stringify(selectionState, null, 2)}`);
 
