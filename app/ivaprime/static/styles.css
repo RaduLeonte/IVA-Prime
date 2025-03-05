@@ -1158,8 +1158,9 @@ input, select, textarea {
 }
 
 .sequence-tooltip-row-key {
-  min-width: 30px;
+  min-width: 40px;
   font-weight: bold;
+  overflow-wrap: break-word;
 }
 
 .sequence-tooltip-row-value {
