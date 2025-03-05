@@ -141,14 +141,10 @@ const Nucleotides = new class {
      * @returns {string} - Optimised DNA sequence
      */
     optimizeAA(inputAA, targetOrganism) {
-        preferredOrganism = targetOrganism;
-        saveUserPreference("preferredOrganism", targetOrganism);
-        //updateOrganismSelectorDefault();
-
         return inputAA
         .split("")
         .map(aa => {
-            const possibilities = Object.entries(codonWeights[targetOrganism][aa]).map(([value, weight]) => ({
+            const possibilities = Object.entries(this.codonWeights[targetOrganism][aa]).map(([value, weight]) => ({
                 weight: parseFloat(weight),
                 value
             }));
