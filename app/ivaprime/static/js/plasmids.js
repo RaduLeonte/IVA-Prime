@@ -76,6 +76,14 @@ const Session = new class {
         this.subcloningOriginPlasmidIndex = Session.activePlasmidIndex;
         this.subcloningOriginSpan = span;
 
+        if (this.subcloningOriginSpan[1] - this.subcloningOriginSpan[0] < 400) {
+            Alerts.warning(
+                "Short subcloning target",
+                "Attempting to subclone fragments shorter than 400 bp may result in lower efficiency or the subcloning may fail all together.",
+                10
+            );
+        };
+
         PlasmidViewer.highlightSubcloningTarget();
     };
 

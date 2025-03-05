@@ -338,7 +338,9 @@ const Primers = new class {
                 {
                     name: "Reverse Primer",
                     regions: [
-                        {sequence: tempRev, type: "TBR", start: operationRange[0], direction: "rev"}
+                        {sequence: "", type: "HR", start: operationRange[0], direction: "rev"},
+                        {sequence: "", type: "INS", start: operationRange[0], direction: "rev"},
+                        {sequence: tempRev, type: "TBR", start: operationRange[0], direction: "rev"},
                     ],
                 },
             ],
@@ -398,6 +400,7 @@ const Primers = new class {
                 {
                     name: "Forward Primer",
                     regions: [
+                        {sequence: "", type: "HR", start: operationRange[0] + seqToInsert.length - 1, direction: "fwd"},
                         {sequence: homoFwd, type: "INS", start: operationRange[0] + seqToInsert.length - 1, direction: "fwd"},
                         {sequence: tempFwd, type: "TBR", start: operationRange[0] + seqToInsert.length, direction: "fwd"},
                     ],
@@ -405,6 +408,7 @@ const Primers = new class {
                 {
                     name: "Reverse Primer",
                     regions: [
+                        {sequence: "", type: "HR", start: operationRange[0], direction: "rev"},
                         {sequence: homoRev, type: "INS", start: operationRange[0], direction: "rev"},
                         {sequence: tempRev, type: "TBR", start: operationRange[0], direction: "rev"},
                     ],
@@ -456,6 +460,7 @@ const Primers = new class {
                 {
                     name: "Forward Primer",
                     regions: [
+                        {sequence: "", type: "HR", start: operationRange[0] + seqToInsert.length - 1, direction: "fwd"},
                         {sequence: homoFwd, type: "INS", start: operationRange[0] + seqToInsert.length - 1, direction: "fwd"},
                         {sequence: tempFwd, type: "TBR", start: operationRange[0] + seqToInsert.length, direction: "fwd"},
                     ],
@@ -463,6 +468,7 @@ const Primers = new class {
                 {
                     name: "Reverse Primer",
                     regions: [
+                        {sequence: "", type: "HR", start: operationRange[0], direction: "rev"},
                         {sequence: homoRev, type: "INS", start: operationRange[0], direction: "rev"},
                         {sequence: tempRev, type: "TBR", start: operationRange[0], direction: "rev"},
                     ],
@@ -478,33 +484,51 @@ const Primers = new class {
         seq5Prime,
         seq3Prime,
     ) {
+        if (operationRange[1] === null) {
+            operationRange = [
+                operationRange[0],
+                operationRange[0] - 1
+            ];
+        } else {
+            operationRange = [
+                Math.min(...operationRange),
+                Math.max(...operationRange)
+            ];
+        };
+
         const subclonignOriginPlasmid = Session.getPlasmid(Session.subcloningOriginPlasmidIndex);
         const subcloningOriginSpan = Session.subcloningOriginSpan;
         const subcloningTarget = subclonignOriginPlasmid.sequence.slice(subcloningOriginSpan[0] - 1, subcloningOriginSpan[1])
     
 
-        const activePlasmidSequence = Session.activePlasmid().sequence;
-        const pseudoPlasmidSequence5Prime = activePlasmidSequence.slice(0, subcloningOriginSpan[0]-1) + subcloningTarget + activePlasmidSequence.slice(subcloningOriginSpan[1]);
-    
+        const activePlasmidSequence = plasmidSequence;
+        const pseudoPlasmidSequence5Prime = activePlasmidSequence.slice(0, operationRange[0]-1) + subcloningTarget + activePlasmidSequence.slice(operationRange[1]);
+        console.log("Primers.generateSubcloningSet -> pseudoPlasmidSequence5Prime", pseudoPlasmidSequence5Prime)
+
         const primerSet5Prime = Primers.generateSet(
             "Insertion",
-            [subcloningOriginSpan[0], null],
+            [operationRange[0], null],
             pseudoPlasmidSequence5Prime,
             seq5Prime
         );
-
+        
         const pseudoPlasmidSequence3Prime = Nucleotides.reverseComplementary(pseudoPlasmidSequence5Prime);
-        const operationPos =  pseudoPlasmidSequence3Prime.length - subcloningOriginSpan[0] - subcloningTarget.length + 2
+        console.log("Primers.generateSubcloningSet -> pseudoPlasmidSequence3Prime", pseudoPlasmidSequence3Prime)
+        const operationPos =  pseudoPlasmidSequence3Prime.length - operationRange[0] - subcloningTarget.length + 2
+        console.log("Primers.generateSubcloningSet -> operationPos", operationPos)
+
         const primerSet3Prime = Primers.generateSet(
             "Insertion",
             [operationPos, null],
             pseudoPlasmidSequence3Prime,
-            seq3Prime
+            Nucleotides.reverseComplementary(seq3Prime)
         );
 
-        console.log("Plasmid.IVAOperation -> Subcloning", JSON.stringify(primerSet5Prime, null, 2), JSON.stringify(primerSet3Prime, null, 2) )
+        //console.log("Primers.generateSubcloningSet -> Subcloning", JSON.stringify(primerSet5Prime, null, 2), JSON.stringify(primerSet3Prime, null, 2) )
     
         const sets = [primerSet5Prime, primerSet3Prime];
+
+        const insertionSequenceFull = seq5Prime + subcloningTarget + seq3Prime;
 
         return {
             title: "Subcloning",
@@ -515,19 +539,95 @@ const Primers = new class {
             primers: [
                 {
                     name: "Forward primer",
-                    regions: sets[0].primers[0].regions,
+                    regions: [
+                        {
+                            sequence: sets[0].primers[0].regions[0].sequence,
+                            type: "subHR",
+                            start: operationRange[0] - 1,
+                            direction: "fwd",
+                        },
+                        {
+                            sequence: sets[0].primers[0].regions[1].sequence,
+                            type: "INS",
+                            start: operationRange[0] - 1 + seq5Prime.length,
+                            direction: "fwd",
+                        },
+                        {
+                            sequence: sets[0].primers[0].regions[2].sequence,
+                            type: "subTBR",
+                            start: operationRange[0] + seq5Prime.length,
+                            direction: "fwd",
+                        },
+                    ],
                 },
                 {
                     name: "Reverse primer",
-                    regions: sets[1].primers[0].regions,
+                    regions: [
+                        {
+                            sequence: sets[1].primers[0].regions[0].sequence,
+                            type: "subHR",
+                            start: operationRange[0] + insertionSequenceFull.length,
+                            direction: "rev",
+                        },
+                        {
+                            sequence: sets[1].primers[0].regions[1].sequence,
+                            type: "INS",
+                            start: operationRange[0] + insertionSequenceFull.length - seq3Prime.length,
+                            direction: "rev",
+                        },
+                        {
+                            sequence: sets[1].primers[0].regions[2].sequence,
+                            type: "subTBR",
+                            start: operationRange[0] + insertionSequenceFull.length - seq3Prime.length,
+                            direction: "rev",
+                        },
+                    ],
                 },
                 {
                     name: "Vector forward primer",
-                    regions: sets[1].primers[1].regions,
+                    regions: [
+                        {
+                            sequence: sets[1].primers[1].regions[0].sequence,
+                            type: "subHR",
+                            start: operationRange[0] + insertionSequenceFull.length - seq3Prime.length - 1,
+                            direction: "fwd",
+                        },
+                        {
+                            sequence: sets[1].primers[1].regions[1].sequence,
+                            type: "INS",
+                            start: operationRange[0] + insertionSequenceFull.length  - 1,
+                            direction: "fwd",
+                        },
+                        {
+                            sequence: sets[1].primers[1].regions[2].sequence,
+                            type: "subTBR",
+                            start: operationRange[0] + insertionSequenceFull.length,
+                            direction: "fwd",
+                        },
+                    ],
                 },
                 {
                     name: "Vector reverse primer",
-                    regions: sets[0].primers[1].regions,
+                    regions: [
+                        {
+                            sequence: sets[0].primers[1].regions[0].sequence,
+                            type: "subHR",
+                            start: operationRange[0] + seq5Prime.length,
+                            direction: "rev",
+                        },
+                        {
+                            sequence: sets[0].primers[1].regions[1].sequence,
+                            type: "INS",
+                            start: operationRange[0],
+                            direction: "rev",
+                        },
+                        {
+                            sequence: sets[0].primers[1].regions[2].sequence,
+                            type: "subTBR",
+                            start: operationRange[0],
+                            direction: "rev",
+                        },
+                    ],
                 },
             ]
         }
