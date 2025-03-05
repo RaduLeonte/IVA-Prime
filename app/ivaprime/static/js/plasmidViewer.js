@@ -2062,7 +2062,7 @@ const PlasmidViewer = new class {
                 {
                     item: "Subclone into selection",
                     conditions: {any: ["single", "range", "feature"], all: ["subcloningTarget"]},
-                    action: () => Alerts.warning("Subclone into selection")
+                    action: () => Session.activePlasmid().IVAOperation("Subcloning", "", "", null, true)
                 },
                 {
                     item: "Subclone with insertion(s) into selection",

@@ -602,57 +602,15 @@ class Plasmid {
             const subclonignOriginPlasmid = Session.getPlasmid(Session.subcloningOriginPlasmidIndex);
             const subcloningOriginSpan = Session.subcloningOriginSpan;
             const subcloningTarget = subclonignOriginPlasmid.sequence.slice(subcloningOriginSpan[0] - 1, subcloningOriginSpan[1])
-        
             const subcloningSequenceFull = seq5Prime + subcloningTarget + seq3Prime;
-
-            const activePlasmidSequence = Session.activePlasmid().sequence;
-            const pseudoPlasmidSequence5Prime = activePlasmidSequence.slice(0, subcloningOriginSpan[0]-1) + subcloningTarget + activePlasmidSequence.slice(subcloningOriginSpan[1]);
-       
-            const primerSet5Prime = Primers.generateSet(
-                "Insertion",
-                [subcloningOriginSpan[0], null],
-                pseudoPlasmidSequence5Prime,
-                seq5Prime
-            );
-
-            const pseudoPlasmidSequence3Prime = Nucleotides.reverseComplementary(pseudoPlasmidSequence5Prime);
-            const operationPos =  pseudoPlasmidSequence3Prime.length - subcloningOriginSpan[0] - subcloningTarget.length + 2
-            const primerSet3Prime = Primers.generateSet(
-                "Insertion",
-                [operationPos, null],
-                pseudoPlasmidSequence3Prime,
-                seq3Prime
-            );
-
             seqToInsert = subcloningSequenceFull;
-            console.log("Plasmid.IVAOperation -> Subcloning", JSON.stringify(primerSet5Prime, null, 2), JSON.stringify(primerSet3Prime, null, 2) )
-        
-            const sets = [primerSet5Prime, primerSet3Prime]
-            primerSet = {
-                title: "Subcloning",
-                type: "Subcloning",
-                hrLength: [sets[0].hrLength, sets[1].hrLength],
-                hrTm: [sets[0].hrTm, sets[1].hrTm],
-                symmetry: sets[0].symmetry,
-                primers: [
-                    {
-                        name: "Forward primer",
-                        regions: sets[0].primers[0].regions,
-                    },
-                    {
-                        name: "Reverse primer",
-                        regions: sets[1].primers[0].regions,
-                    },
-                    {
-                        name: "Vector forward primer",
-                        regions: sets[1].primers[1].regions,
-                    },
-                    {
-                        name: "Vector reverse primer",
-                        regions: sets[0].primers[1].regions,
-                    },
-                ]
-            }
+
+            primerSet = Primers.generateSubcloningSet(
+                this.selectionIndices,
+                this.sequence,
+                seq5Prime,
+                seq3Prime,
+            );
         };
 
 
