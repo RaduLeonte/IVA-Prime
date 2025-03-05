@@ -201,44 +201,83 @@ class Plasmid {
 
 
     /**
-     * 
-     * Case 1: S1 < S2 && E1 < S2 && E1 < E2
-     * S1------------------E1
-     *                         S2------E2
-     * 
-     * Case 2: S1 < S2 && E1 >= S2 && E1 < E2 -> Overlap
-     * S1------------------E1
-     *                  S2------E2
-     * 
-     * Case 3: S1 < S2 && E1 >= S2 && E1 >= E2 -> Overlap
-     * S1--------------------------------E1
-     *                         S2--------E2
+     *  Iterate over features and assign them to rows so that they do not overlap.
      */
     checkFeatureOverlap() {
+        this.features = Utilities.sortFeaturesDictBySpan(this.features);
         for (const [featureID, featureDict] of Object.entries(this.features)) {
             featureDict["level"] = 0;
         };
 
-        for (const [featureID, featureDict] of Object.entries(this.features)) {
-            const featureSpan = featureDict["span"];
-            console.log("checkFeatureOverlap:", featureDict["label"], featureSpan);
+        let levelTracker = {};
+
+        for (const [featureID1, featureDict1] of Object.entries(this.features)) {
+            const label1 = featureDict1["label"];
+            const [span1Start, span1End] = featureDict1["span"];
             for (const [featureID2, featureDict2] of Object.entries(this.features)) {
-                if (featureID === featureID2) {continue};
+                if (featureID1 === featureID2) continue; // Skip self-comparison
 
-                const featureSpan2 = featureDict2["span"]
+                const label2 = featureDict2["label"];
+                const [span2Start, span2End] = featureDict2["span"];
 
-                // Check if features are even on the same level
-                if (featureDict["level"] !== featureDict2["level"]) {continue};
-                
-                // No overlap
-                if (
-                    (featureSpan[0] < featureSpan2[0] && featureSpan[1] < featureSpan2[0]) ||
-                    (featureSpan[0] > featureSpan2[1] && featureSpan[1] > featureSpan2[1])
-                ) {continue};
+                if (span1Start < span2Start && span1End < span2Start) {
+                    // Feature1 is before Feature2 -> No overlap and break inner loop
+                    console.log("Plasmid.checkFeatureOverlap -> No overlap, break loop","\n",
+                        label1, featureDict1["level"], [span1Start, span1End], "\n",
+                        label2, featureDict2["level"], [span2Start, span2End]
+                    );
+                    break;
+                };
 
-                // Overlap detected, move 
-                console.log("Overlap", featureDict["label"], featureSpan, featureDict2["label"], featureSpan2);
-                featureDict2["level"] += 1;
+                if (span2Start < span1Start && span2End < span1Start) {
+                    // Feature 2 is before Feature 1 -> No overlap, don't break inner loop
+                    //console.log(
+                    //    "Plasmid.checkFeatureOverlap -> No overlap 2","\n",
+                    //    label1, level1, [span1Start, span1End], "\n",
+                    //    label2, level2, [span2Start, span2End]
+                    //);
+                    continue;
+                };
+
+                if (featureDict1["level"] !== featureDict2["level"]) {
+                    // Features are on different levels and could not possibly overlap
+                    console.log("Plasmid.checkFeatureOverlap -> Different levels", "\n",
+                        label1, featureDict1["level"], [span1Start, span1End], "\n",
+                        label2, featureDict2["level"], [span2Start, span2End]
+                    );
+                    continue;
+                };
+
+
+                let featureToMove, spanToMove;
+                if ((span1End - span1Start) >= (span2End - span2Start)) {
+                    featureToMove = featureDict2;
+                    spanToMove = [span2Start, span2End];
+                } else {
+                    featureToMove = featureDict1;
+                    spanToMove = [span1Start, span1End];
+                }
+
+                let newLevel = featureToMove["level"] + 1;
+
+                // Ensure the new level is not occupied at this span range
+                while (levelTracker[newLevel] && levelTracker[newLevel].some(existingSpan =>
+                    Math.max(existingSpan[0], spanToMove[0]) < Math.min(existingSpan[1], spanToMove[1])
+                )) {
+                    newLevel += 1; // Keep moving up until there's space
+                }
+
+                featureToMove["level"] = newLevel;
+
+                // Register the new occupied level for this span
+                if (!levelTracker[newLevel]) {
+                    levelTracker[newLevel] = [];
+                }
+                levelTracker[newLevel].push(spanToMove);
+
+                console.log("Plasmid.checkFeatureOverlap -> Overlap detected, move feature up", "\n",
+                    featureToMove["label"], featureToMove["level"], spanToMove
+                );
             };
         };
     };
