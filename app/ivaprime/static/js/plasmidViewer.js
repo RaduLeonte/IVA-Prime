@@ -482,6 +482,16 @@ const PlasmidViewer = new class {
                     featureSegmentSpanEnd - segments[i]["segmentIndexStart"]
                 ]
 
+                const aaIndices = [];
+                const nrAA = Math.ceil((featureSpanEnd - featureSpanStart) / 3);
+                let aaIndex = (featureDirectionality === "fwd") ?  featureSpanStart: featureSpanEnd;
+                for (let j = 0; j < nrAA; j++) {
+                    aaIndices.push([aaIndex, (featureDirectionality === "fwd")? aaIndex + 2: aaIndex - 2])
+                    aaIndex += (featureDirectionality === "fwd") ? 3: -3
+                };
+
+                segments[i]["features"][featureID]["aaIndices"] = aaIndices;
+
                 // Figure out shape of this segment -> left=arrow/continued/none, right=arrow/continued/none
                 segments[i]["features"][featureID]["shape-left"] = null;
                 segments[i]["features"][featureID]["shape-right"] = null;
@@ -1058,19 +1068,69 @@ const PlasmidViewer = new class {
                     const featureSegmentSpan = [
                         featureDict["span"][0] + segmentIndexStart,
                         featureDict["span"][1] + segmentIndexStart,
-                    ]
+                    ];
                     console.log(
                         `PlasmidViewer.drawGrid -> translation ${featureDict["label"]}: ${featureDict["translation"]} ${featureSegmentSpan} ${featureSpan}`
                     );
-                
+
+                    
                     const translation = this.createShapeElement("g");
                     translation.setAttribute("id", "svg-feature-translation");
                     segmentFeatures.appendChild(translation);
 
-                    const featureStartIndex = (featureDict["directionality"] === "fwd") ? featureSpan[0]: featureSpan[1];
-                    const featureEndIndex = (featureDict["directionality"] === "fwd") ? featureSpan[1]: featureSpan[0];
-                    let translationStartIndex = (featureDict["directionality"] === "fwd") ? featureSegmentSpan[0]: featureSegmentSpan[1];
+                    const direction = features[featureID]["directionality"];
+                    const aaIndices = featureDict["aaIndices"]
+                    console.log(
+                        `PlasmidViewer.drawGrid -> translation codon ${featureDict["label"]}`,
+                        direction,
+                        aaIndices,
+                    );
+                    let codonStart = (direction === "fwd") ? featureSegmentSpan[0]: featureSegmentSpan[1];
+                    
+                    let aaRangeIndex = aaIndices.findIndex(([a, b]) => codonStart >= Math.min(a, b) && codonStart <= Math.max(a, b));
+                    
+                    while (aaIndices[aaRangeIndex]) {
+                        const aaRangeFull = aaIndices[aaRangeIndex];
 
+                        if (direction === "fwd" && aaRangeFull[0] > segmentIndexEnd) break;
+                        if (direction === "rev" && aaRangeFull[0] < segmentIndexStart) break;
+
+                        const codon = (direction === "fwd") 
+                        ? sequence.slice(Math.min(...aaRangeFull) - 1, Math.max(...aaRangeFull))
+                        : complementarySequence.slice(Math.min(...aaRangeFull) - 1, Math.max(...aaRangeFull)).split("").reverse().join("");
+                        
+                        const aa = Nucleotides.translate(codon);
+
+                        const aaShapeRange = (direction === "fwd")
+                        ? [Math.max(aaRangeFull[0], segmentIndexStart + 1), Math.min(aaRangeFull[1], segmentIndexEnd)]
+                        : [Math.min(aaRangeFull[0], segmentIndexEnd), Math.max(aaRangeFull[1], segmentIndexStart+1)];
+
+
+                        const aaBlockXStart = seqToPixel(Math.min(...aaShapeRange) - segmentIndexStart) - baseWidth;
+                        const aaBlockWidthBases = Math.abs(aaShapeRange[0] - aaShapeRange[1]) + 1
+                        const aaBlockWidthPx = aaBlockWidthBases*baseWidth;
+                        const aaTextPos = (aaBlockWidthBases >= 2)
+                        ? (direction === "fwd")
+                            ? aaRangeFull[0] + 1
+                            : aaRangeFull[0] - 1
+                        : null;
+                        const aaTextPosPx = seqToPixel(aaTextPos - segmentIndexStart) - baseWidth/2
+                        
+                        const aaBlockHeight = 20;
+                        translation.appendChild(
+                            this.aaBlock(
+                                aaBlockXStart,
+                                featuresLevels[featureDict["level"]] - featureAnnotationHeight/2 - aaBlockHeight,
+                                aaBlockWidthPx,
+                                aaBlockHeight,
+                                direction,
+                                aaTextPosPx,
+                                aa,
+                            )
+                        );
+
+                        aaRangeIndex++;
+                    };
                 };
             };
             //#endregion Features
@@ -1534,6 +1594,73 @@ const PlasmidViewer = new class {
         ));
 
         return featureGroup;
+    };
+
+
+    aaBlock(x, y, width, height, direction, textPosX, aa) {
+        const headWidth = 5;
+
+        const aaBlockGroup = this.createShapeElement("g")
+
+        let points;
+        if (aa !== "*") {
+            points = (direction === "fwd") 
+            ? [
+                [x + headWidth, y + height/2],
+                [x, y],
+                [x + width, y],
+                [x + width + headWidth, y + height/2],
+                [x + width, y + height],
+                [x, y + height]
+            ]
+            : [
+                [x - headWidth, y + height/2],
+                [x , y],
+                [x + width, y],
+                [x + width - headWidth, y + height/2],
+                [x + width, y + height],
+                [x , y + height]
+            ];
+        } else {
+            points = (direction === "fwd") 
+            ? [
+                [x + headWidth, y + height/2],
+                [x, y],
+                [x + width, y],
+                [x + width, y + height/2],
+                [x + width, y + height],
+                [x, y + height]
+            ]
+            : [
+                [x, y + height/2],
+                [x , y],
+                [x + width, y],
+                [x + width - headWidth, y + height/2],
+                [x + width, y + height],
+                [x , y + height]
+            ];
+        };
+
+        const aaBlock = this.createShapeElement("polygon");
+        aaBlock.setAttribute("points", points);
+        aaBlock.classList.add("aa-block");
+        aaBlock.classList.add(`aa-block-${aa}`.replace("*", "stop"));
+        aaBlockGroup.appendChild(aaBlock);
+        
+        if (textPosX) {
+            aaBlockGroup.appendChild(
+                this.text(
+                    [textPosX, y + height/2],
+                    aa,
+                    null,
+                    "base-text",
+                    "middle",
+                    "0.4em"
+                )
+            );
+        };
+
+        return aaBlockGroup;
     };
 
 

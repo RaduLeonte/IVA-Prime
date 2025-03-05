@@ -1034,6 +1034,34 @@ input, select, textarea {
   user-select: none;
 }
 
+.aa-block {
+  fill: transparent;
+  stroke: var(--border-color);
+  stroke-width: 1px;
+}
+.aa-block-A { fill: #FFB3BA; } /* Alanine */
+.aa-block-R { fill: #FFDFBA; } /* Arginine */
+.aa-block-N { fill: #FFFFBA; } /* Asparagine */
+.aa-block-D { fill: #BAFFC9; } /* Aspartic Acid */
+.aa-block-C { fill: #BAE1FF; } /* Cysteine */
+.aa-block-E { fill: #E6C0FF; } /* Glutamic Acid */
+.aa-block-Q { fill: #FFD6E0; } /* Glutamine */
+.aa-block-G { fill: #C7E9B0; } /* Glycine */
+.aa-block-H { fill: #FFB7C5; } /* Histidine */
+.aa-block-I { fill: #FFDAC1; } /* Isoleucine */
+.aa-block-L { fill: #D5AAFF; } /* Leucine */
+.aa-block-K { fill: #FF9AA2; } /* Lysine */
+.aa-block-M { fill: #C5CBE3; } /* Methionine */
+.aa-block-F { fill: #A2D2FF; } /* Phenylalanine */
+.aa-block-P { fill: #B5EAD7; } /* Proline */
+.aa-block-S { fill: #FFB347; } /* Serine */
+.aa-block-T { fill: #e2ff61; } /* Threonine */
+.aa-block-W { fill: #FFCCF9; } /* Tryptophan */
+.aa-block-Y { fill: #AFCBFF; } /* Tyrosine */
+.aa-block-V { fill: #F8C8DC; } /* Valine */
+.aa-block-stop { fill: #FF6961; } /* Stop */
+
+
 
 
 .base-text {
