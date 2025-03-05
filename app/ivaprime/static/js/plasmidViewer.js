@@ -2039,7 +2039,7 @@ const PlasmidViewer = new class {
                 {
                     item: "Insert here",
                     conditions: {all: ["single"]},
-                    action: () => Modals.createInsertionModal()
+                    action: () => Modals.createInsertionModal("insertion")
                 },
                 {
                     item: "Delete selection",
@@ -2049,7 +2049,7 @@ const PlasmidViewer = new class {
                 {
                     item: "Mutate selection",
                     conditions: {any: ["range", "feature"]},
-                    action: () => Alerts.warning("Mutate selection")
+                    action: () => Modals.createInsertionModal("mutation")
                 },
 
                 { separator: "" },

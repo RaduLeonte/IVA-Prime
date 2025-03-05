@@ -124,7 +124,7 @@ const Modals = new class {
     };
 
 
-    createInsertionModal() {
+    createInsertionModal(type="insertion") {
         const body = document.createElement("div");
         body.classList.add("modal-insertion");
         const id = "modal-window-insertion";
@@ -143,7 +143,7 @@ const Modals = new class {
         };
     
         body.innerHTML = `
-        <div class="modal-title">Insert here:</div>
+        <div class="modal-title">${(type === "insertion") ? "Insert here": "Mutate selection"}</div>
 
         <div class="modal-vgroup">
             <label>DNA sequence:</label>
@@ -159,9 +159,14 @@ const Modals = new class {
         </div>
         
 
-        <div class="modal-hgroup">
-            <label>Optimize codons for:</label>
-            <select id="insertion-select-organism">${getOrganismOptions()}</select>
+        <div class="modal-vgroup">
+            <div class="modal-hgroup">
+                <label>Optimize codons for:</label>
+                <select id="insertion-select-organism">${getOrganismOptions()}</select>
+            </div>
+            <div class="modal-hint">
+                Codon frequency tables from <a href="https://hive.biochemistry.gwu.edu/review/codon2" target="_blank">CoCoPUTs</a> (<a href="https://doi.org/10.1016/j.jmb.2019.04.021" target="_blank">Alexaki et al. 2019</a>).
+            </div>
         </div>
 
 
