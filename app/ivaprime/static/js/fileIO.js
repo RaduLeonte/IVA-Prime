@@ -1231,7 +1231,11 @@ const FileIO = new class {
             let lines = [];
             for (let i = 0; i < primerSets.length; i++) {
                 const set = primerSets[i];
-                lines.push(`${i+1}. ${set.title} (${set.symmetry}; HR: ${set.hrLength} nt, ${set.hrTm.toFixed(2)} C)`);
+                if (set.type === "Subcloning") {
+                    lines.push(`${i+1}. ${set.title} (${set.symmetry}; HR1: ${set.hrLength[0]} nt, ${set.hrTm[0].toFixed(2)} C; HR2: ${set.hrLength[1]} nt, ${set.hrTm[1].toFixed(2)} C)`);
+                } else {
+                    lines.push(`${i+1}. ${set.title} (${set.symmetry}; HR: ${set.hrLength} nt, ${set.hrTm.toFixed(2)} C)`);
+                };
                 
                 for (let j = 0; j < set.primers.length; j++) {
                     const primer = set.primers[j];
@@ -1242,7 +1246,7 @@ const FileIO = new class {
                     for (let k = 0; k < primer.regions.length; k++) {
                         const region = primer.regions[k];
                         primerSequence += region.sequence;
-                        if (region.type === "TBR") {
+                        if (["TBR", "subTBR"].includes(region.type)) {
                             tbrTm = Nucleotides.getMeltingTemperature(region.sequence);
                             tbrLength = region.sequence.length;
                         };
