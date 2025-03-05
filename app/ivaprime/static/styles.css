@@ -686,6 +686,10 @@ input[type="checkbox"] {
   font-size: 14px;
 }
 
+.modal-insertion {
+  min-width: 50vw;
+}
+
 
 .modal-new-file {
   min-width: 50vw;
@@ -703,6 +707,18 @@ input[type="checkbox"] {
 .modal-input-wrapper {
   display: flex;
   align-items: center;
+  background-color: var(--bg-color1);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+}
+
+.modal-input {
+  position: relative;
+  padding: 10px 20px 10px 20px;
+  color: var(--text-color);
+  background-color: transparent;
+  font-size: 14px;
+
   background-color: var(--bg-color1);
   border: 1px solid var(--border-color);
   border-radius: 5px;

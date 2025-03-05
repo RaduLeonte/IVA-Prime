@@ -580,6 +580,8 @@ class Plasmid {
         if (this.selectionIndices === null) {return};
         console.log(`Plasmid.IVAOperation -> this.selectionIndices=${this.selectionIndices}`);
 
+        if (targetOrganism !== UserPreferences.get("preferredOrganism")) UserPreferences.set("preferredOrganism", targetOrganism);
+
         let seqToInsert;
         let primerSet;
         if (operationType !== "Subcloning") {

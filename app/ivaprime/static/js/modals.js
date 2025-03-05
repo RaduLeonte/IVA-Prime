@@ -92,6 +92,7 @@ const Modals = new class {
         this.create(id, body, action);
     };
 
+
     createRenamePlasmidModal(targetPlasmid) {
         const body = document.createElement("div");
         const id = "modal-window-rename-plasmid";
@@ -117,6 +118,74 @@ const Modals = new class {
         const action = () => {
             const newName = document.getElementById("modal-window-rename-plasmid-input").value;
             targetPlasmid.rename(newName);
+        };
+    
+        this.create(id, body, action);
+    };
+
+
+    createInsertionModal() {
+        const body = document.createElement("div");
+        body.classList.add("modal-insertion");
+        const id = "modal-window-insertion";
+
+        function getOrganismOptions() {
+            let options = "";
+            const preferredOrganism = UserPreferences.get("preferredOrganism");
+            for (const key in Nucleotides.codonWeights) {
+                if (key === preferredOrganism) {
+                    options += `<option value="${key}" selected="selected">${key}</option>\n`;
+                } else {
+                    options += `<option value="${key}">${key}</option>\n`;
+                };
+            };
+            return options;
+        };
+    
+        body.innerHTML = `
+        <div class="modal-title">Insert here:</div>
+
+        <div class="modal-vgroup">
+            <label>DNA sequence:</label>
+            <input type="text" id="insertion-input-dna" class="modal-input" value="">
+        </div>
+
+        <div class="modal-vgroup">
+            <label>Amino acid sequence:</label>
+            <input type="text" id="insertion-input-aa" class="modal-input" value="">
+            <div class="modal-hint">
+                Accepted STOP letter codes: "*", "-", "X".
+            </div>
+        </div>
+        
+
+        <div class="modal-hgroup">
+            <label>Optimize codons for:</label>
+            <select id="insertion-select-organism">${getOrganismOptions()}</select>
+        </div>
+
+
+        <div class="modal-hgroup">
+            <label>Translate new feature:</label>
+            <input type="checkbox" id="insertion-checkbox-translate" checked="false">
+        </div>
+
+        
+        
+        <div class="modal-hgroup">
+            <span class="round-button modal-button-action" id="${id}-action-button">Create File</span>
+            <span class="round-button modal-button-cancel" onclick="removeModalWindow('${id}')">Cancel</span>
+        </div>
+        `;
+
+        const action = () => {
+            Session.activePlasmid().IVAOperation(
+                "Insertion",
+                document.getElementById("insertion-input-dna").value,
+                document.getElementById("insertion-input-aa").value,
+                document.getElementById("insertion-select-organism").value,
+                document.getElementById("insertion-checkbox-translate").checked,
+            );
         };
     
         this.create(id, body, action);

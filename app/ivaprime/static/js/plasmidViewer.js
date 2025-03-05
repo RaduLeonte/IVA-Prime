@@ -766,7 +766,7 @@ const PlasmidViewer = new class {
             this.unhighlightBases("base-hover");
         });
 
-        document.addEventListener("click", function (e) {
+        document.getElementById("content-wrapper").addEventListener("click", function (e) {
             if (document.getElementById("viewer").contains(e.target)) {
                 return;
             };
@@ -2039,7 +2039,7 @@ const PlasmidViewer = new class {
                 {
                     item: "Insert here",
                     conditions: {all: ["single"]},
-                    action: () => Alerts.warning("Insert here")
+                    action: () => Modals.createInsertionModal()
                 },
                 {
                     item: "Delete selection",
