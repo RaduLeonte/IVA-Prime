@@ -2152,6 +2152,21 @@ const PlasmidViewer = new class {
                     )
                 },
             ] },
+
+            { separator: "" },
+
+            { submenu: "Edit plasmid", items: [
+                {
+                    item: "Flip plasmid",
+                    conditions: {},
+                    action: () => Session.activePlasmid().flip()
+                },
+                {
+                    item: "Set new plasmid origin",
+                    conditions: {all: ["single"]},
+                    action: () => Session.activePlasmid().setOrigin(Session.activePlasmid().getSelectionIndices()[0])
+                },
+            ] },
         ];
 
 
