@@ -1232,9 +1232,9 @@ input, select, textarea {
 
 /* #region Alerts */
 .alerts-container-wrapper {
-  position: absolute;
-  bottom: 0;
-  right: 0;
+  position: fixed;
+  bottom: 37px;
+  right: 65px;
   width: 50%;
   height: 100%;
 
