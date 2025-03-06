@@ -599,9 +599,16 @@ const PlasmidViewer = new class {
          */
         const singleStrandHeight = 38;
         const baseTextOffset = 12;
-        const strandFeatureSpacing = 30;
+
+        const strandFeatureSpacing = 5;
+
+        const aaIndexHeight = 15;
+        const featureGroupGap = 1
+        const aaBlockHeight = 20;
         const featureAnnotationHeight = 25;
+
         const featureAnnotationsSpacing = 5;
+
         const gridMargin = 50; // margin on each side
         
 
@@ -646,26 +653,20 @@ const PlasmidViewer = new class {
                 }
             );
         };
-        console.log(`PlasmidViewer.drawGrid -> segments=${JSON.stringify(segments, null, 2)}`);
-        console.log(`PlasmidViewer.drawGrid -> features=${JSON.stringify(features, null, 2)}`);
+        //console.log(`PlasmidViewer.drawGrid -> segments=${JSON.stringify(segments, null, 2)}`);
+        //console.log(`PlasmidViewer.drawGrid -> features=${JSON.stringify(features, null, 2)}`);
 
         // Figure out which features are drawn on which segments
         for (const [featureID, featureDict] of Object.entries(features)) {
             const featureSpanStart = featureDict["span"][0];
             const featureSpanEnd = featureDict["span"][1];
             const featureDirectionality = featureDict["directionality"];
-            const segmentListIndexStart = Math.floor(featureSpanStart / basesPerLine);
+            const segmentListIndexStart = Math.floor((featureSpanStart-1) / basesPerLine);
             const segmentListIndexEnd = Math.floor(featureSpanEnd / basesPerLine);
-            console.log(
-                "PlasmidViewer.drawGrid",
-                featureID,
-                JSON.stringify(featureDict),
-                [featureSpanStart, featureSpanEnd],
-                [segmentListIndexStart, segmentListIndexEnd]
-            );
 
+            console.log(`PlasmidViewer.drawGrid -> figure out segments ${featureDict["label"]} ${featureDict["span"]}`, basesPerLine, segmentListIndexStart, segmentListIndexEnd)
             for (let i = segmentListIndexStart; i <= segmentListIndexEnd; i++) {
-                //console.log(`PlasmidViewer.drawGrid -> {}`)
+                console.log(`PlasmidViewer.drawGrid -> figure out segments ${featureDict["label"]} ${featureDict["span"]}`, i)
                 segments[i]["features"][featureID] = JSON.parse(JSON.stringify(featureDict));
 
                 const featureSegmentSpanStart = Math.max((segments[i]["segmentIndexStart"] + 1), featureSpanStart);
@@ -677,7 +678,7 @@ const PlasmidViewer = new class {
                 ]
 
                 const aaIndices = [];
-                const nrAA = Math.ceil((featureSpanEnd - featureSpanStart) / 3);
+                const nrAA = Math.ceil((featureSpanEnd - featureSpanStart + 1) / 3);
                 let aaIndex = (featureDirectionality === "fwd") ?  featureSpanStart: featureSpanEnd;
                 for (let j = 0; j < nrAA; j++) {
                     aaIndices.push([aaIndex, (featureDirectionality === "fwd")? aaIndex + 2: aaIndex - 2])
@@ -727,6 +728,8 @@ const PlasmidViewer = new class {
                     continue;
                 };
             };
+
+            console.log(`PlasmidViewer.drawGrid -> figure out segments`, JSON.stringify(segments, null, 2))
         };
 
         // Main wrapper
@@ -889,9 +892,12 @@ const PlasmidViewer = new class {
                         const targetShape = shapesAtPoint[0].parentElement;
                         const featureID = targetShape.getAttribute("feature-id");
                         const aaIndex = targetShape.getAttribute("aa-index");
+                        const aa = targetShape.getAttribute("aa");
                         this.addAABlocksHover(featureID, aaIndex);
 
-                        this.hideSequenceTooltip();
+                        // Show tooltip
+                        this.showSequenceTooltip(e.pageX, e.pageY);
+                        this.setSequenceTooltip(`${aa}${parseInt(aaIndex)+1}`);
                     };
                 };
 
@@ -995,19 +1001,6 @@ const PlasmidViewer = new class {
             basesPositions.push(basesWidth/2 + i*basesWidth + gridMargin)
         };
 
-        const featuresLevelStart = singleStrandHeight*2 + strandFeatureSpacing;
-        let maxFeatureLevel = 0;
-        for (const [uuid, featureDict] of Object.entries(features)) {
-            if (featureDict["level"] > maxFeatureLevel) {
-                maxFeatureLevel = featureDict["level"]
-            };
-        };
-        console.log(`PlasmidViewer.drawGrid -> maxFeatureLevel=${maxFeatureLevel}`);
-        let featuresLevels = [];
-        for (let i = 0; i <= maxFeatureLevel; i++) {
-            featuresLevels.push(featuresLevelStart + i*(featureAnnotationHeight + featureAnnotationsSpacing))
-        };
-
         /**
          * Iterate over segments and draw
          */
@@ -1029,19 +1022,19 @@ const PlasmidViewer = new class {
             // Calculate the maximum amount of feature stacking in this segment to
             // set an appropriate height
             // #region Feature_stacking
-            let maxFeatureLevelInSegment = 0;
-            if (Object.keys(segment["features"]).length !== 0) {
-                for (const [uuid, featureDict] of Object.entries(segment["features"])) {
-                    if (featureDict["level"] > maxFeatureLevelInSegment) {
-                        maxFeatureLevelInSegment = featureDict["level"]
-                    };
-                };
-                maxFeatureLevelInSegment++;
-            };
-            maxFeatureLevelInSegment = Math.max(maxFeatureLevelInSegment, 1);
-            console.log(`PlasmidViewer.drawGrid -> segment maxFeatureLevelInSegment=${maxFeatureLevelInSegment}`);
-            const svgHeight = singleStrandHeight*2 + strandFeatureSpacing + (featureAnnotationHeight + featureAnnotationsSpacing)*maxFeatureLevelInSegment;
-            svgCanvas.setAttribute("height", svgHeight);
+            //let maxFeatureLevelInSegment = 0;
+            //if (Object.keys(segment["features"]).length !== 0) {
+            //    for (const [uuid, featureDict] of Object.entries(segment["features"])) {
+            //        if (featureDict["level"] > maxFeatureLevelInSegment) {
+            //            maxFeatureLevelInSegment = featureDict["level"]
+            //        };
+            //    };
+            //    maxFeatureLevelInSegment++;
+            //};
+            //maxFeatureLevelInSegment = Math.max(maxFeatureLevelInSegment, 1);
+            //console.log(`PlasmidViewer.drawGrid -> segment maxFeatureLevelInSegment=${maxFeatureLevelInSegment}`);
+            //const svgHeight = singleStrandHeight*2 + strandFeatureSpacing + (featureAnnotationHeight + featureAnnotationsSpacing)*maxFeatureLevelInSegment;
+            //svgCanvas.setAttribute("height", svgHeight);
             //#endregion Feature_stacking
 
 
@@ -1231,133 +1224,191 @@ const PlasmidViewer = new class {
             segmentFeatures.setAttribute("id", "svg-features");
             groupMain.appendChild(segmentFeatures);
 
-            for (const [featureID, featureDict] of Object.entries(segment["features"])) {
-                console.log(
-                    "PlasmidViewer.drawGrid -> segment features",
-                    featureDict["label"],
-                    featureDict["span"],
-                    featureDict["directionality"],
-                    featureDict
-                );
+            let levels = {};
+            for (let key in segment["features"]) {
+                let level = segment["features"][key]["level"];
+                
+                if (!levels[level]) {
+                    levels[level] = [];
+                };
+                levels[level].push(key);
+            };
+            levels = Object.values(levels)
+        
+            console.log("PlasmidViewer.dragGrid -> features", JSON.stringify(levels, null, 2));
+            const featuresLevelStart = singleStrandHeight*2 + strandFeatureSpacing;
+            let featureGroupTopY = featuresLevelStart;
+            let aaIndexY;
+            let aaBlockY;
+            let annotationY;
+            let svgHeight;
+            // Iterate over levels
+            for (let i = 0; i < levels.length; i++) {
+                if (i !== 0) {
+                    featureGroupTopY = annotationY + featureAnnotationHeight/2 + featureAnnotationsSpacing;
+                };
 
-
-
-                let featureLengthPixels = seqToPixel(featureDict["span"][1]) - seqToPixel(featureDict["span"][0]-1);
-                featureLengthPixels -= (featureDict["shape-left"] !== null) ? 10: 0;
-                featureLengthPixels -= (featureDict["shape-right"] !== null) ? 10: 0;
-                const featureLabel = this.fitTextInRectangle(
-                    featureDict["label"],
-                    featureLengthPixels,
-                    "svg-feature-label-black",
-                );
-                segmentFeatures.appendChild(this.gridFeature(
-                    featureID,
-                    [
-                        seqToPixel(featureDict["span"][0]-1),
-                        seqToPixel(featureDict["span"][1])
-                    ],
-                    featuresLevels[featureDict["level"]],
-                    featureAnnotationHeight,
-                    featureDict["shape-left"],
-                    featureDict["shape-right"],
-                    featureLabel,
-                    featureDict["color"],
-                    null,
-                    "svg-feature-arrow"
-                ));
-
-
-                // #region Translation
-                if (featureDict["translation"]) {
-                    const featureSpan = features[featureID]["span"]
-                    const featureSegmentSpan = [
-                        featureDict["span"][0] + segmentIndexStart,
-                        featureDict["span"][1] + segmentIndexStart,
-                    ];
-                    console.log(
-                        `PlasmidViewer.drawGrid -> translation ${featureDict["label"]}: ${featureDict["translation"]} ${featureSegmentSpan} ${featureSpan}`
-                    );
-
-                    
-                    const translation = this.createShapeElement("g");
-                    translation.setAttribute("id", "svg-feature-translation");
-                    segmentFeatures.appendChild(translation);
-
-                    const direction = features[featureID]["directionality"];
-                    const aaIndices = featureDict["aaIndices"]
-                    console.log(
-                        `PlasmidViewer.drawGrid -> translation codon ${featureDict["label"]}`,
-                        direction,
-                        aaIndices,
-                    );
-                    let codonStart = (direction === "fwd") ? featureSegmentSpan[0]: featureSegmentSpan[1];
-                    
-                    let aaRangeIndex = aaIndices.findIndex(([a, b]) => codonStart >= Math.min(a, b) && codonStart <= Math.max(a, b));
-                    
-                    while (aaIndices[aaRangeIndex]) {
-                        const aaRangeFull = aaIndices[aaRangeIndex];
-
-                        if (direction === "fwd" && aaRangeFull[0] > segmentIndexEnd) break;
-                        if (direction === "rev" && aaRangeFull[0] < segmentIndexStart) break;
-
-                        const codon = (direction === "fwd") 
-                        ? sequence.slice(Math.min(...aaRangeFull) - 1, Math.max(...aaRangeFull))
-                        : complementarySequence.slice(Math.min(...aaRangeFull) - 1, Math.max(...aaRangeFull)).split("").reverse().join("");
-                        
-                        const aa = Nucleotides.translate(codon);
-
-                        const aaShapeRange = (direction === "fwd")
-                        ? [Math.max(aaRangeFull[0], segmentIndexStart + 1), Math.min(aaRangeFull[1], segmentIndexEnd)]
-                        : [Math.min(aaRangeFull[0], segmentIndexEnd), Math.max(aaRangeFull[1], segmentIndexStart+1)];
-
-
-                        const aaBlockXStart = seqToPixel(Math.min(...aaShapeRange) - segmentIndexStart) - baseWidth;
-                        const aaBlockWidthBases = Math.abs(aaShapeRange[0] - aaShapeRange[1]) + 1
-                        const aaBlockWidthPx = aaBlockWidthBases*baseWidth;
-                        let aaTextPos = (aaBlockWidthBases >= 2)
-                        ? (direction === "fwd")
-                            ? aaRangeFull[0] + (aaRangeFull[1] - aaRangeFull[0])/2
-                            : aaRangeFull[0] - (aaRangeFull[0] - aaRangeFull[1])/2
-                        : null;
-                        let aaTextPosPx = seqToPixel(aaTextPos - segmentIndexStart) - baseWidth/2;
-                        
-                        if (aaBlockWidthBases === 2) {
-                            const closerEdge = Math.abs(aaShapeRange[0] - aaRangeFull[0]) < Math.abs(aaShapeRange[1] - aaRangeFull[1]) ? "back" : "front";
-                            if (closerEdge === "front") {
-                                aaTextPos = aaShapeRange[0] + ((direction === "fwd") ? 0.2: -0.2);
-                            } else {
-                                aaTextPos = aaShapeRange[0] + ((direction === "fwd") ? 1: -1);
-                            };
-                            
-                            aaTextPosPx = seqToPixel(aaTextPos - segmentIndexStart) - baseWidth/2;
-                        } else if (aaBlockWidthBases === 3) {
-                            aaTextPos = aaRangeFull[0] + ((direction === "fwd") ? 1: -1);
-                            aaTextPosPx = seqToPixel(aaTextPos - segmentIndexStart) - baseWidth/2;
-                        } else {
-                            aaTextPosPx = null;
-                        };
-
-
-                        const aaBlockHeight = 20;
-                        const aaBlock = this.aaBlock(
-                            aaBlockXStart,
-                            featuresLevels[featureDict["level"]] - featureAnnotationHeight/2 - aaBlockHeight - 2,
-                            aaBlockWidthPx,
-                            aaBlockHeight,
-                            direction,
-                            aaTextPosPx,
-                            aa,
-                        );
-                        aaBlock.setAttribute("feature-id", featureID);
-                        aaBlock.setAttribute("aa-index", aaRangeIndex);
-                        aaBlock.setAttribute("aa-span", aaRangeFull);
-                        translation.appendChild(aaBlock);
-
-                        aaRangeIndex++;
+                const featuresInLevel = levels[i];
+                let translatedFeatureInLevel = false;
+                for (let j = 0; j < featuresInLevel.length; j++) {
+                    const currFeatureID = featuresInLevel[j];
+                    const featureDict = segment["features"][currFeatureID];
+                    if (featureDict["translation"]) {
+                        translatedFeatureInLevel = true
                     };
                 };
-                // #endregion Translation
+
+                // Iterate over features in level
+                if (translatedFeatureInLevel) {
+                    aaIndexY = featureGroupTopY;
+                    aaBlockY = aaIndexY + aaIndexHeight + featureGroupGap;
+                    annotationY = aaBlockY + aaBlockHeight + featureGroupGap + featureAnnotationHeight/2;
+                } else {
+                    annotationY = featureGroupTopY + featureAnnotationHeight/2;
+                };
+
+                svgHeight = Math.max(
+                    annotationY + featureAnnotationHeight/2 + featureAnnotationsSpacing + 5,
+                    140,
+                );
+
+                for (let j = 0; j < featuresInLevel.length; j++) {
+                    const currFeatureID = featuresInLevel[j];
+                    const featureDict = segment["features"][currFeatureID];
+                    console.log(
+                        "PlasmidViewer.drawGrid -> segment features",
+                        featureDict["label"],
+                        featureDict["span"],
+                        featureDict["directionality"],
+                        featureDict
+                    );
+    
+    
+                    let featureLengthPixels = seqToPixel(featureDict["span"][1]) - seqToPixel(featureDict["span"][0]-1);
+                    featureLengthPixels -= (featureDict["shape-left"] !== null) ? 10: 0;
+                    featureLengthPixels -= (featureDict["shape-right"] !== null) ? 10: 0;
+                    const featureLabel = this.fitTextInRectangle(
+                        featureDict["label"],
+                        featureLengthPixels,
+                        "svg-feature-label-black",
+                    );
+
+                    segmentFeatures.appendChild(this.gridFeature(
+                        currFeatureID,
+                        [
+                            seqToPixel(featureDict["span"][0]-1),
+                            seqToPixel(featureDict["span"][1])
+                        ],
+                        annotationY,
+                        featureAnnotationHeight,
+                        featureDict["shape-left"],
+                        featureDict["shape-right"],
+                        featureLabel,
+                        featureDict["color"],
+                        null,
+                        "svg-feature-arrow"
+                    ));
+    
+    
+                    // #region Translation
+                    if (featureDict["translation"]) {
+                        translatedFeatureInLevel = true;
+
+                        const featureSpan = features[currFeatureID]["span"]
+                        const featureSegmentSpan = [
+                            featureDict["span"][0] + segmentIndexStart,
+                            featureDict["span"][1] + segmentIndexStart,
+                        ];
+                        console.log(
+                            `PlasmidViewer.drawGrid -> translation ${featureDict["label"]}: ${featureDict["translation"]} ${featureSegmentSpan} ${featureSpan}`
+                        );
+    
+                        
+                        const translation = this.createShapeElement("g");
+                        translation.setAttribute("id", "svg-feature-translation");
+                        segmentFeatures.appendChild(translation);
+    
+                        const direction = features[currFeatureID]["directionality"];
+                        const aaIndices = featureDict["aaIndices"]
+                        console.log(
+                            `PlasmidViewer.drawGrid -> translation codon ${featureDict["label"]}`,
+                            direction,
+                            aaIndices,
+                        );
+                        let codonStart = (direction === "fwd") ? featureSegmentSpan[0]: featureSegmentSpan[1];
+                        
+                        let aaRangeIndex = aaIndices.findIndex(([a, b]) => codonStart >= Math.min(a, b) && codonStart <= Math.max(a, b));
+                        
+                        while (aaIndices[aaRangeIndex]) {
+                            const aaRangeFull = aaIndices[aaRangeIndex];
+    
+                            if (direction === "fwd" && aaRangeFull[0] > segmentIndexEnd) break;
+                            if (direction === "rev" && aaRangeFull[0] < segmentIndexStart) break;
+    
+                            const codon = (direction === "fwd") 
+                            ? sequence.slice(Math.min(...aaRangeFull) - 1, Math.max(...aaRangeFull))
+                            : complementarySequence.slice(Math.min(...aaRangeFull) - 1, Math.max(...aaRangeFull)).split("").reverse().join("");
+                            
+                            const aa = Nucleotides.translate(codon);
+    
+                            const aaShapeRange = (direction === "fwd")
+                            ? [Math.max(aaRangeFull[0], segmentIndexStart + 1), Math.min(aaRangeFull[1], segmentIndexEnd)]
+                            : [Math.min(aaRangeFull[0], segmentIndexEnd), Math.max(aaRangeFull[1], segmentIndexStart+1)];
+    
+    
+                            const aaBlockXStart = seqToPixel(Math.min(...aaShapeRange) - segmentIndexStart) - baseWidth;
+                            const aaBlockWidthBases = Math.abs(aaShapeRange[0] - aaShapeRange[1]) + 1
+                            const aaBlockWidthPx = aaBlockWidthBases*baseWidth;
+                            let aaTextPos = (aaBlockWidthBases >= 2)
+                            ? (direction === "fwd")
+                                ? aaRangeFull[0] + (aaRangeFull[1] - aaRangeFull[0])/2
+                                : aaRangeFull[0] - (aaRangeFull[0] - aaRangeFull[1])/2
+                            : null;
+                            let aaTextPosPx = seqToPixel(aaTextPos - segmentIndexStart) - baseWidth/2;
+                            
+                            if (aaBlockWidthBases === 2) {
+                                const closerEdge = Math.abs(aaShapeRange[0] - aaRangeFull[0]) < Math.abs(aaShapeRange[1] - aaRangeFull[1]) ? "back" : "front";
+                                if (closerEdge === "front") {
+                                    aaTextPos = aaShapeRange[0] + ((direction === "fwd") ? 0.2: -0.2);
+                                } else {
+                                    aaTextPos = aaShapeRange[0] + ((direction === "fwd") ? 1: -1);
+                                };
+                                
+                                aaTextPosPx = seqToPixel(aaTextPos - segmentIndexStart) - baseWidth/2;
+                            } else if (aaBlockWidthBases === 3) {
+                                aaTextPos = aaRangeFull[0] + ((direction === "fwd") ? 1: -1);
+                                aaTextPosPx = seqToPixel(aaTextPos - segmentIndexStart) - baseWidth/2;
+                            } else {
+                                aaTextPosPx = null;
+                            };
+
+                            const aaIndex = ((aaRangeIndex + 1) % 5 === 0 || aaRangeIndex === 0) ? aaRangeIndex + 1: null;
+    
+                            const aaBlock = this.aaBlock(
+                                aaBlockXStart,
+                                aaBlockY,
+                                aaBlockWidthPx,
+                                aaBlockHeight,
+                                direction,
+                                aaTextPosPx,
+                                aa,
+                                aaIndexY,
+                                aaIndexHeight,
+                                aaIndex,
+                            );
+                            aaBlock.setAttribute("feature-id", currFeatureID);
+                            aaBlock.setAttribute("aa-index", aaRangeIndex);
+                            aaBlock.setAttribute("aa-span", aaRangeFull);
+                            aaBlock.setAttribute("aa", aa);
+                            translation.appendChild(aaBlock);
+    
+                            aaRangeIndex++;
+                        };
+                    };
+                    // #endregion Translation
+                };
             };
+            svgCanvas.setAttribute("height", svgHeight);
             //#endregion Features
             // #endregion Main_group
 
@@ -1514,12 +1565,41 @@ const PlasmidViewer = new class {
     };
     
     
-    aaBlock(x, y, width, height, direction, textPosX, aa) {
+    aaBlock(x, y, width, height, direction, textPosX, aa, aaIndexY, aaIndexHeight, aaIndex) {
         const headWidth = 3;
 
         const aaBlockGroup = this.createShapeElement("g");
         aaBlockGroup.setAttribute("id", "aa-block-group");
 
+        /**
+         * Block index
+         */
+        if (aaIndex && textPosX) {
+            aaBlockGroup.appendChild(this.text(
+                [textPosX, aaIndexY + aaIndexHeight/2],
+                aaIndex,
+                null,
+                `aa-index`,
+                "middle",
+                "0.4em"
+            ));
+
+            //const testRect = this.createShapeElement("rect");
+            //testRect.setAttribute("x", textPosX - width/2);
+            //testRect.setAttribute("y", aaIndexY);
+            //testRect.setAttribute("width", width);
+            //testRect.setAttribute("height", aaIndexHeight);
+            //testRect.setAttribute("fill", "transparent");
+            //testRect.setAttribute("stroke", "black");
+            //testRect.setAttribute("stroke-width", 1);
+            //
+            //aaBlockGroup.appendChild(testRect);
+        };
+
+
+        /**
+         * Block
+         */
         let points;
         if (aa !== "*") {
             points = (direction === "fwd") 
@@ -1567,13 +1647,18 @@ const PlasmidViewer = new class {
         aaBlock.classList.add(resClass);
         aaBlockGroup.appendChild(aaBlock);
         
-        let tempElement = document.createElement("div");
-        tempElement.className = resClass;
-        document.body.appendChild(tempElement);
-        let color = window.getComputedStyle(tempElement).getPropertyValue("fill");
-        document.body.removeChild(tempElement);
-
+        /**
+         * Block text
+         */
         if (textPosX) {
+            // Get block color from css stylesheet to 
+            // figure out text color
+            let tempElement = document.createElement("div");
+            tempElement.className = resClass;
+            document.body.appendChild(tempElement);
+            let color = window.getComputedStyle(tempElement).getPropertyValue("fill");
+            document.body.removeChild(tempElement);
+
             const aaText = this.text(
                 [textPosX, y + height/2],
                 aa,
@@ -1585,7 +1670,6 @@ const PlasmidViewer = new class {
             aaText.classList.add(`aa-text-${Utilities.getTextColorBasedOnBg(color)}`)
             aaBlockGroup.appendChild(aaText);
         };
-
         return aaBlockGroup;
     };
     
