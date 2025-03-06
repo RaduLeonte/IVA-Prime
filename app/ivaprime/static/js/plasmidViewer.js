@@ -585,7 +585,7 @@ const PlasmidViewer = new class {
     // #endregion Linear_view
 
 
-    // #region Grid
+    // #region Grid_view
     /**
      * 
      * @param {*} sequence 
@@ -593,7 +593,6 @@ const PlasmidViewer = new class {
      * @param {*} features 
      * @param {*} topology 
      */
-    //#region Grid view
     drawGrid(plasmidName, sequence, complementarySequence, features, topology) {
         /**
          * Settings
@@ -1258,6 +1257,7 @@ const PlasmidViewer = new class {
                 ));
 
 
+                // #region Translation
                 if (featureDict["translation"]) {
                     const featureSpan = features[featureID]["span"]
                     const featureSegmentSpan = [
@@ -1304,13 +1304,30 @@ const PlasmidViewer = new class {
                         const aaBlockXStart = seqToPixel(Math.min(...aaShapeRange) - segmentIndexStart) - baseWidth;
                         const aaBlockWidthBases = Math.abs(aaShapeRange[0] - aaShapeRange[1]) + 1
                         const aaBlockWidthPx = aaBlockWidthBases*baseWidth;
-                        const aaTextPos = (aaBlockWidthBases >= 2)
+                        let aaTextPos = (aaBlockWidthBases >= 2)
                         ? (direction === "fwd")
-                            ? aaRangeFull[0] + 1
-                            : aaRangeFull[0] - 1
+                            ? aaRangeFull[0] + (aaRangeFull[1] - aaRangeFull[0])/2
+                            : aaRangeFull[0] - (aaRangeFull[0] - aaRangeFull[1])/2
                         : null;
-                        const aaTextPosPx = seqToPixel(aaTextPos - segmentIndexStart) - baseWidth/2
+                        let aaTextPosPx = seqToPixel(aaTextPos - segmentIndexStart) - baseWidth/2;
                         
+                        if (aaBlockWidthBases === 2) {
+                            const closerEdge = Math.abs(aaShapeRange[0] - aaRangeFull[0]) < Math.abs(aaShapeRange[1] - aaRangeFull[1]) ? "back" : "front";
+                            if (closerEdge === "front") {
+                                aaTextPos = aaShapeRange[0] + ((direction === "fwd") ? 0.2: -0.2);
+                            } else {
+                                aaTextPos = aaShapeRange[0] + ((direction === "fwd") ? 1: -1);
+                            };
+                            
+                            aaTextPosPx = seqToPixel(aaTextPos - segmentIndexStart) - baseWidth/2;
+                        } else if (aaBlockWidthBases === 3) {
+                            aaTextPos = aaRangeFull[0] + ((direction === "fwd") ? 1: -1);
+                            aaTextPosPx = seqToPixel(aaTextPos - segmentIndexStart) - baseWidth/2;
+                        } else {
+                            aaTextPosPx = null;
+                        };
+
+
                         const aaBlockHeight = 20;
                         translation.appendChild(
                             this.aaBlock(
@@ -1327,6 +1344,7 @@ const PlasmidViewer = new class {
                         aaRangeIndex++;
                     };
                 };
+                // #endregion Translation
             };
             //#endregion Features
             // #endregion Main_group
@@ -1349,7 +1367,7 @@ const PlasmidViewer = new class {
     };
 
 
-        /**
+    /**
      * 
      * @param {*} featureId 
      * @param {*} span 
@@ -1361,232 +1379,239 @@ const PlasmidViewer = new class {
      * @param {*} cssClass 
      * @returns 
      */
-        gridFeature(featureId, span, levelHeight, featureHeight, featureShapeLeft, featureShapeRight, label, color, elementId, cssClass) {
-            console.log("PlasmidViewer.gridFeature ->", label, featureShapeLeft, featureShapeRight)
+    gridFeature(featureId, span, levelHeight, featureHeight, featureShapeLeft, featureShapeRight, label, color, elementId, cssClass) {
+        console.log("PlasmidViewer.gridFeature ->", label, featureShapeLeft, featureShapeRight)
+        
+        const featureArrowWidth = featureHeight; //px
+        const featureHeadMinWidth = 10; //px
+        const featureBodyHeadRatio = 0.9;
+
+        const textHeight = 21; // px approx
+        
+        
+        const featureGroup = this.createShapeElement("g");
+        featureGroup.setAttribute("feature-id", featureId)
+        
+        /**
+         * Arrow
+         */
+        const featureArrowGroup = this.createShapeElement("g");
+        const featureArrow = this.createShapeElement("polygon");
+        featureArrowGroup.setAttribute("id", "arrow")
+
+        const featureHeadWidth = Math.min(featureHeadMinWidth, (span[1] - span[0])*featureBodyHeadRatio)
+        const featureY = levelHeight - featureArrowWidth/2;
+
+        // Shapes are drawn clockwise
+        const shapesLeft = {
+            // Blunt end
+            null: [
+                [span[0], featureY + featureArrowWidth],
+                [span[0], featureY]
+            ],
+            // Arrow
+            "arrow": [
+                [span[0] + featureHeadWidth, featureY + featureArrowWidth],
+                [span[0], featureY + featureArrowWidth/2],
+                [span[0] + featureHeadWidth, featureY]
+            ],
+            // Break
+            "break": [
+                [span[0] + featureHeadWidth, featureY + featureArrowWidth],
+                [span[0], featureY]
+            ]
+        };
+        const shapesRight = {
+            // Blunt end
+            null: [
+                [span[1], featureY],
+                [span[1], featureY + featureArrowWidth]
+            ],
+            // Arrow
+            "arrow": [
+                [span[1] - featureHeadWidth, featureY],
+                [span[1], featureY + featureArrowWidth/2],
+                [span[1] - featureHeadWidth, featureY + featureArrowWidth]
+            ],
+            // Break
+            "break": [
+                [span[1] - featureHeadWidth, featureY],
+                [span[1], featureY + featureArrowWidth]
+            ]
+        };
+
+        const pointsLeft = shapesLeft[featureShapeLeft];
+        const pointsRight = shapesRight[featureShapeRight];
+        const points = pointsLeft.concat(pointsRight);
+        featureArrow.setAttribute("points", points);
+
+        featureArrow.setAttribute("fill", color);
+
+        if (elementId) {featureArrowGroup.setAttribute("id", elementId)};
+        if (cssClass) {featureArrowGroup.setAttribute("class", cssClass)};
+        
+        
+        if (featureShapeLeft == "break") {
+            const breakDecorationLeft = this.createShapeElement("polygon");
+            breakDecorationLeft.setAttribute("points", [
+                [span[0], featureY + featureArrowWidth],
+                [span[0] + featureHeadWidth, featureY],
+                [span[0] + featureHeadWidth, featureY + featureArrowWidth]
+            ]);
+            breakDecorationLeft.setAttribute("fill", color);
+            breakDecorationLeft.classList.add("svg-feature-arrow-decoration");
             
-            const featureArrowWidth = featureHeight; //px
-            const featureHeadMinWidth = 10; //px
-            const featureBodyHeadRatio = 0.9;
-    
-            const textHeight = 21; // px approx
+            featureArrowGroup.appendChild(breakDecorationLeft);
+        }
+
+        if (featureShapeRight == "break") {
+            const breakDecorationRight = this.createShapeElement("polygon");
+            breakDecorationRight.setAttribute("points", [
+                [span[1] - featureHeadWidth, featureY],
+                [span[1], featureY],
+                [span[1] - featureHeadWidth, featureY + featureArrowWidth]
+            ]);
+            breakDecorationRight.setAttribute("fill", color);
+            breakDecorationRight.classList.add("svg-feature-arrow-decoration");
             
-            
-            const featureGroup = this.createShapeElement("g");
-            featureGroup.setAttribute("feature-id", featureId)
-            
-            /**
-             * Arrow
-             */
-            const featureArrowGroup = this.createShapeElement("g");
-            const featureArrow = this.createShapeElement("polygon");
-            featureArrowGroup.setAttribute("id", "arrow")
-    
-            const featureHeadWidth = Math.min(featureHeadMinWidth, (span[1] - span[0])*featureBodyHeadRatio)
-            const featureY = levelHeight - featureArrowWidth/2;
-    
-            // Shapes are drawn clockwise
-            const shapesLeft = {
-                // Blunt end
-                null: [
-                    [span[0], featureY + featureArrowWidth],
-                    [span[0], featureY]
-                ],
-                // Arrow
-                "arrow": [
-                    [span[0] + featureHeadWidth, featureY + featureArrowWidth],
-                    [span[0], featureY + featureArrowWidth/2],
-                    [span[0] + featureHeadWidth, featureY]
-                ],
-                // Break
-                "break": [
-                    [span[0] + featureHeadWidth, featureY + featureArrowWidth],
-                    [span[0], featureY]
-                ]
-            };
-            const shapesRight = {
-                // Blunt end
-                null: [
-                    [span[1], featureY],
-                    [span[1], featureY + featureArrowWidth]
-                ],
-                // Arrow
-                "arrow": [
-                    [span[1] - featureHeadWidth, featureY],
-                    [span[1], featureY + featureArrowWidth/2],
-                    [span[1] - featureHeadWidth, featureY + featureArrowWidth]
-                ],
-                // Break
-                "break": [
-                    [span[1] - featureHeadWidth, featureY],
-                    [span[1], featureY + featureArrowWidth]
-                ]
-            };
-    
-            const pointsLeft = shapesLeft[featureShapeLeft];
-            const pointsRight = shapesRight[featureShapeRight];
-            const points = pointsLeft.concat(pointsRight);
-            featureArrow.setAttribute("points", points);
-    
-            featureArrow.setAttribute("fill", color);
-    
-            if (elementId) {featureArrowGroup.setAttribute("id", elementId)};
-            if (cssClass) {featureArrowGroup.setAttribute("class", cssClass)};
-            
-            
-            if (featureShapeLeft == "break") {
-                const breakDecorationLeft = this.createShapeElement("polygon");
-                breakDecorationLeft.setAttribute("points", [
-                    [span[0], featureY + featureArrowWidth],
-                    [span[0] + featureHeadWidth, featureY],
-                    [span[0] + featureHeadWidth, featureY + featureArrowWidth]
-                ]);
-                breakDecorationLeft.setAttribute("fill", color);
-                breakDecorationLeft.classList.add("svg-feature-arrow-decoration");
-                
-                featureArrowGroup.appendChild(breakDecorationLeft);
-            }
-    
-            if (featureShapeRight == "break") {
-                const breakDecorationRight = this.createShapeElement("polygon");
-                breakDecorationRight.setAttribute("points", [
-                    [span[1] - featureHeadWidth, featureY],
-                    [span[1], featureY],
-                    [span[1] - featureHeadWidth, featureY + featureArrowWidth]
-                ]);
-                breakDecorationRight.setAttribute("fill", color);
-                breakDecorationRight.classList.add("svg-feature-arrow-decoration");
-                
-                featureArrowGroup.appendChild(breakDecorationRight);
-            }
+            featureArrowGroup.appendChild(breakDecorationRight);
+        }
+
+
+        featureArrowGroup.appendChild(featureArrow);
+        
+        featureGroup.appendChild(featureArrowGroup);
+
+        /**
+         * Text
+         */
+        const textBoxStart = (featureShapeLeft == null) ? span[0]: span[0] + featureHeadWidth;
+        const textBoxEnd = (featureShapeRight == null) ? span[1]: span[1] - featureHeadWidth;
+        featureGroup.appendChild(this.text(
+            [textBoxStart + (textBoxEnd - textBoxStart)/2, featureY+(featureArrowWidth/2)],
+            label,
+            null,
+            `svg-feature-label-${Utilities.getTextColorBasedOnBg(color)}`,
+            "middle",
+            "0.4em"
+        ));
+
+        return featureGroup;
+    };
     
     
-            featureArrowGroup.appendChild(featureArrow);
-            
-            featureGroup.appendChild(featureArrowGroup);
-    
-            /**
-             * Text
-             */
-            const textBoxStart = (featureShapeLeft == null) ? span[0]: span[0] + featureHeadWidth;
-            const textBoxEnd = (featureShapeRight == null) ? span[1]: span[1] - featureHeadWidth;
-            featureGroup.appendChild(this.text(
-                [textBoxStart + (textBoxEnd - textBoxStart)/2, featureY+(featureArrowWidth/2)],
-                label,
+    aaBlock(x, y, width, height, direction, textPosX, aa) {
+        const headWidth = 3;
+
+        const aaBlockGroup = this.createShapeElement("g")
+
+        let points;
+        if (aa !== "*") {
+            points = (direction === "fwd") 
+            ? [
+                [x + headWidth, y + height/2],
+                [x, y],
+                [x + width, y],
+                [x + width + headWidth, y + height/2],
+                [x + width, y + height],
+                [x, y + height]
+            ]
+            : [
+                [x - headWidth, y + height/2],
+                [x , y],
+                [x + width, y],
+                [x + width - headWidth, y + height/2],
+                [x + width, y + height],
+                [x , y + height]
+            ];
+        } else {
+            points = (direction === "fwd") 
+            ? [
+                [x + headWidth, y + height/2],
+                [x, y],
+                [x + width, y],
+                [x + width, y + height/2],
+                [x + width, y + height],
+                [x, y + height]
+            ]
+            : [
+                [x, y + height/2],
+                [x , y],
+                [x + width, y],
+                [x + width - headWidth, y + height/2],
+                [x + width, y + height],
+                [x , y + height]
+            ];
+        };
+
+        const aaBlock = this.createShapeElement("polygon");
+        aaBlock.setAttribute("points", points);
+        aaBlock.classList.add("aa-block");
+        const resClass = `aa-block-${aa}`.replace("*", "stop")
+        aaBlock.classList.add(resClass);
+        aaBlockGroup.appendChild(aaBlock);
+        
+        let tempElement = document.createElement("div");
+        tempElement.className = resClass;
+        document.body.appendChild(tempElement);
+        let color = window.getComputedStyle(tempElement).getPropertyValue("fill");
+        document.body.removeChild(tempElement);
+
+        if (textPosX) {
+            const aaText = this.text(
+                [textPosX, y + height/2],
+                aa,
                 null,
-                `svg-feature-label-${Utilities.getTextColorBasedOnBg(color)}`,
+                `aa-text`,
                 "middle",
                 "0.4em"
-            ));
+            );
+            aaText.classList.add(`aa-text-${Utilities.getTextColorBasedOnBg(color)}`)
+            aaBlockGroup.appendChild(aaText);
+        };
+
+        return aaBlockGroup;
+    };
     
-            return featureGroup;
+    
+    /**
+     * 
+     * @param {*} maxValue 
+     * @returns 
+     */
+    generateTicks(maxValue) {
+        // 150, 850 -> 100
+        const magnitude = Math.pow(10, Math.floor(Math.log10(maxValue)));
+        
+        // check if input 850 is closer to 100 or 1'000
+        let interval;
+        if (Math.abs(maxValue - magnitude) < Math.abs(maxValue - magnitude*10)) {
+            // magnitude closer to 100 -> interval = 10
+            interval = magnitude/10;
+        } else {
+            // magnitude closer to 1000 -> interval = 100
+            interval = magnitude;
         };
     
-    
-        aaBlock(x, y, width, height, direction, textPosX, aa) {
-            const headWidth = 5;
-    
-            const aaBlockGroup = this.createShapeElement("g")
-    
-            let points;
-            if (aa !== "*") {
-                points = (direction === "fwd") 
-                ? [
-                    [x + headWidth, y + height/2],
-                    [x, y],
-                    [x + width, y],
-                    [x + width + headWidth, y + height/2],
-                    [x + width, y + height],
-                    [x, y + height]
-                ]
-                : [
-                    [x - headWidth, y + height/2],
-                    [x , y],
-                    [x + width, y],
-                    [x + width - headWidth, y + height/2],
-                    [x + width, y + height],
-                    [x , y + height]
-                ];
-            } else {
-                points = (direction === "fwd") 
-                ? [
-                    [x + headWidth, y + height/2],
-                    [x, y],
-                    [x + width, y],
-                    [x + width, y + height/2],
-                    [x + width, y + height],
-                    [x, y + height]
-                ]
-                : [
-                    [x, y + height/2],
-                    [x , y],
-                    [x + width, y],
-                    [x + width - headWidth, y + height/2],
-                    [x + width, y + height],
-                    [x , y + height]
-                ];
-            };
-    
-            const aaBlock = this.createShapeElement("polygon");
-            aaBlock.setAttribute("points", points);
-            aaBlock.classList.add("aa-block");
-            aaBlock.classList.add(`aa-block-${aa}`.replace("*", "stop"));
-            aaBlockGroup.appendChild(aaBlock);
-            
-            if (textPosX) {
-                aaBlockGroup.appendChild(
-                    this.text(
-                        [textPosX, y + height/2],
-                        aa,
-                        null,
-                        "base-text",
-                        "middle",
-                        "0.4em"
-                    )
-                );
-            };
-    
-            return aaBlockGroup;
+        // Adjust the interval to a nice round number that divides the range sensibly
+        if (maxValue / interval > 10) {
+            interval *= 5;
+        } else if (maxValue / interval > 5) {
+            interval *= 2;
         };
     
-    
-        /**
-         * 
-         * @param {*} maxValue 
-         * @returns 
-         */
-        generateTicks(maxValue) {
-            // 150, 850 -> 100
-            const magnitude = Math.pow(10, Math.floor(Math.log10(maxValue)));
-            
-            // check if input 850 is closer to 100 or 1'000
-            let interval;
-            if (Math.abs(maxValue - magnitude) < Math.abs(maxValue - magnitude*10)) {
-                // magnitude closer to 100 -> interval = 10
-                interval = magnitude/10;
-            } else {
-                // magnitude closer to 1000 -> interval = 100
-                interval = magnitude;
-            };
-        
-            // Adjust the interval to a nice round number that divides the range sensibly
-            if (maxValue / interval > 10) {
-                interval *= 5;
-            } else if (maxValue / interval > 5) {
-                interval *= 2;
-            };
-        
-            // Generate ticks
-            const ticks = [];
-            for (let tick = 0; tick <= maxValue; tick += interval) {
-                ticks.push(tick);
-            };
-        
-            // Remove first item in list
-            ticks.shift();
-    
-            return ticks;
+        // Generate ticks
+        const ticks = [];
+        for (let tick = 0; tick <= maxValue; tick += interval) {
+            ticks.push(tick);
         };
-    // #endregion Grid
+    
+        // Remove first item in list
+        ticks.shift();
+
+        return ticks;
+    };
+    // #endregion Grid_view
 
 
     // #region Drawing_helpers

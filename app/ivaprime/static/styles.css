@@ -1039,27 +1039,51 @@ input, select, textarea {
   stroke: var(--border-color);
   stroke-width: 1px;
 }
-.aa-block-A { fill: #FFB3BA; } /* Alanine */
-.aa-block-R { fill: #FFDFBA; } /* Arginine */
-.aa-block-N { fill: #FFFFBA; } /* Asparagine */
-.aa-block-D { fill: #BAFFC9; } /* Aspartic Acid */
-.aa-block-C { fill: #BAE1FF; } /* Cysteine */
-.aa-block-E { fill: #E6C0FF; } /* Glutamic Acid */
-.aa-block-Q { fill: #FFD6E0; } /* Glutamine */
-.aa-block-G { fill: #C7E9B0; } /* Glycine */
-.aa-block-H { fill: #FFB7C5; } /* Histidine */
-.aa-block-I { fill: #FFDAC1; } /* Isoleucine */
-.aa-block-L { fill: #D5AAFF; } /* Leucine */
-.aa-block-K { fill: #FF9AA2; } /* Lysine */
-.aa-block-M { fill: #C5CBE3; } /* Methionine */
-.aa-block-F { fill: #A2D2FF; } /* Phenylalanine */
-.aa-block-P { fill: #B5EAD7; } /* Proline */
-.aa-block-S { fill: #FFB347; } /* Serine */
-.aa-block-T { fill: #e2ff61; } /* Threonine */
-.aa-block-W { fill: #FFCCF9; } /* Tryptophan */
-.aa-block-Y { fill: #AFCBFF; } /* Tyrosine */
-.aa-block-V { fill: #F8C8DC; } /* Valine */
-.aa-block-stop { fill: #FF6961; } /* Stop */
+/* Positively charged */
+.aa-block-R { fill: #0077FF; } /* Arginine */
+.aa-block-H { fill: #3399FF; } /* Histidine */
+.aa-block-K { fill: #66B2FF; } /* Lysine */
+
+/* Negatively charged */
+.aa-block-D { fill: #FF4C4C; } /* Aspartic Acid */
+.aa-block-E { fill: #FF6666; } /* Glutamic Acid */
+
+/* Uncharged */
+.aa-block-S { fill: #33CC66; } /* Serine */
+.aa-block-T { fill: #66D98D; } /* Threonine */
+.aa-block-N { fill: #99E6A6; } /* Asparagine */
+.aa-block-Q { fill: #B3F0C2; } /* Glutamine */
+
+/* Hydrophobic */
+.aa-block-A { fill: #FFA500; } /* Alanine */
+.aa-block-V { fill: #FFB833; } /* Valine */
+.aa-block-I { fill: #FFC94D; } /* Isoleucine */
+.aa-block-L { fill: #FFDB66; } /* Leucine */
+.aa-block-M { fill: #E6A23C; } /* Methionine */
+.aa-block-F { fill: #D98E3A; } /* Phenylalanine */
+.aa-block-Y { fill: #E6A845; } /* Tyrosine */
+.aa-block-W { fill: #DA8540; } /* Tryptophan */
+
+/* Special */
+.aa-block-C { fill: #8A2BE2; } /* Cysteine */
+.aa-block-G { fill: #20B2AA; } /* Glycine */
+.aa-block-P { fill: #5F9EA0; } /* Proline */
+
+.aa-block-stop { fill: #D60000; } /* Stop */
+
+
+.aa-text {
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.aa-text-white {
+  fill: white;
+}
+
+.aa-text-black {
+  fill: black;
+}
 
 
 
