@@ -2806,17 +2806,24 @@ const PlasmidViewer = new class {
      */
     updateFooterSelectionInfo() {
         const selectionSpan = Session.activePlasmid().getSelectionIndices();
-        if (!selectionSpan) return;
 
         const selectionLengthSpan = document.getElementById("footer-selection-info-length");
         const selectionRemainder = document.getElementById("footer-selection-info-remainder");
         const selectionRange = document.getElementById("footer-selection-info-range");
         const selectionTm = document.getElementById("footer-selection-info-tm");
 
-        if (!selectionSpan[0] | !selectionSpan[1]) {
+        if (!selectionSpan) {
             selectionLengthSpan.innerText = 0;
             selectionRemainder.innerText = "";
             selectionRange.innerText = "";
+            selectionTm.innerText = "";
+            return;
+        };
+
+        if (!selectionSpan[1]) {
+            selectionLengthSpan.innerText = 0;
+            selectionRemainder.innerText = "";
+            selectionRange.innerText = `[${selectionSpan[0]}]`;
             selectionTm.innerText = "";
             return;
         };
@@ -2825,10 +2832,10 @@ const PlasmidViewer = new class {
         selectionLengthSpan.innerText = selectionLength;
 
         const remainder = selectionLength % 3;
-        const remainderString = (remainder !== 0) ? "+" + remainder: ""
+        const remainderString = (remainder !== 0) ? ` + ${remainder} bp`: ""
         const nrAA = (selectionLength - remainder)/3
-        const nrAAString = (selectionLength >= 3) ? "3x" + nrAA: nrAA
-        selectionRemainder.innerText = "(" + nrAAString + remainderString + ")";
+        const nrAAString = (selectionLength >= 3) ? `${nrAA} aa`: nrAA
+        selectionRemainder.innerText = (selectionLength >= 3) ? "(" + nrAAString + remainderString + ")": "";
 
         selectionRange.innerText = `[${selectionSpan[0]}, ${selectionSpan[1]}]` 
 
