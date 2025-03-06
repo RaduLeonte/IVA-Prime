@@ -83,7 +83,7 @@ const Modals = new class {
         
         <div class="modal-hgroup">
             <span class="round-button modal-button-action" id="${id}-action-button">Create File</span>
-            <span class="round-button modal-button-cancel" onclick="removeModalWindow('${id}')">Cancel</span>
+            <span class="round-button modal-button-cancel" onclick="Modals.remove('${id}')">Cancel</span>
         </div>
         `;
 
@@ -111,7 +111,7 @@ const Modals = new class {
         
         <div class="modal-hgroup">
             <span class="round-button modal-button-action" id="${id}-action-button">Rename</span>
-            <span class="round-button modal-button-cancel" onclick="removeModalWindow('${id}')">Cancel</span>
+            <span class="round-button modal-button-cancel" onclick="Modals.remove('${id}')">Cancel</span>
         </div>
         `;
 
@@ -179,7 +179,7 @@ const Modals = new class {
         
         <div class="modal-hgroup">
             <span class="round-button modal-button-action" id="${id}-action-button">Create File</span>
-            <span class="round-button modal-button-cancel" onclick="removeModalWindow('${id}')">Cancel</span>
+            <span class="round-button modal-button-cancel" onclick="Modals.remove('${id}')">Cancel</span>
         </div>
         `;
 
@@ -271,7 +271,7 @@ const Modals = new class {
         
         <div class="modal-hgroup">
             <span class="round-button modal-button-action" id="${id}-action-button">Create File</span>
-            <span class="round-button modal-button-cancel" onclick="removeModalWindow('${id}')">Cancel</span>
+            <span class="round-button modal-button-cancel" onclick="Modals.remove('${id}')">Cancel</span>
         </div>
         `;
 
@@ -312,7 +312,7 @@ const Modals = new class {
         
         <div class="modal-hgroup">
             <span class="round-button modal-button-action" id="${id}-action-button">Rename</span>
-            <span class="round-button modal-button-cancel" onclick="removeModalWindow('${id}')">Cancel</span>
+            <span class="round-button modal-button-cancel" onclick="Modals.remove('${id}')">Cancel</span>
         </div>
         `;
 
