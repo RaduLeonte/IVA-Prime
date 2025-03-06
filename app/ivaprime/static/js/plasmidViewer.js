@@ -777,13 +777,19 @@ const PlasmidViewer = new class {
                 if (nearestRect) {
                     // Start selection
                     const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
+                    
+                    const rectBounds = nearestRect.getBoundingClientRect();
+                    const midX = rectBounds.left + rectBounds.width / 2;
+                    const adjustedBaseIndex = (e.clientX < midX) ? baseIndex : baseIndex + 1;
+                    
                     if (e.shiftKey) {
-                        this.selectBases(this.combineSpans(baseIndex));
+                        this.selectBases(this.combineSpans(adjustedBaseIndex));
                     } else {
-                        this.selectBase(baseIndex);
+                        this.selectBase(adjustedBaseIndex);
                     };
+                    
                     this.currentlySelecting = true;
-                    this.selectionStartIndex = baseIndex;
+                    this.selectionStartIndex = adjustedBaseIndex;
                 };
             };
         });
@@ -914,15 +920,20 @@ const PlasmidViewer = new class {
                 // Check to see if we're hovering over a base
                 const nearestRect = elementsAtPoint.find((el) => el.tagName === 'rect' && el.classList.contains("base"));
                 if (nearestRect) {
-                    // Add the hover styling to it
                     const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
+
+                    // Add the hover styling to it
                     this.highlightBases([baseIndex, baseIndex], "base-hover");
     
+                    const rectBounds = nearestRect.getBoundingClientRect();
+                    const midX = rectBounds.left + rectBounds.width / 2;
+                    const adjustedBaseIndex = (e.clientX < midX) ? baseIndex : baseIndex + 1;
+
                     this.showSequenceTooltip(e.pageX, e.pageY);
-                    this.setSequenceTooltip(baseIndex);
+                    this.setSequenceTooltip(adjustedBaseIndex);
             
                     this.removeCursors("sequence-cursor-hover");
-                    this.placeCursor(baseIndex);
+                    this.placeCursor(adjustedBaseIndex);
                 };
             } else if (this.currentlySelecting) {
                 // We're selecting
@@ -1927,58 +1938,95 @@ const PlasmidViewer = new class {
      * @param {*} input 
      */
     placeCursor(input, cssClass="sequence-cursor-hover") {
+        //console.log(input)
+        const placeCursorOnLastBase = input - 1 === Session.activePlasmid().sequence.length;
+
         const indices = Array.isArray(input) ? input : [input];
 
         const cursorsPlaced = [];
         const svgs = document.getElementById("grid-view-container").getElementsByTagName('svg');
 
+        let svgMatch;
+        let rectMatch;
+        let posX;
+        if (placeCursorOnLastBase) {
+            svgMatch = svgs[svgs.length - 1];
+            const targetStrandGroup = svgMatch.getElementById("strand-fwd");
+            const rectsGroup = targetStrandGroup.querySelector("#strand-rects");
+            rectMatch = rectsGroup.lastChild;
+
+            if (rectMatch) {
+                posX = parseFloat(rectMatch.getAttribute("x")) + parseFloat(rectMatch.getAttribute("width"));
+            };
+
+            if (posX) {
+                const cursorHeight = svgMatch.getBoundingClientRect().height;
         
-        for (let i = 0; i < indices.length; i++) {
-            const index = indices[i];
-            let svgMatch;
-            let rectMatch;
-            svgLoop: for (let j = 0; j < svgs.length; j++) {
-                const svg = svgs[j];
-                const [svgStart, svgEnd] = svg.getAttribute('indices').split(',').map(Number);
+                const cursorGroup = svgMatch.getElementById(
+                    cssClass.includes("preview") ? 'selection-preview-cursor-group': 'selection-cursor-group'
+                );
         
-                // Skip this SVG if it doesn't contain relevant bases
-                if (index < svgStart || svgEnd < index) continue;
+                const cursorElement = this.line(
+                    [posX, 0],
+                    [posX, cursorHeight],
+                    null,
+                    ["sequence-cursor", cssClass]
+                );
+                cursorGroup.appendChild(cursorElement);
+                
+                cursorsPlaced.push(cursorElement);
+            };
+
+        } else {
+            for (let i = 0; i < indices.length; i++) {
+                const index = indices[i];
+                svgLoop: for (let j = 0; j < svgs.length; j++) {
+                    const svg = svgs[j];
+                    const [svgStart, svgEnd] = svg.getAttribute('indices').split(',').map(Number);
+            
+                    // Skip this SVG if it doesn't contain relevant bases
+                    if (index < svgStart || svgEnd < index) continue;
+            
+                    const targetStrandGroup = svg.getElementById("strand-fwd")
+                    const rects = targetStrandGroup.getElementsByTagName('rect');
         
-                const targetStrandGroup = svg.getElementById("strand-fwd")
-                const rects = targetStrandGroup.getElementsByTagName('rect');
-    
-                for (let k = 0; k < rects.length; k++) {
-                    const rect = rects[k];
-                    const baseIndex = parseInt(rect.getAttribute('base-index'), 10);
-                    
-                    if (baseIndex == index) {
-                        svgMatch = svg;
-                        rectMatch = rect;
-                        break svgLoop;
+                    for (let k = 0; k < rects.length; k++) {
+                        const rect = rects[k];
+                        const baseIndex = parseInt(rect.getAttribute('base-index'), 10);
+                        
+                        if (baseIndex == index) {
+                            svgMatch = svg;
+                            rectMatch = rect;
+                            break svgLoop;
+                        };
                     };
                 };
-            };
     
-            // Find x value to place cursor at
-            const posX = rectMatch.getAttribute("x");
-            const cursorHeight = svgMatch.getBoundingClientRect().height;
-    
-    
-            const cursorGroup = svgMatch.getElementById(
-                cssClass.includes("preview") ? 'selection-preview-cursor-group': 'selection-cursor-group'
-            );
-    
-            const cursorElement = this.line(
-                [posX, 0],
-                [posX, cursorHeight],
-                null,
-                ["sequence-cursor", cssClass]
-            );
-    
-            cursorGroup.appendChild(cursorElement);
+                // Find x value to place cursor at
+                if (rectMatch) {
+                    posX = rectMatch.getAttribute("x");
+                };
+
+                if (posX) {
+                    const cursorHeight = svgMatch.getBoundingClientRect().height;
             
-            cursorsPlaced.push(cursorElement);
+                    const cursorGroup = svgMatch.getElementById(
+                        cssClass.includes("preview") ? 'selection-preview-cursor-group': 'selection-cursor-group'
+                    );
+            
+                    const cursorElement = this.line(
+                        [posX, 0],
+                        [posX, cursorHeight],
+                        null,
+                        ["sequence-cursor", cssClass]
+                    );
+                    cursorGroup.appendChild(cursorElement);
+                    
+                    cursorsPlaced.push(cursorElement);
+                };
+            };
         };
+
 
         if (!this.cursors[cssClass]) {
             this.cursors[cssClass] = cursorsPlaced
