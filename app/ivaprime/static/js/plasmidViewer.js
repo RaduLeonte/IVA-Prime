@@ -5,6 +5,12 @@ const PlasmidViewer = new class {
         this.currentlySelecting = false;
         this.elementsAtMouseDown = null;
 
+        this.baseRectsMap = {"fwd": [], "rev": []};
+        this.featureSegmentsMap = {};
+
+        this.currentHoverSpan = null;
+        this.currentTooltipTarget = null;
+
         this.highlightedBases = {};
         this.cursors = {};
         this.hoveredFeatureSegments = [];
@@ -621,6 +627,9 @@ const PlasmidViewer = new class {
      * @param {*} topology 
      */
     drawGrid(plasmidName, sequence, complementarySequence, features, topology) {
+        this.baseRectsMap = {"fwd": [], "rev": []};
+        this.featureSegmentsMap = {};
+        
         /**
          * Settings
          */
@@ -895,25 +904,35 @@ const PlasmidViewer = new class {
                         // Find all segments with same ID and add hover styling to them
                         this.addFeatureHover(featureID);
     
-                        // Create feature description for tooltip
-                        const tooltipBody = this.createFeatureHoverTooltip(featureID);
-    
-                        // Show tooltip
-                        this.showSequenceTooltip(e.pageX, e.pageY);
-                        this.setSequenceTooltip(tooltipBody.innerHTML);
-    
-                        // Add hover classes
-                        this.addFeatureHover(featureID);
+                        if (this.currentTooltipTarget !== featureID) {
+                            // Create feature description for tooltip
+                            const tooltipBody = this.createFeatureHoverTooltip(featureID);
+        
+                            // Show tooltip
+                            this.setSequenceTooltip(tooltipBody.innerHTML);
+                            this.showSequenceTooltip();
+
+                            this.currentTooltipTarget = featureID;
+                        };
+                        
+                        this.positionSequenceTooltip(e.pageX, e.pageY);
+
                     } else if (shapesAtPoint[0].parentElement.matches('g#aa-block-group')) {
                         const targetShape = shapesAtPoint[0].parentElement;
                         const featureID = targetShape.getAttribute("feature-id");
                         const aaIndex = targetShape.getAttribute("aa-index");
                         const aa = targetShape.getAttribute("aa");
+                        const aaString = `${aa}${parseInt(aaIndex)+1}`;
                         this.addAABlocksHover(featureID, aaIndex);
 
                         // Show tooltip
-                        this.showSequenceTooltip(e.pageX, e.pageY);
-                        this.setSequenceTooltip(`${aa}${parseInt(aaIndex)+1}`);
+                        if (this.currentTooltipTarget !== aaString) {
+                            this.setSequenceTooltip(aaString);
+                            this.showSequenceTooltip();
+
+                            this.currentTooltipTarget = aaString;
+                        };
+                        this.positionSequenceTooltip(e.pageX, e.pageY);
                     };
                 };
 
@@ -929,7 +948,8 @@ const PlasmidViewer = new class {
                     const midX = rectBounds.left + rectBounds.width / 2;
                     const adjustedBaseIndex = (e.clientX < midX) ? baseIndex : baseIndex + 1;
 
-                    this.showSequenceTooltip(e.pageX, e.pageY);
+                    this.showSequenceTooltip();
+                    this.positionSequenceTooltip(e.pageX, e.pageY);
                     this.setSequenceTooltip(adjustedBaseIndex);
             
                     this.removeCursors("sequence-cursor-hover");
@@ -938,31 +958,7 @@ const PlasmidViewer = new class {
             } else if (this.currentlySelecting) {
                 // We're selecting
 
-                // Get a list of all rects in all svgs
-                const svgElements = Array.from(svgWrapper.children);
-                let rects = [];
-                svgElements.forEach(svg => {
-                    // Get all <rect> elements inside the current SVG
-                    const rectElements = svg.querySelectorAll('.base');
-                    rects = rects.concat(Array.from(rectElements));
-                });
-            
-
-                // Find nearest rectangle to the mouse position
-                let nearestRect = null;
-                let lastDistance = Infinity;
-                rects.forEach(rect => {
-                    const rectBox = rect.getBoundingClientRect();
-
-                    const rectX =  rectBox.left + rectBox.width/2;
-                    const rectY = rectBox.top + rectBox.height/2;
-
-                    const distance = Math.sqrt(Math.pow(rectX - e.clientX, 2) + Math.pow(rectY - e.clientY, 2));
-                    if (distance < lastDistance) {
-                        lastDistance = distance;
-                        nearestRect = rect;
-                    }
-                });
+                const nearestRect = this.findNearestBaseRect(e);
                 
                 
                 if (nearestRect) {
@@ -970,7 +966,8 @@ const PlasmidViewer = new class {
                     // before it
                     const selectionEndIndex = parseInt(nearestRect.getAttribute("base-index"));
     
-                    this.showSequenceTooltip(e.pageX, e.pageY);
+                    this.showSequenceTooltip();
+                    this.positionSequenceTooltip(e.pageX, e.pageY);
                     this.setSequenceTooltip(selectionEndIndex);
 
 
@@ -1027,6 +1024,7 @@ const PlasmidViewer = new class {
         // #region Draw_segments
         const baseBoxTemplate = this.createShapeElement("rect");
 
+        
         segments.forEach((segment) => {
             const segmentIndexStart = segment["segmentIndexStart"];
             const segmentIndexEnd = segment["segmentIndexEnd"];
@@ -1077,6 +1075,8 @@ const PlasmidViewer = new class {
                 baseBox.classList.add("base");
                 baseBox.setAttribute("base-index", segments.indexOf(segment)*basesPerLine + i + 1)
                 groupStrandFwdRects.appendChild(baseBox);
+
+                this.baseRectsMap["fwd"].push(baseBox);
                 
                 const base = this.text(
                     [basesPositions[i], singleStrandHeight - baseTextOffset],
@@ -1113,6 +1113,9 @@ const PlasmidViewer = new class {
                 baseBox.classList.add("base");
                 baseBox.setAttribute("base-index", segments.indexOf(segment)*basesPerLine + i + 1)
                 groupStrandRevRects.appendChild(baseBox);
+
+                this.baseRectsMap["rev"].push(baseBox);
+                
                 const base = this.text(
                     [basesPositions[i], singleStrandHeight*2  - baseTextOffset],
                     segment["sequenceRev"][i],
@@ -1289,7 +1292,7 @@ const PlasmidViewer = new class {
                         "svg-feature-label-black",
                     );
 
-                    segmentFeatures.appendChild(this.gridFeature(
+                    const featureElement = this.gridFeature(
                         currFeatureID,
                         [
                             seqToPixel(featureDict["span"][0]-1),
@@ -1303,7 +1306,13 @@ const PlasmidViewer = new class {
                         featureDict["color"],
                         null,
                         "svg-feature-arrow"
-                    ));
+                    );
+                    segmentFeatures.appendChild(featureElement);
+
+                    if (!this.featureSegmentsMap[currFeatureID]) {
+                        this.featureSegmentsMap[currFeatureID] = [];
+                    };
+                    this.featureSegmentsMap[currFeatureID].push(featureElement);
     
     
                     // #region Translation
@@ -1633,6 +1642,69 @@ const PlasmidViewer = new class {
         return aaBlockGroup;
     };
 
+
+    findNearestBaseRect(event) {
+        const svgWrapper = document.querySelector(".svg-wrapper-grid");
+        const svgElements = Array.from(svgWrapper.children);
+        const scrollBox = document.getElementById("viewer").getBoundingClientRect(); 
+
+        const visibleSvgs = svgElements.filter(svg => {
+            const svgBox = svg.getBoundingClientRect();
+            return (
+                svgBox.bottom > scrollBox.top &&  // Is it below the top of the scrollable area?
+                svgBox.top < scrollBox.bottom     // Is it above the bottom of the scrollable area?
+            );
+        });
+        if (visibleSvgs.length === 0) return;
+
+
+        let nearestSvg = null;
+        let lastSvgDistance = Infinity;
+
+        visibleSvgs.forEach(svg => {
+            const svgBox = svg.getBoundingClientRect();
+            const svgX = svgBox.left + svgBox.width / 2;
+            const svgY = svgBox.top + svgBox.height / 2;
+
+            const distance = Math.hypot(svgX - event.clientX, svgY - event.clientY);
+
+            if (distance < lastSvgDistance) {
+                lastSvgDistance = distance;
+                nearestSvg = svg;
+            }
+        });
+
+        const targetSvgs = [nearestSvg];
+        const prevSvg = nearestSvg?.previousElementSibling;
+        const nextSvg = nearestSvg?.nextElementSibling;
+        if (prevSvg && visibleSvgs.includes(prevSvg)) targetSvgs.push(prevSvg);
+        if (nextSvg && visibleSvgs.includes(nextSvg)) targetSvgs.push(nextSvg);
+    
+        let rects = [];
+        targetSvgs.forEach(svg => rects.push(...svg.querySelectorAll(".base")));
+
+
+        // Find nearest rectangle to the mouse position
+        let nearestRect = null;
+        let lastDistance = Infinity;
+
+        rects.forEach(rect => {
+            const rectBox = rect.getBoundingClientRect();
+            const rectX = rectBox.left + rectBox.width / 2;
+            const rectY = rectBox.top + rectBox.height / 2;
+
+            const distance = Math.hypot(rectX - event.clientX, rectY - event.clientY);
+
+            if (distance < lastDistance) {
+                lastDistance = distance;
+                nearestRect = rect;
+            }
+        });
+
+        return nearestRect;
+    };
+
+
     getCssFillColor(className) {
         for (let sheet of document.styleSheets) {
             try {
@@ -1901,34 +1973,39 @@ const PlasmidViewer = new class {
      * @param {int} posX 
      * @param {int} posY 
      */
-        showSequenceTooltip(posX, posY) {
-            const tooltip = document.getElementById("sequence-tooltip");
-            tooltip.style.left = `${posX + 12}px`;
-            tooltip.style.top = `${posY + 15}px`;
-            
-            tooltip.setAttribute("visible", "");
-        };
-    
-    
-        /**
-         *  Hide the sequence tooltip
-         */
-        hideSequenceTooltip() {
-            document.getElementById("sequence-tooltip").removeAttribute("visible");
-        };
-    
-    
-        /**
-         * Set the text of the sequence tooltip
-         * 
-         * @param {string} text 
-         */
-        setSequenceTooltip(body) {
-            const tooltip = document.getElementById("sequence-tooltip");
-            requestAnimationFrame(() => {
-                tooltip.innerHTML = body;
-            });
-        };
+    showSequenceTooltip() {
+        document.getElementById("sequence-tooltip").setAttribute("visible", "");;
+    };
+
+    positionSequenceTooltip(posX, posY) {
+        const tooltip = document.getElementById("sequence-tooltip");
+        tooltip.style.left = `${posX + 12}px`;
+        tooltip.style.top = `${posY + 15}px`;
+        
+        tooltip.setAttribute("visible", "");
+    };
+
+
+    /**
+     *  Hide the sequence tooltip
+     */
+    hideSequenceTooltip() {
+        this.currentTooltipTarget = null;
+        document.getElementById("sequence-tooltip").removeAttribute("visible");
+    };
+
+
+    /**
+     * Set the text of the sequence tooltip
+     * 
+     * @param {string} text 
+     */
+    setSequenceTooltip(body) {
+        const tooltip = document.getElementById("sequence-tooltip");
+        requestAnimationFrame(() => {
+            tooltip.innerHTML = body;
+        });
+    };
     // #endregion Sequence_tooltip 
 
 
@@ -1938,93 +2015,43 @@ const PlasmidViewer = new class {
      * @param {*} input 
      */
     placeCursor(input, cssClass="sequence-cursor-hover") {
-        //console.log(input)
-        const placeCursorOnLastBase = input - 1 === Session.activePlasmid().sequence.length;
-
+        const seqLength = Session.activePlasmid().sequence.length;
         const indices = Array.isArray(input) ? input : [input];
 
         const cursorsPlaced = [];
-        const svgs = document.getElementById("grid-view-container").getElementsByTagName('svg');
 
-        let svgMatch;
         let rectMatch;
         let posX;
-        if (placeCursorOnLastBase) {
-            svgMatch = svgs[svgs.length - 1];
-            const targetStrandGroup = svgMatch.getElementById("strand-fwd");
-            const rectsGroup = targetStrandGroup.querySelector("#strand-rects");
-            rectMatch = rectsGroup.lastChild;
+        for (let i = 0; i < indices.length; i++) {
+            const index = indices[i];
+            const placeCursorOnLastBase = index - 1 === seqLength;
 
-            if (rectMatch) {
-                posX = parseFloat(rectMatch.getAttribute("x")) + parseFloat(rectMatch.getAttribute("width"));
-            };
+            rectMatch = (!placeCursorOnLastBase)
+                ? this.baseRectsMap["fwd"][index - 1]
+                : this.baseRectsMap["fwd"][index - 2];
+            if (!rectMatch) continue;
 
-            if (posX) {
-                const cursorHeight = svgMatch.getBoundingClientRect().height;
-        
-                const cursorGroup = svgMatch.getElementById(
-                    cssClass.includes("preview") ? 'selection-preview-cursor-group': 'selection-cursor-group'
-                );
-        
-                const cursorElement = this.line(
-                    [posX, 0],
-                    [posX, cursorHeight],
-                    null,
-                    ["sequence-cursor", cssClass]
-                );
-                cursorGroup.appendChild(cursorElement);
-                
-                cursorsPlaced.push(cursorElement);
-            };
+            posX = (!placeCursorOnLastBase)
+                ? rectMatch.getAttribute("x")
+                : posX = parseFloat(rectMatch.getAttribute("x")) + parseFloat(rectMatch.getAttribute("width"));;
 
-        } else {
-            for (let i = 0; i < indices.length; i++) {
-                const index = indices[i];
-                svgLoop: for (let j = 0; j < svgs.length; j++) {
-                    const svg = svgs[j];
-                    const [svgStart, svgEnd] = svg.getAttribute('indices').split(',').map(Number);
-            
-                    // Skip this SVG if it doesn't contain relevant bases
-                    if (index < svgStart || svgEnd < index) continue;
-            
-                    const targetStrandGroup = svg.getElementById("strand-fwd")
-                    const rects = targetStrandGroup.getElementsByTagName('rect');
-        
-                    for (let k = 0; k < rects.length; k++) {
-                        const rect = rects[k];
-                        const baseIndex = parseInt(rect.getAttribute('base-index'), 10);
-                        
-                        if (baseIndex == index) {
-                            svgMatch = svg;
-                            rectMatch = rect;
-                            break svgLoop;
-                        };
-                    };
-                };
+            if (!posX) continue;
+
+            const svgParent = rectMatch.closest("svg");
+            const cursorHeight = svgParent.getBoundingClientRect().height;
+            const cursorGroup = svgParent.getElementById(
+                cssClass.includes("preview") ? 'selection-preview-cursor-group': 'selection-cursor-group'
+            );
     
-                // Find x value to place cursor at
-                if (rectMatch) {
-                    posX = rectMatch.getAttribute("x");
-                };
-
-                if (posX) {
-                    const cursorHeight = svgMatch.getBoundingClientRect().height;
+            const cursorElement = this.line(
+                [posX, 0],
+                [posX, cursorHeight],
+                null,
+                ["sequence-cursor", cssClass]
+            );
+            cursorGroup.appendChild(cursorElement);
             
-                    const cursorGroup = svgMatch.getElementById(
-                        cssClass.includes("preview") ? 'selection-preview-cursor-group': 'selection-cursor-group'
-                    );
-            
-                    const cursorElement = this.line(
-                        [posX, 0],
-                        [posX, cursorHeight],
-                        null,
-                        ["sequence-cursor", cssClass]
-                    );
-                    cursorGroup.appendChild(cursorElement);
-                    
-                    cursorsPlaced.push(cursorElement);
-                };
-            };
+            cursorsPlaced.push(cursorElement);
         };
 
 
@@ -2063,42 +2090,14 @@ const PlasmidViewer = new class {
     
         let basesHighlighted = [];
 
-        const svgs = document.getElementById("grid-view-container").getElementsByTagName('svg');
-        for (let i = 0; i < svgs.length; i++) {
-            const svg = svgs[i];
-            const [svgStart, svgEnd] = svg.getAttribute('indices').split(',').map(Number);
-    
-            // Skip this SVG if it doesn't contain relevant bases
-            if (svgEnd < start || svgStart > end) continue;
-    
-            let targetGroups = [];
-            if (strand === "fwd") {
-                targetGroups = [
-                    svg.getElementById("strand-fwd"),
-                ]
-            } else if (strand === "rev") {
-                targetGroups = [
-                    svg.getElementById("strand-rev")
-                ]
-            } else {
-                targetGroups = [
-                    svg.getElementById("strand-fwd"),
-                    svg.getElementById("strand-rev")
-                ];
-            };
+        const strands = (strand) ? [strand]: ["fwd", "rev"]
+        for (let i = 0; i < strands.length; i++) {
+            const currMap = this.baseRectsMap[strands[i]];
 
-            for (let g = 0; g < targetGroups.length; g++) {
-                const rects = targetGroups[g].getElementsByTagName('rect');
-    
-                for (let j = 0; j < rects.length; j++) {
-                    const rect = rects[j];
-                    const baseIndex = parseInt(rect.getAttribute('base-index'), 10);
-                    
-                    if (baseIndex >= start && baseIndex <= end) {
-                        rect.classList.add(cssClass);
-                        basesHighlighted.push(rect);
-                    };
-                };
+            for (let j = start; j <= end; j++) {
+                const rect = currMap[j-1];
+                rect.classList.add(cssClass);
+                basesHighlighted.push(rect);
             };
         };
 
@@ -2197,41 +2196,42 @@ const PlasmidViewer = new class {
 
 
     addSequenceHover(span) {
+        if (span === this.currentHoverSpan) return;
+
         this.removeSequenceHover();
         this.placeCursor([span[0], span[1] + 1]);
         this.highlightBases(span);
+
+        this.currentHoverSpan = span;
     };
 
 
     removeSequenceHover() {
         this.removeCursors("sequence-cursor-hover");
         this.unhighlightBases();
+
+        this.currentHoverSpan = null;
     };
 
 
     addFeatureHover(featureID) {
         const span = Session.activePlasmid().features[featureID]["span"]
-        const [start, end] = span;
-        const containerDiv = document.getElementById('grid-view-container');
+        const featureSegments = this.featureSegmentsMap[featureID];
         
-        const svgs = containerDiv.getElementsByTagName("svg");
-        for (let i = 0, len = svgs.length; i < len; i++){
-            const svg = svgs[i];
-            const [svgStart, svgEnd] = svg.getAttribute('indices').split(',').map(Number);
-    
-            // Skip this SVG if it doesn't contain relevant bases
-            if (svgEnd < start || svgStart > end) continue;
-    
-            const svgFeaturesGroup = svg.getElementById("svg-features");
+        const svgWrapper = document.querySelector(".svg-wrapper-grid");
+        const scrollBox = document.getElementById("viewer").getBoundingClientRect(); 
 
-            const shapesWithAttribute = svgFeaturesGroup.querySelectorAll(`g[feature-id="${featureID}"]`);
-        
-            if (shapesWithAttribute.length === 0) return;
-
-            for (let j = 0, len = shapesWithAttribute.length; j < len; j++) {
-                const shape = shapesWithAttribute[j];
-                const polygon = shape.querySelector("#arrow");
-                if (polygon) {
+        for (let i = 0, len = featureSegments.length; i < len; i++) {
+            const polygon = featureSegments[i].firstElementChild;
+            
+            if (polygon) {
+                const polyBox = polygon.getBoundingClientRect();
+    
+                // Check if the polygon is visible inside the scrollable div
+                if (
+                    polyBox.bottom > scrollBox.top &&  // Not above the visible area
+                    polyBox.top < scrollBox.bottom  // Not below the visible area
+                ) {
                     polygon.classList.add("svg-feature-arrow-hover");
                     this.hoveredFeatureSegments.push(polygon);
                 };

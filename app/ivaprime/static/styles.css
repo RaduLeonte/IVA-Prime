@@ -964,6 +964,10 @@ input, select, textarea {
   padding: 20px;
 }
 
+.svg-wrapper-grid svg {
+  transform: translateZ(0);
+}
+
 .svg-plasmid-title {
   font-weight: bold;
 }
@@ -1086,6 +1090,13 @@ input, select, textarea {
   pointer-events: none;
   -webkit-user-select: none;
   -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.aa-index {
+  fill: var(--text-color);
+  -webkit-user-select: none;
   -ms-user-select: none;
   user-select: none;
 }
@@ -1218,14 +1229,14 @@ input, select, textarea {
   background-color: var(--bg-color1);
   border: 1px solid var(--border-color);
   color: var(--text-color);
-  box-shadow: 0px 0px 5px var(--shadow-color);
+  /* box-shadow: 0px 0px 5px var(--shadow-color); */
 
   padding: 5px 10px;
   border-radius: 5px;
   font-size: 11px;
   pointer-events: none;
 
-  z-index: 9999;
+  z-index: 100;
 
   visibility: hidden;
 
