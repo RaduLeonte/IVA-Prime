@@ -1,149 +1,98 @@
-/**
- * Create and save the site cookie.
- * 
- * @param {string} name - Cookie name
- * @param {any} value - Cookie value
- * @param {number} daysToExpire - Days until expiration
- * @param {boolean} isSecure - Secure flag
- * @param {boolean} isCrossSite - Cross site flag
- */
-function setCookie(name, value, daysToExpire, isSecure=true, isCrossSite=true) {
-    let cookieValue = `${name}=${value}; path=/`;
-    
-    if (daysToExpire) {
-        const expirationDate = new Date();
-        expirationDate.setDate(expirationDate.getDate() + daysToExpire);
-        cookieValue += `; expires=${expirationDate.toUTCString()}`;
-    };
+const UserPreferences = new class {
+    constructor() {
+        this.cookieName = 'user_prefs';
+        this.expiryDays = 365;
 
-    if (isSecure && location.protocol == 'https:') {cookieValue += '; Secure'};
-    if (isCrossSite) {cookieValue += '; SameSite=None'};
-    document.cookie = cookieValue;
-};
+        const defaultSettings = {
+            "theme": "light",
 
+            "symmetricPrimers": false,
+            "HRMinLength": 18,
+            "HRTm": 50,
+            "HRSubcloningTm": 55,
+            "TBRTm": 60,
+            "maxTmSi": 49.5,
+            "primerConc": 100,
+            "TmAlgorithm": "oligoCalc",
+            "saltConc": 0,
+            "saltCorr": "SchildkrautLifson",
+            "dmsoConc": 0,
 
-/**
- * Read site cookie and return dict.
- * 
- * @param {string} name 
- * @returns 
- */
-function getCookieValue(name) {
-    const cookieName = `${name}=`;
-    const cookies = document.cookie.split(';');
+            "baseWidth": 16,
 
-    for (let i = 0; i < cookies.length; i++) {
-        let cookie = cookies[i].trim();
-        if (cookie.indexOf(cookieName) === 0) {
-            return cookie.substring(cookieName.length, cookie.length);
+            "preferredOrganism": "Escherichia coli",
+
+            "overwriteSnapGeneColors": true,
         };
+
+        const savedPreferences = this.loadPreferences();
+        //console.log(`UserPreferences -> savedPreferences=\n${JSON.stringify(savedPreferences, null, 2)}`);
+        this.preferences = { ...defaultSettings, ...savedPreferences };
+        //console.log(`UserPreferences -> merged=\n${JSON.stringify(this.preferences, null, 2)}`);
+        this.savePreferences();
     };
-    return null;
-};
 
+    /**
+     * Load preferences from cookie.
+     * 
+     * @returns {Object} - Dictionary of settings
+     */
+    loadPreferences() {
+        const cookies = document.cookie.split('; ');
+        let userPrefsCookie = null;
+        for (let cookie of cookies) {
+            let [key, value] = cookie.split('=');
+            if (key === this.cookieName) {
+                userPrefsCookie = decodeURIComponent(value);
+            };
+        };
+        return userPrefsCookie ? JSON.parse(userPrefsCookie) : {};
+    };
 
-/**
- * Updates user preferences in site cookie.
- * 
- * @param {string} preferenceName - Key
- * @param {any} preferenceValue - Value
- * @param {number} daysToExpire - Days until expiration
- * @param {boolean} isSecure - Secure flag
- * @param {boolean} isCrossSite - Cross site flag
- */
-function saveUserPreference(preferenceName, preferenceValue, daysToExpire, isSecure=true, isCrossSite=true) {
-    // Get current user preferences
-    const userPreferences = JSON.parse(getCookieValue('userPreferences') || '{}');
     
-    // Update or set the preference
-    userPreferences[preferenceName] = preferenceValue;
+    /**
+     * Save current preferences to the cookie.
+     */
+    savePreferences() {
+        let expires = '';
+        if (this.expiryDays) {
+            const date = new Date();
+            date.setTime(date.getTime() + this.expiryDays * 24 * 60 * 60 * 1000);
+            expires = `; expires=${date.toUTCString()}`;
+        };
 
-    // Save the updated user preferences to the cookie
-    setCookie('userPreferences', JSON.stringify(userPreferences), daysToExpire, isSecure, isCrossSite);
-};
+        document.cookie = `${this.cookieName}=${JSON.stringify(this.preferences)}${expires}; path=/`;
+    };
 
 
-/**
- * Returns specific user preference from site cookie
- * 
- * @param {string} preferenceName - Key
- * @returns {any}
- */
-function getUserPreference(preferenceName) {
-    // Get current user preferences
-    const userPreferences = JSON.parse(getCookieValue('userPreferences') || '{}');
+    /**
+     * Delete user preferences cookie
+     */
+    deleteCookie() {
+        document.cookie = `${this.cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        location.reload();
+    };
 
-    // Check if the preference exists, and return its value; otherwise, return a default value or null
-    if (userPreferences.hasOwnProperty(preferenceName)) {
-        return userPreferences[preferenceName];
-    } else {
-        return null;
+
+    /**
+     * Set user preference.
+     * 
+     * @param {String} key - Name of entry
+     * @param {any} value - Value of entry
+     */
+    set(key, value) {
+        this.preferences[key] = value;
+        this.savePreferences();
+    };
+
+    /**
+     * Get specific user preference value
+     * 
+     * @param {String} key - Name of entry
+     * @returns {any} - Value of entry
+     */
+    get(key) {
+        console.assert(key in this.preferences, `User preference "${key}" does not exist.`);
+        return this.preferences[key];
     };
 };
-
-
-/**
- * Default settings
- */
-const defaultSetingsDict = {
-    "colorTheme": "lightTheme",
-    "primerDistribution": true,
-    "homoRegionMinLength": 18,
-    "homoRegionTm": 50,
-    "homoRegionSubcloningTm": 55,
-    "tempRegionTm": 60,
-    "upperBoundShortInsertions": 49.5,
-    "primerConc": 100,
-    "meltingTempAlgorithmChoice": "oligoCalc",
-    "saltConc": 0,
-    "saltCorrectionEquation": "SchildkrautLifson",
-    "dmsoConc": 0,
-    "gridWidth": 60,
-    "preferredOrganism" : "Escherichia coli"
-};
-/**
- * Set user preferences and global variables
- */
-for (let setting in defaultSetingsDict) {
-    window[setting] = (getUserPreference(setting) !== null) ? getUserPreference(setting) : defaultSetingsDict[setting];
-};
-
-const defaultAnnotationColors = [
-    "#ff7a8e",
-    "#bc99ee",
-    "#ff8756",
-    "#5aa8d9",
-    "#f45ba8",
-    "#74e374"
-];
-/**
- * Configure Coloris color picker
- */
-Coloris({
-    el: '.coloris',
-    wrap: true,
-    theme: 'polaroid',
-    swatches: defaultAnnotationColors,
-    closeButton: true,
-    closeLabel: 'Save',
-});
-
-/**
- * Update the CSS theme
- */
-function updateCSSTheme() {
-    if (colorTheme === "darkTheme") {
-        document.querySelector("html").setAttribute("data-theme", "dark");
-        Coloris({
-            themeMode: 'dark',
-            alpha: false
-          });
-    } else if (colorTheme === "lightTheme") {
-        document.querySelector("html").setAttribute("data-theme", "light");
-        Coloris({
-            themeMode: 'light',
-            alpha: false
-          });
-    };
-};
-updateCSSTheme();

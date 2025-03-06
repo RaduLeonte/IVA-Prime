@@ -2,6 +2,7 @@ const FileIO = new class {
     constructor() {
         document.addEventListener("DOMContentLoaded", function() {
             console.log("FileIO -> Page is done loading.");
+            
         });
     };
 
@@ -175,8 +176,9 @@ const FileIO = new class {
                 return new DataView(new Uint8Array(bytes).buffer).getUint32(0);
             };
 
+            const textDecoder = new TextDecoder("utf-8")
             function bytesToText(bytes) {
-                return new TextDecoder("utf-8").decode(new Uint8Array(bytes));
+                return textDecoder.decode(new Uint8Array(bytes));
             };
 
             const xmlPrettyPrint = (xmlDoc) => {
@@ -190,9 +192,9 @@ const FileIO = new class {
             const arrayBuf = new Uint8Array(fileArrayBuffer);
             const bytes = Array.from(arrayBuf);
             // Decode file content as string
-            let fileContent = new TextDecoder().decode(arrayBuf);
+            //let fileContent = new TextDecoder().decode(arrayBuf);
             // Init XML parser
-            const xmlParser = new DOMParser();
+            const xmlParser = new XMLParser({ ignoreAttributes: false });
 
 
             const blocks = {};
@@ -201,8 +203,6 @@ const FileIO = new class {
                 const blockLengthBytes = bytes.splice(0,4)
                 const blockLength = parseLength(blockLengthBytes);
                 const blockData = bytes.splice(0, blockLength);
-
-                console.log(`FileIO.parsers.dna -> blocks \ntype = ${blockType} [${bytesToString(blockType)}],\nlength = ${blockLength} [${bytesToString(blockLengthBytes)}],\ndata = [${bytesToString(blockData).slice(0, 20)}...]`);
                 
                 blocks[blockType] = blockData;
             };
@@ -222,8 +222,6 @@ const FileIO = new class {
                 );
                 return;
             };
-
-            console.log(`FileIO.parsers.dna -> blocks=\n${blocks[0]}`)
 
             /**
              *        00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F   10 11 12 13 14 15 160 17 18 19 1A 1B 1C 1D 1E 1F 
@@ -360,84 +358,77 @@ const FileIO = new class {
              * @param {Array} bytes 
              */
             function parseFeatures(bytes) {
+
                 // Extract XML tree
-                const featuresXMLDoc = xmlParser.parseFromString(bytesToText(bytes), 'text/xml');
-                //console.log(`FileIO.parsers.dna.parseFeatures -> featuresXMLDoc=\n${xmlPrettyPrint(featuresXMLDoc)}`)
+                const featuresXMLDoc = xmlParser.parse(bytesToText(bytes));
 
                 const featuresDict = {};
 
                 // Select all <Features> nodes and iterate over them
-                const featureNodes = featuresXMLDoc.getElementsByTagName('Feature');
+                const featureNodes = featuresXMLDoc.Features.Feature;
                 for (let i = 0; i < featureNodes.length; i++) {
                     // Current node
                     const featureNode = featureNodes[i]; // Current feature
-    
+                    //console.log(featureNode)
                     const featureInfo = {}
 
                     // Feature label
-                    featureInfo["label"] = featureNode.getAttribute('name');
+                    featureInfo["label"] = featureNode['@_name'];
 
                     // Feature type
-                    featureInfo["type"] = featureNode.getAttribute('type');
+                    featureInfo["type"] = featureNode['@_type'];
                     if (featureInfo["type"] === "source") continue;
 
 
                     // Get feature directionaliy, fwd, rev, both, or null
-                    featureInfo["directionality"] = {"1": "fwd", "2": "rev", "3": "both"}[featureNode.getAttribute('directionality')] || null;
+                    featureInfo["directionality"] = {"1": "fwd", "2": "rev", "3": "both"}[featureNode['@_directionality']] || null;
     
                     // Iterate over <Feature> node children (<Q> and <Segment>) to find properties
-                    for (let j = 0; j < featureNode.children.length; j++) {
-                        const childNode = featureNode.children[j];
-                        const childNodeName = childNode.nodeName;
+                    const qNodes = Array.isArray(featureNode.Q) ? featureNode.Q : [featureNode.Q];
+                    for (let j = 0; j < qNodes.length; j++) {
+                        const QNode = qNodes[j];
+                        const QNodeName = QNode["@_name"];
     
-                        switch(childNodeName) {
-                            /**
-                             * Nodes with the name "Q" and its "V" children are "Query-Value" nodes.
-                             * The information is not useful for us, but we keep it to maybe use it
-                             * at some later point.
-                             */
-                            case "Q":
-                                const attrNameQ = childNode.getAttribute("name");
-                                const V = childNode.children[0];
-                                Array.from(V.attributes).forEach((attr) => {
-                                    const attrNameV = attr.name;
-                                    const attrValueV = attr.value;
-                                    switch(attrNameV) {
-                                        case "int":
-                                            featureInfo[attrNameQ] = parseInt(attrValueV);
-                                            break;
-                                        case "text":
-                                            // Sometimes the text has html so we need to deal with it
-                                            featureInfo[attrNameQ] = new DOMParser().parseFromString(attrValueV, 'text/html').body.textContent.trim();
-                                            break;
-                                    };
-                                });
-                                break;
-                            /**
-                             * Nodes with the name "Segment" contain the actually interesting
-                             * information for us.
-                             */
-                            case "Segment":
-                                // Add span to feature info
-                                featureInfo["span"] = childNode.getAttribute('range').split("-").map((s) => parseInt(s));
-                                
-                                // Extract color
-                                featureInfo["color"] = (UserPreferences.get("overwriteSnapGeneColors"))
-                                ? Utilities.getRandomDefaultColor()
-                                : childNode.getAttribute('color');
+                        /**
+                         * Nodes with the name "Q" and its "V" children are "Query-Value" nodes.
+                         * The information is not useful for us, but we keep it to maybe use it
+                         * at some later point.
+                         */
+                        const VNode = QNode.V;
+                        if (VNode) {
+                            if ("@_int" in VNode) {
+                                featureInfo[QNodeName] = parseInt(VNode["@_int"], 10);
+                            } else if ("@_text" in VNode) {
+                                const needsParsing = /[<>]|&(?:[a-z\d#]+);/i.test(VNode["@_text"]);
 
-                                featureInfo["translated"] = {"1": true}[childNode.getAttribute('translated')] || false;
-
-                                featureInfo["translationOffset"] = childNode.getAttribute('translationNumberingStartsFrom') || 0;
-                                break;
+                                featureInfo[QNodeName] = needsParsing
+                                    ? VNode["@_text"].replace(/<\/?[^>]+(>|$)/g, "").replace(/&[a-z\d#]+;/gi, "").trim()
+                                    : VNode["@_text"].trim();
+                            };
                         };
+                    };
+
+                    const segments = Array.isArray(featureNode.Segment) ? featureNode.Segment : [featureNode.Segment];
+                    for (let j = 0; j < segments.length; j++) {
+                        const segment = segments[j];
+    
+                        // Add span to feature info
+                        featureInfo["span"] = segment['@_range'].split("-").map((s) => parseInt(s));
+                                
+                        // Extract color
+                        featureInfo["color"] = (UserPreferences.get("overwriteSnapGeneColors"))
+                        ? Utilities.getRandomDefaultColor()
+                        : segment['@_color'];
+
+                        featureInfo["translated"] = {"1": true}[segment['@_translated']] || false;
+
+                        featureInfo["translationOffset"] = segment['@_translationNumberingStartsFrom'] || 0;
                     };
     
                     // Append feature info dict the corresponding feature in the dict
                     featuresDict[Utilities.newUUID()] = featureInfo;
                 };
 
-                //console.log(`FileIO.parsers.dna.parseFeatures -> featuresDict=\n${JSON.stringify(featuresDict, null, 2)}`)
                 return featuresDict;
             };
             // #endregion Features
@@ -484,15 +475,14 @@ const FileIO = new class {
              */
             function parsePrimers(bytes) {
                 // Extract XML tree
-                const primersXMLString = bytesToText(bytes);
-                console.log(`FileIO.parsers.dna.parsePrimers -> primersXMLString=\n${primersXMLString}`)
 
-                const primersXMLDoc = xmlParser.parseFromString(bytesToText(bytes), 'text/xml');
-                console.log(`FileIO.parsers.dna.parsePrimers -> primersXMLDoc=\n${xmlPrettyPrint(primersXMLDoc)}`)
+                const primersXMLDoc = xmlParser.parse(bytesToText(bytes));
     
                 const primersDict = {};
 
-                const primerNodes = primersXMLDoc.getElementsByTagName('Primer');
+                if (!primersXMLDoc.Primers.Primer) return {};
+
+                const primerNodes = Array.isArray(primersXMLDoc.Primers.Primer) ? primersXMLDoc.Primers.Primer : [primersXMLDoc.Primers.Primer];
                 for (let i = 0; i < primerNodes.length; i++) {
                     // Current node
                     const primerNode = primerNodes[i];
@@ -500,7 +490,7 @@ const FileIO = new class {
                     const primerInfo = {};
     
                     // Feature label
-                    primerInfo["label"] = primerNode.getAttribute('name');
+                    primerInfo["label"] = primerNode['@_name'];
                     
                     // Feture type
                     primerInfo["type"] = "primer_bind";
@@ -508,20 +498,20 @@ const FileIO = new class {
                     primerInfo["color"] = Utilities.getRandomDefaultColor();
     
                     // Feature note
-                    primerInfo["note"] = primerNode.getAttribute('description') || "";
+                    primerInfo["note"] = primerNode['@_description'] || "";
                     
 
-                    const bindingSiteNode = primerNode.getElementsByTagName("BindingSite")[0];
+                    const bindingSiteNodes = Array.isArray(primerNode.BindingSite) ? primerNode.BindingSite : [primerNode.BindingSite];
+                    const bindingSiteNode = bindingSiteNodes[0];
     
-                    primerInfo["directionality"] = {"0": "fwd", "1": "rev"}[bindingSiteNode.getAttribute('boundStrand')] || null;
+                    primerInfo["directionality"] = {"0": "fwd", "1": "rev"}[bindingSiteNode['@_boundStrand']] || null;
     
-                    primerInfo["span"] = bindingSiteNode.getAttribute('location').split("-").map((s) => parseInt(s));
+                    primerInfo["span"] = bindingSiteNode['@_location'].split("-").map((s) => parseInt(s));
                     if (!primerInfo["span"]) continue;
     
                     primersDict[Utilities.newUUID()] = primerInfo;
                 };
 
-                //console.log(`FileIO.parsers.dna.parsePrimers -> primersDict=\n${JSON.stringify(primersDict, null, 2)}`)
                 return primersDict;
             };
             // #endregion Primers
@@ -535,7 +525,6 @@ const FileIO = new class {
                 fileFeatures = {...fileFeatures, ...parsePrimers(blocks[5])};
             };
             fileFeatures = Utilities.sortFeaturesDictBySpan(fileFeatures);
-            //console.log(`FileIO.parsers.dna -> fileFeatures=\n${JSON.stringify(fileFeatures, null, 2)}`);
 
 
             // #region Notes
@@ -585,77 +574,54 @@ const FileIO = new class {
             function parseNotes(bytes) {
                 // Extract XML tree
                 const notesXMLString = bytesToText(bytes);
-                //console.log(`FileIO.parsers.dna.parseNotes -> notesXMLString=\n${notesXMLString}`);
 
-                const notesXMLDoc = xmlParser.parseFromString(notesXMLString, 'text/xml');
-                console.log(`FileIO.parsers.dna.parseNotes -> notesXMLDoc=\n${xmlPrettyPrint(notesXMLDoc)}`)
+                const notesXMLDoc = xmlParser.parse(notesXMLString);
 
                 const notesDict = {};
 
-                //console.log(`FileIO.parsers.dna.parseNotes ->`, notesXMLDoc.documentElement.nodeName)
-                const notesNodes = notesXMLDoc.querySelector("Notes");
-                for (let i = 0; i < notesNodes.children.length; i++) {
-                    const childNode = notesNodes.children[i];
+                const notesNodes = notesXMLDoc.Notes;
+                for (const [tagName, childNode] of Object.entries(notesNodes)) {
+                    let key, value;
 
-                    //console.log(`FileIO.parsers.dna.parseNotes ->`, notesNode.tagName)
-
-                    let key;
-                    let value;
-                    switch(childNode.tagName) {
+                    switch(tagName) {
                         case "Description":
                             key = "DEFINITION";
-                            value = childNode.textContent;
+                            value = childNode;
                             break;
 
                         case "References":
-                            const referencesNode = childNode;
-
-                            const referencesList = [];
-
-                            for (let j = 0, len = referencesNode.children.length; j < len; j++) {
-                                const referenceNode = childNode.children[j];
-                                
-                                const referenceDict = {};
-
-                                for (let k = 0; k < referenceNode.attributes.length; k++) {
-                                    const attribute = referenceNode.attributes[k];
-                                    const attributeName = attribute.name.toUpperCase();
-                                    const attributeValue = attribute.value;
-                                   
-                                    referenceDict[attributeName] = attributeValue;
-                                };
-
-                                referencesList.push(referenceDict);
-                            };
-
                             key = "REFERENCES";
-                            value = referencesList;
+                            value = childNode.Reference
+                                ? [].concat(childNode.Reference).map(ref =>
+                                    Object.fromEntries(Object.entries(ref).map(([k, v]) => [k.toUpperCase(), v])))
+                                : [];
                             break;
 
                         case "Created":
-                            // Parse date
-                            const dateParts = childNode.textContent.split(".").map(Number);
-                            const dateObj = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
-                            
-                            // Parse time
-                            const time = childNode.getAttribute("UTC");
-                            const timeParts = time.split(":").map(Number);
-                            dateObj.setUTCHours(timeParts[0], timeParts[1], timeParts[2], 0);
-
                             key = "CREATED";
-                            value = dateObj;
+                            if (typeof childNode === "object" && "#text" in childNode) {
+                                const [year, month, day] = childNode["#text"].split(".").map(Number);
+                                const dateObj = new Date(Date.UTC(year, month - 1, day));
+                
+                                if (childNode["@_UTC"]) {
+                                    const [hours, minutes, seconds] = childNode["@_UTC"].split(":").map(Number);
+                                    dateObj.setUTCHours(hours, minutes, seconds, 0);
+                                }
+                                value = dateObj;
+                            } else {
+                                value = null; // Handle unexpected formats
+                            }
                             break;
 
                         default:
-                            key = childNode.tagName;
-                            value = childNode.textContent;
+                            key = tagName.toUpperCase();
+                            value = childNode;
                             break;
                     };
     
                     notesDict[key] = value;
                 };
 
-                //console.log(`FileIO.parsers.dna.parseNotes -> notesDict=\n${JSON.stringify(notesDict, null, 2)}`)
                 return notesDict;
             };
 
@@ -663,6 +629,8 @@ const FileIO = new class {
             if (blocks[6]) {
                 fileAdditionalInfo = parseNotes(blocks[6]);
             };
+
+            console.log("notes", fileAdditionalInfo)
 
             const accountedBlockKeys = [0, 10, 5, 6];
             const unaccountedBlocks = Object.keys(blocks).reduce((obj, key) => {
@@ -817,7 +785,6 @@ const FileIO = new class {
                 };
             };
             // #endregion Additional_info
-            console.log(`FileIO.parsers.gb -> Additional info`, JSON.stringify(fileAdditionalInfo, null, 2))
 
 
             // #region Features
@@ -874,7 +841,6 @@ const FileIO = new class {
                     };
                     if (currentInfoString !== "") featureInfo.push(currentInfoString);
 
-                    console.log(`FileIO.parsers.gb -> features [${JSON.stringify(featureInfo, null, 2)}]`);
 
                     for (let j = 0, len = featureInfo.length; j < len; j++) {
                         let match = featureInfo[j].match(/^\/([\w\W]+)=(.*)$/);
@@ -894,7 +860,6 @@ const FileIO = new class {
                         featureDict[key] = value;
                     };
 
-                    console.log(`FileIO.parsers.gb -> features featureDict=\n${JSON.stringify(featureDict, null, 2)}`)
                     
                     if (featureDict["type"] === "source") continue;
 
@@ -953,7 +918,6 @@ const FileIO = new class {
         */
        //TO DO: Prompt user to specify topology and if they want common feature annotated
         fasta : (fileContent) => {
-            console.log(`FileIO.parser.fasta -> fileContent=${fileContent}`);
             const lines = fileContent.split("\n");
 
             if (lines.length < 2) {
@@ -964,7 +928,6 @@ const FileIO = new class {
                 console.error("No sequence found in FASTA file.")
             };
 
-            console.log(`FileIO.parser.fasta -> lines=${lines}`);
             const fileSequence = lines[1];
 
             if (!Nucleotides.isNucleotideSequence(fileSequence)) {
@@ -1143,7 +1106,6 @@ const FileIO = new class {
                 fileContent += segments.join(" ") + "\n"
             };
             fileContent += "//"
-            console.log(`FileIO.exporters.gb -> fileContent=\n${fileContent}`)
             // #endregion Sequence
 
 
@@ -1161,7 +1123,6 @@ const FileIO = new class {
          */
         fasta: (plasmidIndex) => {
             const targetPlasmid = Session.getPlasmid(plasmidIndex);
-            console.log(`FileIO.exports.fasta -> ${plasmidIndex} ${targetPlasmid.name}`)
 
             this.downloadFile(
                 targetPlasmid.name + ".fasta",
@@ -1259,8 +1220,6 @@ const FileIO = new class {
 
             const fileText = lines.join("\n");
 
-            console.log(`FileIO.primerExporters.txt ->`, fileText);
-
             this.downloadFile(
                 plasmidName + " primers" + ".txt",
                 fileText
@@ -1318,7 +1277,6 @@ const FileIO = new class {
          */
         csv: (plasmidIndex, plasmidName, primerSets) => {
             const table = this.primersToTable(primerSets, true);
-            console.log("FileIO.primerExports.csv ->", table);
 
             let csvLines = table.map(function(row) {
                 return row.map(function(cell) {
@@ -1338,7 +1296,6 @@ const FileIO = new class {
          */
         xlsx: (plasmidIndex, plasmidName, primerSets) => {
             const table = this.primersToTable(primerSets, true);
-            console.log("FileIO.primerExports.xlsx ->", table);
 
             XlsxPopulate.fromBlankAsync()
                         .then((workbook) => {
@@ -1364,7 +1321,6 @@ const FileIO = new class {
          */
         microsynth: (plasmidIndex, plasmidName, primerSets) => {
             const table = this.primersToTable(primerSets, false);
-            console.log("FileIO.primerExports.xlsx ->", table);
 
             // Create a list of rows to append to the microsynth form
             const primerList = table.map(([primerId, primerSeq]) => [
@@ -1519,7 +1475,6 @@ const FileIO = new class {
                             similarFeatures.push(feature.span);
                         };
                     });
-                    //console.log("similarFeatures", featureLabel, similarFeatures);
         
                     /**
                      * If checking for amino acid sequence

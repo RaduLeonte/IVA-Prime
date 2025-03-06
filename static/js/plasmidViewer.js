@@ -1,28 +1,96 @@
 const PlasmidViewer = new class {
+    constructor () {
+        // Init viewer variables
+        this.activeView = null;
+        this.currentlySelecting = false;
+        this.elementsAtMouseDown = null;
 
-    // Init viewer variables
-    activeView = null;
+        this.highlightedBases = {};
+        this.cursors = {};
+        this.hoveredFeatureSegments = [];
+        this.hoveredAABlocks = [];
 
-    // Shortname
-    svgNameSpace = "http://www.w3.org/2000/svg";
+        this.subcloningRects = [];
 
-    /**
-     * Redraw all views and return svgs to class that called it
-     * 
-     * @param {string} sequence - Plasmid sequence
-     * @param {string} complementarySequence - Plasmid complementary sequence
-     * @param {Object} features - Dictionary of features
-     * @param {*} topology - 
-     * @returns 
-     */
-    draw(plasmidName, sequence, complementarySequence, features, topology) {
-        return {
-            "circular": this.drawCircular(plasmidName, sequence, complementarySequence, features, topology),
-            "linear": this.drawLinear(plasmidName, sequence, complementarySequence, features, topology),
-            "grid": this.drawGrid(plasmidName, sequence, complementarySequence, features, topology)
+        this.sequenceTooltips = {};
+
+        // Shortname
+        this.svgNameSpace = "http://www.w3.org/2000/svg";
+
+        this.textElementTemplate = this.createShapeElement("text");
+
+
+        /**
+         * Redraw views on window resize
+         */
+        let resizeTimeout;
+        window.addEventListener('resize', function () {
+            document.getElementById("viewer").style.display = "none";
+            
+            clearTimeout(resizeTimeout);
+        
+            resizeTimeout = setTimeout(() => {
+                document.getElementById("viewer").style.display = "block";
+                PlasmidViewer.redraw();
+            }, 100);
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            PlasmidViewer.initializeContextMenu();
+        });
+
+
+        /**
+         * Search bar
+         */
+        this.searchResults = [];
+        this.searchFocusIndex = null;
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById("search-bar").addEventListener("input", function() {
+                PlasmidViewer.search();
+            });
+
+            document.getElementById("search-bar").addEventListener("keydown", function(event) {
+                if (event.key === "ArrowUp") {
+                    event.preventDefault();
+                    PlasmidViewer.navigateSearchResults(-1);
+                } else if (event.key === "ArrowDown") {
+                    event.preventDefault();
+                    PlasmidViewer.navigateSearchResults(1);
+                };
+            });
+        });
+
+
+        document.addEventListener("keydown", function(event) {
+            if ((event.ctrlKey || event.metaKey) && event.key === "f") {
+                event.preventDefault();
+                document.getElementById("search-bar").focus();
+            };
+        });
+        
+        
+        /**
+         * AA fill colors
+         */
+        const resList = "RHKDESTNQCGPAVILMFYW".split("");
+        resList.push("stop");
+        this.resFillColors = {};
+        for (let i = 0, len = resList.length; i < len; i++) {
+            const res = resList[i]
+            this.resFillColors[res] = this.getCssFillColor("aa-block-" + res)
         };
+
+        /**
+         * Init measurement svg for annotation text
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            PlasmidViewer.initMeasurementSVG();
+        });
     };
 
+
+    // #region Circular_view
     /**
      * Draw the circular view
      * 
@@ -31,7 +99,6 @@ const PlasmidViewer = new class {
      * @param {*} features 
      * @param {*} topology 
      */
-    //#region Circular view
     drawCircular(plasmidName, sequence, complementarySequence, features, topology) {
         const svgContainer = document.getElementById("linear-view-container");
         const mainViewerDiv = svgContainer.parentElement;
@@ -44,7 +111,6 @@ const PlasmidViewer = new class {
         const maxWidth = mainViewerDiv.offsetWidth - (parseFloat(svgWrapperStyle.paddingLeft) + parseFloat(svgWrapperStyle.paddingRight));
         const maxHeight = mainViewerDiv.offsetHeight - (parseFloat(svgWrapperStyle.paddingTop) + parseFloat(svgWrapperStyle.paddingBottom));
         const maxSize = Math.min(maxWidth, maxHeight)*0.8;
-        console.log("drawCircular", maxSize, maxWidth, maxHeight);
         svgContainer.removeChild(svgWrapperDummy);
 
 
@@ -193,6 +259,125 @@ const PlasmidViewer = new class {
         return svgWrapper;
     };
 
+
+    /**
+     * 
+     * @param {*} span 
+     * @param {*} levelHeight 
+     * @param {*} directionality 
+     * @param {*} label 
+     * @param {*} color 
+     * @param {*} id 
+     * @param {*} cssClass 
+     * @param {*} seqToPixel 
+     * @param {*} sequenceLength 
+     * @returns 
+     */
+    circularFeature(span, levelHeight, directionality, label, color, id, cssClass, seqToPixel, sequenceLength) {
+        const featureGroup = this.createShapeElement("g");
+        /**
+         * Arrow
+         */
+        const featureArrow = this.createShapeElement("path");
+
+        const featureArrowWidth = 20; //px
+        const featureHeadMinWidth = 20; //px
+        const featureBodyHeadRatio = 0.9;
+        const featureHeadWidth = Math.min(featureHeadMinWidth, (span[1] - span[0])*featureBodyHeadRatio)
+        const featureHeight = levelHeight - featureArrowWidth/2;
+
+        let curve;
+        let p1;
+        let p2;
+        let p3;
+        let p4;
+        let p5;
+        switch (directionality) {
+            case "fwd":
+                p1 = seqToPixel(span[0], featureHeight);
+                p2 = seqToPixel(span[1] - featureHeadWidth, featureHeight);
+                p3 = seqToPixel(span[1], featureHeight + featureArrowWidth/2);
+                p4 = seqToPixel(span[1] - featureHeadWidth, featureHeight + featureArrowWidth);
+                p5 = seqToPixel(span[0], featureHeight + featureArrowWidth);
+                curve = `
+                M ${p1[0]}, ${p1[1]}
+                A${featureHeight} ${featureHeight} 0 0 1
+                ${p2[0]} ${p2[1]}
+                L ${p3[0]} ${p3[1]}
+                ${p4[0]} ${p4[1]}
+                A${featureHeight} ${featureHeight} 0 0 0
+                ${p5[0]} ${p5[1]}
+                Z`
+                break;
+            case "rev":
+                p1 = seqToPixel(span[1], featureHeight);
+                p2 = seqToPixel(span[0] + featureHeadWidth, featureHeight);
+                p3 = seqToPixel(span[0], featureHeight + featureArrowWidth/2);
+                p4 = seqToPixel(span[0] + featureHeadWidth, featureHeight + featureArrowWidth);
+                p5 = seqToPixel(span[1], featureHeight + featureArrowWidth);
+                curve = `
+                M ${p1[0]}, ${p1[1]}
+                A${featureHeight} ${featureHeight} 0 0 0
+                ${p2[0]} ${p2[1]}
+                L ${p3[0]} ${p3[1]}
+                ${p4[0]} ${p4[1]}
+                A${featureHeight} ${featureHeight} 0 0 1
+                ${p5[0]} ${p5[1]}
+                Z`
+                break;
+            default:
+                p1 = seqToPixel(span[1], featureHeight);
+                p2 = seqToPixel(span[0], featureHeight);
+                p4 = seqToPixel(span[0], featureHeight + featureArrowWidth);
+                p5 = seqToPixel(span[1], featureHeight + featureArrowWidth);
+                curve = `
+                M ${p1[0]}, ${p1[1]}
+                A${featureHeight} ${featureHeight} 0 0 0
+                ${p2[0]} ${p2[1]}
+                L ${p4[0]} ${p4[1]}
+                A${featureHeight} ${featureHeight} 0 0 1
+                ${p5[0]} ${p5[1]}
+                Z`
+                break;
+        };
+        featureArrow.setAttribute("d", curve);
+
+        featureArrow.setAttribute("fill", color);
+
+        if (id) {featureArrow.setAttribute("id", id)};
+        if (cssClass) {featureArrow.setAttribute("class", cssClass)};
+        
+        featureGroup.appendChild(featureArrow);
+
+        /**
+         * Arrow
+         */
+        const featureLabel = this.text(
+            [0, 0],
+            label,
+            null,
+            `svg-feature-label-${Utilities.getTextColorBasedOnBg(color)}`,
+            "middle"
+        );
+        const pos = span[0] + (span[1] - span[0])/2
+        const a1 = (pos / sequenceLength)*2*Math.PI - Math.PI/2
+        let a2 = (pos / sequenceLength)*2*Math.PI*(180/Math.PI)
+        let r = featureHeight+featureArrowWidth*0.2;
+        if (a2 >= 90 && a2 <= 270) {
+            a2 -= 180;
+            r += 13;
+        };
+        const x = r*Math.cos(a1);
+        const y = r*Math.sin(a1);
+        featureLabel.setAttribute("transform", `translate(${x}, ${y}) rotate(${a2})`)
+        featureGroup.appendChild(featureLabel);
+
+        return featureGroup;
+    };
+    // #endregion Circular_view
+
+
+    // #region Linear_view 
     /**
      * 
      * @param {*} sequence 
@@ -200,7 +385,6 @@ const PlasmidViewer = new class {
      * @param {*} features 
      * @param {*} topology 
      */
-    //#region Linear view
     drawLinear(plasmidName, sequence, complementarySequence, features, topology) {
         const svgContainer = document.getElementById("linear-view-container");
         const mainViewerDiv = svgContainer.parentElement;
@@ -211,7 +395,6 @@ const PlasmidViewer = new class {
         const svgWrapperStyle = getComputedStyle(svgWrapperDummy);
         
         const maxWidth = mainViewerDiv.offsetWidth - (parseFloat(svgWrapperStyle.paddingLeft) + parseFloat(svgWrapperStyle.paddingRight));
-        console.log("drawLinear", maxWidth)
         svgContainer.removeChild(svgWrapperDummy);
 
         // Main wrapper
@@ -352,350 +535,6 @@ const PlasmidViewer = new class {
         return svgWrapper;
     };
 
-
-    /**
-     * 
-     * @param {*} sequence 
-     * @param {*} complementarySequence 
-     * @param {*} features 
-     * @param {*} topology 
-     */
-    //#region Grid view
-    drawGrid(plasmidName, sequence, complementarySequence, features, topology) {
-        /**
-         * Settings
-         */
-        const basesPerLine = 60;
-        const sequenceFwdHeight = 20;
-        const sequenceAxisHeight = 30
-        const sequenceRevHeight = 55;
-        
-        /**
-         * Figure out how wide the drawable area is
-         */
-        const svgContainer = document.getElementById("grid-view-container");
-        svgContainer.style.display = "flex";
-        
-        const svgWrapperDummy = document.createElement("DIV");
-        svgWrapperDummy.classList.add("svg-wrapper");
-        svgContainer.appendChild(svgWrapperDummy);
-        const svgWrapperStyle = getComputedStyle(svgWrapperDummy);
-        
-        let maxWidth = svgContainer.offsetWidth - (parseFloat(svgWrapperStyle.paddingLeft) + parseFloat(svgWrapperStyle.paddingRight));
-        
-        const mainViewer = svgContainer.parentElement;
-        mainViewer.style.overflowY = "scroll";
-        const scrollbarWidth = mainViewer.offsetWidth - svgContainer.offsetWidth;
-        mainViewer.style.overflowY = "";
-        console.log("drawGrid", scrollbarWidth)
-
-        maxWidth -= scrollbarWidth;
-        maxWidth -= 2; // 1 pixel marginon each side so strokes are not cutoff
-        console.log("drawGrid", maxWidth);
-
-        svgContainer.style.display = "";
-        svgContainer.removeChild(svgWrapperDummy);
-
-        // Sequence coordinate to pixel in axis
-        let seqToPixel = (s) => (s / basesPerLine)*(maxWidth) + 1;
-
-        /**
-         * Prepare segments
-         */
-        const nrOfSegments = Math.ceil(sequence.length/basesPerLine);
-        const segments = [];
-        for (let i = 0; i < nrOfSegments; i++) {
-            const sequenceStartIndex = i*basesPerLine;
-            const sequenceEndIndex = sequenceStartIndex + basesPerLine;
-            const sequenceFwd = sequence.slice(sequenceStartIndex, sequenceEndIndex);
-            const sequenceRev = complementarySequence.slice(sequenceStartIndex, sequenceEndIndex);
-
-            segments.push(
-                {
-                    "segmentIndexStart": sequenceStartIndex,
-                    "segmentIndexEnd": sequenceEndIndex,
-                    "sequenceFwd": sequenceFwd,
-                    "sequenceRev": sequenceRev,
-                    "features": {}
-                }
-            );
-        };
-
-        // Figure out which features are drawn on which segments
-        for (const [featureID, featureDict] of Object.entries(features)) {
-            const featureSpanStart = featureDict["span"][0];
-            const featureSpanEnd = featureDict["span"][1];
-            const featureDirectionality = featureDict["directionality"];
-            const segmentListIndexStart = Math.floor(featureSpanStart / basesPerLine);
-            const segmentListIndexEnd = Math.floor(featureSpanEnd / basesPerLine);
-            //console.log("PlasmidViewer.drawGrid", featureDict["label"], [featureSpanStart, featureSpanEnd], [segmentIndexStart, segmentIndexEnd]);
-
-            for (let i = segmentListIndexStart; i <= segmentListIndexEnd; i++) {
-                segments[i]["features"][featureID] = JSON.parse(JSON.stringify(featureDict));
-
-                const featureSegmentSpanStart = Math.max((segments[i]["segmentIndexStart"] + 1), featureSpanStart);
-                const featureSegmentSpanEnd = Math.min(segments[i]["segmentIndexEnd"], featureSpanEnd);
-                
-                segments[i]["features"][featureID]["span"] = [
-                    featureSegmentSpanStart - segments[i]["segmentIndexStart"],
-                    featureSegmentSpanEnd - segments[i]["segmentIndexStart"]
-                ]
-
-                // Figure out shape of this segment -> left=arrow/continued/none, right=arrow/continued/none
-                segments[i]["features"][featureID]["shape-left"] = null;
-                segments[i]["features"][featureID]["shape-right"] = null;
-                const isFirstSegment = (i == segmentListIndexStart) ? true: false;
-                const isLastSegment = (i == segmentListIndexEnd) ? true: false;
-                const isMiddleSegment = (!isFirstSegment && !isLastSegment) ? true: false;
-                
-                // If we're first segment
-                if (isFirstSegment) {
-                    // Left side
-                    segments[i]["features"][featureID]["shape-left"] = (featureDirectionality == "fwd") ? "null" : "arrow";
-
-                    // Right side
-                    if (isLastSegment) {
-                        // One single segment, draw blunt end or arrow end
-                        segments[i]["features"][featureID]["shape-right"] = (featureDirectionality == "fwd") ? "arrow" : null;
-                    } else {
-                        // The feature continues, draw break shape
-                        segments[i]["features"][featureID]["shape-right"] = "break";
-                    };
-                    continue;
-                };
-
-                // If we're middle segment
-                if (isMiddleSegment) {
-                    // The feature continues in both directions, draw break shapes on both ends
-                    segments[i]["features"][featureID]["shape-left"] = "break";
-                    segments[i]["features"][featureID]["shape-right"] = "break";
-                    continue;
-                };
-
-                // If this is the last segment
-                if (isLastSegment) {
-                    // Always set break shape to the left side
-                    // if it were the first segment it case would've already been handled
-                    segments[i]["features"][featureID]["shape-left"] = "break";
-
-                    segments[i]["features"][featureID]["shape-right"] = (featureDirectionality == "fwd") ? "arrow" : null;
-                    continue;
-                };
-
-
-
-                //console.log("PlasmidViewer.drawGrid -> segment features:",
-                //    featureDict["label"],
-                //    i,
-                //    [featureSpanStart, featureSpanEnd],
-                //    [segments[i]["segmentIndexStart"], segments[i]["segmentIndexEnd"]],
-                //    segments[i]["features"][featureID]["span"]
-                //)
-            };
-        };
-
-        // Main wrapper
-        const svgWrapper = document.createElement("DIV");
-        svgWrapper.classList.add("svg-wrapper-grid");
-
-        const basesWidth = maxWidth/basesPerLine;
-        const basesPositions = [];
-        for (let i = 0; i < basesPerLine; i++) {
-            basesPositions.push(basesWidth/2 + i*basesWidth)
-        };
-
-        const featuresLevelStart = 100;
-        const featuresLevelOffset = 25;
-        const featuresLevelsNr = 3;
-        let featuresLevels = [];
-        for (let i = 0; i < featuresLevelsNr; i++) {
-            featuresLevels.push(featuresLevelStart + i*featuresLevelOffset)
-        };
-
-        /**
-         * Iterate over segments and draw
-         */
-        segments.forEach((segment) => {
-            const segmentIndexStart = segment["segmentIndexStart"];
-            const segmentIndexEnd = segment["segmentIndexEnd"];
-            
-            // Canvas
-            const svgCanvas = this.createShapeElement("svg");
-            svgCanvas.setAttribute("version", "1.2");
-            svgCanvas.setAttribute("width", maxWidth + 2); // add margin for strokes back in
-            svgWrapper.appendChild(svgCanvas);
-
-            // Main group
-            const groupMain = this.createShapeElement("g");
-            groupMain.setAttribute("transform", `translate(${0} ${0})`);
-            svgCanvas.appendChild(groupMain);
-    
-            // Sequence group (fwd strand + axis + rev strand)
-            const groupSequence = this.createShapeElement("g");
-            groupSequence.setAttribute("id", "sequence-group");
-
-            // Forward strand
-            const groupStrandFwd = this.createShapeElement("g");
-            groupStrandFwd.setAttribute("id", "strand-fwd");
-            for (let i = 0; i < basesPerLine; i++) {
-                groupStrandFwd.appendChild(this.text(
-                    [basesPositions[i], sequenceFwdHeight],
-                    segment["sequenceFwd"][i],
-                    null,
-                    "base-text",
-                    "middle"
-                ));
-            };
-            groupSequence.appendChild(groupStrandFwd);
-            
-            // Sequence axis
-            groupSequence.appendChild(this.line(
-                [0, sequenceAxisHeight],
-                [(segment["sequenceFwd"].length/basesPerLine)*maxWidth, sequenceAxisHeight],
-                null,
-                "svg-sequence-axis-grid"
-            ));
-
-            const groupTicks = this.createShapeElement("g");
-            // Ticks 10s
-            const ticksLength10s = 14;
-            for (let num = Math.ceil(segmentIndexStart / 10) * 10; num <= segmentIndexEnd; num += 10) {
-                if (num - segmentIndexStart === 0) {continue};
-                if (num - segmentIndexStart > segment["sequenceFwd"].length) {continue}
-                groupTicks.appendChild(this.line(
-                    [basesPositions[num - segmentIndexStart - 1], sequenceAxisHeight-ticksLength10s/2],
-                    [basesPositions[num - segmentIndexStart - 1], sequenceAxisHeight+ticksLength10s/2],
-                    null,
-                    "svg-sequence-axis-grid"
-                ));
-            };
-            // Ticks 5s
-            const ticksLength5s = 7;
-            for (let num = Math.ceil(segmentIndexStart / 5) * 5; num <= segmentIndexEnd; num += 5) {
-                if (num - segmentIndexStart === 0) {continue};
-                if (num - segmentIndexStart > segment["sequenceFwd"].length) {continue}
-                groupTicks.appendChild(this.line(
-                    [basesPositions[num - segmentIndexStart - 1], sequenceAxisHeight-ticksLength5s/2],
-                    [basesPositions[num - segmentIndexStart - 1], sequenceAxisHeight+ticksLength5s/2],
-                    null,
-                    "svg-sequence-axis-grid"
-                ));
-            };
-            groupSequence.appendChild(groupTicks);
-    
-            // Reverse strand
-            const groupStrandRev = this.createShapeElement("g");
-            groupStrandRev.setAttribute("id", "strand-rev")
-            for (let i = 0; i < basesPerLine; i++) {
-                groupStrandRev.appendChild(this.text(
-                    [basesPositions[i], sequenceRevHeight],
-                    segment["sequenceRev"][i],
-                    null,
-                    "base-text",
-                    "middle"
-                ));
-            };
-            groupSequence.appendChild(groupStrandRev);
-
-            groupMain.appendChild(groupSequence);
-
-
-            /**
-             * Features
-             */
-            const segmentFeatures = this.createShapeElement("g");
-            segmentFeatures.setAttribute("id", "svg-features");
-            groupMain.appendChild(segmentFeatures);
-
-            for (const [featureID, featureDict] of Object.entries(segment["features"])) {
-                console.log(
-                    "PlasmidViewer.drawGrid -> segment features",
-                    featureDict["label"],
-                    featureDict["span"],
-                    featureDict["directionality"],
-                    featureDict
-                );
-
-                segmentFeatures.appendChild(this.gridFeature(
-                    featureID,
-                    [
-                        seqToPixel(featureDict["span"][0]-1),
-                        seqToPixel(featureDict["span"][1])
-                    ],
-                    featuresLevels[featureDict["level"]],
-                    featureDict["shape-left"],
-                    featureDict["shape-right"],
-                    featureDict["label"],
-                    featureDict["color"],
-                    null,
-                    "svg-feature-arrow"
-                ));
-            };
-        });
-
-        return svgWrapper;
-    };
-
-
-    /**
-     * 
-     * @param {*} shape 
-     * @returns 
-     */
-    createShapeElement(shape) {
-        return document.createElementNS("http://www.w3.org/2000/svg", shape)
-    };
-
-
-    /**
-     * 
-     * @param {*} pos 
-     * @param {*} content 
-     * @param {*} id 
-     * @param {*} cssClass 
-     * @param {*} textAnchor 
-     * @returns 
-     */
-    text(pos, content, id=null, cssClass=null, textAnchor="start", dy=0) {
-        const textElement = this.createShapeElement("text");
-        textElement.setAttribute("x", pos[0]);
-        textElement.setAttribute("y", pos[1]);
-        textElement.setAttribute("dy", dy);      
-        textElement.textContent = content;
-
-        if (id) {textElement.setAttribute("class", cssClass)};
-        
-        if (cssClass) {textElement.setAttribute("class", cssClass)};
-        
-        textElement.setAttribute("text-anchor", textAnchor);
-        
-        return textElement;
-    };
-
-
-    /**
-     * 
-     * @param {*} p1 
-     * @param {*} p2 
-     * @param {*} id 
-     * @param {*} cssClass 
-     * @returns 
-     */
-    line(p1, p2, id=null, cssClass=null) {
-        const line = this.createShapeElement("line");
-
-        line.setAttribute("x1", p1[0]);
-        line.setAttribute("y1", p1[1]);
-        line.setAttribute("x2", p2[0]);
-        line.setAttribute("y2", p2[1]);
-
-        if (id) {line.setAttribute("id", id)};
-        if (cssClass) {line.setAttribute("class", cssClass)};
-
-        return line;
-    };
-
-
     /**
      * 
      * @param {*} span 
@@ -706,7 +545,6 @@ const PlasmidViewer = new class {
      * @param {*} cssClass 
      * @returns 
      */
-    //#region Linear feature
     linearFeature(span, levelHeight, directionality, label, color, id, cssClass) {
         const featureGroup = this.createShapeElement("g");
         
@@ -765,128 +603,811 @@ const PlasmidViewer = new class {
             [span[0] + (span[1] - span[0])/2, featureHeight+featureArrowWidth*0.8],
             label,
             null,
-            `svg-feature-label-${this.getTextColorBasedOnBg(color)}`,
+            `svg-feature-label-${Utilities.getTextColorBasedOnBg(color)}`,
             "middle"
         ));
 
         return featureGroup;
     };
+    // #endregion Linear_view
 
 
+    // #region Grid_view
     /**
      * 
-     * @param {*} span 
-     * @param {*} levelHeight 
-     * @param {*} directionality 
-     * @param {*} label 
-     * @param {*} color 
-     * @param {*} id 
-     * @param {*} cssClass 
-     * @param {*} seqToPixel 
-     * @param {*} sequenceLength 
-     * @returns 
+     * @param {*} sequence 
+     * @param {*} complementarySequence 
+     * @param {*} features 
+     * @param {*} topology 
      */
-    //#region Circular Feature
-    circularFeature(span, levelHeight, directionality, label, color, id, cssClass, seqToPixel, sequenceLength) {
-        const featureGroup = this.createShapeElement("g");
+    drawGrid(plasmidName, sequence, complementarySequence, features, topology) {
         /**
-         * Arrow
+         * Settings
          */
-        const featureArrow = this.createShapeElement("path");
+        const svgMinHeight = 140;
 
-        const featureArrowWidth = 20; //px
-        const featureHeadMinWidth = 20; //px
-        const featureBodyHeadRatio = 0.9;
-        const featureHeadWidth = Math.min(featureHeadMinWidth, (span[1] - span[0])*featureBodyHeadRatio)
-        const featureHeight = levelHeight - featureArrowWidth/2;
+        const singleStrandHeight = 38;
+        const baseTextOffset = 12;
 
-        let curve;
-        let p1;
-        let p2;
-        let p3;
-        let p4;
-        let p5;
-        switch (directionality) {
-            case "fwd":
-                p1 = seqToPixel(span[0], featureHeight);
-                p2 = seqToPixel(span[1] - featureHeadWidth, featureHeight);
-                p3 = seqToPixel(span[1], featureHeight + featureArrowWidth/2);
-                p4 = seqToPixel(span[1] - featureHeadWidth, featureHeight + featureArrowWidth);
-                p5 = seqToPixel(span[0], featureHeight + featureArrowWidth);
-                curve = `
-                M ${p1[0]}, ${p1[1]}
-                A${featureHeight} ${featureHeight} 0 0 1
-                ${p2[0]} ${p2[1]}
-                L ${p3[0]} ${p3[1]}
-                ${p4[0]} ${p4[1]}
-                A${featureHeight} ${featureHeight} 0 0 0
-                ${p5[0]} ${p5[1]}
-                Z`
-                break;
-            case "rev":
-                p1 = seqToPixel(span[1], featureHeight);
-                p2 = seqToPixel(span[0] + featureHeadWidth, featureHeight);
-                p3 = seqToPixel(span[0], featureHeight + featureArrowWidth/2);
-                p4 = seqToPixel(span[0] + featureHeadWidth, featureHeight + featureArrowWidth);
-                p5 = seqToPixel(span[1], featureHeight + featureArrowWidth);
-                curve = `
-                M ${p1[0]}, ${p1[1]}
-                A${featureHeight} ${featureHeight} 0 0 0
-                ${p2[0]} ${p2[1]}
-                L ${p3[0]} ${p3[1]}
-                ${p4[0]} ${p4[1]}
-                A${featureHeight} ${featureHeight} 0 0 1
-                ${p5[0]} ${p5[1]}
-                Z`
-                break;
-            default:
-                p1 = seqToPixel(span[1], featureHeight);
-                p2 = seqToPixel(span[0], featureHeight);
-                p4 = seqToPixel(span[0], featureHeight + featureArrowWidth);
-                p5 = seqToPixel(span[1], featureHeight + featureArrowWidth);
-                curve = `
-                M ${p1[0]}, ${p1[1]}
-                A${featureHeight} ${featureHeight} 0 0 0
-                ${p2[0]} ${p2[1]}
-                L ${p4[0]} ${p4[1]}
-                A${featureHeight} ${featureHeight} 0 0 1
-                ${p5[0]} ${p5[1]}
-                Z`
-                break;
-        };
-        featureArrow.setAttribute("d", curve);
+        const strandFeatureSpacing = 5;
 
-        featureArrow.setAttribute("fill", color);
+        const aaIndexHeight = 15;
+        const featureGroupGap = 1
+        const aaBlockHeight = 20;
+        const featureAnnotationHeight = 25;
 
-        if (id) {featureArrow.setAttribute("id", id)};
-        if (cssClass) {featureArrow.setAttribute("class", cssClass)};
+        const featureAnnotationsSpacing = 5;
+
+        const gridMargin = 50; // margin on each side
         
-        featureGroup.appendChild(featureArrow);
 
         /**
-         * Arrow
+         * Figure out how wide the drawable area is
          */
-        const featureLabel = this.text(
-            [0, 0],
-            label,
-            null,
-            `svg-feature-label-${this.getTextColorBasedOnBg(color)}`,
-            "middle"
-        );
-        const pos = span[0] + (span[1] - span[0])/2
-        const a1 = (pos / sequenceLength)*2*Math.PI - Math.PI/2
-        let a2 = (pos / sequenceLength)*2*Math.PI*(180/Math.PI)
-        let r = featureHeight+featureArrowWidth*0.2;
-        if (a2 >= 90 && a2 <= 270) {
-            a2 -= 180;
-            r += 13;
-        };
-        const x = r*Math.cos(a1);
-        const y = r*Math.sin(a1);
-        featureLabel.setAttribute("transform", `translate(${x}, ${y}) rotate(${a2})`)
-        featureGroup.appendChild(featureLabel);
+        const viewerContainer = document.getElementById("viewer");
+        const svgWrapperPadding = 40;
+        const scrollBarWidth = Utilities.getScrollbarWidth();
+        let maxWidth = viewerContainer.clientWidth - svgWrapperPadding - scrollBarWidth;
+        
+        maxWidth -= gridMargin*2;
 
-        return featureGroup;
+        const baseWidth = UserPreferences.get("baseWidth");
+
+        const basesPerLine = Math.floor(maxWidth / baseWidth)
+
+
+        // Sequence coordinate to pixel in axis
+        let seqToPixel = (s) => (s / basesPerLine)*(maxWidth) + gridMargin;
+
+        /**
+         * Prepare segments
+         */
+        const nrOfSegments = Math.ceil(sequence.length/basesPerLine);
+        const segments = [];
+        for (let i = 0; i < nrOfSegments; i++) {
+            const sequenceStartIndex = i*basesPerLine;
+            const sequenceEndIndex = sequenceStartIndex + basesPerLine;
+            const sequenceFwd = sequence.slice(sequenceStartIndex, sequenceEndIndex);
+            const sequenceRev = complementarySequence.slice(sequenceStartIndex, sequenceEndIndex);
+
+            segments.push(
+                {
+                    "segmentIndexStart": sequenceStartIndex,
+                    "segmentIndexEnd": sequenceEndIndex,
+                    "sequenceFwd": sequenceFwd,
+                    "sequenceRev": sequenceRev,
+                    "features": {}
+                }
+            );
+        };
+
+        // Figure out which features are drawn on which segments
+        for (const [featureID, featureDict] of Object.entries(features)) {
+            const featureSpanStart = featureDict["span"][0];
+            const featureSpanEnd = featureDict["span"][1];
+            const featureDirectionality = featureDict["directionality"];
+            const segmentListIndexStart = Math.floor((featureSpanStart-1) / basesPerLine);
+            const segmentListIndexEnd = Math.floor(featureSpanEnd / basesPerLine);
+
+            for (let i = segmentListIndexStart; i <= segmentListIndexEnd; i++) {
+                segments[i]["features"][featureID] = Utilities.deepClone(featureDict);
+
+                const featureSegmentSpanStart = Math.max((segments[i]["segmentIndexStart"] + 1), featureSpanStart);
+                const featureSegmentSpanEnd = Math.min(segments[i]["segmentIndexEnd"], featureSpanEnd);
+                
+                segments[i]["features"][featureID]["span"] = [
+                    featureSegmentSpanStart - segments[i]["segmentIndexStart"],
+                    featureSegmentSpanEnd - segments[i]["segmentIndexStart"]
+                ]
+
+                const aaIndices = [];
+                const nrAA = Math.ceil((featureSpanEnd - featureSpanStart + 1) / 3);
+                let aaIndex = (featureDirectionality === "fwd") ?  featureSpanStart: featureSpanEnd;
+                for (let j = 0; j < nrAA; j++) {
+                    aaIndices.push([aaIndex, (featureDirectionality === "fwd")? aaIndex + 2: aaIndex - 2])
+                    aaIndex += (featureDirectionality === "fwd") ? 3: -3
+                };
+
+                segments[i]["features"][featureID]["aaIndices"] = aaIndices;
+
+                // Figure out shape of this segment -> left=arrow/continued/none, right=arrow/continued/none
+                segments[i]["features"][featureID]["shape-left"] = null;
+                segments[i]["features"][featureID]["shape-right"] = null;
+                const isFirstSegment = (i == segmentListIndexStart) ? true: false;
+                const isLastSegment = (i == segmentListIndexEnd) ? true: false;
+                const isMiddleSegment = (!isFirstSegment && !isLastSegment) ? true: false;
+                
+                // If we're first segment
+                if (isFirstSegment) {
+                    // Left side
+                    segments[i]["features"][featureID]["shape-left"] = (featureDirectionality == "fwd") ? "null" : "arrow";
+
+                    // Right side
+                    if (isLastSegment) {
+                        // One single segment, draw blunt end or arrow end
+                        segments[i]["features"][featureID]["shape-right"] = (featureDirectionality == "fwd") ? "arrow" : null;
+                    } else {
+                        // The feature continues, draw break shape
+                        segments[i]["features"][featureID]["shape-right"] = "break";
+                    };
+                    continue;
+                };
+
+                // If we're middle segment
+                if (isMiddleSegment) {
+                    // The feature continues in both directions, draw break shapes on both ends
+                    segments[i]["features"][featureID]["shape-left"] = "break";
+                    segments[i]["features"][featureID]["shape-right"] = "break";
+                    continue;
+                };
+
+                // If this is the last segment
+                if (isLastSegment) {
+                    // Always set break shape to the left side
+                    // if it were the first segment it case would've already been handled
+                    segments[i]["features"][featureID]["shape-left"] = "break";
+
+                    segments[i]["features"][featureID]["shape-right"] = (featureDirectionality == "fwd") ? "arrow" : null;
+                    continue;
+                };
+            };
+
+        };
+
+        // Main wrapper
+        // #region Main
+
+        const svgWrapper = document.createElement("DIV");
+        svgWrapper.classList.add("svg-wrapper-grid");
+
+        // #region Event_listeners
+        /**
+         * Mouse down
+         */
+        svgWrapper.addEventListener("mousedown", (e) => {
+            if (e.button === 0) {
+
+                // Get element at mousedown position
+                const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+                this.elementsAtMouseDown = elementsAtPoint;
+
+                // Find nearest base rect
+                const nearestRect = elementsAtPoint.find((el) => el.tagName === 'rect');
+
+                if (nearestRect) {
+                    // Start selection
+                    const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
+                    if (e.shiftKey) {
+                        this.selectBases(this.combineSpans(baseIndex));
+                    } else {
+                        this.selectBase(baseIndex);
+                    };
+                    this.currentlySelecting = true;
+                    this.selectionStartIndex = baseIndex;
+                };
+            };
+        });
+        /**
+         * Mouse up
+         */
+        svgWrapper.addEventListener("mouseup", (e) => {
+
+            // Stop selection
+            this.currentlySelecting = false;
+
+            // Find out if the event was a click event by checking if the elements the mouse is over have changed
+            const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+            const clicked = elementsAtPoint.every((ele, i) => ele === this.elementsAtMouseDown[i]);
+
+            
+            if (clicked) {
+
+                // Reset shapes tracker
+                this.elementsAtMouseDown = null;
+
+                // Find shapes at event
+                const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
+
+                // No shapes at event, deselect
+                if (shapesAtPoint.length == 0) {
+                    PlasmidViewer.deselectBases();
+                    return;
+                };
+    
+                // If we clicked on feature annotation, select it
+                if (shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
+                    const featureID = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id")
+    
+                    this.selectFeature(featureID, e.shiftKey);
+                } else if (shapesAtPoint[0].parentElement.matches('g#aa-block-group')) {
+                    const targetShape = shapesAtPoint[0].parentElement;
+                    const aaSpan = targetShape.getAttribute("aa-span").split(",").map(n => Number(n));
+
+                    this.selectAA(aaSpan, e.shiftKey);
+                };
+            };
+        });
+
+
+        /**
+         * Double click
+         */
+        svgWrapper.addEventListener("dblclick", (e) => {
+            // Get shapes at event
+            const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+            const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
+
+            if (shapesAtPoint[0] && shapesAtPoint[0].parentElement) {
+                // If we double click on feature annotation
+                if (shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
+                    // Open its header in the sidebar
+                    const featureID = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id");
+                    const targetDiv = document.getElementById(featureID)
+                    const targetHeader = targetDiv.firstElementChild;
+                    const targetContent = targetHeader.nextElementSibling;
+            
+                    Sidebar.toggleCollapsibleHeader(targetHeader);
+    
+                    // Scroll feature header into view
+                    targetContent.addEventListener("transitionend", function scrollAfterTransition() {
+                        targetContent.scrollIntoView({ behavior: "smooth", block: "center" });
+                        targetContent.removeEventListener("transitionend", scrollAfterTransition);
+                    }, { once: true });
+                };
+            };
+        });
+
+
+        /**
+         * Mouse move
+         */
+        svgWrapper.addEventListener("mousemove", (e) => {
+            // Get shapes at event
+            const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+            const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
+
+            // Remove hover class from previously hovered bases
+            this.unhighlightBases();
+            this.removeFeatureHover();
+            this.removeAABlocksHover();
+
+            if (!this.currentlySelecting) {
+                // If we're not currently selecting
+
+                // If we're not hovering over anything, remove tooltip and hover cursors
+                if (shapesAtPoint.length == 0) {
+                    this.hideSequenceTooltip();
+                    this.removeCursors("sequence-cursor-hover");
+                };
+
+                // If we're hovering over feature annotation
+                if (shapesAtPoint[0] && shapesAtPoint[0].parentElement) {
+                    if (shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
+                        // Find its ID
+                        const featureID = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id")
+                        
+                        // Find all segments with same ID and add hover styling to them
+                        this.addFeatureHover(featureID);
+    
+                        // Create feature description for tooltip
+                        const tooltipBody = this.createFeatureHoverTooltip(featureID);
+    
+                        // Show tooltip
+                        this.showSequenceTooltip(e.pageX, e.pageY);
+                        this.setSequenceTooltip(tooltipBody.innerHTML);
+    
+                        // Add hover classes
+                        this.addFeatureHover(featureID);
+                    } else if (shapesAtPoint[0].parentElement.matches('g#aa-block-group')) {
+                        const targetShape = shapesAtPoint[0].parentElement;
+                        const featureID = targetShape.getAttribute("feature-id");
+                        const aaIndex = targetShape.getAttribute("aa-index");
+                        const aa = targetShape.getAttribute("aa");
+                        this.addAABlocksHover(featureID, aaIndex);
+
+                        // Show tooltip
+                        this.showSequenceTooltip(e.pageX, e.pageY);
+                        this.setSequenceTooltip(`${aa}${parseInt(aaIndex)+1}`);
+                    };
+                };
+
+                // Check to see if we're hovering over a base
+                const nearestRect = elementsAtPoint.find((el) => el.tagName === 'rect' && el.classList.contains("base"));
+                if (nearestRect) {
+                    // Add the hover styling to it
+                    const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
+                    this.highlightBases([baseIndex, baseIndex], "base-hover");
+    
+                    this.showSequenceTooltip(e.pageX, e.pageY);
+                    this.setSequenceTooltip(baseIndex);
+            
+                    this.removeCursors("sequence-cursor-hover");
+                    this.placeCursor(baseIndex);
+                };
+            } else if (this.currentlySelecting) {
+                // We're selecting
+
+                // Get a list of all rects in all svgs
+                const svgElements = Array.from(svgWrapper.children);
+                let rects = [];
+                svgElements.forEach(svg => {
+                    // Get all <rect> elements inside the current SVG
+                    const rectElements = svg.querySelectorAll('.base');
+                    rects = rects.concat(Array.from(rectElements));
+                });
+            
+
+                // Find nearest rectangle to the mouse position
+                let nearestRect = null;
+                let lastDistance = Infinity;
+                rects.forEach(rect => {
+                    const rectBox = rect.getBoundingClientRect();
+
+                    const rectX =  rectBox.left + rectBox.width/2;
+                    const rectY = rectBox.top + rectBox.height/2;
+
+                    const distance = Math.sqrt(Math.pow(rectX - e.clientX, 2) + Math.pow(rectY - e.clientY, 2));
+                    if (distance < lastDistance) {
+                        lastDistance = distance;
+                        nearestRect = rect;
+                    }
+                });
+                
+                
+                if (nearestRect) {
+                    // Make the nearest rectangle to the mouse the end index and select everything
+                    // before it
+                    const selectionEndIndex = parseInt(nearestRect.getAttribute("base-index"));
+    
+                    this.showSequenceTooltip(e.pageX, e.pageY);
+                    this.setSequenceTooltip(selectionEndIndex);
+
+
+                    let selectionSpan;
+                    if (this.selectionStartIndex <= selectionEndIndex) {
+                        selectionSpan = [
+                            this.selectionStartIndex,
+                            selectionEndIndex
+                        ];
+                    } else {
+                        selectionSpan = [
+                            this.selectionStartIndex - 1,
+                            selectionEndIndex
+                        ];
+                    }
+                    this.selectBases(selectionSpan);
+                };
+            };
+        });
+
+
+        /**
+         * Mouse leave
+         */
+        svgWrapper.addEventListener("mouseleave", (e) => {
+            // Hide tooltip and remove hover styling
+            this.hideSequenceTooltip();
+            this.removeCursors("sequence-cursor-hover");
+            this.unhighlightBases("base-hover");
+        });
+
+        /**
+         * Click outside of view container
+         */
+        document.getElementById("content-wrapper").addEventListener("click", function (e) {
+            if (document.getElementById("viewer").contains(e.target)) {
+                return;
+            };
+            // If we click outside the viewer, deselect bases
+            PlasmidViewer.deselectBases();
+        });
+        // #endregion Event_listeners
+
+
+        const basesWidth = maxWidth/basesPerLine;
+        const basesPositions = [];
+        for (let i = 0; i < basesPerLine; i++) {
+            basesPositions.push(basesWidth/2 + i*basesWidth + gridMargin)
+        };
+
+        /**
+         * Iterate over segments and draw
+         */
+        // #region Draw_segments
+        const baseBoxTemplate = this.createShapeElement("rect");
+
+        segments.forEach((segment) => {
+            const segmentIndexStart = segment["segmentIndexStart"];
+            const segmentIndexEnd = segment["segmentIndexEnd"];
+            
+
+            // #region SVG_canvas
+            const svgCanvas = this.createShapeElement("svg");
+            svgCanvas.setAttribute("version", "1.2");
+            svgCanvas.setAttribute("width", maxWidth + gridMargin*2); // add margin for strokes back in 
+            svgCanvas.setAttribute("indices", [segmentIndexStart+1, segmentIndexEnd])
+            svgWrapper.appendChild(svgCanvas);
+            // #endregion SVG_canvas
+
+
+            // #region Main_group
+            const groupMain = this.createShapeElement("g");
+            groupMain.setAttribute("id", "strand-group");
+            groupMain.setAttribute("transform", "translate(0, 5)");
+            svgCanvas.appendChild(groupMain);
+    
+
+            // #region Sequence_group
+            const groupSequence = this.createShapeElement("g");
+            groupSequence.setAttribute("id", "sequence-group");
+            groupMain.appendChild(groupSequence);
+            
+
+            // #region Forward_strand
+            const groupStrandFwd = this.createShapeElement("g");
+            groupStrandFwd.setAttribute("id", "strand-fwd");
+            groupSequence.appendChild(groupStrandFwd);
+
+            const groupStrandFwdRects = this.createShapeElement("g");
+            groupStrandFwdRects.setAttribute("id", "strand-rects");
+            groupStrandFwd.appendChild(groupStrandFwdRects);
+            const groupStrandFwdText = this.createShapeElement("g");
+            groupStrandFwdText.setAttribute("id", "strand-text");
+            groupStrandFwd.appendChild(groupStrandFwdText);
+
+            for (let i = 0; i < basesPerLine; i++) {
+                if (!segment["sequenceFwd"][i]) {continue};
+
+                const baseBox = baseBoxTemplate.cloneNode();
+                baseBox.setAttribute("x", basesPositions[i] - basesWidth/2);
+                baseBox.setAttribute("y", 0);
+                baseBox.setAttribute("height", singleStrandHeight);
+                baseBox.setAttribute("width", basesWidth);
+                baseBox.classList.add("base");
+                baseBox.setAttribute("base-index", segments.indexOf(segment)*basesPerLine + i + 1)
+                groupStrandFwdRects.appendChild(baseBox);
+                
+                const base = this.text(
+                    [basesPositions[i], singleStrandHeight - baseTextOffset],
+                    segment["sequenceFwd"][i],
+                    null,
+                    "base-text",
+                    "middle"
+                );
+                groupStrandFwdText.appendChild(base);
+            };
+            // #endregion Forward_strand
+
+
+            // #region Reverse_strand
+            const groupStrandRev = this.createShapeElement("g");
+            groupStrandRev.setAttribute("id", "strand-rev");
+            groupSequence.appendChild(groupStrandRev);
+
+            const groupStrandRevRects = this.createShapeElement("g");
+            groupStrandRevRects.setAttribute("id", "strand-rects");
+            groupStrandRev.appendChild(groupStrandRevRects);
+            const groupStrandRevText = this.createShapeElement("g");
+            groupStrandRevText.setAttribute("id", "strand-text");
+            groupStrandRev.appendChild(groupStrandRevText);
+
+            for (let i = 0; i < basesPerLine; i++) {
+                if (!segment["sequenceRev"][i]) {continue};
+
+                const baseBox = baseBoxTemplate.cloneNode();
+                baseBox.setAttribute("x", basesPositions[i] - basesWidth/2);
+                baseBox.setAttribute("y", singleStrandHeight);
+                baseBox.setAttribute("height", singleStrandHeight);
+                baseBox.setAttribute("width", basesWidth);
+                baseBox.classList.add("base");
+                baseBox.setAttribute("base-index", segments.indexOf(segment)*basesPerLine + i + 1)
+                groupStrandRevRects.appendChild(baseBox);
+                const base = this.text(
+                    [basesPositions[i], singleStrandHeight*2  - baseTextOffset],
+                    segment["sequenceRev"][i],
+                    null,
+                    "base-text",
+                    "middle"
+                );
+                groupStrandRevText.appendChild(base);
+            };
+            // #endregion Reverse_strand
+
+            
+            // #region Axis
+            groupSequence.appendChild(this.line(
+                [0 + gridMargin, singleStrandHeight],
+                [(segment["sequenceFwd"].length/basesPerLine)*maxWidth + gridMargin, singleStrandHeight],
+                null,
+                "svg-sequence-axis-grid"
+            ));
+            // #endregion Axis
+
+
+            // #region Ticks
+            const groupTicks = this.createShapeElement("g");
+            groupSequence.appendChild(groupTicks);
+
+            const ticksIncrement = [10, 5];
+            const ticksLength = [14, 7];
+            for (let i = 0; i < 2; i++) {
+                for (
+                    let num = Math.ceil(segmentIndexStart / ticksIncrement[i]) * ticksIncrement[i];
+                    num <= segmentIndexEnd;
+                    num += ticksIncrement[i]
+                ) {
+                    if (num - segmentIndexStart === 0) {continue};
+                    if (num - segmentIndexStart > segment["sequenceFwd"].length) {continue}
+                    groupTicks.appendChild(this.line(
+                        [
+                            basesPositions[num - segmentIndexStart - 1],
+                            singleStrandHeight-ticksLength[i]/2
+                        ],
+                        [
+                            basesPositions[num - segmentIndexStart - 1],
+                            singleStrandHeight+ticksLength[i]/2
+                        ],
+                        null,
+                        "svg-sequence-axis-grid"
+                    ));
+                };
+            };
+            // #endregion Ticks
+
+
+            // #region Sequence_indices
+            // Sequence indices or
+            // dots on each side of the axis for circular plasmids
+            const groupStrandIndices = this.createShapeElement("g");
+            groupStrandIndices.setAttribute("id", "strand-indices");
+            groupSequence.appendChild(groupStrandIndices);
+
+            const dotsOffset = 8;
+            const dotsWidth = 4;
+            const startingOffset = 4;
+            if (topology === "circular" && segments.indexOf(segment) == 0){
+                for (let i = 0; i < 3; i++){
+                    groupStrandIndices.appendChild(this.line(
+                        [gridMargin - startingOffset - i*dotsOffset, singleStrandHeight],
+                        [gridMargin - startingOffset - i*dotsOffset - dotsWidth, singleStrandHeight],
+                        null,
+                        "svg-sequence-axis-grid"
+                    ));
+                };
+            } else {
+                groupStrandIndices.appendChild(this.text(
+                    [gridMargin - 8, singleStrandHeight],
+                    `${segmentIndexStart + 1}`,
+                    null,
+                    "svg-sequence-indices",
+                    "end",
+                    5
+                ));
+            };
+
+            // Dots on each side of the axis for circular plasmids
+            const startX = gridMargin + (segment["sequenceFwd"].length/basesPerLine)*maxWidth
+            if (topology === "circular" && segments.indexOf(segment) == segments.length - 1){
+                for (let i = 0; i < 3; i++) {
+                    groupSequence.appendChild(this.line(
+                        [startX + startingOffset + i*dotsOffset, singleStrandHeight],
+                        [startX + startingOffset + i*dotsOffset + dotsWidth, singleStrandHeight],
+                        null,
+                        "svg-sequence-axis-grid"
+                    ));
+                };
+            } else {
+                groupSequence.appendChild(this.text(
+                    [startX + 8, singleStrandHeight],
+                    `${segmentIndexEnd}`,
+                    null,
+                    "svg-sequence-indices",
+                    "start",
+                    5
+                ));
+            };
+            // #endregion Sequence_indices
+            
+            // #endregion Sequence_group
+
+
+            // #region Features
+            const segmentFeatures = this.createShapeElement("g");
+            segmentFeatures.setAttribute("id", "svg-features");
+            groupMain.appendChild(segmentFeatures);
+
+            let levels = {};
+            for (let key in segment["features"]) {
+                let level = segment["features"][key]["level"];
+                
+                if (!levels[level]) {
+                    levels[level] = [];
+                };
+                levels[level].push(key);
+            };
+            levels = Object.values(levels)
+        
+            const featuresLevelStart = singleStrandHeight*2 + strandFeatureSpacing;
+            let featureGroupTopY = featuresLevelStart;
+            let aaIndexY;
+            let aaBlockY;
+            let annotationY;
+            
+            let svgHeight = svgMinHeight;
+            // Iterate over levels
+            for (let i = 0; i < levels.length; i++) {
+                if (i !== 0) {
+                    featureGroupTopY = annotationY + featureAnnotationHeight/2 + featureAnnotationsSpacing;
+                };
+
+                const featuresInLevel = levels[i];
+                let translatedFeatureInLevel = false;
+                for (let j = 0; j < featuresInLevel.length; j++) {
+                    const currFeatureID = featuresInLevel[j];
+                    const featureDict = segment["features"][currFeatureID];
+                    if (featureDict["translation"]) {
+                        translatedFeatureInLevel = true
+                    };
+                };
+
+                // Iterate over features in level
+                if (translatedFeatureInLevel) {
+                    aaIndexY = featureGroupTopY;
+                    aaBlockY = aaIndexY + aaIndexHeight + featureGroupGap;
+                    annotationY = aaBlockY + aaBlockHeight + featureGroupGap + featureAnnotationHeight/2;
+                } else {
+                    annotationY = featureGroupTopY + featureAnnotationHeight/2;
+                };
+
+                svgHeight = Math.max(
+                    annotationY + featureAnnotationHeight/2 + featureAnnotationsSpacing + 5,
+                    svgMinHeight,
+                );
+
+                for (let j = 0; j < featuresInLevel.length; j++) {
+                    const currFeatureID = featuresInLevel[j];
+                    const featureDict = segment["features"][currFeatureID];
+    
+    
+                    let featureLengthPixels = seqToPixel(featureDict["span"][1]) - seqToPixel(featureDict["span"][0]-1);
+                    featureLengthPixels -= (featureDict["shape-left"] !== null) ? 10: 0;
+                    featureLengthPixels -= (featureDict["shape-right"] !== null) ? 10: 0;
+                    const featureLabel = this.fitTextInRectangle(
+                        featureDict["label"],
+                        featureLengthPixels,
+                        "svg-feature-label-black",
+                    );
+
+                    segmentFeatures.appendChild(this.gridFeature(
+                        currFeatureID,
+                        [
+                            seqToPixel(featureDict["span"][0]-1),
+                            seqToPixel(featureDict["span"][1])
+                        ],
+                        annotationY,
+                        featureAnnotationHeight,
+                        featureDict["shape-left"],
+                        featureDict["shape-right"],
+                        featureLabel,
+                        featureDict["color"],
+                        null,
+                        "svg-feature-arrow"
+                    ));
+    
+    
+                    // #region Translation
+                    if (featureDict["translation"]) {
+                        translatedFeatureInLevel = true;
+
+                        const featureSpan = featureDict["span"]
+                        const featureSegmentSpan = [
+                            featureDict["span"][0] + segmentIndexStart,
+                            featureDict["span"][1] + segmentIndexStart,
+                        ];
+    
+                        
+                        const translation = this.createShapeElement("g");
+                        translation.setAttribute("id", "svg-feature-translation");
+                        segmentFeatures.appendChild(translation);
+    
+                        const direction = features[currFeatureID]["directionality"];
+                        const aaIndices = featureDict["aaIndices"]
+
+                        let codonStart = (direction === "fwd") ? featureSegmentSpan[0]: featureSegmentSpan[1];
+                        
+                        let aaRangeIndex = aaIndices.findIndex(([a, b]) => codonStart >= Math.min(a, b) && codonStart <= Math.max(a, b));
+                        
+                        while (aaIndices[aaRangeIndex]) {
+                            const aaRangeFull = aaIndices[aaRangeIndex];
+    
+                            if (direction === "fwd" && aaRangeFull[0] > segmentIndexEnd) break;
+                            if (direction === "rev" && aaRangeFull[0] < segmentIndexStart+1) break;
+    
+                            const codon = (direction === "fwd") 
+                            ? sequence.slice(Math.min(...aaRangeFull) - 1, Math.max(...aaRangeFull))
+                            : complementarySequence.slice(Math.min(...aaRangeFull) - 1, Math.max(...aaRangeFull)).split("").reverse().join("");
+                            
+                            const aa = Nucleotides.translate(codon);
+    
+                            const aaShapeRange = (direction === "fwd")
+                            ? [Math.max(aaRangeFull[0], segmentIndexStart + 1), Math.min(aaRangeFull[1], segmentIndexEnd)]
+                            : [Math.min(aaRangeFull[0], segmentIndexEnd), Math.max(aaRangeFull[1], segmentIndexStart+1)];
+    
+    
+                            const aaBlockXStart = seqToPixel(Math.min(...aaShapeRange) - segmentIndexStart) - baseWidth;
+                            const aaBlockWidthBases = Math.abs(aaShapeRange[0] - aaShapeRange[1]) + 1
+                            const aaBlockWidthPx = aaBlockWidthBases*baseWidth;
+                            let aaTextPos = (aaBlockWidthBases >= 2)
+                            ? (direction === "fwd")
+                                ? aaRangeFull[0] + (aaRangeFull[1] - aaRangeFull[0])/2
+                                : aaRangeFull[0] - (aaRangeFull[0] - aaRangeFull[1])/2
+                            : null;
+                            let aaTextPosPx = seqToPixel(aaTextPos - segmentIndexStart) - baseWidth/2;
+                            
+                            if (aaBlockWidthBases === 2) {
+                                const closerEdge = Math.abs(aaShapeRange[0] - aaRangeFull[0]) < Math.abs(aaShapeRange[1] - aaRangeFull[1]) ? "back" : "front";
+                                if (closerEdge === "front") {
+                                    aaTextPos = aaShapeRange[0] + ((direction === "fwd") ? 0.2: -0.2);
+                                } else {
+                                    aaTextPos = aaShapeRange[0] + ((direction === "fwd") ? 1: -1);
+                                };
+                                
+                                aaTextPosPx = seqToPixel(aaTextPos - segmentIndexStart) - baseWidth/2;
+                            } else if (aaBlockWidthBases === 3) {
+                                aaTextPos = aaRangeFull[0] + ((direction === "fwd") ? 1: -1);
+                                aaTextPosPx = seqToPixel(aaTextPos - segmentIndexStart) - baseWidth/2;
+                            } else {
+                                aaTextPosPx = null;
+                            };
+
+                            const aaIndex = ((aaRangeIndex + 1) % 5 === 0 || aaRangeIndex === 0) ? aaRangeIndex + 1: null;
+    
+
+                            const aaBlock = this.aaBlock(
+                                aaBlockXStart,
+                                aaBlockY,
+                                aaBlockWidthPx,
+                                aaBlockHeight,
+                                direction,
+                                aaTextPosPx,
+                                aa,
+                                aaIndexY,
+                                aaIndexHeight,
+                                aaIndex,
+                            );
+                            aaBlock.setAttribute("feature-id", currFeatureID);
+                            aaBlock.setAttribute("aa-index", aaRangeIndex);
+                            aaBlock.setAttribute("aa-span", aaRangeFull);
+                            aaBlock.setAttribute("aa", aa);
+                            translation.appendChild(aaBlock);
+    
+                            aaRangeIndex++;
+                        };
+                    };
+                    // #endregion Translation
+                };
+            };
+            svgCanvas.setAttribute("height", svgHeight);
+            //#endregion Features
+            // #endregion Main_group
+
+
+            //#region Cursors_groups 
+            const groupSelectionPreviewCursor = this.createShapeElement("g");
+            groupSelectionPreviewCursor.setAttribute("id", "selection-preview-cursor-group");
+            svgCanvas.appendChild(groupSelectionPreviewCursor);
+
+            const groupSelectionCursor = this.createShapeElement("g");
+            groupSelectionCursor.setAttribute("id", "selection-cursor-group");
+            svgCanvas.appendChild(groupSelectionCursor);
+            //#endregion Cursors_groups
+
+        });
+        // #endregion
+
+
+        // #endregion Main
+        return svgWrapper;
     };
 
 
@@ -902,11 +1423,9 @@ const PlasmidViewer = new class {
      * @param {*} cssClass 
      * @returns 
      */
-    //#region Grid feature
-    gridFeature(featureId, span, levelHeight, featureShapeLeft, featureShapeRight, label, color, elementId, cssClass) {
-        console.log("PlasmidViewer.gridFeature ->", label, featureShapeLeft, featureShapeRight)
+    gridFeature(featureId, span, levelHeight, featureHeight, featureShapeLeft, featureShapeRight, label, color, elementId, cssClass) {
         
-        const featureArrowWidth = 30; //px
+        const featureArrowWidth = featureHeight; //px
         const featureHeadMinWidth = 10; //px
         const featureBodyHeadRatio = 0.9;
 
@@ -924,43 +1443,43 @@ const PlasmidViewer = new class {
         featureArrowGroup.setAttribute("id", "arrow")
 
         const featureHeadWidth = Math.min(featureHeadMinWidth, (span[1] - span[0])*featureBodyHeadRatio)
-        const featureHeight = levelHeight - featureArrowWidth/2;
+        const featureY = levelHeight - featureArrowWidth/2;
 
         // Shapes are drawn clockwise
         const shapesLeft = {
             // Blunt end
             null: [
-                [span[0], featureHeight + featureArrowWidth],
-                [span[0], featureHeight]
+                [span[0], featureY + featureArrowWidth],
+                [span[0], featureY]
             ],
             // Arrow
             "arrow": [
-                [span[0] + featureHeadWidth, featureHeight + featureArrowWidth],
-                [span[0], featureHeight + featureArrowWidth/2],
-                [span[0] + featureHeadWidth, featureHeight]
+                [span[0] + featureHeadWidth, featureY + featureArrowWidth],
+                [span[0], featureY + featureArrowWidth/2],
+                [span[0] + featureHeadWidth, featureY]
             ],
             // Break
             "break": [
-                [span[0] + featureHeadWidth, featureHeight + featureArrowWidth],
-                [span[0], featureHeight]
+                [span[0] + featureHeadWidth, featureY + featureArrowWidth],
+                [span[0], featureY]
             ]
         };
         const shapesRight = {
             // Blunt end
             null: [
-                [span[1], featureHeight],
-                [span[1], featureHeight + featureArrowWidth]
+                [span[1], featureY],
+                [span[1], featureY + featureArrowWidth]
             ],
             // Arrow
             "arrow": [
-                [span[1] - featureHeadWidth, featureHeight],
-                [span[1], featureHeight + featureArrowWidth/2],
-                [span[1] - featureHeadWidth, featureHeight + featureArrowWidth]
+                [span[1] - featureHeadWidth, featureY],
+                [span[1], featureY + featureArrowWidth/2],
+                [span[1] - featureHeadWidth, featureY + featureArrowWidth]
             ],
             // Break
             "break": [
-                [span[1] - featureHeadWidth, featureHeight],
-                [span[1], featureHeight + featureArrowWidth]
+                [span[1] - featureHeadWidth, featureY],
+                [span[1], featureY + featureArrowWidth]
             ]
         };
 
@@ -978,9 +1497,9 @@ const PlasmidViewer = new class {
         if (featureShapeLeft == "break") {
             const breakDecorationLeft = this.createShapeElement("polygon");
             breakDecorationLeft.setAttribute("points", [
-                [span[0], featureHeight + featureArrowWidth],
-                [span[0] + featureHeadWidth, featureHeight],
-                [span[0] + featureHeadWidth, featureHeight + featureArrowWidth]
+                [span[0], featureY + featureArrowWidth],
+                [span[0] + featureHeadWidth, featureY],
+                [span[0] + featureHeadWidth, featureY + featureArrowWidth]
             ]);
             breakDecorationLeft.setAttribute("fill", color);
             breakDecorationLeft.classList.add("svg-feature-arrow-decoration");
@@ -991,9 +1510,9 @@ const PlasmidViewer = new class {
         if (featureShapeRight == "break") {
             const breakDecorationRight = this.createShapeElement("polygon");
             breakDecorationRight.setAttribute("points", [
-                [span[1] - featureHeadWidth, featureHeight],
-                [span[1], featureHeight],
-                [span[1] - featureHeadWidth, featureHeight + featureArrowWidth]
+                [span[1] - featureHeadWidth, featureY],
+                [span[1], featureY],
+                [span[1] - featureHeadWidth, featureY + featureArrowWidth]
             ]);
             breakDecorationRight.setAttribute("fill", color);
             breakDecorationRight.classList.add("svg-feature-arrow-decoration");
@@ -1012,43 +1531,111 @@ const PlasmidViewer = new class {
         const textBoxStart = (featureShapeLeft == null) ? span[0]: span[0] + featureHeadWidth;
         const textBoxEnd = (featureShapeRight == null) ? span[1]: span[1] - featureHeadWidth;
         featureGroup.appendChild(this.text(
-            [textBoxStart + (textBoxEnd - textBoxStart)/2, featureHeight+(featureArrowWidth/2)],
+            [textBoxStart + (textBoxEnd - textBoxStart)/2, featureY+(featureArrowWidth/2)],
             label,
             null,
-            `svg-feature-label-${this.getTextColorBasedOnBg(color)}`,
+            `svg-feature-label-${Utilities.getTextColorBasedOnBg(color)}`,
             "middle",
             "0.4em"
         ));
 
-        /** 
-         * Event listeners
-        */
-        featureGroup.addEventListener("mouseover", () => {
-            const containerDiv = document.getElementById('grid-view-container');
-            const shapesWithAttribute = containerDiv.querySelectorAll(`svg [feature-id="${featureId}"]`);
-            shapesWithAttribute.forEach((shape) => {
-                shape.querySelector("#arrow").classList.add("svg-feature-arrow-hover")
-            });
-            //console.log(`PlasmidViewer.gridFeature.Event.mouseover -> ${label} ${featureId}`);
-        });
-
-        featureGroup.addEventListener("mouseout", () => {
-            const containerDiv = document.getElementById('grid-view-container');
-            const shapesWithAttribute = containerDiv.querySelectorAll(`svg [feature-id="${featureId}"]`);
-            shapesWithAttribute.forEach((shape) => {
-                shape.querySelector("#arrow").classList.remove("svg-feature-arrow-hover")
-            });
-            console.log(`PlasmidViewer.gridFeature.Event.mouseout -> ${label} ${featureId}`);
-        });
-
-        featureGroup.addEventListener("click", () => {
-            console.log(`PlasmidViewer.gridFeature.Event.click -> ${label} ${featureId}`);
-        });
-
         return featureGroup;
     };
+    
+    
+    aaBlock(x, y, width, height, direction, textPosX, aa, aaIndexY, aaIndexHeight, aaIndex) {
+        const headWidth = 3;
+
+        const aaBlockGroup = this.createShapeElement("g");
+        aaBlockGroup.setAttribute("id", "aa-block-group");
+
+        let fragment = document.createDocumentFragment();
+
+        /**
+         * Block index
+         */
+        if (aaIndex && textPosX) {
+            fragment.appendChild(this.text(
+                [textPosX, aaIndexY + aaIndexHeight/2],
+                aaIndex,
+                null,
+                `aa-index`,
+                "middle",
+                "0.4em"
+            ));
+        };
 
 
+        /**
+         * Block
+         */
+        const isForward = direction === "fwd";
+        const isStop = aa === "*";
+
+        let points = isForward 
+        ? [
+            [x + headWidth, y + height / 2],
+            [x, y],
+            [x + width, y],
+            [x + width + (isStop ? 0 : headWidth), y + height / 2],
+            [x + width, y + height],
+            [x, y + height]
+        ]
+        : [
+            [x - (isStop ? 0 : headWidth), y + height / 2],
+            [x, y],
+            [x + width, y],
+            [x + width - headWidth, y + height / 2],
+            [x + width, y + height],
+            [x, y + height]
+        ];
+
+        const aaBlock = this.createShapeElement("polygon");
+        aaBlock.setAttribute("id", "block")
+        aaBlock.setAttribute("points", points.map(p => p.join(",")).join(" "));
+        aaBlock.classList.add("aa-block");
+
+        const resClass = `aa-block-${aa === "*" ? "stop" : aa}`;
+        aaBlock.classList.add(resClass);
+        fragment.appendChild(aaBlock);
+        
+
+        /**
+         * Block text
+         */
+        if (textPosX) {
+            let color = this.resFillColors[aa === "*" ? "stop" : aa];
+
+            const aaText = this.text(
+                [textPosX, y + height/2],
+                aa,
+                null,
+                `aa-text`,
+                "middle",
+                "0.4em"
+            );
+            aaText.classList.add(`aa-text-${Utilities.getTextColorBasedOnBg(color)}`)
+            fragment.appendChild(aaText);
+        };
+
+        aaBlockGroup.appendChild(fragment);
+        return aaBlockGroup;
+    };
+
+    getCssFillColor(className) {
+        for (let sheet of document.styleSheets) {
+            try {
+                for (let rule of sheet.cssRules) {
+                    if (rule.selectorText === `.${className}`) {
+                        return rule.style.fill;
+                    };
+                };
+            } catch (e) {}
+        };
+        return "#000";
+    };
+    
+    
     /**
      * 
      * @param {*} maxValue 
@@ -1086,16 +1673,146 @@ const PlasmidViewer = new class {
 
         return ticks;
     };
+    // #endregion Grid_view
+
+
+    // #region Drawing_helpers
+    /**
+     * 
+     * @param {*} shape 
+     * @returns 
+     */
+    createShapeElement(shape) {
+        return document.createElementNS(this.svgNameSpace, shape)
+    };
 
 
     /**
      * 
-     * @param {*} targetView 
+     * @param {*} pos 
+     * @param {*} content 
+     * @param {*} id 
+     * @param {*} cssClass 
+     * @param {*} textAnchor 
      * @returns 
      */
-    switchView(targetView) {
-        // Return immediately if we're already in target view
-        if (this.activeView === targetView) {return};
+    text(pos, content, id=null, cssClass=null, textAnchor="start", dy=0) {
+        const textElement = this.textElementTemplate.cloneNode();
+        textElement.setAttribute("x", pos[0]);
+        textElement.setAttribute("y", pos[1]);
+        textElement.setAttribute("dy", dy);      
+        textElement.textContent = content;
+
+        if (id) {textElement.setAttribute("class", cssClass)};
+        
+        if (cssClass) {textElement.setAttribute("class", cssClass)};
+        
+        textElement.setAttribute("text-anchor", textAnchor);
+        
+        return textElement;
+    };
+
+
+    /**
+     * 
+     * @param {*} p1 
+     * @param {*} p2 
+     * @param {*} id 
+     * @param {*} cssClass 
+     * @returns 
+     */
+    line(p1, p2, id=null, cssClass=null) {
+        const line = this.createShapeElement("line");
+
+        line.setAttribute("x1", p1[0]);
+        line.setAttribute("y1", p1[1]);
+        line.setAttribute("x2", p2[0]);
+        line.setAttribute("y2", p2[1]);
+
+        if (id) {line.setAttribute("id", id)};
+
+        if (cssClass) {
+            const cssClasses = Array.isArray(cssClass) ? cssClass : [cssClass];
+            cssClasses.forEach((c) => {
+                line.classList.add(c)
+            });
+        };
+
+        return line;
+    };
+
+
+    initMeasurementSVG() {
+        this.measurementSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        this.measurementSvg.style.position = "absolute";
+        this.measurementSvg.style.visibility = "hidden";
+        this.measurementSvg.style.width = "0";
+        this.measurementSvg.style.height = "0";
+        document.body.appendChild(this.measurementSvg);
+
+        this.measurementText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        this.measurementSvg.appendChild(this.measurementText);
+    };
+
+
+    /**
+     * Truncates strings to fit wihin an area.
+     * 
+     * @param {String} text - Input string
+     * @param {Number} maxWidth - Max width of string in pixels
+     * @param {String} cssClass - CSS class to pull styling from
+     * @returns  {String} - Original string or truncated string
+     */
+    fitTextInRectangle(text, maxWidth, cssClass) {
+        this.measurementText.setAttribute("class", cssClass);
+        this.measurementText.textContent = text;
+
+        const computedStyle = window.getComputedStyle(this.measurementText);
+        this.measurementText.setAttribute("font-size", computedStyle.fontSize);
+        this.measurementText.setAttribute("font-family", computedStyle.fontFamily);
+
+        let textWidth = this.measurementText.getComputedTextLength();
+
+        if (textWidth <= maxWidth) return text;
+
+        let left = 0, right = text.length;
+        let bestFit = "";
+
+        while (left <= right) {
+            let mid = Math.floor((left + right) / 2);
+            let candidateText = text.slice(0, mid) + "...";
+            this.measurementText.textContent = candidateText;
+            textWidth = this.measurementText.getComputedTextLength();
+
+            if (textWidth <= maxWidth) {
+                // Store valid fit
+                bestFit = candidateText;
+                // Try longer text
+                left = mid + 1;
+            } else {
+                // Try shorter text
+                right = mid - 1;
+            };
+        };
+
+        return bestFit;
+    };
+    // #endregion Drawing_helpers
+
+
+    // #region Render_functions
+    /**
+     * Display a specific view.
+     * 
+     * @param {String} targetView  - Target view to display ("circular", "linear", "grid")
+     * @param {HTMLElement} sender 
+     * @returns 
+     */
+    switchView(targetView, sender=null) {
+        
+        // Return immediately if the button is disabled
+        if (sender && sender.hasAttribute("disabled")) {return};
+        
 
         // Get parent group
         const button = document.getElementById(`${targetView}-view-button`);
@@ -1107,14 +1824,13 @@ const PlasmidViewer = new class {
                 e.classList.remove("toolbar-button-selected")
             );
         };
-
         // Select button that was just clicked
-        button.classList.add("toolbar-button-selected")
-        
-        if (this.activeView) {
-            const currentViewContainer = document.getElementById(`${this.activeView}-view-container`);
-            currentViewContainer.style.display = "none";
-        };
+        button.classList.add("toolbar-button-selected");
+
+
+        ["circular", "linear", "grid"].forEach(view => {
+            document.getElementById(`${view}-view-container`).style.display = "none";
+        });
 
         const targetViewContainer = document.getElementById(`${targetView}-view-container`);
         targetViewContainer.style.display = "flex";
@@ -1130,70 +1846,1179 @@ const PlasmidViewer = new class {
         };
     };
 
+
     /**
      * 
-     * @param {*} bgColor 
-     * @returns 
      */
-    getTextColorBasedOnBg(bgColor) {
-        // Remove the '#' if present
-        const hex = bgColor.replace('#', '');
-    
-        // Parse the HEX color into RGB components
-        const r = parseInt(hex.substring(0, 2), 16);
-        const g = parseInt(hex.substring(2, 4), 16);
-        const b = parseInt(hex.substring(4, 6), 16);
-    
-        // Calculate relative luminance
-        const luminance = (r / 255) * 0.2126 + (g / 255) * 0.7152 + (b / 255) * 0.0722;
-    
-        // Return white for dark backgrounds and black for light backgrounds
-        return luminance > 0.5 ? 'black' : 'white';
-    };
-
-
     updateViewer() {
-        let targetView;
-        if (PlasmidViewer.activeView) {
-            targetView = PlasmidViewer.activeView;
-        } else {
-            targetView = "grid";
-        };
+        const targetView = PlasmidViewer.activeView ? PlasmidViewer.activeView: "grid";
 
-        const views = ["circular", "linear", "grid"]
-        for (let i in views) {
-            const svgContainer = document.getElementById(`${views[i]}-view-container`);
+
+        ["circular", "linear", "grid"].forEach(view => {
+            const svgContainer = document.getElementById(`${view}-view-container`);
             if (svgContainer.firstElementChild) {
                 svgContainer.removeChild(svgContainer.firstElementChild)
             };
 
-            svgContainer.appendChild(Session.activePlasmid().views[views[i]]);
-        };
-
+            svgContainer.appendChild(Session.activePlasmid().views[view]);
+        });
 
         this.switchView(targetView);
     };
 
-    redraw() {
+
+    /**
+     * 
+     */
+    redraw(views=null) {
+        //TO DO: Keep selection when redrawing
         const activePlasmid = Session.activePlasmid()
         if (activePlasmid) {
-            activePlasmid.generateViews();
+            activePlasmid.generateViews(views);
             PlasmidViewer.updateViewer();
         };
-    };
-};
 
-/**
- * Redraw views on window resize
- */
-let resizeTimeout;
-window.addEventListener('resize', function () {
-    document.getElementById("viewer").style.display = "none";
+        this.highlightSubcloningTarget()
+    };
     
-    clearTimeout(resizeTimeout);
-  
-    resizeTimeout = setTimeout(() => {
-        document.getElementById("viewer").style.display = "block";
-        PlasmidViewer.redraw()
-    }, 500);
-  });
+    // #endregion Render_functions
+
+    // #region Sequence_tooltip 
+    /**
+     * Show the sequence tooltip and set its position
+     * 
+     * @param {int} posX 
+     * @param {int} posY 
+     */
+        showSequenceTooltip(posX, posY) {
+            const tooltip = document.getElementById("sequence-tooltip");
+            tooltip.style.left = `${posX + 12}px`;
+            tooltip.style.top = `${posY + 15}px`;
+            
+            tooltip.setAttribute("visible", "");
+        };
+    
+    
+        /**
+         *  Hide the sequence tooltip
+         */
+        hideSequenceTooltip() {
+            document.getElementById("sequence-tooltip").removeAttribute("visible");
+        };
+    
+    
+        /**
+         * Set the text of the sequence tooltip
+         * 
+         * @param {string} text 
+         */
+        setSequenceTooltip(body) {
+            const tooltip = document.getElementById("sequence-tooltip");
+            requestAnimationFrame(() => {
+                tooltip.innerHTML = body;
+            });
+        };
+    // #endregion Sequence_tooltip 
+
+
+    // #region Selection
+    /**
+     * 
+     * @param {*} input 
+     */
+    placeCursor(input, cssClass="sequence-cursor-hover") {
+        const indices = Array.isArray(input) ? input : [input];
+
+        const cursorsPlaced = [];
+        const svgs = document.getElementById("grid-view-container").getElementsByTagName('svg');
+
+        
+        for (let i = 0; i < indices.length; i++) {
+            const index = indices[i];
+            let svgMatch;
+            let rectMatch;
+            svgLoop: for (let j = 0; j < svgs.length; j++) {
+                const svg = svgs[j];
+                const [svgStart, svgEnd] = svg.getAttribute('indices').split(',').map(Number);
+        
+                // Skip this SVG if it doesn't contain relevant bases
+                if (index < svgStart || svgEnd < index) continue;
+        
+                const targetStrandGroup = svg.getElementById("strand-fwd")
+                const rects = targetStrandGroup.getElementsByTagName('rect');
+    
+                for (let k = 0; k < rects.length; k++) {
+                    const rect = rects[k];
+                    const baseIndex = parseInt(rect.getAttribute('base-index'), 10);
+                    
+                    if (baseIndex == index) {
+                        svgMatch = svg;
+                        rectMatch = rect;
+                        break svgLoop;
+                    };
+                };
+            };
+    
+            // Find x value to place cursor at
+            const posX = rectMatch.getAttribute("x");
+            const cursorHeight = svgMatch.getBoundingClientRect().height;
+    
+    
+            const cursorGroup = svgMatch.getElementById(
+                cssClass.includes("preview") ? 'selection-preview-cursor-group': 'selection-cursor-group'
+            );
+    
+            const cursorElement = this.line(
+                [posX, 0],
+                [posX, cursorHeight],
+                null,
+                ["sequence-cursor", cssClass]
+            );
+    
+            cursorGroup.appendChild(cursorElement);
+            
+            cursorsPlaced.push(cursorElement);
+        };
+
+        if (!this.cursors[cssClass]) {
+            this.cursors[cssClass] = cursorsPlaced
+        } else {
+            this.cursors[cssClass] = this.cursors[cssClass].concat(cursorsPlaced);
+        };
+    };
+
+
+    /**
+     * 
+     * @param {*} cssClass 
+     */
+    removeCursors(cssClass="sequence-cursor") {
+        const cursors = this.cursors[cssClass];
+        if (!cursors) return;
+
+        for (let i = 0, len = cursors.length; i < len; i ++) {
+            const currCursor = cursors[i]
+            currCursor.remove();
+        };
+
+        this.cursors[cssClass] = [];
+    };
+
+
+    /**
+     * 
+     * @param {Array<number>} span 
+     * @param {string} cssClass 
+     */
+    highlightBases(span, cssClass = "base-hover", strand=null) {
+        const [start, end] = span;
+    
+        let basesHighlighted = [];
+
+        const svgs = document.getElementById("grid-view-container").getElementsByTagName('svg');
+        for (let i = 0; i < svgs.length; i++) {
+            const svg = svgs[i];
+            const [svgStart, svgEnd] = svg.getAttribute('indices').split(',').map(Number);
+    
+            // Skip this SVG if it doesn't contain relevant bases
+            if (svgEnd < start || svgStart > end) continue;
+    
+            let targetGroups = [];
+            if (strand === "fwd") {
+                targetGroups = [
+                    svg.getElementById("strand-fwd"),
+                ]
+            } else if (strand === "rev") {
+                targetGroups = [
+                    svg.getElementById("strand-rev")
+                ]
+            } else {
+                targetGroups = [
+                    svg.getElementById("strand-fwd"),
+                    svg.getElementById("strand-rev")
+                ];
+            };
+
+            for (let g = 0; g < targetGroups.length; g++) {
+                const rects = targetGroups[g].getElementsByTagName('rect');
+    
+                for (let j = 0; j < rects.length; j++) {
+                    const rect = rects[j];
+                    const baseIndex = parseInt(rect.getAttribute('base-index'), 10);
+                    
+                    if (baseIndex >= start && baseIndex <= end) {
+                        rect.classList.add(cssClass);
+                        basesHighlighted.push(rect);
+                    };
+                };
+            };
+        };
+
+
+        if (!this.highlightedBases[cssClass]) {
+            this.highlightedBases[cssClass] = basesHighlighted;
+        } else {
+            this.highlightedBases[cssClass] = this.highlightedBases[cssClass].concat(basesHighlighted);
+        };
+    };
+
+
+    /**
+     * 
+     * @param {string} cssClass 
+     */
+    unhighlightBases(cssClass="base-hover") {
+        const basesToUnhighlight = this.highlightedBases[cssClass];
+        if (!basesToUnhighlight) return;
+
+
+        for (let i = 0, len = basesToUnhighlight.length; i < len; i++) {
+            const currBase = basesToUnhighlight[i];
+            currBase.classList.remove(cssClass);
+        };
+        this.highlightedBases[cssClass] = [];
+    };
+
+
+    highlightSubcloningTarget() {
+        this.unhighlightSubcloningTarget();
+        if (
+            Session.subcloningOriginPlasmidIndex === null ||
+            Session.subcloningOriginPlasmidIndex !== Session.activePlasmidIndex
+        ) {
+            return;
+        };
+
+        const [start, end] = Session.subcloningOriginSpan;
+    
+        const svgs = document.getElementById("grid-view-container").getElementsByTagName('svg');
+        for (let i = 0; i < svgs.length; i++) {
+            const svg = svgs[i];
+            const [svgStart, svgEnd] = svg.getAttribute('indices').split(',').map(Number);
+            // Skip this SVG if it doesn't contain relevant bases
+            if (svgEnd < start || svgStart > end) continue;
+    
+            const rects = svg.getElementById("strand-fwd").getElementsByTagName('rect');
+
+            let basesInSubSpan = []
+            for (let j = 0; j < rects.length; j++) {
+                const rect = rects[j];
+                const baseIndex = parseInt(rect.getAttribute('base-index'), 10);
+                
+                if (baseIndex >= start && baseIndex <= end) {
+                    basesInSubSpan.push(rect)
+                };
+            };
+
+            if (basesInSubSpan.length === 0) continue;
+
+            const firstRect = basesInSubSpan[0];
+            const lastRect = basesInSubSpan[basesInSubSpan.length - 1];
+
+            const X1 = parseFloat(firstRect.getAttribute('x'));
+            const Y = parseFloat(firstRect.getAttribute('y'));
+
+            const X2 = parseFloat(lastRect.getAttribute('x'));
+            const cellWidth = parseFloat(lastRect.getAttribute('width'));
+            const cellHeight = parseFloat(firstRect.getAttribute('height'));
+
+            const subcloningRect = this.createShapeElement("rect");
+            subcloningRect.setAttribute("id", "subcloning-rect");
+            subcloningRect.setAttribute("class", "subcloning-rect");
+
+            subcloningRect.setAttribute("x", X1);
+            subcloningRect.setAttribute("y", Y);
+            subcloningRect.setAttribute("width", X2 + cellWidth - X1);
+            subcloningRect.setAttribute("height", cellHeight*2);
+
+            firstRect.parentElement.insertBefore(subcloningRect, firstRect.parentElement.firstChild);
+        
+            this.subcloningRects.push(subcloningRect);
+        };
+    };
+
+
+    unhighlightSubcloningTarget() {
+        this.unhighlightBases("base-sub-target");
+        for (let i = 0, len = this.subcloningRects.length; i < len; i++) {
+            this.subcloningRects[i].remove()
+        };
+        this.subcloningRects = [];
+    };
+
+
+
+    addSequenceHover(span) {
+        this.removeSequenceHover();
+        this.placeCursor([span[0], span[1] + 1]);
+        this.highlightBases(span);
+    };
+
+
+    removeSequenceHover() {
+        this.removeCursors("sequence-cursor-hover");
+        this.unhighlightBases();
+    };
+
+
+    addFeatureHover(featureID) {
+        const span = Session.activePlasmid().features[featureID]["span"]
+        const [start, end] = span;
+        const containerDiv = document.getElementById('grid-view-container');
+        
+        const svgs = containerDiv.getElementsByTagName("svg");
+        for (let i = 0, len = svgs.length; i < len; i++){
+            const svg = svgs[i];
+            const [svgStart, svgEnd] = svg.getAttribute('indices').split(',').map(Number);
+    
+            // Skip this SVG if it doesn't contain relevant bases
+            if (svgEnd < start || svgStart > end) continue;
+    
+            const svgFeaturesGroup = svg.getElementById("svg-features");
+
+            const shapesWithAttribute = svgFeaturesGroup.querySelectorAll(`g[feature-id="${featureID}"]`);
+        
+            if (shapesWithAttribute.length === 0) return;
+
+            for (let j = 0, len = shapesWithAttribute.length; j < len; j++) {
+                const shape = shapesWithAttribute[j];
+                const polygon = shape.querySelector("#arrow");
+                if (polygon) {
+                    polygon.classList.add("svg-feature-arrow-hover");
+                    this.hoveredFeatureSegments.push(polygon);
+                };
+            };
+        };
+
+        this.addSequenceHover(span);
+    };
+
+    removeFeatureHover() {
+        for (let i = 0, len = this.hoveredFeatureSegments.length; i < len; i++) {
+            this.hoveredFeatureSegments[i].classList.remove("svg-feature-arrow-hover");
+        };
+        this.hoveredFeatureSegments = [];
+
+        this.removeSequenceHover();
+    };
+
+    createFeatureHoverTooltip(featureID) {
+        const featureDict = Session.activePlasmid().features[featureID];
+
+        const tooltipBody = document.createElement("DIV");
+
+        const title = document.createElement("DIV");
+        title.innerText = featureDict["label"];
+        title.classList.add("sequence-tooltip-title");
+        tooltipBody.appendChild(title);
+
+        const featureLength = featureDict["span"][1] - featureDict["span"][0];
+        const remainder = featureLength % 3;
+        const remainderString = (remainder !== 0) ? "+" + remainder: "";
+        const nrAA = (featureLength - remainder)/3;
+        const nrAAString = (featureLength >= 3) ? "3x" + nrAA: nrAA;
+        const properties = {
+            "Type": featureDict["type"],
+            "Span": `${featureLength} bp (${nrAAString}${remainderString}) [${featureDict["span"][0]}, ${featureDict["span"][1]}]`,
+            "Note": (featureDict["note"] && featureDict["note"].length !== 0) ? featureDict["note"]: null,
+            "Translation": (featureDict["translation"] && featureDict["translation"].length !== 0) ? featureDict["translation"]: null,
+        }
+
+        for (const [key, value] of Object.entries(properties)) {
+            if (value === null || value.length === 0) {continue};
+
+            const propertyDiv = document.createElement("DIV");
+            propertyDiv.classList.add("sequence-tooltip-row");
+
+            const propertyKey = document.createElement("DIV");
+            propertyKey.classList.add("sequence-tooltip-row-key");
+            propertyKey.innerText = key;
+            propertyDiv.appendChild(propertyKey);
+
+            const propertyValue = document.createElement("DIV");
+            propertyValue.classList.add("sequence-tooltip-row-value");
+            propertyValue.innerText = value;
+            propertyDiv.appendChild(propertyValue);
+
+            tooltipBody.appendChild(propertyDiv);
+        };
+
+        return tooltipBody;
+    };
+
+
+    addAABlocksHover(featureID, aaIndex) {
+        this.removeAABlocksHover();
+
+        // Find all segments with same ID
+        const containerDiv = document.getElementById('grid-view-container');
+        const shapesWithAttribute = containerDiv.querySelectorAll(`[feature-id="${featureID}"][aa-index="${aaIndex}"]`);
+        
+        if (shapesWithAttribute.length === 0) return;
+        
+        shapesWithAttribute.forEach((shape) => {
+            const polygon = shape.querySelector("#block");
+            if (polygon) {
+                polygon.classList.add("aa-block-hover")
+                this.hoveredAABlocks.push(polygon);
+            };
+        });
+
+        let aaSpan = shapesWithAttribute[0].getAttribute("aa-span").split(",").map(Number);
+        aaSpan.sort((a, b) => a - b);
+
+        this.addSequenceHover(aaSpan);
+    };
+
+    removeAABlocksHover() {
+        for (let i = 0, len = this.hoveredAABlocks.length; i < len; i++) {
+            this.hoveredAABlocks[i].classList.remove("aa-block-hover");
+        };
+        this.hoveredAABlocks = [];
+
+        this.removeSequenceHover();
+    };
+
+
+    /**
+     * 
+     * @param {*} featureID 
+     */
+    selectFeature(featureID, combineSelection=false) {
+        
+        let span = Session.activePlasmid().features[featureID]["span"];
+        
+        this.selectBases((combineSelection) ? this.combineSpans(span): span);
+    };
+
+
+    selectAA(span, combineSelection=false) {
+        
+        this.selectBases((combineSelection) ? this.combineSpans(span): span);
+    };
+
+
+    /**
+     * 
+     * @param {*} featureID 
+     */
+    scrollToFeature(featureID) {
+        if (PlasmidViewer.activeView !== "grid") {return};
+
+        const gridViewContainer = document.getElementById("grid-view-container");
+        const featureSegments = Array.from(gridViewContainer.querySelectorAll(`g[feature-id="${featureID}"]`));
+    
+        if (featureSegments.length === 0) {return};
+
+        featureSegments.sort((a, b) => {
+            const yA = a.getBoundingClientRect().top;
+            const yB = b.getBoundingClientRect().top;
+            return yA - yB;
+        });
+
+        const featureDirectionality = Session.activePlasmid().features[featureID]["directionality"];
+
+        const targetSegment = featureDirectionality === "fwd" 
+        ? featureSegments[featureSegments.length - 1]
+        : featureSegments[0];
+
+        targetSegment.scrollIntoView(
+            {
+                behavior: "smooth",
+                block: "center",
+            }
+        );
+    };
+
+
+    /**
+     * 
+     * @param {*} index 
+     */
+    selectBase(index) {
+        this.deselectBases();
+
+        this.placeCursor(index, "sequence-cursor-selection");
+        Session.activePlasmid().setSelectionIndices([index, null]);
+    };
+
+
+    /**
+     * 
+     * @param {*} span 
+     */
+    selectBases(span) {
+        span = [Math.min(...span), Math.max(...span)]
+        this.deselectBases();
+
+        this.placeCursor([span[0], span[1] + 1], "sequence-cursor-selection");
+        this.highlightBases(span, "base-selected");
+
+        Session.activePlasmid().setSelectionIndices(span);
+    };
+
+
+    deselectBases() {
+        this.removeCursors("sequence-cursor-selection");
+        this.unhighlightBases("base-selected");
+
+        Session.activePlasmid().clearSelectionIndices();
+    };
+
+
+    combineSpans(span) {
+        const singleIndexInput = !Array.isArray(span);
+
+        const currentSelection = Session.activePlasmid().getSelectionIndices();
+        if (!currentSelection) {
+            if (singleIndexInput) {
+                return span
+            } else {
+                return [
+                    Math.min(...span),
+                    Math.max(...span)
+                ];
+            };
+        };
+        
+        const currentSelectionFiltered = currentSelection.filter(item => item != null);
+        if (singleIndexInput) {
+            if (Math.max(...currentSelectionFiltered) < span) {
+                span -= 1;
+            } else if (currentSelectionFiltered.length == 1 && span < currentSelectionFiltered[0]) {
+                currentSelectionFiltered[0] -= 1
+            };
+        } else {
+            if (currentSelectionFiltered.length == 1 && Math.max(...span) < currentSelectionFiltered[0]) {
+                currentSelectionFiltered[0] -= 1
+            };
+        };
+
+        span = singleIndexInput ? [span] : span;
+        const combinedIndices = [
+            ...span,
+            ...currentSelectionFiltered
+        ];
+
+        return [
+            Math.min(...combinedIndices),
+            Math.max(...combinedIndices)
+        ];
+    };
+
+    // #endregion Selection
+
+
+    // #region Context_menu 
+    initializeContextMenu() {
+        const menuStructure = [
+            { section: "IVA Cloning Operations", items: [
+                {
+                    item: "Insert here",
+                    conditions: {all: ["single"]},
+                    action: () => Modals.createInsertionModal("insertion")
+                },
+                {
+                    item: "Delete selection",
+                    conditions: {any: ["range", "feature"]},
+                    action: () => Session.activePlasmid().IVAOperation("Deletion")
+                },
+                {
+                    item: "Mutate selection",
+                    conditions: {any: ["range", "feature"]},
+                    action: () => Modals.createInsertionModal("mutation")
+                },
+
+                { separator: "" },
+
+                {
+                    item: "Mark selection for subcloning",
+                    conditions:  {any: ["range", "feature"]},
+                    action: () => Session.markForSubcloning()
+                },
+                {
+                    item: "Unmark subcloning target",
+                    conditions:  {all: ["subcloningTarget"]},
+                    action: () => Session.removeMarkForSubcloning()
+                },
+                {
+                    item: "Subclone into selection",
+                    conditions: {any: ["single", "range", "feature"], all: ["subcloningTarget"]},
+                    action: () => Session.activePlasmid().IVAOperation("Subcloning", "", "", null, true)
+                },
+                {
+                    item: "Subclone with insertion(s) into selection",
+                    conditions:  {any: ["single", "range", "feature"], all: ["subcloningTarget"]},
+                    action: () => Modals.createSubcloningModal()
+                },
+            ]},
+
+            { separator: "" },
+
+            {
+                item: "Annotate selection",
+                conditions: {all: ["range"]},
+                action: () => Session.activePlasmid().newFeature(Session.activePlasmid().getSelectionIndices())
+            },
+            {
+                item: "Delete feature annotation",
+                conditions: {all: ["feature"]},
+                action: () => Alerts.warning("Delete feature annotation")
+            },
+
+            { separator: "" },
+
+            {
+                item: "Copy selection",
+                conditions: {any: ["range", "feature"]},
+                action: () => Utilities.copySequence()
+            },
+            { submenu: "Copy special", items: [
+                {
+                    item: "<p>Copy reverse</p><p>(top strand, 3'->5')</p>",
+                    conditions: {any: ["range", "feature"]},
+                    action: () => Utilities.copySequence("reverse")
+                },
+                {
+                    item: "<p>Copy reverse complement</p><p>(bottom strand, 5'->3')</p>",
+                    conditions: {any: ["range", "feature"]},
+                    action: () => Utilities.copySequence("reverse complement")
+                },
+                {
+                    item: "<p>Copy complement</p><p>(bottom strand, 3'->5')</p>",
+                    conditions: {any: ["range", "feature"]},
+                    action: () => Utilities.copySequence("complement")
+                },
+            ] },
+
+            { separator: "" },
+
+            { submenu: "Translate", items: [
+                {
+                    item: "Begin translation at first START codon (5'->3')",
+                    conditions: {all: ["single"]},
+                    action: () => Session.activePlasmid().newTranslationAtFirstStart("fwd")
+                },
+                {
+                    item: "Begin translation at first START codon (3'->5')",
+                    conditions: {all: ["single"]},
+                    action: () => Session.activePlasmid().newTranslationAtFirstStart("rev")
+                },
+                {
+                    item: "Translate selection (5'->3')",
+                    conditions: {any: ["range", "feature"]},
+                    action: () => Session.activePlasmid().newFeature(
+                        Session.activePlasmid().getSelectionIndices(),
+                        "fwd",
+                        "New translation",
+                        "CDS",
+                        null,
+                        true
+                    )
+                },
+                {
+                    item: "Translate selection (3'->5')",
+                    conditions: {any: ["range", "feature"]},
+                    action: () => Session.activePlasmid().newFeature(
+                        Session.activePlasmid().getSelectionIndices(),
+                        "rev",
+                        "New translation",
+                        "CDS",
+                        null,
+                        true
+                    )
+                },
+            ] },
+
+            { separator: "" },
+
+            { submenu: "Edit plasmid", items: [
+                {
+                    item: "Flip plasmid",
+                    conditions: {},
+                    action: () => Session.activePlasmid().flip()
+                },
+                {
+                    item: "Set new plasmid origin",
+                    conditions: {all: ["single"]},
+                    action: () => Session.activePlasmid().setOrigin(Session.activePlasmid().getSelectionIndices()[0])
+                },
+            ] },
+        ];
+
+
+        function createMenuItems(menuStructure, parent) {
+            menuStructure.forEach(entry => {
+                if (entry.section) {
+                    // Create section container
+                    const sectionContainer = document.createElement("div");
+                    sectionContainer.classList.add("context-menu-section");
+        
+                    // Create section title
+                    const sectionTitle = document.createElement("div");
+                    sectionTitle.classList.add("context-menu-section-title");
+                    sectionTitle.textContent = entry.section;
+                    sectionContainer.appendChild(sectionTitle);
+        
+                    // Create section items container
+                    const sectionItemsContainer = document.createElement("div");
+                    sectionItemsContainer.classList.add("context-menu-section-items");
+        
+                    // Recursively create menu items inside the section items container
+                    createMenuItems(entry.items, sectionItemsContainer);
+                    
+                    sectionContainer.appendChild(sectionItemsContainer);
+                    parent.appendChild(sectionContainer);
+
+                } else if (entry.separator !== undefined) {
+                    // Create separator (only if explicitly defined)
+                    const separator = document.createElement("div");
+                    separator.classList.add("context-menu-separator");
+                    parent.appendChild(separator);
+
+                } else if (entry.item) {
+                    // Create menu item
+                    const menuItem = document.createElement("div");
+                    menuItem.classList.add("context-menu-item");
+                    menuItem.innerHTML = entry.item;
+
+                    menuItem.setAttribute("conditions", JSON.stringify(entry.conditions))
+
+                    // Attach click event for regular menu items
+                    menuItem.addEventListener("click", () => {
+                        PlasmidViewer.hideContextMenu();
+                        entry.action();
+                    });
+
+                    parent.appendChild(menuItem);
+
+                } else if (entry.submenu) {
+                    // Create parent item for submenu
+                    const menuItem = document.createElement("div");
+                    menuItem.classList.add("context-menu-item", "context-menu-has-submenu");
+                    menuItem.textContent = entry.submenu;
+
+                    // Create submenu container
+                    const submenu = document.createElement("div");
+                    submenu.classList.add("context-menu");
+                    submenu.classList.add("context-submenu");
+
+                    // Recursively create submenu items
+                    createMenuItems(entry.items, submenu);
+
+                    // Append submenu to the menu item
+                    menuItem.appendChild(submenu);
+                    parent.appendChild(menuItem);
+
+                    // Handle dynamic submenu positioning
+                    menuItem.addEventListener("mouseenter", function () {
+                        positionSubmenu(menuItem, submenu);
+                        submenu.setAttribute("visible", "");
+                    });
+                    menuItem.addEventListener("mouseleave", function () {
+                        submenu.removeAttribute("visible");
+                    });
+                }
+            });
+        };
+
+
+        function positionSubmenu(menuItem, submenu) {
+            // Get dimensions
+            const menuRect = menuItem.getBoundingClientRect();
+            const submenuWidth = submenu.offsetWidth;
+            const submenuHeight = submenu.offsetHeight;
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+        
+            let leftPos = menuRect.width;
+            let topPos = 0;
+            
+            if (menuRect.right + submenuWidth > viewportWidth) {
+                leftPos = -submenuWidth;
+            };
+            if (menuRect.bottom + submenuHeight > viewportHeight) {
+                topPos = -submenuHeight + menuRect.height + 2;
+            };
+        
+            // Set final position
+            submenu.style.left = `${leftPos}px`;
+            submenu.style.top = `${topPos}px`;
+        };
+        
+
+        const contextMenu = document.getElementById("context-menu");
+        createMenuItems(menuStructure, contextMenu);
+
+        const gridViewContainer = document.getElementById("grid-view-container");
+        gridViewContainer.addEventListener("contextmenu", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            PlasmidViewer.showContextMenu(e);
+        });
+    
+        document.addEventListener("click", function (e) {
+            if (contextMenu.contains(e.target)) {
+                return;
+            };
+
+            PlasmidViewer.hideContextMenu();
+        });
+
+        document.addEventListener("contextmenu", function (e) {
+            if (gridViewContainer.contains(e.target) || contextMenu.contains(e.target)) {
+                return;
+            };
+            
+            PlasmidViewer.hideContextMenu();
+        });
+    };
+
+
+    showContextMenu(e) {
+        const contextMenu = document.getElementById("context-menu");
+        
+        // Enable/disable menu options based on selection state
+        const selectionIndices = Session.activePlasmid().selectionIndices;
+        const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+        const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
+        let clickedOnFeature = false;
+        if (shapesAtPoint && shapesAtPoint.length !== 0 && shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
+            const featureId = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id");
+            this.selectFeature(featureId);
+            clickedOnFeature = true;
+        };
+
+        const selectionState = {
+            "single": (selectionIndices !== null && selectionIndices.filter(i => i !== null).length === 1 && !clickedOnFeature) ? true: false,
+            "range": (selectionIndices !== null && selectionIndices.filter(i => i !== null).length > 1 && !clickedOnFeature) ? true: false,
+            "feature": clickedOnFeature,
+            "subcloningTarget": (Session.subcloningOriginPlasmidIndex !== null && Session.subcloningOriginSpan !== null) ? true: false,
+        };
+
+        
+        const menuItems = contextMenu.querySelectorAll(".context-menu-item");
+        menuItems.forEach(menuItem => {
+            if (!menuItem.hasAttribute("conditions")) {return};
+
+            const conditions = [JSON.parse(menuItem.getAttribute("conditions"))];
+            
+            const conditionsMet = conditions.every(condition => {
+                // If "any" exists, at least one of the conditions must be true
+                const anyValid = condition.any ? condition.any.some(key => selectionState[key]) : true;
+                // If "all" exists, all of them must be true
+                const allValid = condition.all ? condition.all.every(key => selectionState[key]) : true;
+                // The condition is valid if both rules are satisfied
+                return anyValid && allValid;
+            });
+
+            if (conditionsMet) {
+                menuItem.removeAttribute("disabled");
+            } else {
+                menuItem.setAttribute("disabled", "")
+            };
+        });
+
+
+        // Position context menu
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        const menuWidth = contextMenu.offsetWidth;
+        const menuHeight = contextMenu.offsetHeight;
+
+        let posX = e.clientX;
+        let posY = e.clientY
+        ;
+        if (posX + menuWidth > viewportWidth) {
+            posX -= menuWidth;
+        };
+        if (posY + menuHeight > viewportHeight) {
+            posY -= menuHeight;
+        };
+
+        posX = Math.max(0, posX);
+        posY = Math.max(0, posY);
+
+        contextMenu.style.top = `${posY}px`;
+        contextMenu.style.left = `${posX}px`;
+        contextMenu.setAttribute("visible", "");
+    };
+
+
+    hideContextMenu() {
+        document.getElementById("context-menu").removeAttribute("visible");
+    };
+    // #endregion Context_menu
+
+
+    // #region Footer
+    /**
+     * Update footer selection info with the current selection.
+     */
+    updateFooterSelectionInfo() {
+        const selectionSpan = Session.activePlasmid().getSelectionIndices();
+        if (!selectionSpan) return;
+
+        const selectionLengthSpan = document.getElementById("footer-selection-info-length");
+        const selectionRemainder = document.getElementById("footer-selection-info-remainder");
+        const selectionRange = document.getElementById("footer-selection-info-range");
+        const selectionTm = document.getElementById("footer-selection-info-tm");
+
+        if (!selectionSpan[0] | !selectionSpan[1]) {
+            selectionLengthSpan.innerText = 0;
+            selectionRemainder.innerText = "";
+            selectionRange.innerText = "";
+            selectionTm.innerText = "";
+            return;
+        };
+
+        const selectionLength = (selectionSpan[1] + 1) - selectionSpan[0]
+        selectionLengthSpan.innerText = selectionLength;
+
+        const remainder = selectionLength % 3;
+        const remainderString = (remainder !== 0) ? "+" + remainder: ""
+        const nrAA = (selectionLength - remainder)/3
+        const nrAAString = (selectionLength >= 3) ? "3x" + nrAA: nrAA
+        selectionRemainder.innerText = "(" + nrAAString + remainderString + ")";
+
+        selectionRange.innerText = `[${selectionSpan[0]}, ${selectionSpan[1]}]` 
+
+        selectionTm.innerText = Nucleotides.getMeltingTemperature(Session.activePlasmid().sequence.slice(selectionSpan[0] - 1, selectionSpan[1])).toFixed(2);
+    };
+    // #endregion Footer
+
+
+    // #region Search
+    /**
+     * Clears the search bar
+     */
+    clearSearch(clearInput=true) {
+        if (clearInput) {
+            document.getElementById("search-bar").value = "";
+        };
+        this.unhighlightBases("base-search");
+        this.unhighlightBases("base-search-focus");
+        this.searchResults = [];
+        this.searchFocusIndex = null;
+        this.updateSearchBarInfo();
+    };
+
+
+    /**
+     * Search for DNA or AA sequence in plasmid
+     */
+    search() {
+        const query = document.getElementById("search-bar").value;
+        const searchAASeq = document.getElementById("search-aa").checked;
+
+        this.clearSearch(false);
+
+        if (!query || query === null || query.length === 0) {return};
+
+        if (searchAASeq) {
+            this.searchAA(query);
+        } else {
+            this.searchDNA(query);
+        };
+    };
+
+
+    /**
+     * Search for DNA sequence in plasmid
+     * 
+     * @param {String} query - DNA Sequence
+     */
+    searchDNA(query) {
+
+        const activePlasmid = Session.activePlasmid();
+        const sequences = [activePlasmid.sequence, activePlasmid.complementarySequence];
+        const queries = [query, query.split("").reverse().join("")];
+
+        for (let i = 0; i < 2; i++) {
+            const query = queries[i]
+            const sequence = sequences[i];
+            const strand = ["fwd", "rev"][i]
+            let indices = [];
+            let index = sequence.indexOf(query);
+            while (index !== -1) {
+                indices.push(index);
+                index = sequence.indexOf(query, index + 1);
+            };
+        
+            for (let j = 0; j < indices.length; j++) {
+                const span = [indices[j]+1, indices[j]+query.length];
+                this.highlightBases(
+                    span,
+                    "base-search",
+                    strand,
+                );
+
+                this.searchResults.push({strand: strand, span: span});
+            };
+        };
+
+        this.findNearestSearchResult();
+        this.focusSearchResult();
+        this.updateSearchBarInfo();
+    };
+
+
+    /**
+     * Search for AA sequence in plasmid
+     * 
+     * @param {String} query - AA sequence
+     */
+    searchAA(query) {
+
+        const activePlasmid = Session.activePlasmid()
+        const sequences = [activePlasmid.sequence, Nucleotides.reverseComplementary(activePlasmid.sequence)];
+        const strands = ["fwd", "rev"];
+        for (let i = 0; i < 2; i++) {
+            const sequence = sequences[i];
+            const strand = strands[i];
+            const dnaFrames = [
+                sequence,
+                sequence.slice(-1) + sequence.slice(0, -1),
+                sequence.slice(-2) + sequence.slice(0, -2)
+            ];
+    
+            for (let j = 0; j < 3; j++) {
+                const dnaFrame = dnaFrames[j];
+                let aaFrame = "";
+                for (let k = 0; k+3 <= dnaFrame.length; k += 3) {
+                    aaFrame += Nucleotides.codonTable[dnaFrame.slice(k, k+3)]
+                };
+
+    
+                let indices = [];
+                let index = aaFrame.indexOf(query);
+                while (index !== -1) {
+                    if (strand === "fwd") {
+                        indices.push(index*3 + j);
+                    } else {
+                        indices.push(dnaFrame.length - (index*3 + j))
+                    }
+                    index = aaFrame.indexOf(query, index + 1);
+                };
+            
+                for (let k = 0; k < indices.length; k++) {
+                    const span = (strand === "fwd")
+                    ? [indices[k] + 1, indices[k] + query.length*3]
+                    : [indices[k] - query.length*3 + 1, indices[k]]
+                    
+                    this.highlightBases(
+                        span,
+                        "base-search",
+                        strand,
+                    );
+
+                    this.searchResults.push({strand: strand, span: span});
+                };
+            };
+        };
+
+        this.findNearestSearchResult();
+        this.focusSearchResult();
+        this.updateSearchBarInfo();
+    };
+
+
+    findNearestSearchResult() {
+        const gridViewContainer = document.getElementById("grid-view-container");
+
+        const bases = Array.from(gridViewContainer.getElementsByClassName("base-search"));
+
+        const containerRect = gridViewContainer.getBoundingClientRect();
+        let firstBaseInView;
+        for (let i = 0; i < bases.length; i++) {
+            const base = bases[i]
+            const rect = base.getBoundingClientRect();
+            if (
+                rect.top >= containerRect.top &&
+                rect.bottom <= containerRect.bottom
+            ) {
+                firstBaseInView = base;
+            };
+        };
+
+        const targetBase = (firstBaseInView) ? firstBaseInView: bases[0];
+        if (!targetBase) return;
+
+        const targetBaseIndex = parseInt(targetBase.getAttribute("base-index"));
+
+        this.searchResults.sort((a, b) => a.span[0] - b.span[0]);
+        for (let i = 0; i < this.searchResults.length; i++) {
+            const resultSpan = this.searchResults[i].span;
+            if (resultSpan[0] <= targetBaseIndex <= resultSpan[1]) {
+                this.searchFocusIndex = i;
+                break;
+            };
+        };
+    };
+
+
+    navigateSearchResults(increment) {
+        this.unhighlightBases("base-search-focus");
+        if (this.searchFocusIndex + increment < 0) {
+            this.searchFocusIndex = this.searchResults.length - 1;
+        } else if (this.searchFocusIndex + increment >= this.searchResults.length) {
+            this.searchFocusIndex = 0;
+        } else {
+            this.searchFocusIndex += increment;
+        };
+        this.focusSearchResult();
+        this.updateSearchBarInfo();
+    };
+
+
+    focusSearchResult() {
+        const searchResult = this.searchResults[this.searchFocusIndex];
+        this.highlightBases(searchResult.span, "base-search-focus", searchResult.strand);
+
+        const container = document.getElementById("viewer");
+        const containerRect = container.getBoundingClientRect();
+        const basesInSearchResult = Array.from(container.querySelectorAll(".base-search-focus")).sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+
+        
+        const basesHeightDifference = basesInSearchResult[basesInSearchResult.length - 1].getBoundingClientRect().bottom
+                                    - basesInSearchResult[0].getBoundingClientRect().top
+        
+        const targetBase = searchResult.strand === "fwd" 
+            ? basesInSearchResult[0] 
+            : basesInSearchResult.at(-1);
+
+        const targetSVG = targetBase.closest("svg");
+        const targetSVGRect = targetSVG.getBoundingClientRect();
+        const targetTop = targetSVGRect.top - containerRect.top + container.scrollTop;
+        const targetBottom = targetSVGRect.bottom - containerRect.top + container.scrollTop;
+        const halfContainer = containerRect.height / 2;
+        const halfBases = basesHeightDifference / 2;
+        
+        let targetHeight;
+        
+        if (basesHeightDifference > containerRect.height) {
+            targetHeight = searchResult.strand === "fwd" 
+                ? targetTop 
+                : targetBottom - containerRect.height;
+        } else {
+            targetHeight = searchResult.strand === "fwd" 
+                ? targetTop - halfContainer + halfBases 
+                : targetBottom - halfContainer - halfBases;
+        };
+
+        document.getElementById("viewer").scrollTo({ top: targetHeight, behavior: "smooth" });
+    };
+
+
+    updateSearchBarInfo() {
+        const infoSpan = document.getElementById("search-bar-info");
+
+        if (this.searchResults.length === 0) {
+            infoSpan.innerText = "";
+        } else {
+            infoSpan.innerText = (this.searchFocusIndex+1) + "/" + this.searchResults.length;
+        };
+    };
+    // #endregion Search
+};

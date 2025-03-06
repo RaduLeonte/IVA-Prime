@@ -144,7 +144,7 @@ class Plasmid {
             "linear": null,
             "grid": null,
         };
-        this.generateViews();
+        //this.generateViews();
 
         
         this.stateHistory = [];

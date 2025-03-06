@@ -5,8 +5,19 @@ const PlasmidViewer = new class {
         this.currentlySelecting = false;
         this.elementsAtMouseDown = null;
 
+        this.highlightedBases = {};
+        this.cursors = {};
+        this.hoveredFeatureSegments = [];
+        this.hoveredAABlocks = [];
+
+        this.subcloningRects = [];
+
+        this.sequenceTooltips = {};
+
         // Shortname
         this.svgNameSpace = "http://www.w3.org/2000/svg";
+
+        this.textElementTemplate = this.createShapeElement("text");
 
 
         /**
@@ -58,6 +69,24 @@ const PlasmidViewer = new class {
             };
         });
         
+        
+        /**
+         * AA fill colors
+         */
+        const resList = "RHKDESTNQCGPAVILMFYW".split("");
+        resList.push("stop");
+        this.resFillColors = {};
+        for (let i = 0, len = resList.length; i < len; i++) {
+            const res = resList[i]
+            this.resFillColors[res] = this.getCssFillColor("aa-block-" + res)
+        };
+
+        /**
+         * Init measurement svg for annotation text
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            PlasmidViewer.initMeasurementSVG();
+        });
     };
 
 
@@ -82,7 +111,6 @@ const PlasmidViewer = new class {
         const maxWidth = mainViewerDiv.offsetWidth - (parseFloat(svgWrapperStyle.paddingLeft) + parseFloat(svgWrapperStyle.paddingRight));
         const maxHeight = mainViewerDiv.offsetHeight - (parseFloat(svgWrapperStyle.paddingTop) + parseFloat(svgWrapperStyle.paddingBottom));
         const maxSize = Math.min(maxWidth, maxHeight)*0.8;
-        console.log("drawCircular", maxSize, maxWidth, maxHeight);
         svgContainer.removeChild(svgWrapperDummy);
 
 
@@ -367,7 +395,6 @@ const PlasmidViewer = new class {
         const svgWrapperStyle = getComputedStyle(svgWrapperDummy);
         
         const maxWidth = mainViewerDiv.offsetWidth - (parseFloat(svgWrapperStyle.paddingLeft) + parseFloat(svgWrapperStyle.paddingRight));
-        console.log("drawLinear", maxWidth)
         svgContainer.removeChild(svgWrapperDummy);
 
         // Main wrapper
@@ -597,6 +624,8 @@ const PlasmidViewer = new class {
         /**
          * Settings
          */
+        const svgMinHeight = 140;
+
         const singleStrandHeight = 38;
         const baseTextOffset = 12;
 
@@ -621,7 +650,6 @@ const PlasmidViewer = new class {
         let maxWidth = viewerContainer.clientWidth - svgWrapperPadding - scrollBarWidth;
         
         maxWidth -= gridMargin*2;
-        console.log(`PlasmidViewer.drawGrid -> maxWidth: ${viewerContainer.clientWidth}=>${maxWidth}`);
 
         const baseWidth = UserPreferences.get("baseWidth");
 
@@ -634,7 +662,6 @@ const PlasmidViewer = new class {
         /**
          * Prepare segments
          */
-        console.log(`PlasmidViewer.drawGrid -> sequence.length=${sequence.length}`)
         const nrOfSegments = Math.ceil(sequence.length/basesPerLine);
         const segments = [];
         for (let i = 0; i < nrOfSegments; i++) {
@@ -653,8 +680,6 @@ const PlasmidViewer = new class {
                 }
             );
         };
-        //console.log(`PlasmidViewer.drawGrid -> segments=${JSON.stringify(segments, null, 2)}`);
-        //console.log(`PlasmidViewer.drawGrid -> features=${JSON.stringify(features, null, 2)}`);
 
         // Figure out which features are drawn on which segments
         for (const [featureID, featureDict] of Object.entries(features)) {
@@ -664,10 +689,8 @@ const PlasmidViewer = new class {
             const segmentListIndexStart = Math.floor((featureSpanStart-1) / basesPerLine);
             const segmentListIndexEnd = Math.floor(featureSpanEnd / basesPerLine);
 
-            console.log(`PlasmidViewer.drawGrid -> figure out segments ${featureDict["label"]} ${featureDict["span"]}`, basesPerLine, segmentListIndexStart, segmentListIndexEnd)
             for (let i = segmentListIndexStart; i <= segmentListIndexEnd; i++) {
-                console.log(`PlasmidViewer.drawGrid -> figure out segments ${featureDict["label"]} ${featureDict["span"]}`, i)
-                segments[i]["features"][featureID] = JSON.parse(JSON.stringify(featureDict));
+                segments[i]["features"][featureID] = Utilities.deepClone(featureDict);
 
                 const featureSegmentSpanStart = Math.max((segments[i]["segmentIndexStart"] + 1), featureSpanStart);
                 const featureSegmentSpanEnd = Math.min(segments[i]["segmentIndexEnd"], featureSpanEnd);
@@ -729,11 +752,11 @@ const PlasmidViewer = new class {
                 };
             };
 
-            console.log(`PlasmidViewer.drawGrid -> figure out segments`, JSON.stringify(segments, null, 2))
         };
 
         // Main wrapper
         // #region Main
+
         const svgWrapper = document.createElement("DIV");
         svgWrapper.classList.add("svg-wrapper-grid");
 
@@ -743,7 +766,6 @@ const PlasmidViewer = new class {
          */
         svgWrapper.addEventListener("mousedown", (e) => {
             if (e.button === 0) {
-                console.log(`PlasmidViewer.svgWrapper.Event.mousedown -> Left click`);
 
                 // Get element at mousedown position
                 const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
@@ -769,7 +791,6 @@ const PlasmidViewer = new class {
          * Mouse up
          */
         svgWrapper.addEventListener("mouseup", (e) => {
-            console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> Left button`);
 
             // Stop selection
             this.currentlySelecting = false;
@@ -777,11 +798,9 @@ const PlasmidViewer = new class {
             // Find out if the event was a click event by checking if the elements the mouse is over have changed
             const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
             const clicked = elementsAtPoint.every((ele, i) => ele === this.elementsAtMouseDown[i]);
-            console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> clicked=${clicked}`);
 
             
             if (clicked) {
-                console.log(`PlasmidViewer.svgWrapper.Event.click -> Left click`);
 
                 // Reset shapes tracker
                 this.elementsAtMouseDown = null;
@@ -791,22 +810,18 @@ const PlasmidViewer = new class {
 
                 // No shapes at event, deselect
                 if (shapesAtPoint.length == 0) {
-                    console.log(`PlasmidViewer.svgWrapper.Event.click -> Deselecting`);
                     PlasmidViewer.deselectBases();
                     return;
                 };
     
-                console.log(`PlasmidViewer.svgWrapper.Event.click -> shapesAtPoint${shapesAtPoint}`);
                 // If we clicked on feature annotation, select it
                 if (shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
                     const featureID = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id")
-                    console.log(`PlasmidViewer.svgWrapper.Event.click -> featureID=${featureID}`);
     
                     this.selectFeature(featureID, e.shiftKey);
                 } else if (shapesAtPoint[0].parentElement.matches('g#aa-block-group')) {
                     const targetShape = shapesAtPoint[0].parentElement;
                     const aaSpan = targetShape.getAttribute("aa-span").split(",").map(n => Number(n));
-                    console.log(`PlasmidViewer.svgWrapper.Event.click -> aaSpan=${aaSpan}`);
 
                     this.selectAA(aaSpan, e.shiftKey);
                 };
@@ -850,14 +865,9 @@ const PlasmidViewer = new class {
             // Get shapes at event
             const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
             const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
-            //console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> shapesAtPoint ${shapesAtPoint}`)
 
             // Remove hover class from previously hovered bases
-            Array.from(svgWrapper.children).forEach((svgEl) => {
-                svgEl.querySelectorAll('.base-hover').forEach((el) => {
-                    el.classList.remove('base-hover');
-                });
-            });
+            this.unhighlightBases();
             this.removeFeatureHover();
             this.removeAABlocksHover();
 
@@ -905,8 +915,8 @@ const PlasmidViewer = new class {
                 const nearestRect = elementsAtPoint.find((el) => el.tagName === 'rect' && el.classList.contains("base"));
                 if (nearestRect) {
                     // Add the hover styling to it
-                    nearestRect.classList.add("base-hover");
                     const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
+                    this.highlightBases([baseIndex, baseIndex], "base-hover");
     
                     this.showSequenceTooltip(e.pageX, e.pageY);
                     this.setSequenceTooltip(baseIndex);
@@ -965,7 +975,6 @@ const PlasmidViewer = new class {
                             selectionEndIndex
                         ];
                     }
-                    console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Selecting: ${selectionSpan}`);
                     this.selectBases(selectionSpan);
                 };
             };
@@ -1005,6 +1014,8 @@ const PlasmidViewer = new class {
          * Iterate over segments and draw
          */
         // #region Draw_segments
+        const baseBoxTemplate = this.createShapeElement("rect");
+
         segments.forEach((segment) => {
             const segmentIndexStart = segment["segmentIndexStart"];
             const segmentIndexEnd = segment["segmentIndexEnd"];
@@ -1017,25 +1028,6 @@ const PlasmidViewer = new class {
             svgCanvas.setAttribute("indices", [segmentIndexStart+1, segmentIndexEnd])
             svgWrapper.appendChild(svgCanvas);
             // #endregion SVG_canvas
-            
-
-            // Calculate the maximum amount of feature stacking in this segment to
-            // set an appropriate height
-            // #region Feature_stacking
-            //let maxFeatureLevelInSegment = 0;
-            //if (Object.keys(segment["features"]).length !== 0) {
-            //    for (const [uuid, featureDict] of Object.entries(segment["features"])) {
-            //        if (featureDict["level"] > maxFeatureLevelInSegment) {
-            //            maxFeatureLevelInSegment = featureDict["level"]
-            //        };
-            //    };
-            //    maxFeatureLevelInSegment++;
-            //};
-            //maxFeatureLevelInSegment = Math.max(maxFeatureLevelInSegment, 1);
-            //console.log(`PlasmidViewer.drawGrid -> segment maxFeatureLevelInSegment=${maxFeatureLevelInSegment}`);
-            //const svgHeight = singleStrandHeight*2 + strandFeatureSpacing + (featureAnnotationHeight + featureAnnotationsSpacing)*maxFeatureLevelInSegment;
-            //svgCanvas.setAttribute("height", svgHeight);
-            //#endregion Feature_stacking
 
 
             // #region Main_group
@@ -1066,7 +1058,7 @@ const PlasmidViewer = new class {
             for (let i = 0; i < basesPerLine; i++) {
                 if (!segment["sequenceFwd"][i]) {continue};
 
-                const baseBox = this.createShapeElement("rect");
+                const baseBox = baseBoxTemplate.cloneNode();
                 baseBox.setAttribute("x", basesPositions[i] - basesWidth/2);
                 baseBox.setAttribute("y", 0);
                 baseBox.setAttribute("height", singleStrandHeight);
@@ -1102,7 +1094,7 @@ const PlasmidViewer = new class {
             for (let i = 0; i < basesPerLine; i++) {
                 if (!segment["sequenceRev"][i]) {continue};
 
-                const baseBox = this.createShapeElement("rect");
+                const baseBox = baseBoxTemplate.cloneNode();
                 baseBox.setAttribute("x", basesPositions[i] - basesWidth/2);
                 baseBox.setAttribute("y", singleStrandHeight);
                 baseBox.setAttribute("height", singleStrandHeight);
@@ -1235,13 +1227,13 @@ const PlasmidViewer = new class {
             };
             levels = Object.values(levels)
         
-            console.log("PlasmidViewer.dragGrid -> features", JSON.stringify(levels, null, 2));
             const featuresLevelStart = singleStrandHeight*2 + strandFeatureSpacing;
             let featureGroupTopY = featuresLevelStart;
             let aaIndexY;
             let aaBlockY;
             let annotationY;
-            let svgHeight;
+            
+            let svgHeight = svgMinHeight;
             // Iterate over levels
             for (let i = 0; i < levels.length; i++) {
                 if (i !== 0) {
@@ -1269,19 +1261,12 @@ const PlasmidViewer = new class {
 
                 svgHeight = Math.max(
                     annotationY + featureAnnotationHeight/2 + featureAnnotationsSpacing + 5,
-                    140,
+                    svgMinHeight,
                 );
 
                 for (let j = 0; j < featuresInLevel.length; j++) {
                     const currFeatureID = featuresInLevel[j];
                     const featureDict = segment["features"][currFeatureID];
-                    console.log(
-                        "PlasmidViewer.drawGrid -> segment features",
-                        featureDict["label"],
-                        featureDict["span"],
-                        featureDict["directionality"],
-                        featureDict
-                    );
     
     
                     let featureLengthPixels = seqToPixel(featureDict["span"][1]) - seqToPixel(featureDict["span"][0]-1);
@@ -1314,14 +1299,11 @@ const PlasmidViewer = new class {
                     if (featureDict["translation"]) {
                         translatedFeatureInLevel = true;
 
-                        const featureSpan = features[currFeatureID]["span"]
+                        const featureSpan = featureDict["span"]
                         const featureSegmentSpan = [
                             featureDict["span"][0] + segmentIndexStart,
                             featureDict["span"][1] + segmentIndexStart,
                         ];
-                        console.log(
-                            `PlasmidViewer.drawGrid -> translation ${featureDict["label"]}: ${featureDict["translation"]} ${featureSegmentSpan} ${featureSpan}`
-                        );
     
                         
                         const translation = this.createShapeElement("g");
@@ -1330,11 +1312,7 @@ const PlasmidViewer = new class {
     
                         const direction = features[currFeatureID]["directionality"];
                         const aaIndices = featureDict["aaIndices"]
-                        console.log(
-                            `PlasmidViewer.drawGrid -> translation codon ${featureDict["label"]}`,
-                            direction,
-                            aaIndices,
-                        );
+
                         let codonStart = (direction === "fwd") ? featureSegmentSpan[0]: featureSegmentSpan[1];
                         
                         let aaRangeIndex = aaIndices.findIndex(([a, b]) => codonStart >= Math.min(a, b) && codonStart <= Math.max(a, b));
@@ -1343,7 +1321,7 @@ const PlasmidViewer = new class {
                             const aaRangeFull = aaIndices[aaRangeIndex];
     
                             if (direction === "fwd" && aaRangeFull[0] > segmentIndexEnd) break;
-                            if (direction === "rev" && aaRangeFull[0] < segmentIndexStart) break;
+                            if (direction === "rev" && aaRangeFull[0] < segmentIndexStart+1) break;
     
                             const codon = (direction === "fwd") 
                             ? sequence.slice(Math.min(...aaRangeFull) - 1, Math.max(...aaRangeFull))
@@ -1384,6 +1362,7 @@ const PlasmidViewer = new class {
 
                             const aaIndex = ((aaRangeIndex + 1) % 5 === 0 || aaRangeIndex === 0) ? aaRangeIndex + 1: null;
     
+
                             const aaBlock = this.aaBlock(
                                 aaBlockXStart,
                                 aaBlockY,
@@ -1445,7 +1424,6 @@ const PlasmidViewer = new class {
      * @returns 
      */
     gridFeature(featureId, span, levelHeight, featureHeight, featureShapeLeft, featureShapeRight, label, color, elementId, cssClass) {
-        console.log("PlasmidViewer.gridFeature ->", label, featureShapeLeft, featureShapeRight)
         
         const featureArrowWidth = featureHeight; //px
         const featureHeadMinWidth = 10; //px
@@ -1571,11 +1549,13 @@ const PlasmidViewer = new class {
         const aaBlockGroup = this.createShapeElement("g");
         aaBlockGroup.setAttribute("id", "aa-block-group");
 
+        let fragment = document.createDocumentFragment();
+
         /**
          * Block index
          */
         if (aaIndex && textPosX) {
-            aaBlockGroup.appendChild(this.text(
+            fragment.appendChild(this.text(
                 [textPosX, aaIndexY + aaIndexHeight/2],
                 aaIndex,
                 null,
@@ -1583,81 +1563,48 @@ const PlasmidViewer = new class {
                 "middle",
                 "0.4em"
             ));
-
-            //const testRect = this.createShapeElement("rect");
-            //testRect.setAttribute("x", textPosX - width/2);
-            //testRect.setAttribute("y", aaIndexY);
-            //testRect.setAttribute("width", width);
-            //testRect.setAttribute("height", aaIndexHeight);
-            //testRect.setAttribute("fill", "transparent");
-            //testRect.setAttribute("stroke", "black");
-            //testRect.setAttribute("stroke-width", 1);
-            //
-            //aaBlockGroup.appendChild(testRect);
         };
 
 
         /**
          * Block
          */
-        let points;
-        if (aa !== "*") {
-            points = (direction === "fwd") 
-            ? [
-                [x + headWidth, y + height/2],
-                [x, y],
-                [x + width, y],
-                [x + width + headWidth, y + height/2],
-                [x + width, y + height],
-                [x, y + height]
-            ]
-            : [
-                [x - headWidth, y + height/2],
-                [x , y],
-                [x + width, y],
-                [x + width - headWidth, y + height/2],
-                [x + width, y + height],
-                [x , y + height]
-            ];
-        } else {
-            points = (direction === "fwd") 
-            ? [
-                [x + headWidth, y + height/2],
-                [x, y],
-                [x + width, y],
-                [x + width, y + height/2],
-                [x + width, y + height],
-                [x, y + height]
-            ]
-            : [
-                [x, y + height/2],
-                [x , y],
-                [x + width, y],
-                [x + width - headWidth, y + height/2],
-                [x + width, y + height],
-                [x , y + height]
-            ];
-        };
+        const isForward = direction === "fwd";
+        const isStop = aa === "*";
+
+        let points = isForward 
+        ? [
+            [x + headWidth, y + height / 2],
+            [x, y],
+            [x + width, y],
+            [x + width + (isStop ? 0 : headWidth), y + height / 2],
+            [x + width, y + height],
+            [x, y + height]
+        ]
+        : [
+            [x - (isStop ? 0 : headWidth), y + height / 2],
+            [x, y],
+            [x + width, y],
+            [x + width - headWidth, y + height / 2],
+            [x + width, y + height],
+            [x, y + height]
+        ];
 
         const aaBlock = this.createShapeElement("polygon");
         aaBlock.setAttribute("id", "block")
-        aaBlock.setAttribute("points", points);
+        aaBlock.setAttribute("points", points.map(p => p.join(",")).join(" "));
         aaBlock.classList.add("aa-block");
-        const resClass = `aa-block-${aa}`.replace("*", "stop")
+
+        const resClass = `aa-block-${aa === "*" ? "stop" : aa}`;
         aaBlock.classList.add(resClass);
-        aaBlockGroup.appendChild(aaBlock);
+        fragment.appendChild(aaBlock);
         
+
         /**
          * Block text
          */
         if (textPosX) {
-            // Get block color from css stylesheet to 
-            // figure out text color
-            let tempElement = document.createElement("div");
-            tempElement.className = resClass;
-            document.body.appendChild(tempElement);
-            let color = window.getComputedStyle(tempElement).getPropertyValue("fill");
-            document.body.removeChild(tempElement);
+            let color = this.resFillColors[aa === "*" ? "stop" : aa];
 
             const aaText = this.text(
                 [textPosX, y + height/2],
@@ -1668,9 +1615,24 @@ const PlasmidViewer = new class {
                 "0.4em"
             );
             aaText.classList.add(`aa-text-${Utilities.getTextColorBasedOnBg(color)}`)
-            aaBlockGroup.appendChild(aaText);
+            fragment.appendChild(aaText);
         };
+
+        aaBlockGroup.appendChild(fragment);
         return aaBlockGroup;
+    };
+
+    getCssFillColor(className) {
+        for (let sheet of document.styleSheets) {
+            try {
+                for (let rule of sheet.cssRules) {
+                    if (rule.selectorText === `.${className}`) {
+                        return rule.style.fill;
+                    };
+                };
+            } catch (e) {}
+        };
+        return "#000";
     };
     
     
@@ -1721,7 +1683,7 @@ const PlasmidViewer = new class {
      * @returns 
      */
     createShapeElement(shape) {
-        return document.createElementNS("http://www.w3.org/2000/svg", shape)
+        return document.createElementNS(this.svgNameSpace, shape)
     };
 
 
@@ -1735,7 +1697,7 @@ const PlasmidViewer = new class {
      * @returns 
      */
     text(pos, content, id=null, cssClass=null, textAnchor="start", dy=0) {
-        const textElement = this.createShapeElement("text");
+        const textElement = this.textElementTemplate.cloneNode();
         textElement.setAttribute("x", pos[0]);
         textElement.setAttribute("y", pos[1]);
         textElement.setAttribute("dy", dy);      
@@ -1779,6 +1741,20 @@ const PlasmidViewer = new class {
         return line;
     };
 
+
+    initMeasurementSVG() {
+        this.measurementSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        this.measurementSvg.style.position = "absolute";
+        this.measurementSvg.style.visibility = "hidden";
+        this.measurementSvg.style.width = "0";
+        this.measurementSvg.style.height = "0";
+        document.body.appendChild(this.measurementSvg);
+
+        this.measurementText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        this.measurementSvg.appendChild(this.measurementText);
+    };
+
+
     /**
      * Truncates strings to fit wihin an area.
      * 
@@ -1788,43 +1764,38 @@ const PlasmidViewer = new class {
      * @returns  {String} - Original string or truncated string
      */
     fitTextInRectangle(text, maxWidth, cssClass) {
-        const tempSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        tempSvg.style.position = "absolute";
-        tempSvg.style.visibility = "hidden";
-        tempSvg.style.width = "0";
-        tempSvg.style.height = "0";
-        document.body.appendChild(tempSvg);
-    
-        const tempText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        tempText.setAttribute("class", cssClass);
-        tempText.textContent = text;
-        tempSvg.appendChild(tempText);
-    
+        this.measurementText.setAttribute("class", cssClass);
+        this.measurementText.textContent = text;
 
-        const computedStyle = window.getComputedStyle(tempText);
-        tempText.setAttribute("font-size", computedStyle.fontSize);
-        tempText.setAttribute("font-family", computedStyle.fontFamily);
-    
+        const computedStyle = window.getComputedStyle(this.measurementText);
+        this.measurementText.setAttribute("font-size", computedStyle.fontSize);
+        this.measurementText.setAttribute("font-family", computedStyle.fontFamily);
 
-        let textWidth = tempText.getComputedTextLength();
-        
-        //console.log(`PlasmidViewer.fitTextInRectangle -> ${text} ${maxWidth} ${textWidth}`);
-    
+        let textWidth = this.measurementText.getComputedTextLength();
 
-        if (textWidth <= maxWidth) {
-            document.body.removeChild(tempSvg);
-            return text;
+        if (textWidth <= maxWidth) return text;
+
+        let left = 0, right = text.length;
+        let bestFit = "";
+
+        while (left <= right) {
+            let mid = Math.floor((left + right) / 2);
+            let candidateText = text.slice(0, mid) + "...";
+            this.measurementText.textContent = candidateText;
+            textWidth = this.measurementText.getComputedTextLength();
+
+            if (textWidth <= maxWidth) {
+                // Store valid fit
+                bestFit = candidateText;
+                // Try longer text
+                left = mid + 1;
+            } else {
+                // Try shorter text
+                right = mid - 1;
+            };
         };
-    
-        let truncatedText = text;
-        while (textWidth > maxWidth && truncatedText.length > 0) {
-            truncatedText = truncatedText.slice(0, -1);
-            tempText.textContent = truncatedText + "...";
-            textWidth = tempText.getComputedTextLength();
-        };
-    
-        document.body.removeChild(tempSvg);
-        return truncatedText.length > 0 ? truncatedText + "..." : "";
+
+        return bestFit;
     };
     // #endregion Drawing_helpers
 
@@ -1838,7 +1809,6 @@ const PlasmidViewer = new class {
      * @returns 
      */
     switchView(targetView, sender=null) {
-        console.log(`PlasmidViewer.switchView -> targetView=${targetView}, sender=${sender}`);
         
         // Return immediately if the button is disabled
         if (sender && sender.hasAttribute("disabled")) {return};
@@ -1944,7 +1914,9 @@ const PlasmidViewer = new class {
          */
         setSequenceTooltip(body) {
             const tooltip = document.getElementById("sequence-tooltip");
-            tooltip.innerHTML = body;
+            requestAnimationFrame(() => {
+                tooltip.innerHTML = body;
+            });
         };
     // #endregion Sequence_tooltip 
 
@@ -1955,58 +1927,81 @@ const PlasmidViewer = new class {
      * @param {*} input 
      */
     placeCursor(input, cssClass="sequence-cursor-hover") {
-        console.log(`PlasmidViewer.placeCursor ->`, input, cssClass);
         const indices = Array.isArray(input) ? input : [input];
 
-        indices.forEach((index) => {
-            //console.log(`PlasmidViewer.placeCursor -> Placing cursor at: ${index}`);
-            // Find svg segment that contains the bases with the specified index
-            const gridViewContainer = document.getElementById("grid-view-container");
-            const svgElements = gridViewContainer.getElementsByTagName('svg');
+        const cursorsPlaced = [];
+        const svgs = document.getElementById("grid-view-container").getElementsByTagName('svg');
 
-            let svgMatch = null;
-            for (let svg of svgElements) {
-                const indices = svg.getAttribute('indices');
-                const [minIndex, maxIndex] = indices.split(',').map(Number);
-                if (index >= minIndex && index <= maxIndex) {
-                    svgMatch = svg;
-                    break;
+        
+        for (let i = 0; i < indices.length; i++) {
+            const index = indices[i];
+            let svgMatch;
+            let rectMatch;
+            svgLoop: for (let j = 0; j < svgs.length; j++) {
+                const svg = svgs[j];
+                const [svgStart, svgEnd] = svg.getAttribute('indices').split(',').map(Number);
+        
+                // Skip this SVG if it doesn't contain relevant bases
+                if (index < svgStart || svgEnd < index) continue;
+        
+                const targetStrandGroup = svg.getElementById("strand-fwd")
+                const rects = targetStrandGroup.getElementsByTagName('rect');
+    
+                for (let k = 0; k < rects.length; k++) {
+                    const rect = rects[k];
+                    const baseIndex = parseInt(rect.getAttribute('base-index'), 10);
+                    
+                    if (baseIndex == index) {
+                        svgMatch = svg;
+                        rectMatch = rect;
+                        break svgLoop;
+                    };
                 };
             };
-
+    
             // Find x value to place cursor at
-            const baseRect = svgMatch.querySelectorAll(`rect[base-index="${index}"]`)[0]
-            const posX = baseRect.getAttribute("x");
+            const posX = rectMatch.getAttribute("x");
             const cursorHeight = svgMatch.getBoundingClientRect().height;
-
-
+    
+    
             const cursorGroup = svgMatch.getElementById(
                 cssClass.includes("preview") ? 'selection-preview-cursor-group': 'selection-cursor-group'
             );
-
-            cursorGroup.appendChild(this.line(
+    
+            const cursorElement = this.line(
                 [posX, 0],
                 [posX, cursorHeight],
                 null,
                 ["sequence-cursor", cssClass]
-            ));
-        });
+            );
+    
+            cursorGroup.appendChild(cursorElement);
+            
+            cursorsPlaced.push(cursorElement);
+        };
+
+        if (!this.cursors[cssClass]) {
+            this.cursors[cssClass] = cursorsPlaced
+        } else {
+            this.cursors[cssClass] = this.cursors[cssClass].concat(cursorsPlaced);
+        };
     };
 
 
     /**
      * 
-     * @param {*} cssClassSelector 
+     * @param {*} cssClass 
      */
-    removeCursors(cssClassSelector=null) {
-        const selector = (cssClassSelector) ? cssClassSelector: "sequence-cursor";
+    removeCursors(cssClass="sequence-cursor") {
+        const cursors = this.cursors[cssClass];
+        if (!cursors) return;
 
-        document.querySelectorAll('svg').forEach((svg) => {
-            const lineElements = svg.querySelectorAll(`line.${selector}`);
-            lineElements.forEach((line) => {
-                line.remove();
-            });
-        });
+        for (let i = 0, len = cursors.length; i < len; i ++) {
+            const currCursor = cursors[i]
+            currCursor.remove();
+        };
+
+        this.cursors[cssClass] = [];
     };
 
 
@@ -2016,9 +2011,10 @@ const PlasmidViewer = new class {
      * @param {string} cssClass 
      */
     highlightBases(span, cssClass = "base-hover", strand=null) {
-        console.log(`PlasmidViewer.highlightBases -> `, span, cssClass, strand);
         const [start, end] = span;
     
+        let basesHighlighted = [];
+
         const svgs = document.getElementById("grid-view-container").getElementsByTagName('svg');
         for (let i = 0; i < svgs.length; i++) {
             const svg = svgs[i];
@@ -2044,7 +2040,7 @@ const PlasmidViewer = new class {
             };
 
             for (let g = 0; g < targetGroups.length; g++) {
-                const rects = targetGroups[g].getElementsByTagName('rect'); // Faster than querySelectorAll
+                const rects = targetGroups[g].getElementsByTagName('rect');
     
                 for (let j = 0; j < rects.length; j++) {
                     const rect = rects[j];
@@ -2052,9 +2048,17 @@ const PlasmidViewer = new class {
                     
                     if (baseIndex >= start && baseIndex <= end) {
                         rect.classList.add(cssClass);
+                        basesHighlighted.push(rect);
                     };
                 };
             };
+        };
+
+
+        if (!this.highlightedBases[cssClass]) {
+            this.highlightedBases[cssClass] = basesHighlighted;
+        } else {
+            this.highlightedBases[cssClass] = this.highlightedBases[cssClass].concat(basesHighlighted);
         };
     };
 
@@ -2064,25 +2068,26 @@ const PlasmidViewer = new class {
      * @param {string} cssClass 
      */
     unhighlightBases(cssClass="base-hover") {
-        document.querySelectorAll('svg').forEach((svg) => {
-            svg.querySelectorAll(`rect.${cssClass}`).forEach((rect) => {
-                rect.classList.remove(cssClass);
-            });
-        });
+        const basesToUnhighlight = this.highlightedBases[cssClass];
+        if (!basesToUnhighlight) return;
+
+
+        for (let i = 0, len = basesToUnhighlight.length; i < len; i++) {
+            const currBase = basesToUnhighlight[i];
+            currBase.classList.remove(cssClass);
+        };
+        this.highlightedBases[cssClass] = [];
     };
 
 
     highlightSubcloningTarget() {
         this.unhighlightSubcloningTarget();
-        console.log("PlasmidViewer.highlightSubcloningTarget ->")
         if (
             Session.subcloningOriginPlasmidIndex === null ||
             Session.subcloningOriginPlasmidIndex !== Session.activePlasmidIndex
         ) {
             return;
         };
-        console.log("PlasmidViewer.highlightSubcloningTarget ->", Session.subcloningOriginSpan)
-        //this.highlightBases(Session.subcloningOriginSpan, "base-sub-target", "fwd")
 
         const [start, end] = Session.subcloningOriginSpan;
     
@@ -2127,15 +2132,18 @@ const PlasmidViewer = new class {
             subcloningRect.setAttribute("height", cellHeight*2);
 
             firstRect.parentElement.insertBefore(subcloningRect, firstRect.parentElement.firstChild);
+        
+            this.subcloningRects.push(subcloningRect);
         };
     };
 
 
     unhighlightSubcloningTarget() {
         this.unhighlightBases("base-sub-target");
-        document.getElementById("grid-view-container")
-                .querySelectorAll("rect.subcloning-rect")
-                .forEach(rect => rect.remove());
+        for (let i = 0, len = this.subcloningRects.length; i < len; i++) {
+            this.subcloningRects[i].remove()
+        };
+        this.subcloningRects = [];
     };
 
 
@@ -2154,17 +2162,44 @@ const PlasmidViewer = new class {
 
 
     addFeatureHover(featureID) {
+        const span = Session.activePlasmid().features[featureID]["span"]
+        const [start, end] = span;
         const containerDiv = document.getElementById('grid-view-container');
-        const shapesWithAttribute = containerDiv.querySelectorAll(`svg [feature-id="${featureID}"]`);
         
-        if (shapesWithAttribute.length === 0) return;
+        const svgs = containerDiv.getElementsByTagName("svg");
+        for (let i = 0, len = svgs.length; i < len; i++){
+            const svg = svgs[i];
+            const [svgStart, svgEnd] = svg.getAttribute('indices').split(',').map(Number);
+    
+            // Skip this SVG if it doesn't contain relevant bases
+            if (svgEnd < start || svgStart > end) continue;
+    
+            const svgFeaturesGroup = svg.getElementById("svg-features");
 
-        shapesWithAttribute.forEach((shape) => {
-            const polygon = shape.querySelector("#arrow");
-            if (polygon) polygon.classList.add("svg-feature-arrow-hover");
-        });
+            const shapesWithAttribute = svgFeaturesGroup.querySelectorAll(`g[feature-id="${featureID}"]`);
+        
+            if (shapesWithAttribute.length === 0) return;
 
-        this.addSequenceHover(Session.activePlasmid().features[featureID]["span"]);
+            for (let j = 0, len = shapesWithAttribute.length; j < len; j++) {
+                const shape = shapesWithAttribute[j];
+                const polygon = shape.querySelector("#arrow");
+                if (polygon) {
+                    polygon.classList.add("svg-feature-arrow-hover");
+                    this.hoveredFeatureSegments.push(polygon);
+                };
+            };
+        };
+
+        this.addSequenceHover(span);
+    };
+
+    removeFeatureHover() {
+        for (let i = 0, len = this.hoveredFeatureSegments.length; i < len; i++) {
+            this.hoveredFeatureSegments[i].classList.remove("svg-feature-arrow-hover");
+        };
+        this.hoveredFeatureSegments = [];
+
+        this.removeSequenceHover();
     };
 
     createFeatureHoverTooltip(featureID) {
@@ -2211,15 +2246,6 @@ const PlasmidViewer = new class {
         return tooltipBody;
     };
 
-    removeFeatureHover() {
-        const containerDiv = document.getElementById('grid-view-container');
-        const hoveredFeatureSegments = containerDiv.querySelectorAll(`svg #arrow.svg-feature-arrow-hover`);
-        hoveredFeatureSegments.forEach((shape) => {
-            shape.classList.remove("svg-feature-arrow-hover");
-        });
-
-        this.removeSequenceHover();
-    };
 
     addAABlocksHover(featureID, aaIndex) {
         this.removeAABlocksHover();
@@ -2232,22 +2258,23 @@ const PlasmidViewer = new class {
         
         shapesWithAttribute.forEach((shape) => {
             const polygon = shape.querySelector("#block");
-            if (polygon) polygon.classList.add("aa-block-hover");
+            if (polygon) {
+                polygon.classList.add("aa-block-hover")
+                this.hoveredAABlocks.push(polygon);
+            };
         });
 
         let aaSpan = shapesWithAttribute[0].getAttribute("aa-span").split(",").map(Number);
-        console.log("PlasmidViewer.hoverAABlocks ->", featureID, aaIndex, typeof aaSpan);
         aaSpan.sort((a, b) => a - b);
 
         this.addSequenceHover(aaSpan);
     };
 
     removeAABlocksHover() {
-        const containerDiv = document.getElementById('grid-view-container');
-        const hoveredAABlocks = containerDiv.querySelectorAll(`svg #block.aa-block-hover`);
-        hoveredAABlocks.forEach((shape) => {
-            shape.classList.remove("aa-block-hover");
-        });
+        for (let i = 0, len = this.hoveredAABlocks.length; i < len; i++) {
+            this.hoveredAABlocks[i].classList.remove("aa-block-hover");
+        };
+        this.hoveredAABlocks = [];
 
         this.removeSequenceHover();
     };
@@ -2258,7 +2285,6 @@ const PlasmidViewer = new class {
      * @param {*} featureID 
      */
     selectFeature(featureID, combineSelection=false) {
-        console.log(`PlasmidViewer.selectFeature -> ${featureID} (combine=${combineSelection})`);
         
         let span = Session.activePlasmid().features[featureID]["span"];
         
@@ -2267,7 +2293,6 @@ const PlasmidViewer = new class {
 
 
     selectAA(span, combineSelection=false) {
-        console.log(`PlasmidViewer.selectAA ->`);
         
         this.selectBases((combineSelection) ? this.combineSpans(span): span);
     };
@@ -2311,7 +2336,6 @@ const PlasmidViewer = new class {
      * @param {*} index 
      */
     selectBase(index) {
-        console.log(`PlasmidViewer.selectBase -> ${index}`);
         this.deselectBases();
 
         this.placeCursor(index, "sequence-cursor-selection");
@@ -2325,7 +2349,6 @@ const PlasmidViewer = new class {
      */
     selectBases(span) {
         span = [Math.min(...span), Math.max(...span)]
-        console.log(`PlasmidViewer.selectBases -> ${span}`);
         this.deselectBases();
 
         this.placeCursor([span[0], span[1] + 1], "sequence-cursor-selection");
@@ -2336,7 +2359,7 @@ const PlasmidViewer = new class {
 
 
     deselectBases() {
-        this.removeCursors();
+        this.removeCursors("sequence-cursor-selection");
         this.unhighlightBases("base-selected");
 
         Session.activePlasmid().clearSelectionIndices();
@@ -2672,7 +2695,6 @@ const PlasmidViewer = new class {
             "feature": clickedOnFeature,
             "subcloningTarget": (Session.subcloningOriginPlasmidIndex !== null && Session.subcloningOriginSpan !== null) ? true: false,
         };
-        //console.log(`PlasmidViewer.showContextMenu -> ${selectionIndices} ${JSON.stringify(selectionState, null, 2)}`);
 
         
         const menuItems = contextMenu.querySelectorAll(".context-menu-item");
@@ -2680,7 +2702,6 @@ const PlasmidViewer = new class {
             if (!menuItem.hasAttribute("conditions")) {return};
 
             const conditions = [JSON.parse(menuItem.getAttribute("conditions"))];
-            //console.log(`PlasmidViewer.showContextMenu -> ${menuItem.innerHTML} ${typeof conditions} ${JSON.stringify(conditions, null, 2)}`)
             
             const conditionsMet = conditions.every(condition => {
                 // If "any" exists, at least one of the conditions must be true
@@ -2739,11 +2760,10 @@ const PlasmidViewer = new class {
         const selectionSpan = Session.activePlasmid().getSelectionIndices();
         if (!selectionSpan) return;
 
-        const footerSelectionInfo = document.getElementById("footer-selection-info");
-        const selectionLengthSpan = footerSelectionInfo.querySelector("#footer-selection-info-length");
-        const selectionRemainder = footerSelectionInfo.querySelector("#footer-selection-info-remainder");
-        const selectionRange = footerSelectionInfo.querySelector("#footer-selection-info-range");
-        const selectionTm = footerSelectionInfo.querySelector("#footer-selection-info-tm");
+        const selectionLengthSpan = document.getElementById("footer-selection-info-length");
+        const selectionRemainder = document.getElementById("footer-selection-info-remainder");
+        const selectionRange = document.getElementById("footer-selection-info-range");
+        const selectionTm = document.getElementById("footer-selection-info-tm");
 
         if (!selectionSpan[0] | !selectionSpan[1]) {
             selectionLengthSpan.innerText = 0;
@@ -2810,7 +2830,6 @@ const PlasmidViewer = new class {
      * @param {String} query - DNA Sequence
      */
     searchDNA(query) {
-        //console.log(`PlasmidViewer.searchDNA -> ${query}`);
 
         const activePlasmid = Session.activePlasmid();
         const sequences = [activePlasmid.sequence, activePlasmid.complementarySequence];
@@ -2851,7 +2870,6 @@ const PlasmidViewer = new class {
      * @param {String} query - AA sequence
      */
     searchAA(query) {
-        //console.log(`PlasmidViewer.searchAA -> ${query}`);
 
         const activePlasmid = Session.activePlasmid()
         const sequences = [activePlasmid.sequence, Nucleotides.reverseComplementary(activePlasmid.sequence)];
@@ -2864,7 +2882,6 @@ const PlasmidViewer = new class {
                 sequence.slice(-1) + sequence.slice(0, -1),
                 sequence.slice(-2) + sequence.slice(0, -2)
             ];
-            console.log(`PlasmidViewer.searchAA -> ${strand} ${dnaFrames.map(f => f.slice(0, 10) + "..." + f.slice(-10))}`);
     
             for (let j = 0; j < 3; j++) {
                 const dnaFrame = dnaFrames[j];
@@ -2885,7 +2902,6 @@ const PlasmidViewer = new class {
                     index = aaFrame.indexOf(query, index + 1);
                 };
             
-                console.log(`PlasmidViewer.searchAA -> ${strand} ${j} "${dnaFrame.slice(0, 9) + "..." + dnaFrame.slice(-9)}" [${dnaFrame.length}] "${aaFrame.slice(0, 3) + "..." + aaFrame.slice(-3)}" [${aaFrame.length}] ${indices}`);
                 for (let k = 0; k < indices.length; k++) {
                     const span = (strand === "fwd")
                     ? [indices[k] + 1, indices[k] + query.length*3]
