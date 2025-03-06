@@ -1039,6 +1039,13 @@ input, select, textarea {
   stroke: var(--border-color);
   stroke-width: 1px;
 }
+
+.aa-block-hover {
+  filter: brightness(1.1);
+  stroke: red;
+  stroke-width: 2;
+  cursor: pointer;
+}
 /* Positively charged */
 .aa-block-R { fill: #0077FF; } /* Arginine */
 .aa-block-H { fill: #3399FF; } /* Histidine */
@@ -1075,6 +1082,12 @@ input, select, textarea {
 .aa-text {
   font-weight: bold;
   font-size: 12px;
+
+  pointer-events: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 .aa-text-white {

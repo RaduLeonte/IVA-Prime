@@ -599,7 +599,7 @@ const PlasmidViewer = new class {
          */
         const singleStrandHeight = 38;
         const baseTextOffset = 12;
-        const strandFeatureSpacing = 25;
+        const strandFeatureSpacing = 30;
         const featureAnnotationHeight = 25;
         const featureAnnotationsSpacing = 5;
         const gridMargin = 50; // margin on each side
@@ -730,179 +730,175 @@ const PlasmidViewer = new class {
         };
 
         // Main wrapper
-        //#region Main SVG wrapper
+        // #region Main
         const svgWrapper = document.createElement("DIV");
         svgWrapper.classList.add("svg-wrapper-grid");
 
         // #region Event_listeners
+        /**
+         * Mouse down
+         */
         svgWrapper.addEventListener("mousedown", (e) => {
             if (e.button === 0) {
-                console.log(`PlasmidViewer.svgWrapper.Event.mousedown -> Left click`)
+                console.log(`PlasmidViewer.svgWrapper.Event.mousedown -> Left click`);
+
+                // Get element at mousedown position
                 const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
                 this.elementsAtMouseDown = elementsAtPoint;
+
+                // Find nearest base rect
                 const nearestRect = elementsAtPoint.find((el) => el.tagName === 'rect');
+
                 if (nearestRect) {
+                    // Start selection
                     const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
                     if (e.shiftKey) {
                         this.selectBases(this.combineSpans(baseIndex));
                     } else {
                         this.selectBase(baseIndex);
                     };
-    
                     this.currentlySelecting = true;
                     this.selectionStartIndex = baseIndex;
                 };
             };
         });
+        /**
+         * Mouse up
+         */
         svgWrapper.addEventListener("mouseup", (e) => {
-            if (e.button === 0) {
-                // Left mouse button
-                console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> Left button`)
-                this.currentlySelecting = false;
-    
-                //Click events
-                const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
-                const clicked = elementsAtPoint.every((ele, i) => ele === this.elementsAtMouseDown[i]);
-                console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> clicked=${clicked}`);
-                //console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> elementsAtPoint (${elementsAtPoint.length}) ${elementsAtPoint}`);
-                //console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> this.elementsAtMouseDown (${this.elementsAtMouseDown.length}) ${this.elementsAtMouseDown}`);
-                if (clicked) {
-                    console.log(`PlasmidViewer.svgWrapper.Event.click -> Left click`);
-                    this.elementsAtMouseDown = null;
-    
-                    const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
-    
-                    if (shapesAtPoint.length == 0) {
-                        console.log(`PlasmidViewer.svgWrapper.Event.click -> Deselecting`);
-                        PlasmidViewer.deselectBases();
-                        return;
-                    };
-        
-                    console.log(`PlasmidViewer.svgWrapper.Event.click -> shapesAtPoint${shapesAtPoint}`)
-                    if (shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
-                        const featureId = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id")
-                        console.log(`PlasmidViewer.svgWrapper.Event.click -> featureId=${featureId}`);
-        
-                        this.selectFeature(featureId, e.shiftKey);
-                    };
+            console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> Left button`);
+
+            // Stop selection
+            this.currentlySelecting = false;
+
+            // Find out if the event was a click event by checking if the elements the mouse is over have changed
+            const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+            const clicked = elementsAtPoint.every((ele, i) => ele === this.elementsAtMouseDown[i]);
+            console.log(`PlasmidViewer.svgWrapper.Event.mouseup -> clicked=${clicked}`);
+
+            
+            if (clicked) {
+                console.log(`PlasmidViewer.svgWrapper.Event.click -> Left click`);
+
+                // Reset shapes tracker
+                this.elementsAtMouseDown = null;
+
+                // Find shapes at event
+                const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
+
+                // No shapes at event, deselect
+                if (shapesAtPoint.length == 0) {
+                    console.log(`PlasmidViewer.svgWrapper.Event.click -> Deselecting`);
+                    PlasmidViewer.deselectBases();
+                    return;
                 };
-            } else if (e.button === 2) {
-                // Right click
-                console.log(`PlasmidViewer.svgWrapper.Event.click -> Right click`);
+    
+                console.log(`PlasmidViewer.svgWrapper.Event.click -> shapesAtPoint${shapesAtPoint}`);
+                // If we clicked on feature annotation, select it
+                if (shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
+                    const featureID = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id")
+                    console.log(`PlasmidViewer.svgWrapper.Event.click -> featureID=${featureID}`);
+    
+                    this.selectFeature(featureID, e.shiftKey);
+                } else if (shapesAtPoint[0].parentElement.matches('g#aa-block-group')) {
+                    const targetShape = shapesAtPoint[0].parentElement;
+                    const aaSpan = targetShape.getAttribute("aa-span").split(",").map(n => Number(n));
+                    console.log(`PlasmidViewer.svgWrapper.Event.click -> aaSpan=${aaSpan}`);
+
+                    this.selectAA(aaSpan, e.shiftKey);
+                };
             };
         });
 
 
+        /**
+         * Double click
+         */
         svgWrapper.addEventListener("dblclick", (e) => {
+            // Get shapes at event
             const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
             const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
-            if (shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
-                const featureID = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id");
-                const targetDiv = document.getElementById(featureID)
-                const targetHeader = targetDiv.firstElementChild;
-                const targetContent = targetHeader.nextElementSibling;
-        
-                Sidebar.toggleCollapsibleHeader(targetHeader);
 
-                targetContent.addEventListener("transitionend", function scrollAfterTransition() {
-                    targetContent.scrollIntoView({ behavior: "smooth", block: "center" });
-                    targetContent.removeEventListener("transitionend", scrollAfterTransition);
-                }, { once: true });
+            if (shapesAtPoint[0] && shapesAtPoint[0].parentElement) {
+                // If we double click on feature annotation
+                if (shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
+                    // Open its header in the sidebar
+                    const featureID = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id");
+                    const targetDiv = document.getElementById(featureID)
+                    const targetHeader = targetDiv.firstElementChild;
+                    const targetContent = targetHeader.nextElementSibling;
+            
+                    Sidebar.toggleCollapsibleHeader(targetHeader);
+    
+                    // Scroll feature header into view
+                    targetContent.addEventListener("transitionend", function scrollAfterTransition() {
+                        targetContent.scrollIntoView({ behavior: "smooth", block: "center" });
+                        targetContent.removeEventListener("transitionend", scrollAfterTransition);
+                    }, { once: true });
+                };
             };
         });
 
 
+        /**
+         * Mouse move
+         */
         svgWrapper.addEventListener("mousemove", (e) => {
+            // Get shapes at event
             const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
             const shapesAtPoint = elementsAtPoint.filter(el => el instanceof SVGGeometryElement);
             //console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> shapesAtPoint ${shapesAtPoint}`)
 
+            // Remove hover class from previously hovered bases
             Array.from(svgWrapper.children).forEach((svgEl) => {
                 svgEl.querySelectorAll('.base-hover').forEach((el) => {
                     el.classList.remove('base-hover');
                 });
             });
+            this.removeFeatureHover();
+            this.removeAABlocksHover();
 
-            
             if (!this.currentlySelecting) {
+                // If we're not currently selecting
+
+                // If we're not hovering over anything, remove tooltip and hover cursors
                 if (shapesAtPoint.length == 0) {
                     this.hideSequenceTooltip();
                     this.removeCursors("sequence-cursor-hover");
                 };
 
+                // If we're hovering over feature annotation
+                if (shapesAtPoint[0] && shapesAtPoint[0].parentElement) {
+                    if (shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
+                        // Find its ID
+                        const featureID = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id")
+                        
+                        // Find all segments with same ID and add hover styling to them
+                        this.addFeatureHover(featureID);
+    
+                        // Create feature description for tooltip
+                        const tooltipBody = this.createFeatureHoverTooltip(featureID);
+    
+                        // Show tooltip
+                        this.showSequenceTooltip(e.pageX, e.pageY);
+                        this.setSequenceTooltip(tooltipBody.innerHTML);
+    
+                        // Add hover classes
+                        this.addFeatureHover(featureID);
+                    } else if (shapesAtPoint[0].parentElement.matches('g#aa-block-group')) {
+                        const targetShape = shapesAtPoint[0].parentElement;
+                        const featureID = targetShape.getAttribute("feature-id");
+                        const aaIndex = targetShape.getAttribute("aa-index");
+                        this.addAABlocksHover(featureID, aaIndex);
 
-                if (shapesAtPoint[0] && shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
-                    const featureID = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id")
-                    //console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Feature preview selection featureID=${featureID}`);
-                    
-                    const containerDiv = document.getElementById('grid-view-container');
-                    const shapesWithAttribute = containerDiv.querySelectorAll(`svg [feature-id="${featureID}"]`);
-                    shapesWithAttribute.forEach((shape) => {
-                        shape.querySelector("#arrow").classList.add("svg-feature-arrow-hover")
-                    });
-
-                    const featureDict = Session.activePlasmid().features[featureID];
-
-                    const tooltipBody = document.createElement("DIV");
-
-                    const title = document.createElement("DIV");
-                    title.innerText = featureDict["label"];
-                    title.classList.add("sequence-tooltip-title");
-                    tooltipBody.appendChild(title);
-
-                    const featureLength = featureDict["span"][1] - featureDict["span"][0];
-                    const remainder = featureLength % 3;
-                    const remainderString = (remainder !== 0) ? "+" + remainder: "";
-                    const nrAA = (featureLength - remainder)/3;
-                    const nrAAString = (featureLength >= 3) ? "3x" + nrAA: nrAA;
-                    const properties = {
-                        "Type": featureDict["type"],
-                        "Span": `${featureLength} bp (${nrAAString}${remainderString}) [${featureDict["span"][0]}, ${featureDict["span"][1]}]`,
-                        "Note": (featureDict["note"] && featureDict["note"].length !== 0) ? featureDict["note"]: null,
-                        "Translation": (featureDict["translation"] && featureDict["translation"].length !== 0) ? featureDict["translation"]: null,
-                    }
-
-                    for (const [key, value] of Object.entries(properties)) {
-                        if (value === null || value.length === 0) {continue};
-
-                        const propertyDiv = document.createElement("DIV");
-                        propertyDiv.classList.add("sequence-tooltip-row");
-
-                        const propertyKey = document.createElement("DIV");
-                        propertyKey.classList.add("sequence-tooltip-row-key");
-                        propertyKey.innerText = key;
-                        propertyDiv.appendChild(propertyKey);
-
-                        const propertyValue = document.createElement("DIV");
-                        propertyValue.classList.add("sequence-tooltip-row-value");
-                        propertyValue.innerText = value;
-                        propertyDiv.appendChild(propertyValue);
-
-                        tooltipBody.appendChild(propertyDiv);
+                        this.hideSequenceTooltip();
                     };
-
-
-                    this.showSequenceTooltip(e.pageX, e.pageY);
-                    this.setSequenceTooltip(tooltipBody.innerHTML);
-
-                    this.deselectFeaturePreview(featureID);
-                    this.selectFeaturePreview(featureID);
-                } else {
-                    const containerDiv = document.getElementById('grid-view-container');
-                    const shapesWithAttribute = containerDiv.querySelectorAll(`svg #arrow.svg-feature-arrow-hover`);
-                    //console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Feature removing preview selection shapesWithAttribute=${shapesWithAttribute}`);
-                    shapesWithAttribute.forEach((shape) => {
-                        shape.classList.remove("svg-feature-arrow-hover");
-                        const featureID = shape.parentElement.getAttribute("feature-id");
-                        //console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> Feature removing preview selection featureID=${featureID}`);
-                        this.deselectFeaturePreview(featureID);
-                    });
                 };
 
-    
+                // Check to see if we're hovering over a base
                 const nearestRect = elementsAtPoint.find((el) => el.tagName === 'rect' && el.classList.contains("base"));
-                //console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> nearestRect ${nearestRect}`)
                 if (nearestRect) {
+                    // Add the hover styling to it
                     nearestRect.classList.add("base-hover");
                     const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
     
@@ -913,6 +909,9 @@ const PlasmidViewer = new class {
                     this.placeCursor(baseIndex);
                 };
             } else if (this.currentlySelecting) {
+                // We're selecting
+
+                // Get a list of all rects in all svgs
                 const svgElements = Array.from(svgWrapper.children);
                 let rects = [];
                 svgElements.forEach(svg => {
@@ -922,6 +921,7 @@ const PlasmidViewer = new class {
                 });
             
 
+                // Find nearest rectangle to the mouse position
                 let nearestRect = null;
                 let lastDistance = Infinity;
                 rects.forEach(rect => {
@@ -936,10 +936,11 @@ const PlasmidViewer = new class {
                         nearestRect = rect;
                     }
                 });
-                //console.log(`PlasmidViewer.svgWrapper.Event.mousemove -> nearestRect ${nearestRect}`)
                 
                 
                 if (nearestRect) {
+                    // Make the nearest rectangle to the mouse the end index and select everything
+                    // before it
                     const selectionEndIndex = parseInt(nearestRect.getAttribute("base-index"));
     
                     this.showSequenceTooltip(e.pageX, e.pageY);
@@ -964,16 +965,25 @@ const PlasmidViewer = new class {
             };
         });
 
+
+        /**
+         * Mouse leave
+         */
         svgWrapper.addEventListener("mouseleave", (e) => {
+            // Hide tooltip and remove hover styling
             this.hideSequenceTooltip();
             this.removeCursors("sequence-cursor-hover");
             this.unhighlightBases("base-hover");
         });
 
+        /**
+         * Click outside of view container
+         */
         document.getElementById("content-wrapper").addEventListener("click", function (e) {
             if (document.getElementById("viewer").contains(e.target)) {
                 return;
             };
+            // If we click outside the viewer, deselect bases
             PlasmidViewer.deselectBases();
         });
         // #endregion Event_listeners
@@ -1329,17 +1339,19 @@ const PlasmidViewer = new class {
 
 
                         const aaBlockHeight = 20;
-                        translation.appendChild(
-                            this.aaBlock(
-                                aaBlockXStart,
-                                featuresLevels[featureDict["level"]] - featureAnnotationHeight/2 - aaBlockHeight,
-                                aaBlockWidthPx,
-                                aaBlockHeight,
-                                direction,
-                                aaTextPosPx,
-                                aa,
-                            )
+                        const aaBlock = this.aaBlock(
+                            aaBlockXStart,
+                            featuresLevels[featureDict["level"]] - featureAnnotationHeight/2 - aaBlockHeight - 2,
+                            aaBlockWidthPx,
+                            aaBlockHeight,
+                            direction,
+                            aaTextPosPx,
+                            aa,
                         );
+                        aaBlock.setAttribute("feature-id", featureID);
+                        aaBlock.setAttribute("aa-index", aaRangeIndex);
+                        aaBlock.setAttribute("aa-span", aaRangeFull);
+                        translation.appendChild(aaBlock);
 
                         aaRangeIndex++;
                     };
@@ -1363,6 +1375,8 @@ const PlasmidViewer = new class {
         });
         // #endregion
 
+
+        // #endregion Main
         return svgWrapper;
     };
 
@@ -1503,7 +1517,8 @@ const PlasmidViewer = new class {
     aaBlock(x, y, width, height, direction, textPosX, aa) {
         const headWidth = 3;
 
-        const aaBlockGroup = this.createShapeElement("g")
+        const aaBlockGroup = this.createShapeElement("g");
+        aaBlockGroup.setAttribute("id", "aa-block-group");
 
         let points;
         if (aa !== "*") {
@@ -1545,6 +1560,7 @@ const PlasmidViewer = new class {
         };
 
         const aaBlock = this.createShapeElement("polygon");
+        aaBlock.setAttribute("id", "block")
         aaBlock.setAttribute("points", points);
         aaBlock.classList.add("aa-block");
         const resClass = `aa-block-${aa}`.replace("*", "stop")
@@ -2039,28 +2055,117 @@ const PlasmidViewer = new class {
     };
 
 
-    /**
-     * 
-     * @param {*} featureID 
-     */
-    selectFeaturePreview(featureID) {
-        const span = Session.activePlasmid().features[featureID]["span"];
-        //console.log(`selectFeaturePreview.selectFeaturePreview -> ${span} ${featureID}`);
-        
-        this.placeCursor([span[0], span[1] + 1]);
 
+    addSequenceHover(span) {
+        this.removeSequenceHover();
+        this.placeCursor([span[0], span[1] + 1]);
         this.highlightBases(span);
     };
 
 
-    /**
-     * 
-     */
-    deselectFeaturePreview() {
-        //console.log(`selectFeaturePreview.deselectFeaturePreview`);
-        
+    removeSequenceHover() {
         this.removeCursors("sequence-cursor-hover");
         this.unhighlightBases();
+    };
+
+
+    addFeatureHover(featureID) {
+        const containerDiv = document.getElementById('grid-view-container');
+        const shapesWithAttribute = containerDiv.querySelectorAll(`svg [feature-id="${featureID}"]`);
+        
+        if (shapesWithAttribute.length === 0) return;
+
+        shapesWithAttribute.forEach((shape) => {
+            const polygon = shape.querySelector("#arrow");
+            if (polygon) polygon.classList.add("svg-feature-arrow-hover");
+        });
+
+        this.addSequenceHover(Session.activePlasmid().features[featureID]["span"]);
+    };
+
+    createFeatureHoverTooltip(featureID) {
+        const featureDict = Session.activePlasmid().features[featureID];
+
+        const tooltipBody = document.createElement("DIV");
+
+        const title = document.createElement("DIV");
+        title.innerText = featureDict["label"];
+        title.classList.add("sequence-tooltip-title");
+        tooltipBody.appendChild(title);
+
+        const featureLength = featureDict["span"][1] - featureDict["span"][0];
+        const remainder = featureLength % 3;
+        const remainderString = (remainder !== 0) ? "+" + remainder: "";
+        const nrAA = (featureLength - remainder)/3;
+        const nrAAString = (featureLength >= 3) ? "3x" + nrAA: nrAA;
+        const properties = {
+            "Type": featureDict["type"],
+            "Span": `${featureLength} bp (${nrAAString}${remainderString}) [${featureDict["span"][0]}, ${featureDict["span"][1]}]`,
+            "Note": (featureDict["note"] && featureDict["note"].length !== 0) ? featureDict["note"]: null,
+            "Translation": (featureDict["translation"] && featureDict["translation"].length !== 0) ? featureDict["translation"]: null,
+        }
+
+        for (const [key, value] of Object.entries(properties)) {
+            if (value === null || value.length === 0) {continue};
+
+            const propertyDiv = document.createElement("DIV");
+            propertyDiv.classList.add("sequence-tooltip-row");
+
+            const propertyKey = document.createElement("DIV");
+            propertyKey.classList.add("sequence-tooltip-row-key");
+            propertyKey.innerText = key;
+            propertyDiv.appendChild(propertyKey);
+
+            const propertyValue = document.createElement("DIV");
+            propertyValue.classList.add("sequence-tooltip-row-value");
+            propertyValue.innerText = value;
+            propertyDiv.appendChild(propertyValue);
+
+            tooltipBody.appendChild(propertyDiv);
+        };
+
+        return tooltipBody;
+    };
+
+    removeFeatureHover() {
+        const containerDiv = document.getElementById('grid-view-container');
+        const hoveredFeatureSegments = containerDiv.querySelectorAll(`svg #arrow.svg-feature-arrow-hover`);
+        hoveredFeatureSegments.forEach((shape) => {
+            shape.classList.remove("svg-feature-arrow-hover");
+        });
+
+        this.removeSequenceHover();
+    };
+
+    addAABlocksHover(featureID, aaIndex) {
+        this.removeAABlocksHover();
+
+        // Find all segments with same ID
+        const containerDiv = document.getElementById('grid-view-container');
+        const shapesWithAttribute = containerDiv.querySelectorAll(`[feature-id="${featureID}"][aa-index="${aaIndex}"]`);
+        
+        if (shapesWithAttribute.length === 0) return;
+        
+        shapesWithAttribute.forEach((shape) => {
+            const polygon = shape.querySelector("#block");
+            if (polygon) polygon.classList.add("aa-block-hover");
+        });
+
+        let aaSpan = shapesWithAttribute[0].getAttribute("aa-span").split(",").map(Number);
+        console.log("PlasmidViewer.hoverAABlocks ->", featureID, aaIndex, typeof aaSpan);
+        aaSpan.sort((a, b) => a - b);
+
+        this.addSequenceHover(aaSpan);
+    };
+
+    removeAABlocksHover() {
+        const containerDiv = document.getElementById('grid-view-container');
+        const hoveredAABlocks = containerDiv.querySelectorAll(`svg #block.aa-block-hover`);
+        hoveredAABlocks.forEach((shape) => {
+            shape.classList.remove("aa-block-hover");
+        });
+
+        this.removeSequenceHover();
     };
 
 
@@ -2072,6 +2177,13 @@ const PlasmidViewer = new class {
         console.log(`PlasmidViewer.selectFeature -> ${featureID} (combine=${combineSelection})`);
         
         let span = Session.activePlasmid().features[featureID]["span"];
+        
+        this.selectBases((combineSelection) ? this.combineSpans(span): span);
+    };
+
+
+    selectAA(span, combineSelection=false) {
+        console.log(`PlasmidViewer.selectAA ->`);
         
         this.selectBases((combineSelection) ? this.combineSpans(span): span);
     };

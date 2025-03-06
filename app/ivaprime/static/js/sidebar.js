@@ -267,11 +267,11 @@ const Sidebar = new class {
             collapsibleHeader.innerText = featureDict["label"];
 
             collapsibleHeader.addEventListener("mouseenter", () => {
-                PlasmidViewer.selectFeaturePreview(featureID);
+                PlasmidViewer.addFeatureHover(featureID);
             });
 
             collapsibleHeader.addEventListener("mouseleave", () => {
-                PlasmidViewer.deselectFeaturePreview(featureID);
+                PlasmidViewer.removeFeatureHover(featureID);
             });
 
             let collapsibleHeaderClickTimeout;
