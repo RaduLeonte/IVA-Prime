@@ -87,6 +87,13 @@ const Primers = new class {
                 };
             } else {
                 // Save current sequence and tm, then recalculate current seq and tm
+                if (!/^[ACTG]$/i.test(primerSequence)) {
+                    Alerts.error(
+                        "Ambigous base encountered",
+                        "Primers could not be generated in regions with ambigous bases."
+                    );
+                    return;
+                };
                 prevPrimerSequence = primerSequence;
                 prevTM = currTM;
                 
