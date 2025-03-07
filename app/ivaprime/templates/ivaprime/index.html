@@ -37,6 +37,7 @@
             <script src="{% static 'js/utilities.js' %}"></script>
             <script src="{% static 'js/primers.js' %}"></script>
             <script src="{% static 'js/search.js' %}"></script>
+            <script src="{% static 'js/toolbar.js' %}"></script>
 
             <tag autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
 
@@ -69,6 +70,171 @@
             
             -->
             <div id="context-menu" class="context-menu"></div>
+
+
+            <!--
+            
+            MARK: Toolbar panels
+
+            -->
+            <div id="toolbar-panel-tm" class="modal-window toolbar-panel toolbar-panel-tm">
+                <div class="modal-body toolbar-panel-body">
+                    <div class="modal-title toolbar-panel-title">
+                        Calculate melting temperatures
+                    </div>
+
+                    <div class="modal-vgroup toolbar-panel-tm-vgroup">
+                        <label>Primer 1</label>
+                        <input type="text" id="tm-calcinput1" class="modal-input">
+                        <span>Tm = <span id="tm-calc-tm1">--</span> °C <span id="tm-calc-info1" style="display: block;"></span></span>
+                    </div>
+
+                    <div class="modal-vgroup toolbar-panel-tm-vgroup">
+                        <label>Primer 2</label>
+                        <input type="text" id="tm-calc-input2" class="modal-input">
+                        <span>
+                            Tm = <span id="tm-calc-tm2">--</span> °C <span id="tm-calc-info2" style="display: block;"></span>
+                        </span>
+                    </div>
+                
+                </div>
+            </div>
+
+            <div id="toolbar-panel-settings" class="modal-window toolbar-panel toolbar-panel-settings">
+                <div class="modal-body toolbar-panel-body">
+                    <div class="modal-title toolbar-panel-title">
+                        Settings
+                    </div>
+
+                    <div class="toolbar-panel-section">
+                        <div class="toolbar-panel-section-title">
+                            Primer generation settings
+                        </div>
+
+                        <div class="toolbar-panel-section-hgroup">
+                            <label>Primer type</label>
+
+                            <div class="toolbar-panel-section-hgroup-input">
+                                <span>
+                                    Symmetric
+                                </span>
+                                <div class="boolean-switch-wrapper">
+                                    <label class="boolean-switch">
+                                        <input type="checkbox" class="boolean-switch-input">
+                                        <span class="boolean-switch-slider"></span>
+                                    </label>
+                                </div>
+                                <span>
+                                    Asymmetric
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="toolbar-panel-section">
+                        <div class="toolbar-panel-section-title">
+                            Appearance
+                        </div>
+
+                        <div class="toolbar-panel-section-hgroup">
+                            <label>Theme</label>
+                            <div class="toolbar-panel-section-hgroup-input">
+                                <select id="primer-symmetry-select">
+                                    <option value="light">Light</option>
+                                    <option value="dark">Dark</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="toolbar-panel-collapsible">
+
+                        <div class="toolbar-panel-section">
+                            <div class="toolbar-panel-section-title">
+                                Tm calculator settings
+                            </div>
+    
+                            <div class="toolbar-panel-section-hgroup">
+                                <label>Primer concentration [nM]</label>
+                                <div class="toolbar-panel-section-hgroup-input">
+                                    <input type="text" class="modal-input">
+                                </div>
+                            </div>
+
+                            <div class="toolbar-panel-section-hgroup">
+                                <label>Algorithm</label>
+                                <div class="toolbar-panel-section-hgroup-input">
+                                    <input type="text" class="modal-input">
+                                </div>
+                            </div>
+
+                            <div class="toolbar-panel-section-hgroup">
+                                <label>Salt concentration [M]</label>
+                                <div class="toolbar-panel-section-hgroup-input">
+                                    <input type="text" class="modal-input">
+                                </div>
+                            </div>
+
+                            <div class="toolbar-panel-section-hgroup">
+                                <label>Salt correction</label>
+                                <div class="toolbar-panel-section-hgroup-input">
+                                    <input type="text" class="modal-input">
+                                </div>
+                            </div>
+
+                            <div class="toolbar-panel-section-hgroup">
+                                <label>DMSO concentration</label>
+                                <div class="toolbar-panel-section-hgroup-input">
+                                    <input type="text" class="modal-input">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="toolbar-panel-section">
+                            <div class="toolbar-panel-section-title">
+                                Primer generation settings
+                            </div>
+    
+                            <div class="toolbar-panel-section-hgroup">
+                                <label>HR minimum length [nt]</label>
+                                <div class="toolbar-panel-section-hgroup-input">
+                                    <input type="text" class="modal-input">
+                                </div>
+                            </div>
+
+                            <div class="toolbar-panel-section-hgroup">
+                                <label>HR target Tm [°C]</label>
+                                <div class="toolbar-panel-section-hgroup-input">
+                                    <input type="text" class="modal-input">
+                                </div>
+                            </div>
+
+                            <div class="toolbar-panel-section-hgroup">
+                                <label>Subcloning HR target Tm [°C]</label>
+                                <div class="toolbar-panel-section-hgroup-input">
+                                    <input type="text" class="modal-input">
+                                </div>
+                            </div>
+
+                            <div class="toolbar-panel-section-hgroup">
+                                <label>TBR target Tm [°C]</label>
+                                <div class="toolbar-panel-section-hgroup-input">
+                                    <input type="text" class="modal-input">
+                                </div>
+                            </div>
+
+                            <div class="toolbar-panel-section-hgroup">
+                                <label>Maximum Tm for short insertions [°C]</label>
+                                <div class="toolbar-panel-section-hgroup-input">
+                                    <input type="text" class="modal-input">
+                                </div>
+                            </div>
+                        </div>
+                    
+                    </div>  
+
+                </div>
+            </div>
 
 
             <!-- Start main content-->
@@ -207,6 +373,7 @@
                             class="toolbar-button
                             toolbar-calculator-button"
                             title="Primer Tm calculator"
+                            onclick='Toolbar.togglePanel("toolbar-panel-tm", this)'
                         ></span>
                     </div>
                     
@@ -244,6 +411,7 @@
                         <span
                             class="toolbar-button toolbar-settings-button"
                             title="Settings"
+                            onclick='Toolbar.togglePanel("toolbar-panel-settings", this)'
                         ></span>
 
                         <span

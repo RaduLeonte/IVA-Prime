@@ -522,6 +522,168 @@ input[type="checkbox"] {
 }
 
 
+.toolbar-panel {
+  position: absolute !important;
+  z-index: 9999;
+
+  transform: translate(-100%, 0) !important;
+}
+
+.toolbar-panel-body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+
+  width: 100% !important;
+}
+
+
+.toolbar-panel:not([visible]) {
+  visibility: hidden;
+}
+
+.toolbar-panel[visible] {
+  visibility: visible;
+}
+
+.toolbar-panel-section {
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+
+.toolbar-panel-section-title {
+  font-weight: bold;
+  font-size:  14px;
+}
+
+.toolbar-panel-section-hgroup {
+  width: 100%;
+
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.toolbar-panel-section-hgroup label {
+  display: flex;
+  align-items: center;
+  height: 26px;
+  font-weight: bold;
+}
+
+.toolbar-panel-section-hgroup-input {
+  max-width: 50%;
+
+  flex-grow: 1;
+
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.toolbar-panel-section-hgroup-input span {
+  vertical-align: middle;
+}
+
+.toolbar-panel-section-hgroup-input input {
+  flex-grow: 1;
+  padding: 5px;
+}
+
+.toolbar-panel-section-hgroup-input select {
+  flex-grow: 1;
+}
+
+
+
+.toolbar-panel-tm {
+  min-width: 20vw !important;
+}
+
+
+.toolbar-panel-tm-vgroup label{
+  font-weight: bold;
+  font-size: 14px !important;
+}
+
+.toolbar-panel-settings {
+  min-width: 30vw !important;
+  max-width: 80vh !important;
+  max-height: 80vh !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  display: flex !important;
+}
+
+.boolean-switch-wrapper {
+  flex-grow: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.boolean-switch {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.boolean-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.boolean-switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border-color);
+  opacity: 70%;
+
+  border-radius: 50em;
+}
+
+.boolean-switch-slider:before {
+  position: absolute;
+  content: "";
+  --knob-radius: 17px;
+  height: var(--knob-radius);
+  width: var(--knob-radius);
+  top: 50%;
+  left: 5px;
+  background-color: white;
+
+  border-radius: 50%;
+  transform: translateY(-50%);
+}
+
+.boolean-switch-input:checked + .boolean-switch-slider:before {
+  left: auto;
+  right: 5px;
+}
+
+.boolean-switch-input:checked + .boolean-switch-slider {
+  background-color: var(--border-color);
+}
+
+
+
 /* Toolbar icon svgs */
 .toolbar-plasmid-circular-button {
   background-image: url('/static/assets/icons/plasmid_circular.svg');
