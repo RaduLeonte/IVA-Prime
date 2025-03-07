@@ -233,11 +233,13 @@ const PlasmidTabs = new class {
      * Enable or disable the switch view buttons in the toolbar
      */
     enableSwitchViewButtons() {
+        return;
         ["circular", "linear", "grid"].forEach(view => {
             document.getElementById(`${view}-view-button`).removeAttribute('disabled');
         });
     };
     disableSwitchViewButtons() {
+        return;
         ["circular", "linear", "grid"].forEach(view => {
             document.getElementById(`${view}-view-button`).setAttribute('disabled', '');
         });

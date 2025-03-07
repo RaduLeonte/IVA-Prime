@@ -603,7 +603,7 @@ input[type="checkbox"] {
 
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 10px;
 
   -webkit-user-select: none; /* Safari */
@@ -672,6 +672,13 @@ input[type="checkbox"] {
   padding: 10px 0;
 }
 
+.toolbar-panel-image-container {
+  display: flex;
+  justify-content: center;
+
+  margin-bottom: 20px;
+}
+
 
 
 .toolbar-panel-tm {
@@ -697,9 +704,8 @@ input[type="checkbox"] {
 }
 
 .boolean-switch-wrapper {
-  flex-grow: 1;
   display: block;
-  width: 100%;
+  width: 25%;
   height: 100%;
 }
 

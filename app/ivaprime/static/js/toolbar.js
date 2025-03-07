@@ -1,14 +1,49 @@
 const Toolbar = new class {
     constructor() {
+        this.equationImages = {
+            "TmAlgorithm": {
+                "oligoCalc": "/static/assets/equations/oligoCalc%20equation.png",
+                "nnSantaLucia": "/static/assets/equations/nnSantaLucia%20equation.png"
+            },
+            "saltCorr": {
+                "SchildkrautLifson": "/static/assets/equations/SchildkrautLifson%20equation.png",
+                "Owczarzy": "/static/assets/equations/Owczarzy%20equation.png"
+            },
+        };
+
+        document.addEventListener("DOMContentLoaded", function() {
+            Toolbar.populateSettings();
+
+            Toolbar.updateEquationImage("TmAlgorithm", "meltingTempAlgorithmEquationImage");
+            Toolbar.updateEquationImage("saltCorr", "saltCorrectionEquationImage");
+        });
+
         document.addEventListener("click", function (event) {
             if (!event.target.closest(".toolbar-panel") && !event.target.closest(".toolbar")) {
                 Toolbar.hideAllPanels();
             };
         });
+    };
 
-        document.addEventListener("DOMContentLoaded", function() {
-            Toolbar.populateSettings();
-        });
+    updateEquationImage(selectId, imageId) {
+
+        const selectElement = document.getElementById(selectId);
+        const imageElement = document.getElementById(imageId);
+
+        if (selectElement && imageElement) {
+            selectElement.addEventListener("change", function () {
+                const selectedValue = this.value;
+                if (Toolbar.equationImages[selectId] && Toolbar.equationImages[selectId][selectedValue]) {
+                    imageElement.src = Toolbar.equationImages[selectId][selectedValue];
+                }
+            });
+
+            // Initial update to set the correct image on page load
+            const selectedValue = selectElement.value;
+            if (Toolbar.equationImages[selectId][selectedValue]) {
+                imageElement.src = Toolbar.equationImages[selectId][selectedValue];
+            };
+        };
     };
 
 
@@ -112,6 +147,8 @@ const Toolbar = new class {
             };
         });
 
+        this.attachValidationListeners();
+
         Utilities.updateTheme();
     };
 
@@ -132,8 +169,6 @@ const Toolbar = new class {
 
 
     resetToDefaultSettings() {
-        Toolbar.hideAllPanels();
-
         const preferences = this.applyToAllInputs((element, prefName) => {
             const defaultValue = UserPreferences.defaultSettings[prefName];
             if (defaultValue !== undefined) {
@@ -147,5 +182,30 @@ const Toolbar = new class {
         UserPreferences.setBulk(preferences);
 
         Utilities.updateTheme();
+    };
+
+
+    attachValidationListeners() {
+        const settingsPanel = document.getElementById("toolbar-panel-settings");
+        const inputs = settingsPanel.querySelectorAll("input, select");
+
+        inputs.forEach((element) => {
+            element.addEventListener("input", this.checkValidationState);
+        });
+
+        this.checkValidationState();
+    };
+
+    checkValidationState() {
+        const settingsPanel = document.getElementById("toolbar-panel-settings");
+        const updateButton = document.getElementById("update-settings-button");
+
+        const inputFailedValidator = settingsPanel.querySelector(".input-incorrect") !== null;
+
+        if (inputFailedValidator) {
+            updateButton.setAttribute("disabled", "");
+        } else {
+            updateButton.removeAttribute("disabled");
+        };
     };
 };

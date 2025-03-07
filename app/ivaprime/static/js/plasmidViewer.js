@@ -1869,23 +1869,23 @@ const PlasmidViewer = new class {
         if (sender && sender.hasAttribute("disabled")) {return};
         
 
-        // Get parent group
-        const button = document.getElementById(`${targetView}-view-button`);
-        const buttonGroup = button.parentElement;
-        // Check if any buttons are already selected and remove the selected class
-        const selectedButtons = buttonGroup.querySelectorAll(".toolbar-button-selected")
-        if (selectedButtons.length > 0) {
-            selectedButtons.forEach((e) =>
-                e.classList.remove("toolbar-button-selected")
-            );
-        };
-        // Select button that was just clicked
-        button.classList.add("toolbar-button-selected");
-
-
-        ["circular", "linear", "grid"].forEach(view => {
-            document.getElementById(`${view}-view-container`).style.display = "none";
-        });
+        //// Get parent group
+        //const button = document.getElementById(`${targetView}-view-button`);
+        //const buttonGroup = button.parentElement;
+        //// Check if any buttons are already selected and remove the selected class
+        //const selectedButtons = buttonGroup.querySelectorAll(".toolbar-button-selected")
+        //if (selectedButtons.length > 0) {
+        //    selectedButtons.forEach((e) =>
+        //        e.classList.remove("toolbar-button-selected")
+        //    );
+        //};
+        //// Select button that was just clicked
+        //button.classList.add("toolbar-button-selected");
+//
+//
+        //["circular", "linear", "grid"].forEach(view => {
+        //    document.getElementById(`${view}-view-container`).style.display = "none";
+        //});
 
         const targetViewContainer = document.getElementById(`${targetView}-view-container`);
         targetViewContainer.style.display = "flex";

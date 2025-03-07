@@ -181,6 +181,16 @@
                                         </select>
                                     </div>
                                 </div>
+                                <div class="toolbar-panel-image-container">
+                                    <img
+                                        class="equation-image"
+                                        id="meltingTempAlgorithmEquationImage"
+                                        src="/static/assets/equations/oligoCalc%20equation.png"
+                                        alt="Melting temperature equation."
+                                        style="height: 50px;"
+                                    >
+                                </div>
+
     
                                 <div class="toolbar-panel-section-hgroup">
                                     <label>Salt concentration [M]</label>
@@ -198,12 +208,31 @@
                                         </select>
                                     </div>
                                 </div>
+                                <div class="toolbar-panel-image-container">
+                                    <img 
+                                        class="equation-image"
+                                        id="saltCorrectionEquationImage"
+                                        src="/static/assets/equations/SchildkrautLifson%20equation.png"
+                                        alt="Salt correction equation."
+                                        style="height: 30px;"
+                                    >
+                                </div>
+
     
                                 <div class="toolbar-panel-section-hgroup">
                                     <label>DMSO concentration [M]</label>
                                     <div class="toolbar-panel-section-hgroup-input">
                                         <input id="dmsoConc" type="text" class="modal-input" validator="float">
                                     </div>
+                                </div>
+                                <div class="toolbar-panel-image-container">
+                                    <img
+                                        class="equation-image"
+                                        id="dmsoCorrectionEquationImage"
+                                        src="/static/assets/equations/DMSO%20equation.png"
+                                        alt="DMSO correction equation."
+                                        style="height: 25px;"
+                                    >
                                 </div>
                             </div>
     
@@ -215,7 +244,7 @@
                                 <div class="toolbar-panel-section-hgroup">
                                     <label>HR minimum length [nt]</label>
                                     <div class="toolbar-panel-section-hgroup-input">
-                                        <input id="HRMinLength" type="text" class="modal-input">
+                                        <input id="HRMinLength" type="text" class="modal-input" validator="float">
                                     </div>
                                 </div>
     
@@ -255,7 +284,7 @@
                     <div class="toolbar-panel-section">
                         <div class="toolbar-panel-section-hgroup">
                             <span class="round-button reset-defaults-button" onclick="Toolbar.resetToDefaultSettings()">Reset to default settings</span>
-                            <span class="round-button update-settings-button" onclick="Toolbar.updateSettings()">Update settings</span>
+                            <span id="update-settings-button" class="round-button update-settings-button" onclick="Toolbar.updateSettings()">Update settings</span>
                         </div>
                     </div>
 
