@@ -29,7 +29,23 @@ const Utilities = new class {
 
         document.addEventListener('DOMContentLoaded', function() {
             Utilities.getScrollbarWidth();
-        })
+        });
+
+
+        this.validators = {
+            float: (value) => /^-?\d*\.?\d*$/.test(value),
+            dna: (value) => /^[ATCG]*$/i.test(value),
+            aa: (value) => /^[ACDEFGHIKLMNPQRSTVWY*X]*$/i.test(value)
+        };
+        document.addEventListener("DOMContentLoaded", function (event) {
+            const inputElements = document.querySelectorAll("input[validator]");
+
+            inputElements.forEach((input) => {
+                const validatorType = input.getAttribute("validator");
+
+                Utilities.addInputValidator(input, validatorType);
+            });
+        });
     };
 
     /**
@@ -317,6 +333,26 @@ const Utilities = new class {
             themeMode: 'dark',
             alpha: false
         });
+    };
+
+
+    addInputValidator(input, validatorType) {
+        function validate() {
+            const isValid = Utilities.validators[validatorType] ? Utilities.validators[validatorType](input.value) : true;
+    
+            if (!isValid) {
+                input.classList.add("input-incorrect");
+            } else {
+                input.classList.remove("input-incorrect");
+            };
+        };
+
+        if (input.currentValidator) {
+            input.removeEventListener("input", input.currentValidator);
+        };
+    
+        input.currentValidator = validate;
+        input.addEventListener("input", validate);
     };
 };
 

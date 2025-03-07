@@ -5,6 +5,7 @@ const Toolbar = new class {
                 Toolbar.hideAllPanels();
             };
         });
+
     };
 
 

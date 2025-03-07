@@ -157,7 +157,7 @@
                             <div class="toolbar-panel-section-hgroup">
                                 <label>Primer concentration [nM]</label>
                                 <div class="toolbar-panel-section-hgroup-input">
-                                    <input type="text" class="modal-input">
+                                    <input type="text" class="modal-input" validator="float">
                                 </div>
                             </div>
 
@@ -171,7 +171,7 @@
                             <div class="toolbar-panel-section-hgroup">
                                 <label>Salt concentration [M]</label>
                                 <div class="toolbar-panel-section-hgroup-input">
-                                    <input type="text" class="modal-input">
+                                    <input type="text" class="modal-input" validator="float">
                                 </div>
                             </div>
 
@@ -183,9 +183,9 @@
                             </div>
 
                             <div class="toolbar-panel-section-hgroup">
-                                <label>DMSO concentration</label>
+                                <label>DMSO concentration [M]</label>
                                 <div class="toolbar-panel-section-hgroup-input">
-                                    <input type="text" class="modal-input">
+                                    <input type="text" class="modal-input" validator="float">
                                 </div>
                             </div>
                         </div>
@@ -205,28 +205,28 @@
                             <div class="toolbar-panel-section-hgroup">
                                 <label>HR target Tm [°C]</label>
                                 <div class="toolbar-panel-section-hgroup-input">
-                                    <input type="text" class="modal-input">
+                                    <input type="text" class="modal-input" validator="float">
                                 </div>
                             </div>
 
                             <div class="toolbar-panel-section-hgroup">
                                 <label>Subcloning HR target Tm [°C]</label>
                                 <div class="toolbar-panel-section-hgroup-input">
-                                    <input type="text" class="modal-input">
+                                    <input type="text" class="modal-input" validator="float">
                                 </div>
                             </div>
 
                             <div class="toolbar-panel-section-hgroup">
                                 <label>TBR target Tm [°C]</label>
                                 <div class="toolbar-panel-section-hgroup-input">
-                                    <input type="text" class="modal-input">
+                                    <input type="text" class="modal-input" validator="float">
                                 </div>
                             </div>
 
                             <div class="toolbar-panel-section-hgroup">
                                 <label>Maximum Tm for short insertions [°C]</label>
                                 <div class="toolbar-panel-section-hgroup-input">
-                                    <input type="text" class="modal-input">
+                                    <input type="text" class="modal-input" validator="float">
                                 </div>
                             </div>
                         </div>
@@ -429,7 +429,7 @@
                 -->
                 <div class="footer">
                     <div class="footer-search">
-                        <input id="search-bar" type="text" placeholder="Search sequence">
+                        <input id="search-bar" type="text" placeholder="Search sequence" validator="">
                         
                         <div class="footer-search-controls">
                             <span class="toolbar-button footer-reset-search-button" title="Reset search query" onclick='Serach.clear()'></span>
@@ -443,7 +443,7 @@
                     
                         <div class="footer-search-options">
                             <div>
-                                <input type="checkbox" id="search-aa" name="search-aa" onclick='Search.search()'>
+                                <input type="checkbox" id="search-aa" name="search-aa" onclick='Search.searchAACheckboxCallback(event)'>
                                 <label for="search-aa">Amino acid sequence</label>
                             </div>
                         </div>

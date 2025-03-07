@@ -512,19 +512,6 @@ const Sidebar = new class {
          */
         targetContent.toggleAttribute("visible");
         return;
-        if (targetContent.style.display === "none") {
-            // Close all others.
-            //FeaturesTable.closeAllCollapsibleHeaders();
-            targetContent.style.display = "block";
-            targetContent.style.maxHeight = targetContent.scrollHeight + "px"; 
-        
-            /**
-         * Close
-         */
-        } else {
-            targetContent.style.display = "none";
-            targetContent.style.maxHeight = null; 
-        };
     };
 
 

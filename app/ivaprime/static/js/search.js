@@ -6,11 +6,18 @@ const Search = new class {
         this.searchResults = [];
         this.searchFocusIndex = null;
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById("search-bar").addEventListener("input", function() {
+            const searchBar = document.getElementById("search-bar")
+            searchBar.addEventListener("input", function() {
                 Search.search();
             });
 
-            document.getElementById("search-bar").addEventListener("keydown", function(event) {
+            const searchAACheckbox = document.getElementById("search-aa").checked;
+            Utilities.addInputValidator(
+                searchBar,
+                (searchAACheckbox) ? "aa": "dna",
+            );
+
+            searchBar.addEventListener("keydown", function(event) {
                 if (event.key === "ArrowUp") {
                     event.preventDefault();
                     Search.navigateResults(-1);
@@ -277,5 +284,17 @@ const Search = new class {
         } else {
             infoSpan.innerText = (this.searchFocusIndex+1) + "/" + this.searchResults.length;
         };
+    };
+
+
+    searchAACheckboxCallback(event) {
+        const isChecked = event.target.checked;
+
+        Utilities.addInputValidator(
+            document.getElementById("search-bar"),
+            (isChecked) ? "aa": "dna",
+        );
+
+        this.search();
     };
 };

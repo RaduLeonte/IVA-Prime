@@ -1597,7 +1597,7 @@ input, select, textarea {
   box-shadow: 0px 2px 10px var(--shadow-color);
   border-left: 5px solid orange;
 
-  transition: height 0.5s ease-out, opacity 0.5s ease-out, padding 0.5s ease-out, ;
+  transition: height 0.5s ease-out, opacity 0.5s ease-out, padding 0.5s ease-out;
 
   box-sizing: border-box;
 
@@ -1873,3 +1873,9 @@ input, select, textarea {
 
 
 /* #endregion Context_menu */
+
+
+.input-incorrect {
+  border: 2px solid red;
+  background-color: #ffe6e6;
+}
