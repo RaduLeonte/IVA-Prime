@@ -31,6 +31,8 @@ const PlasmidViewer = new class {
          */
         let resizeTimeout;
         window.addEventListener('resize', function () {
+            Toolbar.hideAllPanels();
+
             document.getElementById("viewer").style.display = "none";
             
             clearTimeout(resizeTimeout);

@@ -103,9 +103,10 @@
             <div id="toolbar-panel-settings" class="modal-window toolbar-panel toolbar-panel-settings">
                 <div class="modal-body toolbar-panel-body">
                     <div class="modal-title toolbar-panel-title">
-                        Settings
+                        Basic settings
                     </div>
 
+                    <!-- Start basic settings -->
                     <div class="toolbar-panel-section">
                         <div class="toolbar-panel-section-title">
                             Primer generation settings
@@ -116,16 +117,16 @@
 
                             <div class="toolbar-panel-section-hgroup-input">
                                 <span>
-                                    Symmetric
+                                    Asymmetric
                                 </span>
                                 <div class="boolean-switch-wrapper">
                                     <label class="boolean-switch">
-                                        <input type="checkbox" class="boolean-switch-input">
+                                        <input id="symmetricPrimers" type="checkbox" class="boolean-switch-input">
                                         <span class="boolean-switch-slider"></span>
                                     </label>
                                 </div>
                                 <span>
-                                    Asymmetric
+                                    Symmetric
                                 </span>
                             </div>
                         </div>
@@ -139,99 +140,124 @@
                         <div class="toolbar-panel-section-hgroup">
                             <label>Theme</label>
                             <div class="toolbar-panel-section-hgroup-input">
-                                <select id="primer-symmetry-select">
+                                <select id="theme">
                                     <option value="light">Light</option>
                                     <option value="dark">Dark</option>
                                 </select>
                             </div>
                         </div>
                     </div>
+                    <!-- End basic settings -->
 
+                    <!-- Start advanced settings -->
                     <div class="toolbar-panel-collapsible">
+                        <div
+                        class="toolbar-panel-collapsible-header"
+                        onclick="Toolbar.toggleAdvancedSettings(this)"
+                        collapsed="">
+                            Advanced settings
+                        </div>
 
-                        <div class="toolbar-panel-section">
-                            <div class="toolbar-panel-section-title">
-                                Tm calculator settings
+                        <!-- Start collapsible content-->
+                        <div class="toolbar-panel-collapsible-content" collapsed="">
+                            <div class="toolbar-panel-section">
+                                <div class="toolbar-panel-section-title">
+                                    Tm calculator settings
+                                </div>
+        
+                                <div class="toolbar-panel-section-hgroup">
+                                    <label>Primer concentration [nM]</label>
+                                    <div class="toolbar-panel-section-hgroup-input">
+                                        <input id="primerConc" type="text" class="modal-input" validator="float">
+                                    </div>
+                                </div>
+    
+                                <div class="toolbar-panel-section-hgroup">
+                                    <label>Algorithm</label>
+                                    <div class="toolbar-panel-section-hgroup-input">
+                                        <select id="TmAlgorithm">
+                                            <option value="oligoCalc">Basic (Oligo Calc)</option>
+                                            <option value="nnSantaLucia">Nearest-neighbor (SantaLucia)</option>
+                                        </select>
+                                    </div>
+                                </div>
+    
+                                <div class="toolbar-panel-section-hgroup">
+                                    <label>Salt concentration [M]</label>
+                                    <div class="toolbar-panel-section-hgroup-input">
+                                        <input id="saltConc" type="text" class="modal-input" validator="float">
+                                    </div>
+                                </div>
+    
+                                <div class="toolbar-panel-section-hgroup">
+                                    <label>Salt correction</label>
+                                    <div class="toolbar-panel-section-hgroup-input">
+                                        <select id="saltCorr">
+                                            <option value="SchildkrautLifson">Schildkraut-Lifson</option>
+                                            <option value="Owczarzy">Owczarzy</option>
+                                        </select>
+                                    </div>
+                                </div>
+    
+                                <div class="toolbar-panel-section-hgroup">
+                                    <label>DMSO concentration [M]</label>
+                                    <div class="toolbar-panel-section-hgroup-input">
+                                        <input id="dmsoConc" type="text" class="modal-input" validator="float">
+                                    </div>
+                                </div>
                             </div>
     
-                            <div class="toolbar-panel-section-hgroup">
-                                <label>Primer concentration [nM]</label>
-                                <div class="toolbar-panel-section-hgroup-input">
-                                    <input type="text" class="modal-input" validator="float">
+                            <div class="toolbar-panel-section">
+                                <div class="toolbar-panel-section-title">
+                                    Primer generation settings
                                 </div>
-                            </div>
-
-                            <div class="toolbar-panel-section-hgroup">
-                                <label>Algorithm</label>
-                                <div class="toolbar-panel-section-hgroup-input">
-                                    <input type="text" class="modal-input">
+        
+                                <div class="toolbar-panel-section-hgroup">
+                                    <label>HR minimum length [nt]</label>
+                                    <div class="toolbar-panel-section-hgroup-input">
+                                        <input id="HRMinLength" type="text" class="modal-input">
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div class="toolbar-panel-section-hgroup">
-                                <label>Salt concentration [M]</label>
-                                <div class="toolbar-panel-section-hgroup-input">
-                                    <input type="text" class="modal-input" validator="float">
+    
+                                <div class="toolbar-panel-section-hgroup">
+                                    <label>HR target Tm [°C]</label>
+                                    <div class="toolbar-panel-section-hgroup-input">
+                                        <input id="HRTm" type="text" class="modal-input" validator="float">
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div class="toolbar-panel-section-hgroup">
-                                <label>Salt correction</label>
-                                <div class="toolbar-panel-section-hgroup-input">
-                                    <input type="text" class="modal-input">
+    
+                                <div class="toolbar-panel-section-hgroup">
+                                    <label>Subcloning HR target Tm [°C]</label>
+                                    <div class="toolbar-panel-section-hgroup-input">
+                                        <input id="HRSubcloningTm" type="text" class="modal-input" validator="float">
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div class="toolbar-panel-section-hgroup">
-                                <label>DMSO concentration [M]</label>
-                                <div class="toolbar-panel-section-hgroup-input">
-                                    <input type="text" class="modal-input" validator="float">
+    
+                                <div class="toolbar-panel-section-hgroup">
+                                    <label>TBR target Tm [°C]</label>
+                                    <div class="toolbar-panel-section-hgroup-input">
+                                        <input id="TBRTm" type="text" class="modal-input" validator="float">
+                                    </div>
+                                </div>
+    
+                                <div class="toolbar-panel-section-hgroup">
+                                    <label>Maximum Tm for short insertions [°C]</label>
+                                    <div class="toolbar-panel-section-hgroup-input">
+                                        <input id="maxTmSi" type="text" class="modal-input" validator="float">
+                                    </div>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="toolbar-panel-section">
-                            <div class="toolbar-panel-section-title">
-                                Primer generation settings
-                            </div>
-    
-                            <div class="toolbar-panel-section-hgroup">
-                                <label>HR minimum length [nt]</label>
-                                <div class="toolbar-panel-section-hgroup-input">
-                                    <input type="text" class="modal-input">
-                                </div>
-                            </div>
-
-                            <div class="toolbar-panel-section-hgroup">
-                                <label>HR target Tm [°C]</label>
-                                <div class="toolbar-panel-section-hgroup-input">
-                                    <input type="text" class="modal-input" validator="float">
-                                </div>
-                            </div>
-
-                            <div class="toolbar-panel-section-hgroup">
-                                <label>Subcloning HR target Tm [°C]</label>
-                                <div class="toolbar-panel-section-hgroup-input">
-                                    <input type="text" class="modal-input" validator="float">
-                                </div>
-                            </div>
-
-                            <div class="toolbar-panel-section-hgroup">
-                                <label>TBR target Tm [°C]</label>
-                                <div class="toolbar-panel-section-hgroup-input">
-                                    <input type="text" class="modal-input" validator="float">
-                                </div>
-                            </div>
-
-                            <div class="toolbar-panel-section-hgroup">
-                                <label>Maximum Tm for short insertions [°C]</label>
-                                <div class="toolbar-panel-section-hgroup-input">
-                                    <input type="text" class="modal-input" validator="float">
-                                </div>
-                            </div>
-                        </div>
-                    
+                        <!-- End collapsible content-->
                     </div>  
+                    <!-- End advanced settings -->
+
+                    <div class="toolbar-panel-section">
+                        <div class="toolbar-panel-section-hgroup">
+                            <span class="round-button reset-defaults-button" onclick="Toolbar.resetToDefaultSettings()">Reset to default settings</span>
+                            <span class="round-button update-settings-button" onclick="Toolbar.updateSettings()">Update settings</span>
+                        </div>
+                    </div>
 
                 </div>
             </div>
@@ -411,7 +437,7 @@
                         <span
                             class="toolbar-button toolbar-settings-button"
                             title="Settings"
-                            onclick='Toolbar.togglePanel("toolbar-panel-settings", this)'
+                            onclick='Toolbar.togglePanel("toolbar-panel-settings", this, true)'
                         ></span>
 
                         <span

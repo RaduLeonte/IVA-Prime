@@ -33,9 +33,10 @@ const Utilities = new class {
 
 
         this.validators = {
+            integer: (value) => /^-?\d+$/.test(value),
             float: (value) => /^-?\d*\.?\d*$/.test(value),
             dna: (value) => /^[ATCG]*$/i.test(value),
-            aa: (value) => /^[ACDEFGHIKLMNPQRSTVWY*X]*$/i.test(value)
+            aa: (value) => /^[ACDEFGHIKLMNPQRSTVWY*X-]*$/i.test(value)
         };
         document.addEventListener("DOMContentLoaded", function (event) {
             const inputElements = document.querySelectorAll("input[validator]");
