@@ -1,4 +1,9 @@
 const Alerts = new class {
+    constructor () {
+        document.addEventListener("DOMContentLoaded", () => {
+            if (!UserPreferences.get("cookieConsentGiven")) Alerts.showCookieConsentDisclaimer();
+        });
+    };
     /**
      * Create an orange alert with a lifetime of 5 s.
      * 
@@ -127,5 +132,56 @@ const Alerts = new class {
             alert.remove();
             styleEl.parentNode.removeChild(styleEl);
         }, animationDuration*1000);
+    };
+
+
+    showCookieConsentDisclaimer() {
+        // Select alert parent container
+        const alertsContainer = document.getElementById("alerts-container");
+        
+        // Create new alert element
+        const alert = document.createElement('div');
+        alert.classList.add("alert");
+        alert.classList.add("cookie-consent")
+        alert.style.borderColor = "#45a049";
+
+        // Alert main body for title and text
+        const alertBody = document.createElement('div');
+        alertBody.classList.add("alert-body");
+        alertBody.classList.add("cookie-consent-body");
+        
+        // Title
+        const alertTitle = document.createElement('h4');
+        alertTitle.innerHTML = "Cookie disclaimer";
+        
+        // Alert text
+        const alertText = document.createElement("div");
+        alertText.classList.add("alert-text");
+        alertText.innerHTML = `
+        <p>
+            IVA Prime uses cookies to store user preferences across sessions. No third-party cookies are used to track or profile users.
+        </p>
+        <p>
+            <a href="/about#privacy-policy" target="_blank" class="underlined-link">Click here for more details</a>
+        </p>`;
+        
+        
+        // Close button
+        const agreeButton = document.createElement('span');
+        agreeButton.classList.add("round-button");
+        agreeButton.classList.add("cookie-consent-agree-button");
+        agreeButton.textContent = "Understood";
+        agreeButton.addEventListener('click', function (e) {
+            UserPreferences.set("cookieConsentGiven", true);
+            Alerts.removeAlert(alert);
+        });
+        
+        //alertBody.append(alertTitle)
+        alertBody.append(alertText)
+        alertBody.appendChild(agreeButton);
+        alert.appendChild(alertBody);
+
+
+        alertsContainer.insertBefore(alert, alertsContainer.firstChild);
     };
 };

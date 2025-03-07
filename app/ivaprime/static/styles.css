@@ -86,6 +86,15 @@ html, body {
   overflow: hidden;
 }
 
+a {
+  color: var(--link-default);
+}
+
+a:visited {
+  color: var(--link-visited);
+}
+
+
 /* 
  * MARK: Layout
  */
@@ -906,10 +915,72 @@ input, select, textarea {
   align-items: center;
 }
 
-.welcome-disclaimer-wrapper p {
+.welcome-disclaimer-wrapper-title {
+  font-size: 28px;
+  font-weight: bold;
+
+  color: var(--text-color);
+
   text-align: center;
   line-height: 1.5;
 }
+
+
+.welcome-disclaimer-wrapper p {
+  font-size: 16px;
+
+  color: var(--text-color);
+
+  text-align: center;
+  line-height: 1.5;
+}
+
+.welcome-disclaimer-wrapper a {
+  font-weight: bold;
+  color: var(--text-color);
+
+  text-decoration: none;
+
+  position: relative;
+}
+
+.underlined-link {
+  font-weight: bold;
+  color: var(--text-color);
+
+  text-decoration: none;
+
+  position: relative;
+
+  padding-right: 17px;
+  margin: 5px 0px;
+}
+
+.underlined-link::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -5px; /* Controls underline position */
+  width: 100%;
+  height: 3px; /* Thickness of underline */
+  background-color: #79ca7d;
+}
+
+.underlined-link::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  background-image: url("data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools --%3E%3Csvg width='800px' height='800px' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cg id='Interface / External_Link'%3E%3Cpath id='Vector' d='M10.0002 5H8.2002C7.08009 5 6.51962 5 6.0918 5.21799C5.71547 5.40973 5.40973 5.71547 5.21799 6.0918C5 6.51962 5 7.08009 5 8.2002V15.8002C5 16.9203 5 17.4801 5.21799 17.9079C5.40973 18.2842 5.71547 18.5905 6.0918 18.7822C6.5192 19 7.07899 19 8.19691 19H15.8031C16.921 19 17.48 19 17.9074 18.7822C18.2837 18.5905 18.5905 18.2839 18.7822 17.9076C19 17.4802 19 16.921 19 15.8031V14M20 9V4M20 4H15M20 4L13 11' stroke='%23000000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  transform: translateY(-50%);
+
+}
+
+
 /* #endregion Welcome_disclaimer */
 
 
@@ -1421,6 +1492,25 @@ input, select, textarea {
 .alert-close-button:hover {
   background-color: var(--base-hover);
 }
+
+.cookie-consent {
+  max-width: 60%;
+  max-height: 50%;
+  padding: 15px;
+}
+
+.cookie-consent-body {
+  padding: 0;
+  align-items: stretch;
+  font-size: 14px;
+  line-height: 1.5;
+
+  gap: 15px
+}
+
+
+
+
 /* #endregion Alerts */
 
 

@@ -5,6 +5,7 @@ const UserPreferences = new class {
 
         const defaultSettings = {
             "theme": "light",
+            "cookieConsentGiven": false,
 
             "symmetricPrimers": false,
             "HRMinLength": 18,
