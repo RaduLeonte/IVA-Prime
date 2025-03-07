@@ -1427,6 +1427,22 @@ const FileIO = new class {
         const newFileTopology = document.getElementById("new-file-topology-select").value;
         const detectCommonFeatures = document.getElementById("new-file-annotate-features-checkbox").checked;
     
+        if (!newFileSequenceInput ||newFileSequenceInput.length === 0) {
+            Alerts.error(
+                "Parsing error",
+                "No sequence specified."
+            );
+            return;
+        };
+
+        if (newFileSequenceInput.includes("U")) {
+            Alerts.error(
+                "Parsing error",
+                "IVA Prime does not support RNA sequences."
+            );
+            return;
+        };
+
         /** 
          * Generate plasmid object
          */

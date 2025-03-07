@@ -246,8 +246,8 @@ const Sidebar = new class {
         // Iterate over the features and populate the container
         for (const [featureID, featureDict] of Object.entries(features)) {
             // Skip source feature type
-            if (featureDict["type"] && featureDict["type"].includes("source")) {continue};
-
+            if (featureDict["type"] && featureDict["type"].includes("source")) continue;
+            if (featureID && featureID.includes("LOCUS")) continue;
 
             /**
              * Create new feature container

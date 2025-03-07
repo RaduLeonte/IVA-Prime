@@ -1441,9 +1441,18 @@ input, select, textarea {
   user-select: none;
 }
 
+.base-ambigous-text {
+  opacity: 0.3;
+}
+
 .base {
   fill: white;
   opacity: 0;
+}
+
+.base-ambigous {
+  fill: var(--border-color);
+  opacity: 0.3;
 }
 
 .base-hover {

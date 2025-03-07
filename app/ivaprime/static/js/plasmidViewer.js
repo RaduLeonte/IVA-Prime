@@ -1045,16 +1045,23 @@ const PlasmidViewer = new class {
                 baseBox.setAttribute("height", singleStrandHeight);
                 baseBox.setAttribute("width", basesWidth);
                 baseBox.classList.add("base");
+                //if (!/^[ACTG]$/i.test(segment["sequenceFwd"][i])) {
+                //    baseBox.classList.add("base-ambigous");
+                //};
                 baseBox.setAttribute("base-index", segments.indexOf(segment)*basesPerLine + i + 1)
                 groupStrandFwdRects.appendChild(baseBox);
 
                 this.baseRectsMap["fwd"].push(baseBox);
                 
+                const textClass = (/^[ACTG]$/i.test(segment["sequenceFwd"][i]))
+                ? "base-text"
+                : "base-ambigous-text";
+                
                 const base = this.text(
                     [basesPositions[i], singleStrandHeight - baseTextOffset],
                     segment["sequenceFwd"][i],
                     null,
-                    "base-text",
+                    textClass,
                     "middle"
                 );
                 groupStrandFwdText.appendChild(base);
@@ -1083,16 +1090,22 @@ const PlasmidViewer = new class {
                 baseBox.setAttribute("height", singleStrandHeight);
                 baseBox.setAttribute("width", basesWidth);
                 baseBox.classList.add("base");
+                //if (!/^[ACTG]$/i.test(segment["sequenceRev"][i])) {
+                //    baseBox.classList.add("base-ambigous");
+                //};
                 baseBox.setAttribute("base-index", segments.indexOf(segment)*basesPerLine + i + 1)
                 groupStrandRevRects.appendChild(baseBox);
 
                 this.baseRectsMap["rev"].push(baseBox);
                 
+                const textClass = (/^[ACTG]$/i.test(segment["sequenceFwd"][i]))
+                ? "base-text"
+                : "base-ambigous-text";
                 const base = this.text(
                     [basesPositions[i], singleStrandHeight*2  - baseTextOffset],
                     segment["sequenceRev"][i],
                     null,
-                    "base-text",
+                    textClass,
                     "middle"
                 );
                 groupStrandRevText.appendChild(base);
@@ -1881,8 +1894,8 @@ const PlasmidViewer = new class {
         //};
         //// Select button that was just clicked
         //button.classList.add("toolbar-button-selected");
-//
-//
+        //
+        //
         //["circular", "linear", "grid"].forEach(view => {
         //    document.getElementById(`${view}-view-container`).style.display = "none";
         //});
