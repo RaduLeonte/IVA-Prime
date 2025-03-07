@@ -36,6 +36,10 @@
             <script src="{% static 'js/alerts.js' %}"></script>
             <script src="{% static 'js/utilities.js' %}"></script>
             <script src="{% static 'js/primers.js' %}"></script>
+            <script src="{% static 'js/search.js' %}"></script>
+
+            <tag autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+
         </head>
         
         <body ondragover="FileIO.importDragOver(event)" ondragleave="FileIO.importDragLeave(event)" ondrop="FileIO.importDrop(event)">
@@ -260,9 +264,9 @@
                         <input id="search-bar" type="text" placeholder="Search sequence">
                         
                         <div class="footer-search-controls">
-                            <span class="toolbar-button footer-reset-search-button" title="Reset search query" onclick='PlasmidViewer.clearSearch()'></span>
-                            <span class="toolbar-button footer-search-up-button" title="Go to previous occurence" onclick='PlasmidViewer.navigateSearchResults(-1)'></span>
-                            <span class="toolbar-button footer-search-down-button" title="Go to next occurence" onclick='PlasmidViewer.navigateSearchResults(1)'></span>
+                            <span class="toolbar-button footer-reset-search-button" title="Reset search query" onclick='Serach.clear()'></span>
+                            <span class="toolbar-button footer-search-up-button" title="Go to previous occurence" onclick='Search.navigateResults(-1)'></span>
+                            <span class="toolbar-button footer-search-down-button" title="Go to next occurence" onclick='Search.navigateResults(1)'></span>
                         </div>
 
                         <div>
@@ -271,7 +275,7 @@
                     
                         <div class="footer-search-options">
                             <div>
-                                <input type="checkbox" id="search-aa" name="search-aa" onclick='PlasmidViewer.search()'>
+                                <input type="checkbox" id="search-aa" name="search-aa" onclick='Search.search()'>
                                 <label for="search-aa">Amino acid sequence</label>
                             </div>
                         </div>
