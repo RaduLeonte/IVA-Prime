@@ -1563,6 +1563,8 @@ input, select, textarea {
   box-sizing: border-box;
 
   visibility: hidden;
+
+  z-index: 99999;
 }
 
 .alerts-container {
@@ -1570,7 +1572,6 @@ input, select, textarea {
   width: 100%;
   bottom: 0;
   padding: 10px;
-  z-index: 9999;
 
   display: flex;
   flex-direction: column;
