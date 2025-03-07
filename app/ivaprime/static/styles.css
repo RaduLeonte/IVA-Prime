@@ -542,6 +542,9 @@ input[type="checkbox"] {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .toolbar-panel-collapsible {
@@ -692,7 +695,7 @@ input[type="checkbox"] {
 }
 
 .toolbar-panel-settings {
-  min-width: 30vw !important;
+  min-width: 50vw !important;
   max-width: 80vh !important;
   max-height: 80vh !important;
   overflow-y: auto;
@@ -977,6 +980,8 @@ input[type="checkbox"] {
   background-color: var(--bg-color1);
   border: 1px solid var(--border-color);
   border-radius: 5px;
+
+  margin: 0 2px;
 }
 
 .modal-input-with-suffix {

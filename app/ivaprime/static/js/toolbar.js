@@ -16,6 +16,15 @@ const Toolbar = new class {
 
             Toolbar.updateEquationImage("TmAlgorithm", "meltingTempAlgorithmEquationImage");
             Toolbar.updateEquationImage("saltCorr", "saltCorrectionEquationImage");
+
+            const calcinput1 = document.getElementById("tm-calc-input1");
+            calcinput1.addEventListener("input", function () {
+                Toolbar.calculatePrimerTm(this.value, 1)
+            });
+            const calcinput2 = document.getElementById("tm-calc-input2");
+            calcinput2.addEventListener("input", function () {
+                Toolbar.calculatePrimerTm(this.value, 2)
+            });
         });
 
         document.addEventListener("click", function (event) {
@@ -207,5 +216,22 @@ const Toolbar = new class {
         } else {
             updateButton.removeAttribute("disabled");
         };
+    };
+
+
+    calculatePrimerTm(seq, index) {
+        const tmSpan = document.getElementById(`tm-calc-tm${index}`);
+        const infoSpan = document.getElementById(`tm-calc-info${index}`);
+        
+        if (seq.length > 0 && Nucleotides.isNucleotideSequence(seq)) {
+            tmSpan.textContent = Nucleotides.getMeltingTemperature(seq).toFixed(2);
+            infoSpan.textContent = `(${UserPreferences.get("TmAlgorithm")}, ${UserPreferences.get("primerConc")} nM)`;
+
+        } else {
+            tmSpan.textContent = "--";
+            infoSpan.textContent = "--";
+
+        };
+
     };
 };
