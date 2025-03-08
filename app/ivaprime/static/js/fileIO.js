@@ -1471,9 +1471,9 @@ const FileIO = new class {
                 
                 // Iterate over all features in the database and check if
                 // they are present
-                for (const commonFeatureIndex in commonFeatures) {
+                for (const commonFeatureIndex in Nucleotides.commonFeatures) {
                     // Get current feature info
-                    const commonFeatureDict = commonFeatures[commonFeatureIndex];
+                    const commonFeatureDict = Nucleotides.commonFeatures[commonFeatureIndex];
                     const featureLabel = commonFeatureDict["label"];
                     const featureSequenceType = commonFeatureDict["sequence type"];
                     const featureSequence = commonFeatureDict["sequence"];
@@ -1594,18 +1594,6 @@ const FileIO = new class {
     };
 
 
-    /**
-     * Resets inputs of the new file popup window to defaults.
-     */
-    resetNewFilePopupWindow() {
-        // Hide window
-        PopupWindow.hide("new-file-window");
-            
-        // Reset inputs
-        document.getElementById("new-file-name-input").value = "untitled";
-        document.getElementById("new-file-sequence-input").value = "";
-    };
-
 
     /**
      * Change cursor to loading by adding a loading-wrapper
@@ -1632,14 +1620,3 @@ const FileIO = new class {
         };
     };
 };
-
-
-/**
- * Load common features database
- */
-let commonFeatures;
-fetch('static/commonFeatures.json')
-    .then(response => response.json())
-    .then(json => {
-        commonFeatures = json;
-    });

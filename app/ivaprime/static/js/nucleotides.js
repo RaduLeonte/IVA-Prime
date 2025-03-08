@@ -1,55 +1,73 @@
 const Nucleotides = new class {
-    /**
-     * MAP of complementary single letter codes.
-     */
-    complements = {
-        'A': 'T',
-        'C': 'G',
-        'G': 'C',
-        'T': 'A',
-        'R': 'Y', // A or G -> T or C
-        'Y': 'R', // T or C -> A or G
-        'S': 'S', // G or C -> G or C
-        'W': 'W', // A or T -> A or T
-        'K': 'M', // G or T -> A or C
-        'M': 'K', // A or C -> G or T
-        'B': 'V', // C or G or T -> G or C or A
-        'D': 'H', // A or G or T -> T or C or A
-        'H': 'D', // A or C or T -> T or G or A
-        'V': 'B', // A or C or G -> T or G or C
-        'N': 'N', // any
-        '.': '-', // gap
-        '-': '-'  // gap
+    constructor() {
+        this.commonFeatures = null;
+        fetch('static/commonFeatures.json')
+            .then(response => response.json())
+            .then(json => {
+                this.commonFeatures = json;
+            });
+        
+
+        /**
+         * MAP of complementary single letter codes.
+         */
+        this.complements = {
+            'A': 'T',
+            'C': 'G',
+            'G': 'C',
+            'T': 'A',
+            'R': 'Y', // A or G -> T or C
+            'Y': 'R', // T or C -> A or G
+            'S': 'S', // G or C -> G or C
+            'W': 'W', // A or T -> A or T
+            'K': 'M', // G or T -> A or C
+            'M': 'K', // A or C -> G or T
+            'B': 'V', // C or G or T -> G or C or A
+            'D': 'H', // A or G or T -> T or C or A
+            'H': 'D', // A or C or T -> T or G or A
+            'V': 'B', // A or C or G -> T or G or C
+            'N': 'N', // any
+            '.': '-', // gap
+            '-': '-'  // gap
+        };
+    
+
+        /**
+         * Codon table. DNA -> AA
+         */
+        this.codonTable = {
+            'GCT': 'A', 'GCC': 'A', 'GCA': 'A', 'GCG': 'A',
+            'TGT': 'C', 'TGC': 'C',
+            'GAT': 'D', 'GAC': 'D',
+            'GAA': 'E', 'GAG': 'E',
+            'TTT': 'F', 'TTC': 'F',
+            'GGT': 'G', 'GGC': 'G', 'GGA': 'G', 'GGG': 'G',
+            'CAT': 'H', 'CAC': 'H',
+            'ATT': 'I', 'ATC': 'I', 'ATA': 'I',
+            'AAA': 'K', 'AAG': 'K',
+            'TTA': 'L', 'TTG': 'L', 'CTT': 'L', 'CTC': 'L', 'CTA': 'L', 'CTG': 'L',
+            'ATG': 'M',
+            'AAT': 'N', 'AAC': 'N',
+            'CCT': 'P', 'CCC': 'P', 'CCA': 'P', 'CCG': 'P',
+            'CAA': 'Q', 'CAG': 'Q',
+            'CGT': 'R', 'CGC': 'R', 'CGA': 'R', 'CGG': 'R', 'AGA': 'R', 'AGG': 'R',
+            'TCT': 'S', 'TCC': 'S', 'TCA': 'S', 'TCG': 'S', 'AGT': 'S', 'AGC': 'S',
+            'ACT': 'T', 'ACC': 'T', 'ACA': 'T', 'ACG': 'T',
+            'GTT': 'V', 'GTC': 'V', 'GTA': 'V', 'GTG': 'V',
+            'TGG': 'W',
+            'TAT': 'Y', 'TAC': 'Y',
+            'TAA': '*', 'TAG': '*', 'TGA': '*'
+        };
+    
+        
+        this.codonWeights = null;
+        // Load codon weights once document is loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            Nucleotides.loadCodonWeights();
+        });
     };
 
-    /**
-     * Codon table. DNA -> AA
-     */
-    codonTable = {
-        'GCT': 'A', 'GCC': 'A', 'GCA': 'A', 'GCG': 'A',
-        'TGT': 'C', 'TGC': 'C',
-        'GAT': 'D', 'GAC': 'D',
-        'GAA': 'E', 'GAG': 'E',
-        'TTT': 'F', 'TTC': 'F',
-        'GGT': 'G', 'GGC': 'G', 'GGA': 'G', 'GGG': 'G',
-        'CAT': 'H', 'CAC': 'H',
-        'ATT': 'I', 'ATC': 'I', 'ATA': 'I',
-        'AAA': 'K', 'AAG': 'K',
-        'TTA': 'L', 'TTG': 'L', 'CTT': 'L', 'CTC': 'L', 'CTA': 'L', 'CTG': 'L',
-        'ATG': 'M',
-        'AAT': 'N', 'AAC': 'N',
-        'CCT': 'P', 'CCC': 'P', 'CCA': 'P', 'CCG': 'P',
-        'CAA': 'Q', 'CAG': 'Q',
-        'CGT': 'R', 'CGC': 'R', 'CGA': 'R', 'CGG': 'R', 'AGA': 'R', 'AGG': 'R',
-        'TCT': 'S', 'TCC': 'S', 'TCA': 'S', 'TCG': 'S', 'AGT': 'S', 'AGC': 'S',
-        'ACT': 'T', 'ACC': 'T', 'ACA': 'T', 'ACG': 'T',
-        'GTT': 'V', 'GTC': 'V', 'GTA': 'V', 'GTG': 'V',
-        'TGG': 'W',
-        'TAT': 'Y', 'TAC': 'Y',
-        'TAA': '*', 'TAG': '*', 'TGA': '*'
-    };
 
-    codonWeights = null;
     loadCodonWeights() {
         fetch('static/codonWeights.json')
         .then(response => response.json())
@@ -357,6 +375,3 @@ const Nucleotides = new class {
         };
     };
 };
-
-// Load codon weights once document is loaded
-document.addEventListener('DOMContentLoaded', Nucleotides.loadCodonWeights);
