@@ -69,7 +69,8 @@ const Modals = new class {
 
         <div class="modal-hgroup">
             <label>Annotate common features:</label>
-            <input type="checkbox" id="new-file-annotate-features-checkbox" name="annotate-common-features-checkbox" checked="true">
+            <input type="checkbox" id="new-file-annotate-features-checkbox" name="new-file-annotate-features-checkbox" checked="true">
+            <label for="new-file-annotate-features-checkbox" class="custom-checkbox"></label>
         </div>
 
         <div class="modal-hgroup">
@@ -82,8 +83,8 @@ const Modals = new class {
         
         
         <div class="modal-hgroup">
-            <span class="round-button modal-button-action" id="${id}-action-button">Create File</span>
-            <span class="round-button modal-button-cancel" onclick="Modals.remove('${id}')">Cancel</span>
+            <span class="button-round button-green" id="${id}-action-button">Create File</span>
+            <span class="button-round button-red" onclick="Modals.remove('${id}')">Cancel</span>
         </div>
         `;
 
@@ -110,8 +111,8 @@ const Modals = new class {
         
         
         <div class="modal-hgroup">
-            <span class="round-button modal-button-action" id="${id}-action-button">Rename</span>
-            <span class="round-button modal-button-cancel" onclick="Modals.remove('${id}')">Cancel</span>
+            <span class="button-round button-green" id="${id}-action-button">Rename</span>
+            <span class="button-round button-red" onclick="Modals.remove('${id}')">Cancel</span>
         </div>
         `;
 
@@ -172,14 +173,15 @@ const Modals = new class {
 
         <div class="modal-hgroup">
             <label>Translate new feature:</label>
-            <input type="checkbox" id="insertion-checkbox-translate" checked="false">
+            <input type="checkbox" id="insertion-checkbox-translate" name="insertion-checkbox-translate" checked="false">
+            <label for="insertion-checkbox-translate" class="custom-checkbox"></label>
         </div>
 
         
         
         <div class="modal-hgroup">
-            <span class="round-button modal-button-action" id="${id}-action-button">Create File</span>
-            <span class="round-button modal-button-cancel" onclick="Modals.remove('${id}')">Cancel</span>
+            <span class="button-round button-green" id="${id}-action-button">Create File</span>
+            <span class="button-round button-red" onclick="Modals.remove('${id}')">Cancel</span>
         </div>
         `;
 
@@ -264,14 +266,15 @@ const Modals = new class {
 
         <div class="modal-hgroup">
             <label>Translate new feature:</label>
-            <input type="checkbox" id="insertion-checkbox-translate" checked="false">
+            <input type="checkbox" id="insertion-checkbox-translate" name="insertion-checkbox-translate" checked="false">
+            <label for="insertion-checkbox-translate" class="custom-checkbox"></label>
         </div>
 
         
         
         <div class="modal-hgroup">
-            <span class="round-button modal-button-action" id="${id}-action-button">Create File</span>
-            <span class="round-button modal-button-cancel" onclick="Modals.remove('${id}')">Cancel</span>
+            <span class="button-round button-green" id="${id}-action-button">Create File</span>
+            <span class="button-round button-red" onclick="Modals.remove('${id}')">Cancel</span>
         </div>
         `;
 
@@ -311,8 +314,8 @@ const Modals = new class {
         
         
         <div class="modal-hgroup">
-            <span class="round-button modal-button-action" id="${id}-action-button">Rename</span>
-            <span class="round-button modal-button-cancel" onclick="Modals.remove('${id}')">Cancel</span>
+            <span class="button-round button-green" id="${id}-action-button">Rename</span>
+            <span class="button-round button-red" onclick="Modals.remove('${id}')">Cancel</span>
         </div>
         `;
 

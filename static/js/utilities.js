@@ -29,7 +29,24 @@ const Utilities = new class {
 
         document.addEventListener('DOMContentLoaded', function() {
             Utilities.getScrollbarWidth();
-        })
+        });
+
+
+        this.validators = {
+            integer: (value) => /^-?\d+$/.test(value),
+            float: (value) => /^-?\d*\.?\d*$/.test(value),
+            dna: (value) => /^[ATCG]*$/i.test(value),
+            aa: (value) => /^[ACDEFGHIKLMNPQRSTVWY*X-]*$/i.test(value)
+        };
+        document.addEventListener("DOMContentLoaded", function (event) {
+            const inputElements = document.querySelectorAll("input[validator]");
+
+            inputElements.forEach((input) => {
+                const validatorType = input.getAttribute("validator");
+
+                Utilities.addInputValidator(input, validatorType);
+            });
+        });
     };
 
     /**
@@ -314,9 +331,29 @@ const Utilities = new class {
     updateTheme() {
         document.querySelector("html").setAttribute("data-theme", UserPreferences.get("theme"));
         Coloris({
-            themeMode: 'dark',
+            themeMode: UserPreferences.get("theme"),
             alpha: false
         });
+    };
+
+
+    addInputValidator(input, validatorType) {
+        function validate() {
+            const isValid = Utilities.validators[validatorType] ? Utilities.validators[validatorType](input.value) : true;
+    
+            if (!isValid) {
+                input.setAttribute("incorrect", "true")
+            } else {
+                input.removeAttribute("incorrect")
+            };
+        };
+
+        if (input.currentValidator) {
+            input.removeEventListener("input", input.currentValidator);
+        };
+    
+        input.currentValidator = validate;
+        input.addEventListener("input", validate);
     };
 };
 

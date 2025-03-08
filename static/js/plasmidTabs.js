@@ -77,6 +77,24 @@ const PlasmidTabs = new class {
         Sidebar.update();
 
         return;
+    
+        // Refresh undo buttons and set disabled/enabled states
+        refreshUndoRedoButtons();
+    
+        // Update selection info in the footer
+        updateFooterSelectionInfo();
+    
+    
+        const subcloningOriginPlasmidIndex = Session.subcloningOriginIndex;
+        if (subcloningOriginPlasmidIndex !== null && Session.activePlasmidIndex === subcloningOriginPlasmidIndex) {
+            markSelectionForSubcloning(
+                Session.activePlasmidIndex,
+                Session.subcloningOriginSpan[0],
+                Session.subcloningOriginSpan[1]
+            );
+        } else {
+            clearAllSubcloningSelections(clearVariables=false);
+        };
     };
 
 
@@ -215,11 +233,13 @@ const PlasmidTabs = new class {
      * Enable or disable the switch view buttons in the toolbar
      */
     enableSwitchViewButtons() {
+        return;
         ["circular", "linear", "grid"].forEach(view => {
             document.getElementById(`${view}-view-button`).removeAttribute('disabled');
         });
     };
     disableSwitchViewButtons() {
+        return;
         ["circular", "linear", "grid"].forEach(view => {
             document.getElementById(`${view}-view-button`).setAttribute('disabled', '');
         });

@@ -59,7 +59,7 @@ const Alerts = new class {
 
         // Alert icon
         const alertIconContainer = document.createElement("DIV");
-        alertIconContainer.classList.add("alert-icon-container");
+        alertIconContainer.classList.add("alert-icon");
         alert.appendChild(alertIconContainer);
         const alertIcon = document.createElement('svg');
         alertIcon.innerHTML = `
@@ -125,7 +125,7 @@ const Alerts = new class {
         alert.offsetHeight; // Force update the height by reading it
 
         // Add class
-        alert.classList.add('alert-collapsed');
+        alert.setAttribute("collapsed", "")
         
         // Remove alert and temporary css class after animation is done
         setTimeout(() => {
@@ -168,8 +168,11 @@ const Alerts = new class {
         
         // Close button
         const agreeButton = document.createElement('span');
-        agreeButton.classList.add("round-button");
-        agreeButton.classList.add("cookie-consent-agree-button");
+        agreeButton.classList.add(
+            "button-round",
+            "button-green",
+            "cookie-consent-agree-button"
+        );
         agreeButton.textContent = "Understood";
         agreeButton.addEventListener('click', function (e) {
             UserPreferences.set("cookieConsentGiven", true);

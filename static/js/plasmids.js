@@ -447,9 +447,11 @@ class Plasmid {
         this.features[featureID].directionality = collapsibleContent.querySelector("#directionality-select").value;
 
         // Span
+        const span1 = parseInt(collapsibleContent.querySelector("#span-start-input").value);
+        const span2 = parseInt(collapsibleContent.querySelector("#span-end-input").value)
         this.features[featureID].span = [
-            parseInt(collapsibleContent.querySelector("#span-start-input").value),
-            parseInt(collapsibleContent.querySelector("#span-end-input").value),
+            Math.min(span1, span2),
+            Math.max(span1, span2),
         ];
 
         // Translated

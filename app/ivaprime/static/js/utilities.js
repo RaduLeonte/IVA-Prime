@@ -331,7 +331,7 @@ const Utilities = new class {
     updateTheme() {
         document.querySelector("html").setAttribute("data-theme", UserPreferences.get("theme"));
         Coloris({
-            themeMode: 'dark',
+            themeMode: UserPreferences.get("theme"),
             alpha: false
         });
     };
@@ -342,9 +342,9 @@ const Utilities = new class {
             const isValid = Utilities.validators[validatorType] ? Utilities.validators[validatorType](input.value) : true;
     
             if (!isValid) {
-                input.classList.add("input-incorrect");
+                input.setAttribute("incorrect", "true")
             } else {
-                input.classList.remove("input-incorrect");
+                input.removeAttribute("incorrect")
             };
         };
 

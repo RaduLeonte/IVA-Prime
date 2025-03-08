@@ -3,8 +3,9 @@ const UserPreferences = new class {
         this.cookieName = 'user_prefs';
         this.expiryDays = 365;
 
-        const defaultSettings = {
+        this.defaultSettings = {
             "theme": "light",
+            "cookieConsentGiven": false,
 
             "symmetricPrimers": false,
             "HRMinLength": 18,
@@ -27,7 +28,7 @@ const UserPreferences = new class {
 
         const savedPreferences = this.loadPreferences();
         //console.log(`UserPreferences -> savedPreferences=\n${JSON.stringify(savedPreferences, null, 2)}`);
-        this.preferences = { ...defaultSettings, ...savedPreferences };
+        this.preferences = { ...this.defaultSettings, ...savedPreferences };
         //console.log(`UserPreferences -> merged=\n${JSON.stringify(this.preferences, null, 2)}`);
         this.savePreferences();
     };
@@ -84,6 +85,13 @@ const UserPreferences = new class {
         this.preferences[key] = value;
         this.savePreferences();
     };
+
+
+    setBulk(prefs) {
+        Object.assign(this.preferences, prefs); 
+        this.savePreferences();
+    };
+
 
     /**
      * Get specific user preference value

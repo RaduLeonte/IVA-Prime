@@ -93,12 +93,14 @@ const Nucleotides = new class {
      * @returns - Complementary sequence.
      */
     complementary(inputSequence) {
-        // Convert to uppercase, make into list, map to complementary base,
-        // then turn back into string
-        return Nucleotides.sanitizeSequence(inputSequence)
-            .split('')
-            .map(nucleotide => Nucleotides.complements[nucleotide])
-            .join('');
+        const seq = Nucleotides.sanitizeSequence(inputSequence);
+        let result = new Array(seq.length);
+
+        for (let i = 0; i < seq.length; i++) {
+            result[i] = Nucleotides.complements[seq[i]];
+        };
+    
+        return result.join('');
     };
 
 

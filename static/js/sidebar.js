@@ -246,8 +246,8 @@ const Sidebar = new class {
         // Iterate over the features and populate the container
         for (const [featureID, featureDict] of Object.entries(features)) {
             // Skip source feature type
-            if (featureDict["type"] && featureDict["type"].includes("source")) {continue};
-
+            if (featureDict["type"] && featureDict["type"].includes("source")) continue;
+            if (featureID && featureID.includes("LOCUS")) continue;
 
             /**
              * Create new feature container
@@ -340,6 +340,7 @@ const Sidebar = new class {
             startInput.min = "1";
             startInput.max = spanEndMax;
             startInput.value = spanStart;
+            Utilities.addInputValidator(startInput, "integer");
 
             const separator = document.createElement("span");
             separator.textContent = " .. ";
@@ -350,6 +351,7 @@ const Sidebar = new class {
             endInput.min = "1";
             endInput.max = spanEndMax;
             endInput.value = spanEnd;
+            Utilities.addInputValidator(endInput, "integer");
 
             inputContainer.appendChild(startInput);
             inputContainer.appendChild(separator);
@@ -358,16 +360,6 @@ const Sidebar = new class {
             spanDiv.appendChild(inputContainer);
             collapsibleContent.appendChild(spanDiv);
 
-            function validateSpanInputs() {
-                const startVal = parseInt(startInput.value, 10);
-                const endVal = parseInt(endInput.value, 10);
-            
-                if (!isNaN(startVal) && !isNaN(endVal) && endVal <= startVal) {
-                    endInput.value = startVal + 1;
-                };
-            };
-            startInput.addEventListener("input", validateSpanInputs);
-            endInput.addEventListener("input", validateSpanInputs);
 
             /**
              * Directionality
@@ -402,7 +394,8 @@ const Sidebar = new class {
             translateDiv.innerHTML = `
             <label class="collapsible-content-hgroup-label">Translate</label>
             <div class="collapsible-content-hgroup-input">
-            <input type="checkbox" id="translated-checkbox" checked="${featureIsTranslated}">
+                <input type="checkbox" id="translated-checkbox" name="translated-checkbox" checked="${featureIsTranslated}">
+                <label for="translated-checkbox" class="custom-checkbox"></label>
             </div>
             `;
             translateDiv.getElementsByTagName("input")[0].checked = featureIsTranslated;
@@ -473,10 +466,41 @@ const Sidebar = new class {
              */
             const updateButtonDiv = document.createElement("DIV");
             updateButtonDiv.classList.add("collapsible-content-hgroup");
-            updateButtonDiv.innerHTML = `
-            <span class="round-button update-feature-button" onClick="Session.getPlasmid(${Session.activePlasmidIndex}).updateFeatureProperties('${featureID}')">Update</span>
-            <span class="round-button remove-feature-button" onClick="Session.getPlasmid(${Session.activePlasmidIndex}).removeFeature('${featureID}')">Remove</span>
-            `;
+
+            // Create the update button
+            const updateButton = document.createElement("SPAN");
+            updateButton.classList.add("button-round", "button-green", "update-feature-button");
+            updateButton.textContent = "Update";
+            updateButton.onclick = function () {
+                if (!collapsibleContent.querySelector("[incorrect]")) {
+                    Session.getPlasmid(Session.activePlasmidIndex).updateFeatureProperties(featureID);
+                };
+            };
+
+            // Create the remove button
+            const removeButton = document.createElement("SPAN");
+            removeButton.classList.add("button-round", "button-red", "remove-feature-button");
+            removeButton.textContent = "Remove";
+            removeButton.onclick = function () {
+                Session.getPlasmid(Session.activePlasmidIndex).removeFeature(featureID);
+            };
+
+            function checkInputsValidation() {
+                const inputFailedValidator = collapsibleContent.querySelector("[incorrect]") !== null;
+            
+                if (inputFailedValidator) {
+                    updateButton.setAttribute("disabled", "");
+                } else {
+                    updateButton.removeAttribute("disabled");
+                };
+            };
+            collapsibleContent.querySelectorAll("input").forEach(input => {
+                input.addEventListener("input", checkInputsValidation);
+            });
+
+            // Append buttons to the div
+            updateButtonDiv.appendChild(updateButton);
+            updateButtonDiv.appendChild(removeButton);
             collapsibleContent.appendChild(updateButtonDiv);
 
 
@@ -512,19 +536,6 @@ const Sidebar = new class {
          */
         targetContent.toggleAttribute("visible");
         return;
-        if (targetContent.style.display === "none") {
-            // Close all others.
-            //FeaturesTable.closeAllCollapsibleHeaders();
-            targetContent.style.display = "block";
-            targetContent.style.maxHeight = targetContent.scrollHeight + "px"; 
-        
-            /**
-         * Close
-         */
-        } else {
-            targetContent.style.display = "none";
-            targetContent.style.maxHeight = null; 
-        };
     };
 
 

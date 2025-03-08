@@ -394,7 +394,8 @@ const Sidebar = new class {
             translateDiv.innerHTML = `
             <label class="collapsible-content-hgroup-label">Translate</label>
             <div class="collapsible-content-hgroup-input">
-            <input type="checkbox" id="translated-checkbox" checked="${featureIsTranslated}">
+                <input type="checkbox" id="translated-checkbox" name="translated-checkbox" checked="${featureIsTranslated}">
+                <label for="translated-checkbox" class="custom-checkbox"></label>
             </div>
             `;
             translateDiv.getElementsByTagName("input")[0].checked = featureIsTranslated;
@@ -468,24 +469,24 @@ const Sidebar = new class {
 
             // Create the update button
             const updateButton = document.createElement("SPAN");
-            updateButton.classList.add("round-button", "update-feature-button");
+            updateButton.classList.add("button-round", "button-green", "update-feature-button");
             updateButton.textContent = "Update";
             updateButton.onclick = function () {
-                if (!collapsibleContent.querySelector(".input-incorrect")) {
+                if (!collapsibleContent.querySelector("[incorrect]")) {
                     Session.getPlasmid(Session.activePlasmidIndex).updateFeatureProperties(featureID);
                 };
             };
 
             // Create the remove button
             const removeButton = document.createElement("SPAN");
-            removeButton.classList.add("round-button", "remove-feature-button");
+            removeButton.classList.add("button-round", "button-red", "remove-feature-button");
             removeButton.textContent = "Remove";
             removeButton.onclick = function () {
                 Session.getPlasmid(Session.activePlasmidIndex).removeFeature(featureID);
             };
 
             function checkInputsValidation() {
-                const inputFailedValidator = collapsibleContent.querySelector(".input-incorrect") !== null;
+                const inputFailedValidator = collapsibleContent.querySelector("[incorrect]") !== null;
             
                 if (inputFailedValidator) {
                     updateButton.setAttribute("disabled", "");

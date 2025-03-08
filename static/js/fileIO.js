@@ -194,7 +194,7 @@ const FileIO = new class {
             // Decode file content as string
             //let fileContent = new TextDecoder().decode(arrayBuf);
             // Init XML parser
-            const xmlParser = new fxparser.XMLParser();
+            const xmlParser = new XMLParser({ ignoreAttributes: false });
 
 
             const blocks = {};
@@ -365,71 +365,64 @@ const FileIO = new class {
                 const featuresDict = {};
 
                 // Select all <Features> nodes and iterate over them
-                const featureNodes = featuresXMLDoc.getElementsByTagName('Feature');
+                const featureNodes = featuresXMLDoc.Features.Feature;
                 for (let i = 0; i < featureNodes.length; i++) {
                     // Current node
                     const featureNode = featureNodes[i]; // Current feature
-    
+                    //console.log(featureNode)
                     const featureInfo = {}
 
                     // Feature label
-                    featureInfo["label"] = featureNode.getAttribute('name');
+                    featureInfo["label"] = featureNode['@_name'];
 
                     // Feature type
-                    featureInfo["type"] = featureNode.getAttribute('type');
+                    featureInfo["type"] = featureNode['@_type'];
                     if (featureInfo["type"] === "source") continue;
 
 
                     // Get feature directionaliy, fwd, rev, both, or null
-                    featureInfo["directionality"] = {"1": "fwd", "2": "rev", "3": "both"}[featureNode.getAttribute('directionality')] || null;
+                    featureInfo["directionality"] = {"1": "fwd", "2": "rev", "3": "both"}[featureNode['@_directionality']] || null;
     
                     // Iterate over <Feature> node children (<Q> and <Segment>) to find properties
-                    for (let j = 0; j < featureNode.children.length; j++) {
-                        const childNode = featureNode.children[j];
-                        const childNodeName = childNode.nodeName;
+                    const qNodes = Array.isArray(featureNode.Q) ? featureNode.Q : [featureNode.Q];
+                    for (let j = 0; j < qNodes.length; j++) {
+                        const QNode = qNodes[j];
+                        const QNodeName = QNode["@_name"];
     
-                        switch(childNodeName) {
-                            /**
-                             * Nodes with the name "Q" and its "V" children are "Query-Value" nodes.
-                             * The information is not useful for us, but we keep it to maybe use it
-                             * at some later point.
-                             */
-                            case "Q":
-                                const attrNameQ = childNode.getAttribute("name");
-                                const V = childNode.children[0];
-                                if (V) {
-                                    for (let i = 0; i < V.attributes.length; i++) {
-                                        const attr = V.attributes[i];
-                                
-                                        if (attr.name === "int") {
-                                            featureInfo[attrNameQ] = parseInt(attr.value, 10);
-                                        } else if (attr.name === "text") {
-                                            const needsParsing = /[<>]|&(?:[a-z\d#]+);/i.test(attr.value);
-                                            featureInfo[attrNameQ] = needsParsing
-                                                ? xmlParser.parse(attr.value).body.textContent.trim()
-                                                : attr.value.trim();
-                                        };
-                                    };
-                                };
-                                break;
-                            /**
-                             * Nodes with the name "Segment" contain the actually interesting
-                             * information for us.
-                             */
-                            case "Segment":
-                                // Add span to feature info
-                                featureInfo["span"] = childNode.getAttribute('range').split("-").map((s) => parseInt(s));
-                                
-                                // Extract color
-                                featureInfo["color"] = (UserPreferences.get("overwriteSnapGeneColors"))
-                                ? Utilities.getRandomDefaultColor()
-                                : childNode.getAttribute('color');
+                        /**
+                         * Nodes with the name "Q" and its "V" children are "Query-Value" nodes.
+                         * The information is not useful for us, but we keep it to maybe use it
+                         * at some later point.
+                         */
+                        const VNode = QNode.V;
+                        if (VNode) {
+                            if ("@_int" in VNode) {
+                                featureInfo[QNodeName] = parseInt(VNode["@_int"], 10);
+                            } else if ("@_text" in VNode) {
+                                const needsParsing = /[<>]|&(?:[a-z\d#]+);/i.test(VNode["@_text"]);
 
-                                featureInfo["translated"] = {"1": true}[childNode.getAttribute('translated')] || false;
-
-                                featureInfo["translationOffset"] = childNode.getAttribute('translationNumberingStartsFrom') || 0;
-                                break;
+                                featureInfo[QNodeName] = needsParsing
+                                    ? VNode["@_text"].replace(/<\/?[^>]+(>|$)/g, "").replace(/&[a-z\d#]+;/gi, "").trim()
+                                    : VNode["@_text"].trim();
+                            };
                         };
+                    };
+
+                    const segments = Array.isArray(featureNode.Segment) ? featureNode.Segment : [featureNode.Segment];
+                    for (let j = 0; j < segments.length; j++) {
+                        const segment = segments[j];
+    
+                        // Add span to feature info
+                        featureInfo["span"] = segment['@_range'].split("-").map((s) => parseInt(s));
+                                
+                        // Extract color
+                        featureInfo["color"] = (UserPreferences.get("overwriteSnapGeneColors"))
+                        ? Utilities.getRandomDefaultColor()
+                        : segment['@_color'];
+
+                        featureInfo["translated"] = {"1": true}[segment['@_translated']] || false;
+
+                        featureInfo["translationOffset"] = segment['@_translationNumberingStartsFrom'] || 0;
                     };
     
                     // Append feature info dict the corresponding feature in the dict
@@ -487,7 +480,9 @@ const FileIO = new class {
     
                 const primersDict = {};
 
-                const primerNodes = primersXMLDoc.getElementsByTagName('Primer');
+                if (!primersXMLDoc.Primers.Primer) return {};
+
+                const primerNodes = Array.isArray(primersXMLDoc.Primers.Primer) ? primersXMLDoc.Primers.Primer : [primersXMLDoc.Primers.Primer];
                 for (let i = 0; i < primerNodes.length; i++) {
                     // Current node
                     const primerNode = primerNodes[i];
@@ -495,7 +490,7 @@ const FileIO = new class {
                     const primerInfo = {};
     
                     // Feature label
-                    primerInfo["label"] = primerNode.getAttribute('name');
+                    primerInfo["label"] = primerNode['@_name'];
                     
                     // Feture type
                     primerInfo["type"] = "primer_bind";
@@ -503,14 +498,15 @@ const FileIO = new class {
                     primerInfo["color"] = Utilities.getRandomDefaultColor();
     
                     // Feature note
-                    primerInfo["note"] = primerNode.getAttribute('description') || "";
+                    primerInfo["note"] = primerNode['@_description'] || "";
                     
 
-                    const bindingSiteNode = primerNode.getElementsByTagName("BindingSite")[0];
+                    const bindingSiteNodes = Array.isArray(primerNode.BindingSite) ? primerNode.BindingSite : [primerNode.BindingSite];
+                    const bindingSiteNode = bindingSiteNodes[0];
     
-                    primerInfo["directionality"] = {"0": "fwd", "1": "rev"}[bindingSiteNode.getAttribute('boundStrand')] || null;
+                    primerInfo["directionality"] = {"0": "fwd", "1": "rev"}[bindingSiteNode['@_boundStrand']] || null;
     
-                    primerInfo["span"] = bindingSiteNode.getAttribute('location').split("-").map((s) => parseInt(s));
+                    primerInfo["span"] = bindingSiteNode['@_location'].split("-").map((s) => parseInt(s));
                     if (!primerInfo["span"]) continue;
     
                     primersDict[Utilities.newUUID()] = primerInfo;
@@ -583,61 +579,43 @@ const FileIO = new class {
 
                 const notesDict = {};
 
-                const notesNodes = notesXMLDoc.querySelector("Notes");
-                for (let i = 0; i < notesNodes.children.length; i++) {
-                    const childNode = notesNodes.children[i];
+                const notesNodes = notesXMLDoc.Notes;
+                for (const [tagName, childNode] of Object.entries(notesNodes)) {
+                    let key, value;
 
-
-                    let key;
-                    let value;
-                    switch(childNode.tagName) {
+                    switch(tagName) {
                         case "Description":
                             key = "DEFINITION";
-                            value = childNode.textContent;
+                            value = childNode;
                             break;
 
                         case "References":
-                            const referencesNode = childNode;
-
-                            const referencesList = [];
-
-                            for (let j = 0, len = referencesNode.children.length; j < len; j++) {
-                                const referenceNode = childNode.children[j];
-                                
-                                const referenceDict = {};
-
-                                for (let k = 0; k < referenceNode.attributes.length; k++) {
-                                    const attribute = referenceNode.attributes[k];
-                                    const attributeName = attribute.name.toUpperCase();
-                                    const attributeValue = attribute.value;
-                                   
-                                    referenceDict[attributeName] = attributeValue;
-                                };
-
-                                referencesList.push(referenceDict);
-                            };
-
                             key = "REFERENCES";
-                            value = referencesList;
+                            value = childNode.Reference
+                                ? [].concat(childNode.Reference).map(ref =>
+                                    Object.fromEntries(Object.entries(ref).map(([k, v]) => [k.toUpperCase(), v])))
+                                : [];
                             break;
 
                         case "Created":
-                            // Parse date
-                            const dateParts = childNode.textContent.split(".").map(Number);
-                            const dateObj = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
-                            
-                            // Parse time
-                            const time = childNode.getAttribute("UTC");
-                            const timeParts = time.split(":").map(Number);
-                            dateObj.setUTCHours(timeParts[0], timeParts[1], timeParts[2], 0);
-
                             key = "CREATED";
-                            value = dateObj;
+                            if (typeof childNode === "object" && "#text" in childNode) {
+                                const [year, month, day] = childNode["#text"].split(".").map(Number);
+                                const dateObj = new Date(Date.UTC(year, month - 1, day));
+                
+                                if (childNode["@_UTC"]) {
+                                    const [hours, minutes, seconds] = childNode["@_UTC"].split(":").map(Number);
+                                    dateObj.setUTCHours(hours, minutes, seconds, 0);
+                                }
+                                value = dateObj;
+                            } else {
+                                value = null; // Handle unexpected formats
+                            }
                             break;
 
                         default:
-                            key = childNode.tagName;
-                            value = childNode.textContent;
+                            key = tagName.toUpperCase();
+                            value = childNode;
                             break;
                     };
     
@@ -651,6 +629,8 @@ const FileIO = new class {
             if (blocks[6]) {
                 fileAdditionalInfo = parseNotes(blocks[6]);
             };
+
+            console.log("notes", fileAdditionalInfo)
 
             const accountedBlockKeys = [0, 10, 5, 6];
             const unaccountedBlocks = Object.keys(blocks).reduce((obj, key) => {
@@ -1447,6 +1427,22 @@ const FileIO = new class {
         const newFileTopology = document.getElementById("new-file-topology-select").value;
         const detectCommonFeatures = document.getElementById("new-file-annotate-features-checkbox").checked;
     
+        if (!newFileSequenceInput ||newFileSequenceInput.length === 0) {
+            Alerts.error(
+                "Parsing error",
+                "No sequence specified."
+            );
+            return;
+        };
+
+        if (newFileSequenceInput.includes("U")) {
+            Alerts.error(
+                "Parsing error",
+                "IVA Prime does not support RNA sequences."
+            );
+            return;
+        };
+
         /** 
          * Generate plasmid object
          */

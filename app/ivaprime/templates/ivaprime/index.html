@@ -77,6 +77,11 @@
             MARK: Toolbar panels
 
             -->
+            <!--
+            
+            MARK: Tm Calculator
+
+            -->
             <div id="toolbar-panel-tm" class="modal-window toolbar-panel toolbar-panel-tm">
                 <div class="modal-body toolbar-panel-body">
                     <div class="modal-title toolbar-panel-title">
@@ -100,12 +105,22 @@
                 </div>
             </div>
 
+            <!--
+            
+            MARK: Settings panel
+
+            -->
             <div id="toolbar-panel-settings" class="modal-window toolbar-panel toolbar-panel-settings">
                 <div class="modal-body toolbar-panel-body">
                     <div class="modal-title toolbar-panel-title">
                         Basic settings
                     </div>
 
+                    <!--
+            
+                    MARK: Basic settings
+
+                    -->
                     <!-- Start basic settings -->
                     <div class="toolbar-panel-section">
                         <div class="toolbar-panel-section-title">
@@ -117,7 +132,7 @@
 
                             <div class="toolbar-panel-section-hgroup-input">
                                 <span>
-                                    Asymmetric
+                                    Asym.
                                 </span>
                                 <div class="boolean-switch-wrapper">
                                     <label class="boolean-switch">
@@ -126,7 +141,7 @@
                                     </label>
                                 </div>
                                 <span>
-                                    Symmetric
+                                    Sym.
                                 </span>
                             </div>
                         </div>
@@ -149,6 +164,11 @@
                     </div>
                     <!-- End basic settings -->
 
+                    <!--
+            
+                    MARK: Advanced settings
+
+                    -->
                     <!-- Start advanced settings -->
                     <div class="toolbar-panel-collapsible">
                         <div
@@ -166,9 +186,9 @@
                                 </div>
         
                                 <div class="toolbar-panel-section-hgroup">
-                                    <label>Primer concentration [nM]</label>
-                                    <div class="toolbar-panel-section-hgroup-input">
-                                        <input id="primerConc" type="text" class="modal-input" validator="float">
+                                    <label>Primer concentration</label>
+                                    <div class="toolbar-panel-section-hgroup-input input-suffix suffix-nM">
+                                        <input id="primerConc" type="text" class="modal-input input-suffix" validator="float">
                                     </div>
                                 </div>
     
@@ -187,14 +207,14 @@
                                         id="meltingTempAlgorithmEquationImage"
                                         src="/static/assets/equations/oligoCalc%20equation.png"
                                         alt="Melting temperature equation."
-                                        style="height: 50px;"
+                                        style="max-height: 50px;"
                                     >
                                 </div>
 
     
                                 <div class="toolbar-panel-section-hgroup">
-                                    <label>Salt concentration [M]</label>
-                                    <div class="toolbar-panel-section-hgroup-input">
+                                    <label>Salt concentration</label>
+                                    <div class="toolbar-panel-section-hgroup-input input-suffix suffix-M">
                                         <input id="saltConc" type="text" class="modal-input" validator="float">
                                     </div>
                                 </div>
@@ -214,14 +234,14 @@
                                         id="saltCorrectionEquationImage"
                                         src="/static/assets/equations/SchildkrautLifson%20equation.png"
                                         alt="Salt correction equation."
-                                        style="height: 30px;"
+                                        style="max-height: 30px;"
                                     >
                                 </div>
 
     
                                 <div class="toolbar-panel-section-hgroup">
-                                    <label>DMSO concentration [M]</label>
-                                    <div class="toolbar-panel-section-hgroup-input">
+                                    <label>DMSO concentration</label>
+                                    <div class="toolbar-panel-section-hgroup-input input-suffix suffix-M">
                                         <input id="dmsoConc" type="text" class="modal-input" validator="float">
                                     </div>
                                 </div>
@@ -231,7 +251,7 @@
                                         id="dmsoCorrectionEquationImage"
                                         src="/static/assets/equations/DMSO%20equation.png"
                                         alt="DMSO correction equation."
-                                        style="height: 25px;"
+                                        style="max-height: 25px;"
                                     >
                                 </div>
                             </div>
@@ -242,36 +262,36 @@
                                 </div>
         
                                 <div class="toolbar-panel-section-hgroup">
-                                    <label>HR minimum length [nt]</label>
-                                    <div class="toolbar-panel-section-hgroup-input">
+                                    <label>HR minimum length</label>
+                                    <div class="toolbar-panel-section-hgroup-input input-suffix suffix-nt">
                                         <input id="HRMinLength" type="text" class="modal-input" validator="float">
                                     </div>
                                 </div>
     
                                 <div class="toolbar-panel-section-hgroup">
-                                    <label>HR target Tm [°C]</label>
-                                    <div class="toolbar-panel-section-hgroup-input">
+                                    <label>HR target Tm</label>
+                                    <div class="toolbar-panel-section-hgroup-input input-suffix suffix-C">
                                         <input id="HRTm" type="text" class="modal-input" validator="float">
                                     </div>
                                 </div>
     
                                 <div class="toolbar-panel-section-hgroup">
-                                    <label>Subcloning HR target Tm [°C]</label>
-                                    <div class="toolbar-panel-section-hgroup-input">
+                                    <label>Subcloning HR target Tm</label>
+                                    <div class="toolbar-panel-section-hgroup-input input-suffix suffix-C">
                                         <input id="HRSubcloningTm" type="text" class="modal-input" validator="float">
                                     </div>
                                 </div>
     
                                 <div class="toolbar-panel-section-hgroup">
-                                    <label>TBR target Tm [°C]</label>
-                                    <div class="toolbar-panel-section-hgroup-input">
+                                    <label>TBR target Tm</label>
+                                    <div class="toolbar-panel-section-hgroup-input input-suffix suffix-C">
                                         <input id="TBRTm" type="text" class="modal-input" validator="float">
                                     </div>
                                 </div>
     
                                 <div class="toolbar-panel-section-hgroup">
-                                    <label>Maximum Tm for short insertions [°C]</label>
-                                    <div class="toolbar-panel-section-hgroup-input">
+                                    <label>Maximum Tm for short insertions</label>
+                                    <div class="toolbar-panel-section-hgroup-input input-suffix suffix-C">
                                         <input id="maxTmSi" type="text" class="modal-input" validator="float">
                                     </div>
                                 </div>
@@ -283,8 +303,8 @@
 
                     <div class="toolbar-panel-section">
                         <div class="toolbar-panel-section-hgroup">
-                            <span class="round-button reset-defaults-button" onclick="Toolbar.resetToDefaultSettings()">Reset to default settings</span>
-                            <span id="update-settings-button" class="round-button update-settings-button" onclick="Toolbar.updateSettings()">Update settings</span>
+                            <span class="button-round button-gray reset-defaults-button" onclick="Toolbar.resetToDefaultSettings()">Reset to default settings</span>
+                            <span id="update-settings-button" class="button-round button-green update-settings-button" onclick="Toolbar.updateSettings()">Update settings</span>
                         </div>
                     </div>
 
@@ -302,15 +322,15 @@
                 <div class="header">
                     <!-- Import buttons -->
                     <div class="header-import-buttons">
-                        <span class="round-button" title="Import a plasmid file from your computer" onclick="FileIO.importFileButton(event)">Import File</span>
-                        <span class="round-button new-file-button" title="Create a new plasmid file from a DNA sequence" onclick="Modals.createNewFileModal()">New File</span>
-                        <span class="round-button demo-file-button" title="Import a pET-28a plasmid" onclick="FileIO.importDemoFile()">Demo File</span>
+                        <span class="button-round button-green" title="Import a plasmid file from your computer" onclick="FileIO.importFileButton(event)">Import File</span>
+                        <span class="button-round button-blue" title="Create a new plasmid file from a DNA sequence" onclick="Modals.createNewFileModal()">New File</span>
+                        <span class="button-round button-orange" title="Import a pET-28a plasmid" onclick="FileIO.importDemoFile()">Demo File</span>
                     </div>
 
                     <!-- Plasmid tabs -->
                     <div class="plasmid-tabs-wrapper">
                         <span
-                        class="round-button plasmid-tabs-scroll-button"
+                        class="button-round plasmid-tabs-scroll-button"
                         onclick="PlasmidTabs.scrollTabs(-1, this)"
                         disabled
                         >‹</span>
@@ -322,7 +342,7 @@
                         </div>
 
                         <span
-                        class="round-button plasmid-tabs-scroll-button"
+                        class="button-round plasmid-tabs-scroll-button"
                         onclick="PlasmidTabs.scrollTabs(1, this)"
                         disabled
                         >›</span>
@@ -338,12 +358,12 @@
                 <div class="sidebar">
                     <div class="sidebar-content">
                         <!-- Primers -->
-                        <div id="primers-table-container">
+                        <div id="primers-table-container" class="primers-table-container">
                             <div id="primers-table"></div>
                         </div>
     
                         <!-- Features table -->
-                        <div id="features-table-container">
+                        <div id="features-table-container" class="features-table-container">
                             <div id="features-table"></div>
                         </div>
                     </div>
@@ -407,29 +427,40 @@
                 <div class="toolbar">
                     <!-- Undo Redo -->
                     <div class="toolbar-group">
-                        <span
-                            class="toolbar-button toolbar-undo-button"
+                        <div
+                            class="toolbar-button"
                             disabled
                             title="Undo action (Ctrl + Z)"
-                        ></span>
+                        >
+                            <span
+                                class="toolbar-undo-button"
+                            ></span>
+                        </div>
 
-                        <span
-                            class="toolbar-button toolbar-redo-button"
+                        <div
+                            class="toolbar-button"
                             disabled
                             title="Redo action (Ctrl + Shift + Z)"
-                        ></span>
+                        >
+                            <span
+                                class="toolbar-redo-button"
+                            ></span>
+                        </div>
                     </div>
                     
                     <div class="toolbar-divider"></div>
                     
                     <!-- Tm calculator -->
                     <div class="toolbar-group">
-                        <span
-                            class="toolbar-button
-                            toolbar-calculator-button"
+                        <div
+                            class="toolbar-button"
                             title="Primer Tm calculator"
                             onclick='Toolbar.togglePanel("toolbar-panel-tm", this)'
-                        ></span>
+                        >
+                            <span
+                                class="toolbar-calculator-button"
+                            ></span>
+                        </div>
                     </div>
                     
                     <!--
@@ -464,16 +495,24 @@
 
                     <!-- Settings & help -->
                     <div class="toolbar-group">
-                        <span
-                            class="toolbar-button toolbar-settings-button"
+                        <div
+                            class="toolbar-button"
                             title="Settings"
                             onclick='Toolbar.togglePanel("toolbar-panel-settings", this, true)'
-                        ></span>
+                        >
+                            <span
+                                class="toolbar-settings-button"
+                            ></span>
+                        </div>
 
-                        <span
-                            class="toolbar-button toolbar-help-button"
+                        <div
+                            class="toolbar-button"
                             title="Help"
-                        ></span>
+                        >
+                            <span
+                                class="toolbar-help-button"
+                            ></span>
+                        </div>
                     </div>
                 </div>
                 <!-- End Toolbar -->
@@ -488,19 +527,48 @@
                         <input id="search-bar" type="text" placeholder="Search sequence" validator="">
                         
                         <div class="footer-search-controls">
-                            <span class="toolbar-button footer-reset-search-button" title="Reset search query" onclick='Serach.clear()'></span>
-                            <span class="toolbar-button footer-search-up-button" title="Go to previous occurence" onclick='Search.navigateResults(-1)'></span>
-                            <span class="toolbar-button footer-search-down-button" title="Go to next occurence" onclick='Search.navigateResults(1)'></span>
+                            <!-- Clear search -->
+                            <div
+                                class="toolbar-button footer-button"
+                                title="Reset search query"
+                                onclick='Search.clear()'
+                            >
+                                <span
+                                    class="footer-reset-search-button"
+                                ></span>
+                            </div>
+
+                            <!-- Navigate down -->
+                            <div
+                                class="toolbar-button footer-button"
+                                title="Go to previous occurence"
+                                onclick='Search.navigateResults(-1)'
+                            >
+                                <span
+                                    class="footer-search-up-button"
+                                ></span>
+                            </div>
+
+                            <!-- Navigate up -->
+                            <div
+                                class="toolbar-button footer-button"
+                                title="Go to next occurence"
+                                onclick='Search.navigateResults(1)'
+                            >
+                                <span
+                                    class="footer-search-down-button"
+                                ></span>
+                            </div>
                         </div>
 
-                        <div>
+                        <div class="footer-search-info">
                             <span id="search-bar-info"></span>
                         </div>
                     
-                        <div class="footer-search-options">
-                            <div>
+                        <div class="footer-search-options-container">
+                            <div class="footer-search-option">
                                 <input type="checkbox" id="search-aa" name="search-aa" onclick='Search.searchAACheckboxCallback(event)'>
-                                <label for="search-aa">Amino acid sequence</label>
+                                <label for="search-aa" class="custom-checkbox">Amino acid sequence</label>
                             </div>
                         </div>
                     </div>
