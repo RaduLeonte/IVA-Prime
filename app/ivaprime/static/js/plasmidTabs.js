@@ -303,22 +303,23 @@ const PlasmidTabs = new class {
         </ul>
         <div class="plasmid-tab-dropdown-menu-section-title">Export plasmid file</div>
         <ul>
-            <li><span href="#" onclick="FileIO.exporters['gb'](${plasmidIndex})">GenBank file (.gb)</span></li>
-            <li><span href="#" onclick="FileIO.exporters['dna'](${plasmidIndex})">SnapGene file (.dna)</span></li>
-            <li><span href="#" onclick="FileIO.exporters['fasta'](${plasmidIndex})">Fasta file (.fasta)</span></li>
+            <li><span onclick="FileIO.exporters['gb'](${plasmidIndex})">GenBank file (.gb)</span></li>
+            <li><span onclick="FileIO.exporters['dna'](${plasmidIndex})">SnapGene file (.dna)</span></li>
+            <li><span onclick="FileIO.exporters['fasta'](${plasmidIndex})">Fasta file (.fasta)</span></li>
         </ul>
         <div class="plasmid-tab-dropdown-menu-section-title">Edit plasmid</div>
         <ul>
-            <li><span href="#" onclick="PlasmidTabs.renamePlasmid(${plasmidIndex})">Rename plasmid</span></li>
-            <li><span href="#" onclick="PlasmidTabs.flipPlasmid(${plasmidIndex})">Flip plasmid</span></li>
-            <li><span href="#" onclick="PlasmidTabs.setPlasmidOrigin(${plasmidIndex})">Set plasmid origin</span></li>
+            <li><span onclick="PlasmidTabs.renamePlasmid(${plasmidIndex})">Rename plasmid</span></li>
+            <li><span onclick="PlasmidTabs.flipPlasmid(${plasmidIndex})">Flip plasmid</span></li>
+            <li><span onclick="PlasmidTabs.setPlasmidOrigin(${plasmidIndex})">Set plasmid origin</span></li>
+            <li><span onclick="PlasmidTabs.setFileTopology(${plasmidIndex})">Set file topology</span></li>
         </ul>
         <div class="plasmid-tab-dropdown-menu-section-title">Close plasmids</div>
         <ul>
-            <li><span href="#" onclick="PlasmidTabs.close(${plasmidIndex})">Close plasmid</span></li>
-            <li><span href="#" onclick="PlasmidTabs.closeOthers(${plasmidIndex})">Close all OTHER plasmids</span></li>
-            <li><span href="#" onclick="PlasmidTabs.closeToTheRight(${plasmidIndex})">Close plasmids to the RIGHT</span></li>
-            <li><span href="#" onclick="PlasmidTabs.closeToTheLeft(${plasmidIndex})">Close plasmids to the LEFT</span></li>
+            <li><span onclick="PlasmidTabs.close(${plasmidIndex})">Close plasmid</span></li>
+            <li><span onclick="PlasmidTabs.closeOthers(${plasmidIndex})">Close all OTHER plasmids</span></li>
+            <li><span onclick="PlasmidTabs.closeToTheRight(${plasmidIndex})">Close plasmids to the RIGHT</span></li>
+            <li><span onclick="PlasmidTabs.closeToTheLeft(${plasmidIndex})">Close plasmids to the LEFT</span></li>
         </ul>
         `;
 
@@ -395,6 +396,16 @@ const PlasmidTabs = new class {
     setPlasmidOrigin(plasmidIndex) {
         const targetPlasmid = Session.getPlasmid(plasmidIndex);
         Modals.createSetOriginModal(targetPlasmid);
+    };
+
+
+    /**
+     * 
+     * @param {*} plasmidIndex 
+     */
+    setFileTopology(plasmidIndex) {
+        const targetPlasmid = Session.getPlasmid(plasmidIndex);
+        Modals.createSetFileTopologyModal(targetPlasmid);
     };
 };
 

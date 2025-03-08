@@ -107,7 +107,7 @@ const Primers = new class {
                     primerOutOfBounds,
                 );
 
-                if (Session.activePlasmid().topology === "circular" && primerOutOfBounds) {
+                if (Session.activePlasmid().topology === "linear" && primerOutOfBounds) {
                     throw new OutOfBasesError()
                 };
                 

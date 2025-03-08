@@ -425,7 +425,22 @@ class Plasmid {
             Sidebar.update();
         };
 
-        this.saveState("Change plasmid origin");
+        this.saveState("Changed plasmid origin");
+    };
+
+
+    setTopology(newTopology) {
+        console.log(`Plasmid.setTopology -> ${this.topology} => ${newTopology}`);
+
+        this.topology = newTopology;
+
+        if (Session.activePlasmidIndex == this.index) {
+            PlasmidViewer.deselectBases();
+            PlasmidViewer.redraw();
+            Sidebar.update();
+        };
+
+        this.saveState("Changed file topology");
     };
 
 
