@@ -16,12 +16,16 @@ const Utilities = new class {
          */
         document.addEventListener("keydown", function(event) {
             if ((event.ctrlKey || event.metaKey) && (event.key === "c" || event.key === "C")) {
-                event.preventDefault();
-
-                if (event.altKey) {
-                    Utilities.copySequence("reverse complement");
-                } else {
-                    Utilities.copySequence();
+                const currSelection = Session.activePlasmid().getSelectionIndices();
+                if (currSelection && currSelection !== null && currSelection[1] !== null) {
+                    console.log("Copying from viewer")
+                    event.preventDefault();
+    
+                    if (event.altKey) {
+                        Utilities.copySequence("reverse complement");
+                    } else {
+                        Utilities.copySequence();
+                    };
                 };
             };
         });
@@ -30,7 +34,6 @@ const Utilities = new class {
         document.addEventListener('DOMContentLoaded', function() {
             Utilities.getScrollbarWidth();
         });
-
 
         this.validators = {
             integer: (value) => /^-?\d+$/.test(value),
@@ -308,6 +311,12 @@ const Utilities = new class {
         };
 
         console.log("Utilities.copySequence ->", selection, mode);
+        Alerts.showAlert(
+            "Copied sequence to clipboard",
+            `Sequence: "${selection}" (${selection.length} bp).`,
+            3,
+            "green",
+        )
         this.copyToClipboard(selection);
     };
 
