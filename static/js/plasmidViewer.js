@@ -65,6 +65,17 @@ const PlasmidViewer = new class {
         document.addEventListener('DOMContentLoaded', function() {
             PlasmidViewer.initMeasurementSVG();
         });
+
+
+        /**
+         * CTRL + A
+         */
+        document.addEventListener("keydown", function(event) {
+            if ((event.ctrlKey || event.metaKey) && event.key === "a") {
+                event.preventDefault();
+                PlasmidViewer.selectAll();
+            };
+        });
     };
 
 
@@ -784,6 +795,7 @@ const PlasmidViewer = new class {
 
             // Find out if the event was a click event by checking if the elements the mouse is over have changed
             const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+            if (!elementsAtPoint || !this.elementsAtMouseDown) return;
             const clicked = elementsAtPoint.every((ele, i) => ele === this.elementsAtMouseDown[i]);
 
             
@@ -2388,6 +2400,12 @@ const PlasmidViewer = new class {
         this.highlightBases(span, "base-selected");
 
         Session.activePlasmid().setSelectionIndices(span);
+    };
+
+
+    selectAll() {
+        const sequenceLength = Session.activePlasmid().sequence.length;
+        this.selectBases([1, sequenceLength]);
     };
 
 

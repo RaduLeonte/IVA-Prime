@@ -181,12 +181,6 @@ const FileIO = new class {
                 return textDecoder.decode(new Uint8Array(bytes));
             };
 
-            const xmlPrettyPrint = (xmlDoc) => {
-                const serializer = new XMLSerializer();
-                const xmlString = serializer.serializeToString(xmlDoc);
-                return xmlString.replace(/(>)(<)(\/*)/g, '$1\n$2$3');
-            };
-
 
             // Read array as list of 8 bit integers
             const arrayBuf = new Uint8Array(fileArrayBuffer);
@@ -194,7 +188,7 @@ const FileIO = new class {
             // Decode file content as string
             //let fileContent = new TextDecoder().decode(arrayBuf);
             // Init XML parser
-            const xmlParser = new XMLParser({ ignoreAttributes: false });
+            const xmlParser = new fxp.XMLParser({ ignoreAttributes: false });
 
 
             const blocks = {};
@@ -593,7 +587,7 @@ const FileIO = new class {
                             key = "REFERENCES";
                             value = childNode.Reference
                                 ? [].concat(childNode.Reference).map(ref =>
-                                    Object.fromEntries(Object.entries(ref).map(([k, v]) => [k.toUpperCase(), v])))
+                                    Object.fromEntries(Object.entries(ref).map(([k, v]) => [k.toUpperCase().replace("@_", ""), v])))
                                 : [];
                             break;
 
@@ -619,7 +613,7 @@ const FileIO = new class {
                             break;
                     };
     
-                    notesDict[key] = value;
+                    notesDict[key] = {value: value, children: null};
                 };
 
                 return notesDict;
@@ -981,6 +975,7 @@ const FileIO = new class {
      * @returns {String} - "DD-MON-YYY"
      */
     formatToGBDate(date) {
+        console.log(date);
         const months = [
             "JAN", "FEB", "MAR", "APR", "MAY", "JUN", 
             "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
@@ -1002,7 +997,349 @@ const FileIO = new class {
          * @param {int} plasmidIndex - Index of plasmid to be exported.
          */
         dna: (plasmidIndex) => {
+            function printHexBytes(bytes, startAddress = 0, endAddress = bytes.length) {
+                const bytesPerLine = 16;
+                
+                // Convert hex addresses to numbers if given as strings
+                const start = typeof startAddress === "string" ? parseInt(startAddress, 16) : startAddress;
+                const end = typeof endAddress === "string" ? parseInt(endAddress, 16) : endAddress;
+            
+                // Ensure valid bounds
+                if (start < 0 || end > bytes.length || start >= end) {
+                    console.error("Invalid address range.");
+                    return;
+                }
+            
+                const hexStrings = bytes.map(byte => byte.toString(16).toUpperCase().padStart(2, "0"));
+            
+                let lines = [];
+                for (let i = start; i < end; i += bytesPerLine) {
+                    const addressLabel = i.toString(16).toUpperCase().padStart(8, "0"); // Format address
+                    const hexSegment = hexStrings.slice(i, Math.min(i + bytesPerLine, end)).join(" ");
+                    lines.push(`${addressLabel}: ${hexSegment}`);
+                }
+            
+                console.log("\n" + lines.join("\n"));
+            }
+
+
+            function intToHexBytes(int) {
+                const buffer = new ArrayBuffer(4);
+                const view = new DataView(buffer);
+                view.setUint32(0, int, false);
+            
+                return Array.from(new Uint8Array(buffer));
+            };
+            
+
+            function addHexBytes(bytes) {
+                if (Array.isArray(bytes) || bytes instanceof Uint8Array) {
+                    outputBytes.push(...bytes);
+                } else {
+                    outputBytes.push(bytes);
+                };
+            };
+
+            function addHexBytesBlock(blockID, block) {
+                addHexBytes(blockID);
+                addHexBytes(intToHexBytes(block.length));
+                addHexBytes(block);
+            };
+
+            const textEncoder = new TextEncoder('utf-8');
+            function textToHexBytes(text) {
+                return textEncoder.encode(text);
+            };
+
+
+            const builderPretty = new fxp.XMLBuilder({
+                format: true, // Pretty print
+                ignoreAttributes: false, // If using attributes
+                suppressEmptyNode: true,
+            });
+
+            const builder = new fxp.XMLBuilder({
+                ignoreAttributes: false, // If using attributes
+                suppressEmptyNode: true,
+            });
+
             const targetPlasmid = Session.getPlasmid(plasmidIndex);
+
+            const sequence = targetPlasmid.sequence;
+            const topology = targetPlasmid.topology;
+            const primers = Object.fromEntries(Object.entries(targetPlasmid.features).filter(([_, v]) => v.type === "primer_bind"));
+            const features = Object.fromEntries(Object.entries(targetPlasmid.features).filter(([_, v]) => v.type !== "primer_bind"));
+
+            const additionalInfo = targetPlasmid.additionalInfo;
+            const blocks = additionalInfo.blocks;
+
+            let outputBytes = [];
+
+            /**
+             * Header
+             */
+            addHexBytesBlock(9, blocks[9]);
+
+
+            /**
+             * Sequence
+             */
+            const topologyByte = (topology === "linear") ? 2: 3;
+            const sequenceBlock = [topologyByte, ...textToHexBytes(sequence.toLowerCase())];
+            addHexBytesBlock(0, sequenceBlock);
+
+
+            /**
+             * Unknown blocks
+             */
+            for (const [blockID, block] of Object.entries(blocks)) {
+                if ([9].includes(blockID)) continue;
+
+                addHexBytesBlock(blockID, block);
+            };
+
+
+            /**
+             * Features
+             */
+            function makeFeaturesBlock(features) {
+                //console.log(JSON.stringify(features, null, 2));
+
+                const featureNodes = [];
+
+                const directionalityMap = { "fwd": 1, "rev": 2, "both": 0 };
+                const keysToCheck = [
+                    "locus_tag", "note", "bound_moiety", "gene", "rpt_type", "translation",
+                    "old_locus_tag", "product", "citation", "regulatory_class", "allele", "label",
+                    "ncRNA_class", "db_xref", "direction", "mobile_element_type", "gene_synonym",
+                    "codon_start", "standard_name", "protein_id", "map", "experiment", "function",
+                    "EC_number", "transl_table"
+                ];
+
+                const makeQNode = (QName, VType, VValue) => ({
+                    "@_name": QName,
+                    V: { [`@_${VType}`]: VValue },
+                });
+
+                for (const [i, feature] of Object.entries(features)) {
+                    const { label, directionality, type, span, color, translated, translationOffset = 0 } = feature;
+
+                    const node = {
+                        "@_recentID": i,
+                        "@_name": label,
+                        "@_type": type,
+                        ...(directionality && { "@_directionality": directionalityMap[directionality] })
+                    };
+            
+
+                    node.Segment = {
+                        "@_range": `${span[0]}-${span[1]}`,
+                        "@_color": color,
+                        "@_type": "standard",
+                        ...(translated && { "@_translated": 1 }),
+                        "@_translationNumberingStartsFrom": translationOffset
+                    };
+
+                    const QNodes = keysToCheck
+                        .filter(key => key in feature)
+                        .map(key => makeQNode(key, Number.isInteger(feature[key]) ? "int" : "text", feature[key]));
+
+                    // Only add QNodes if they exist
+                    QNodes.length && (node.Q = QNodes);
+
+                    // Push to featureNodes array
+                    featureNodes.push(node);
+                };
+
+                const xmlTree = {
+                    Features: {
+                        "@_nextValidID": Object.keys(features).length,
+                        Feature: featureNodes,
+                    }
+                };
+
+                const xmlString = '<?xml version="1.0"?>' + builder.build(xmlTree);
+                //console.log(builderPretty.build(xmlTree));
+
+
+                return textToHexBytes(xmlString);
+            };
+
+            /**
+             * Primers
+             */
+            function makePrimersBlock(primers) {
+                console.log(JSON.stringify(primers, null, 2));
+
+                const primerNodes = [];
+
+
+                for (const [i, primer] of Object.entries(primers)) {
+                    const { label, directionality, note, span} = primer;
+
+                    const node = {
+                        "@_recentID": i,
+                        "@_name": label,
+                        //"@_sequence": "",
+                        "@_description": note,
+                    };
+
+                    node.BindingSite =  {
+                        "@_location": `${span[0]}-${span[1]}`,
+                        "@_boundStrand": {"fwd": 0, "rev": 1}[directionality],
+                        //"@_annealedBases": "",
+                        //"@_meltingTemperature": "",
+                        //"@_simplified": 1,
+                    };
+
+                    node.BindingSite.Component = {
+                        "@_hybridiziedRange": `${span[0]}-${span[1]}`,
+                        //"@_bases": "",
+                    };
+
+                    primerNodes.push(node);
+                };
+
+                const xmlTree = {
+                    Primers: {
+                        "@_nextValidID": Object.keys(primers).length,
+                        HybridizationParams: {
+                            "@_minContinuousMatchLen": 10,
+                            "@_allowMismatch": 1,
+                            "@_minMeltingTemperature": 40,
+                            "@_showAdditionalFivePrimeMatches": 1,
+                            "@_minimumFivePrimeAnnealing": 15,
+                        },
+                        Primer: primerNodes,
+                    }
+                };
+
+                const xmlString = '<?xml version="1.0"?>' + builder.build(xmlTree);
+                console.log(builderPretty.build(xmlTree));
+                console.log(xmlString)
+
+                return textToHexBytes(xmlString);
+            };
+
+            if (Object.keys(features).length !== 0) {
+                //addHexBytesBlock(10, makeFeaturesBlock(features));
+                /**
+                 * Right now we cannote export the primer_bind features in a way that
+                 * snapgene recognizes them as primers (SnapGene says :"N primers
+                 * have been deleted due to changes in melting temp algorithm").
+                 * 
+                 * For now, just bundle all the primers into the <Features> block.
+                 */
+                addHexBytesBlock(10, makeFeaturesBlock(targetPlasmid.features));
+            };
+            //if (Object.keys(primers).length !== 0) {
+            //    addHexBytesBlock(5, makePrimersBlock(primers));
+            //};
+
+
+            /**
+             * Notes
+             */
+            function makeNotesBlock(additionalInfo) {
+                //console.log(JSON.stringify(additionalInfo, null, 2));
+
+                if (additionalInfo["blocks"]) delete additionalInfo["blocks"];
+
+                const notesNode = {};
+
+                const requiredKeys = ["UUID", "Created", "LastModified", "Description", "References"];
+
+                const getOrGenerateValue = (key) => {
+                    switch (key) {
+                        case "UUID":
+                            return additionalInfo.UUID?.value || Utilities.newUUID();
+
+                        case "Description":
+                            return additionalInfo.DESCRIPTION?.value || null;
+                
+                        case "Created":
+                        case "LastModified": {
+                            const date = key === "Created" && additionalInfo.CREATED?.value 
+                                ? new Date(additionalInfo.CREATED.value) 
+                                : new Date();
+                            
+                            return {
+                                date: `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`,
+                                utc: `${date.getUTCHours()}:${date.getUTCMinutes()}:${date.getUTCSeconds()}`
+                            };
+                        }
+
+                        case "References":
+                            if (!additionalInfo.REFERENCES?.value) return null;
+
+                            const parsedRefs = additionalInfo.REFERENCES.value.map(ref => {
+                                const refNode = {};
+            
+                                for (const [key, value] of Object.entries(ref)) {
+                                    const adjustedKey = key
+                                        .replace(/journalname/i, "journalName")
+                                        .replace(/pubmedid/i, "pubMedID")
+                                        .toLowerCase();
+                                    
+                                    refNode[`@_${adjustedKey}`] = value;
+                                }
+            
+                                return refNode;
+                            });
+
+                            if (!parsedRefs.some(ref => ref["@_journal"]?.includes("IVA Prime"))) {
+                                parsedRefs.push({
+                                    "@_journal": "Exported with IVA Prime :) \nhttps://www.ivaprime.com",
+                                    "@_authors": ".",
+                                    "@_title": "Direct Submission",
+                                });
+                            }
+
+                            return parsedRefs;
+                
+                        default:
+                            return null;
+                    }
+                };
+
+                requiredKeys.forEach(key => {
+                    const value = getOrGenerateValue(key);
+            
+                    if (!value) return;
+            
+                    if (key === "UUID") {
+                        notesNode.UUID = { "#text": value };
+            
+                    } else if (key === "Description") {
+                        notesNode.Description = { "#text": value };
+            
+                    } else if (key === "References") {
+                        if (value.length) notesNode.References = { Reference: value };
+            
+                    } else {
+                        notesNode[key] = { "#text": value.date, "@_UTC": value.utc };
+                    }
+                });
+
+
+                const xmlTree = { Notes: notesNode };
+
+                const xmlString = builder.build(xmlTree);
+                console.log(builderPretty.build(xmlTree));
+                console.log(xmlString)
+
+                return textToHexBytes(xmlString);
+            };
+            addHexBytesBlock(6, makeNotesBlock(additionalInfo));
+
+
+            //console.log(outputBytes);
+            //console.log(printHexBytes(outputBytes, "14F0", "1540"));
+
+            this.downloadFile(
+                targetPlasmid.name + ".dna",
+                outputBytes
+            );
         },
 
         /**
@@ -1012,103 +1349,174 @@ const FileIO = new class {
          */
         gb: (plasmidIndex) => {
             const targetPlasmid = Session.getPlasmid(plasmidIndex);
-            const dateCreated = (targetPlasmid.additionalInfo["CREATED"]) ? targetPlasmid.additionalInfo["CREATED"]: new Date();
 
             let fileContent = ""
 
-
             // #region Header
-            // LOCUS
-            fileContent += `LOCUS       `;
-            fileContent += targetPlasmid.name;
-            fileContent += " ";
-            fileContent += `${targetPlasmid.sequence.length} bp`;
-            fileContent += " ";
-            fileContent += `ds-DNA`;
-            fileContent += " ".repeat(5);
-            fileContent += (targetPlasmid.topology == "circular") ? "circular": "linear";
-            fileContent += " ".repeat(5);
-            fileContent += this.formatToGBDate(dateCreated);
-            fileContent += "\n"
+            function writeHeader(additionalInfo) {
+                const leftColumnWidth = 12;
+                const rightColumnWidth = 50;
+                let header = "";
+
+                const getValue = (key, defaultValue = ".") =>
+                    key in additionalInfo ? additionalInfo[key].value : defaultValue;
+
+                // LOCUS
+                const formatEntry = (key, value) => {
+                    header += key.padEnd(leftColumnWidth, " ");
+                    header += FileIO.breakStringIntoLines(value, rightColumnWidth).join("\n" + " ".repeat(leftColumnWidth));
+                    header += "\n";
+                };
+
+                const dateCreated = getValue("CREATED", new Date());
+
+                header += `LOCUS       ${targetPlasmid.name.padEnd(24, " ")} ${targetPlasmid.sequence.length} bp ds-DNA`.padEnd(30);
+                header += `${targetPlasmid.topology === "circular" ? "circular" : "linear"}`.padEnd(10);
+                
+                const typeMapping = { "Synthetic": "SYN", "Natural": "UNA" };
+                header += typeMapping[getValue("TYPE", "").trim()] || "     ";
+                header += FileIO.formatToGBDate(dateCreated) + "\n";
+
+                ["DEFINITION", "ACCESSION", "VERSION", "KEYWORDS"].forEach(key => {
+                    formatEntry(key, getValue(key));
+            
+                    // Handle children if present
+                    if (additionalInfo[key]?.children) {
+                        Object.entries(additionalInfo[key].children).forEach(([childKey, childValue]) =>
+                            formatEntry("  " + childKey, childValue)
+                        );
+                    }
+                });
+
+                /**
+                 * Source
+                 */
+                // SOURCE
+                header += "SOURCE".padEnd(leftColumnWidth, " ");
+                header += getValue(
+                    "ORGANISM",
+                    getValue(
+                        "SOURCE",
+                        getValue("TYPE", ".") === "Synthetic"
+                            ? "synthetic DNA construct"
+                            : "natural DNA sequence"
+                        )
+                    );
+                header += "\n"
+
+                // ORGANISM
+                formatEntry("  ORGANISM", getValue("ORGANISM"));
+
+
+                if ("REFERENCES" in additionalInfo) {
+                    const refsList = Array.isArray(additionalInfo["REFERENCES"])
+                        ? additionalInfo["REFERENCES"]
+                        : additionalInfo["REFERENCES"].value;
+
+                    refsList.forEach((ref, index) => {
+                        header += `REFERENCE   ${index + 1} `.padEnd(leftColumnWidth, " ");
+                        header += `(bases ${ref.span ? `${ref.span[0]} to ${ref.span[1]}` : `1 to ${targetPlasmid.sequence.length}`})\n`;
+            
+                        ["AUTHORS", "TITLE", "JOURNAL", "PUBMED"].forEach(key => {
+                            if (key in ref) formatEntry(`  ${key}`, ref[key]);
+                        });
+                    });
+                }
+            
+
+                // IVA Prime reference
+                if (!header.includes("IVA Prime")) {
+                    const refIndex = ("REFERENCES" in additionalInfo) ? additionalInfo["REFERENCES"].length + 1 : 1;
+                    header += `REFERENCE   ${refIndex} (bases 1 to ${targetPlasmid.sequence.length})\n`;
+                    header += `AUTHORS     .\n`;
+                    header += `TITLE       .\n`;
+                    header += `JOURNAL     Exported with IVA Prime :)\n`;
+                    header += `            https://www.ivaprime.com\n`;
+                };
+
+                return header;
+            };
+
+            fileContent += writeHeader(targetPlasmid.additionalInfo);
             // #endregion Header
 
 
-            // #region Additional_info
-            let leftColumnWidth = 12;
-            let rightColumnWidth = 50;
-            targetPlasmid.additionalInfo.forEach( property => {
-                if (property["name"] == "CREATED") {return};
-                fileContent += property["name"] + " ".repeat(leftColumnWidth - property["name"].length) + property["entry"] + "\n";
+            // #region Features
+            function writeFeatures(features) {
+                console.log(features);
 
-                if (property["subProperties"]) {
-                    property["subProperties"].forEach( subProperty => {
-                        fileContent += " ".repeat(2) + subProperty["name"] + " ".repeat(leftColumnWidth - subProperty["name"].length - 2);
+                const leftColumnWidth = 21;
+                const rightColumnWidth = 60;
+
+                let featuresText = "";
+
+                featuresText += "FEATURES             Location/Qualifiers\n";
+
+
+                featuresText += `     source          1..${targetPlasmid.sequence.length}\n`;
+
+
+                for (const [key, feature] of Object.entries(features)) {
+                    const location = feature["directionality"] === "fwd"
+                        ? `${feature["span"][0]}..${feature["span"][1]}`
+                        : `complement(${feature["span"][0]+1}..${feature["span"][1]+1})`;
+    
+                        featuresText += "     " + feature["type"].padEnd(leftColumnWidth - 5) + location + "\n";
+
+                    Object.entries(feature).forEach(([propKey, propValue]) => {
+                        if (["directionality", "level", "span", "type"].includes(propKey)) return;
+            
+                        let propertyString = `/${propKey}=`;
+                        propertyString += (propKey !== "label" && !Number.isInteger(propValue)) ? `"${propValue}"` : propValue;
+            
+                        // Format and wrap property text
+                        const propertyLines = FileIO.breakStringIntoLines(propertyString, rightColumnWidth);
                         
-                        const entryLines = this.breakStringIntoLines(subProperty["entry"], rightColumnWidth);
-
-                        fileContent += entryLines.join("\n" + " ".repeat(leftColumnWidth)) + "\n";
+                        featuresText += " ".repeat(leftColumnWidth) + propertyLines.join("\n" + " ".repeat(leftColumnWidth)) + "\n";
                     });
                 };
-            });
-            // #endregion Additional_info
 
-
-            // #region Features
-            leftColumnWidth = 21;
-            rightColumnWidth = 60;
-            fileContent += "FEATURES             Location/Qualifiers\n";
-            for (const [key, value] of Object.entries(targetPlasmid.features)) {
-                const feature = value;
-
-                fileContent += " ".repeat(5) + feature["type"] + " ".repeat(leftColumnWidth - feature["type"].length - 5);
-                fileContent += (feature["directionality"] == "fwd")
-                ? `${feature["span"][0]}..${feature["span"][1]}`
-                : `complement(${feature["span"][0]}..${feature["span"][1]})`;
-                fileContent += "\n";
-
-                const featureProperties = Object.keys(feature);
-                featureProperties.forEach( key => {
-                    if (["directionality", "level", "span", "type"].includes(key)) {return};
-
-                    let propertyString = `/${key}=`;
-                    let propertyEntry = feature[key];
-                    if (key != "label" && !Number.isInteger(propertyEntry)) {
-                        propertyEntry = "\"" + propertyEntry + "\"";
-                    };
-                    propertyString += propertyEntry;
-
-                    const propertyLines = this.breakStringIntoLines(propertyString, rightColumnWidth);
-                    fileContent += " ".repeat(leftColumnWidth);
-                    fileContent += propertyLines.join("\n" + " ".repeat(leftColumnWidth));
-                    
-                    fileContent += "\n";
-                });
+                return featuresText;
             };
+
+            fileContent += writeFeatures(targetPlasmid.features);
             // #endregion Features
 
 
             // #region Sequence
-            fileContent += "ORIGIN\n";
-            const nrSequenceIndexSpaces = 9;
-            const nrBasesInSegment = 10;
-            const nrSegmentsPerLine = 6;
-            // Iterate over lines
-            for (let i = 0; i < Math.ceil(targetPlasmid.sequence.length / (nrBasesInSegment * nrSegmentsPerLine)); i++) {
-                const index = i*nrBasesInSegment*nrSegmentsPerLine + 1
-                const indexSegment = " ".repeat(nrSequenceIndexSpaces - index.toString().length) + index;
+            function writeSequence(sequence) {
+                sequence = sequence.toLowerCase();
 
-                const segments = [indexSegment]
-                for (let j = 0; j < nrSegmentsPerLine; j++) {
-                    const indexStart = i*nrBasesInSegment*nrSegmentsPerLine + j*nrBasesInSegment;
-                    segments.push(targetPlasmid.sequence.slice(indexStart, indexStart + nrBasesInSegment))
-                };
+                let sequenceText = "ORIGIN\n";
 
-                fileContent += segments.join(" ") + "\n"
+                const indexWidth = 9;
+                const basesPerSegment = 10;
+                const segmentsPerLine = 6;
+                const basesPerLine = basesPerSegment * segmentsPerLine;
+
+                // Iterate over lines
+                for (let i = 0; i < Math.ceil(sequence.length / basesPerLine); i++) {
+                    const index = (i * basesPerLine) + 1;
+                    const indexSegment = `${index}`.padStart(indexWidth, " ");
+            
+                    // Build segments for the line
+                    const segments = Array.from({ length: segmentsPerLine }, (_, j) => {
+                        const start = i * basesPerLine + j * basesPerSegment;
+                        return sequence.slice(start, start + basesPerSegment);
+                    });
+            
+                    sequenceText += `${indexSegment} ${segments.join(" ")}\n`;
+                }
+                sequenceText += "//"
+
+                return sequenceText;
             };
-            fileContent += "//"
+
+            fileContent += writeSequence(targetPlasmid.sequence);
             // #endregion Sequence
 
 
+            //console.log("\n" + fileContent)
             this.downloadFile(
                 targetPlasmid.name + ".gb",
                 fileContent
@@ -1471,9 +1879,9 @@ const FileIO = new class {
                 
                 // Iterate over all features in the database and check if
                 // they are present
-                for (const commonFeatureIndex in commonFeatures) {
+                for (const commonFeatureIndex in Nucleotides.commonFeatures) {
                     // Get current feature info
-                    const commonFeatureDict = commonFeatures[commonFeatureIndex];
+                    const commonFeatureDict = Nucleotides.commonFeatures[commonFeatureIndex];
                     const featureLabel = commonFeatureDict["label"];
                     const featureSequenceType = commonFeatureDict["sequence type"];
                     const featureSequence = commonFeatureDict["sequence"];
@@ -1594,18 +2002,6 @@ const FileIO = new class {
     };
 
 
-    /**
-     * Resets inputs of the new file popup window to defaults.
-     */
-    resetNewFilePopupWindow() {
-        // Hide window
-        PopupWindow.hide("new-file-window");
-            
-        // Reset inputs
-        document.getElementById("new-file-name-input").value = "untitled";
-        document.getElementById("new-file-sequence-input").value = "";
-    };
-
 
     /**
      * Change cursor to loading by adding a loading-wrapper
@@ -1632,14 +2028,3 @@ const FileIO = new class {
         };
     };
 };
-
-
-/**
- * Load common features database
- */
-let commonFeatures;
-fetch('static/commonFeatures.json')
-    .then(response => response.json())
-    .then(json => {
-        commonFeatures = json;
-    });

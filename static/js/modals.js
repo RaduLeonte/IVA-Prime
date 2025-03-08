@@ -180,7 +180,7 @@ const Modals = new class {
         
         
         <div class="modal-hgroup">
-            <span class="button-round button-green" id="${id}-action-button">Create File</span>
+            <span class="button-round button-green" id="${id}-action-button">Create primers</span>
             <span class="button-round button-red" onclick="Modals.remove('${id}')">Cancel</span>
         </div>
         `;
@@ -273,7 +273,7 @@ const Modals = new class {
         
         
         <div class="modal-hgroup">
-            <span class="button-round button-green" id="${id}-action-button">Create File</span>
+            <span class="button-round button-green" id="${id}-action-button">Create primers</span>
             <span class="button-round button-red" onclick="Modals.remove('${id}')">Cancel</span>
         </div>
         `;
@@ -314,7 +314,7 @@ const Modals = new class {
         
         
         <div class="modal-hgroup">
-            <span class="button-round button-green" id="${id}-action-button">Rename</span>
+            <span class="button-round button-green" id="${id}-action-button">Set origin</span>
             <span class="button-round button-red" onclick="Modals.remove('${id}')">Cancel</span>
         </div>
         `;
@@ -322,6 +322,49 @@ const Modals = new class {
         const action = () => {
             const newOrigin = document.getElementById(`${id}-input`).value;
             targetPlasmid.setOrigin(newOrigin);
+        };
+    
+        this.create(id, body, action);
+    };
+
+
+    createSetFileTopologyModal(targetPlasmid) {
+        const body = document.createElement("div");
+        const id = "modal-window-set-file-topology";
+
+        const currTopology = targetPlasmid.topology;
+        console.log()
+    
+        body.innerHTML = `
+        <div class="modal-title">Set file topology</div>
+
+        <div class="toolbar-panel-section-hgroup-input" style="padding: 10px 0px;height: 25px;">
+            <span>
+                Linear
+            </span>
+            <div class="boolean-switch-wrapper">
+                <label class="boolean-switch">
+                    <input id="${id}-input" type="checkbox" class="boolean-switch-input" ${currTopology === 'circular' ? 'checked="true"': '' }">
+                    <span class="boolean-switch-slider"></span>
+                </label>
+            </div>
+            <span>
+                Circular.
+            </span>
+        </div>
+        
+        
+        <div class="modal-hgroup">
+            <span class="button-round button-green" id="${id}-action-button">Set topology</span>
+            <span class="button-round button-red" onclick="Modals.remove('${id}')">Cancel</span>
+        </div>
+        `;
+
+        const action = () => {
+            const newToplogy = (document.getElementById(`${id}-input`).checked)
+                ? "circular"
+                : "linear";
+            targetPlasmid.setTopology(newToplogy);
         };
     
         this.create(id, body, action);

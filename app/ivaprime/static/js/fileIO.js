@@ -181,12 +181,6 @@ const FileIO = new class {
                 return textDecoder.decode(new Uint8Array(bytes));
             };
 
-            const xmlPrettyPrint = (xmlDoc) => {
-                const serializer = new XMLSerializer();
-                const xmlString = serializer.serializeToString(xmlDoc);
-                return xmlString.replace(/(>)(<)(\/*)/g, '$1\n$2$3');
-            };
-
 
             // Read array as list of 8 bit integers
             const arrayBuf = new Uint8Array(fileArrayBuffer);
@@ -194,7 +188,7 @@ const FileIO = new class {
             // Decode file content as string
             //let fileContent = new TextDecoder().decode(arrayBuf);
             // Init XML parser
-            const xmlParser = new XMLParser({ ignoreAttributes: false });
+            const xmlParser = new fxp.XMLParser({ ignoreAttributes: false });
 
 
             const blocks = {};
@@ -1003,7 +997,349 @@ const FileIO = new class {
          * @param {int} plasmidIndex - Index of plasmid to be exported.
          */
         dna: (plasmidIndex) => {
+            function printHexBytes(bytes, startAddress = 0, endAddress = bytes.length) {
+                const bytesPerLine = 16;
+                
+                // Convert hex addresses to numbers if given as strings
+                const start = typeof startAddress === "string" ? parseInt(startAddress, 16) : startAddress;
+                const end = typeof endAddress === "string" ? parseInt(endAddress, 16) : endAddress;
+            
+                // Ensure valid bounds
+                if (start < 0 || end > bytes.length || start >= end) {
+                    console.error("Invalid address range.");
+                    return;
+                }
+            
+                const hexStrings = bytes.map(byte => byte.toString(16).toUpperCase().padStart(2, "0"));
+            
+                let lines = [];
+                for (let i = start; i < end; i += bytesPerLine) {
+                    const addressLabel = i.toString(16).toUpperCase().padStart(8, "0"); // Format address
+                    const hexSegment = hexStrings.slice(i, Math.min(i + bytesPerLine, end)).join(" ");
+                    lines.push(`${addressLabel}: ${hexSegment}`);
+                }
+            
+                console.log("\n" + lines.join("\n"));
+            }
+
+
+            function intToHexBytes(int) {
+                const buffer = new ArrayBuffer(4);
+                const view = new DataView(buffer);
+                view.setUint32(0, int, false);
+            
+                return Array.from(new Uint8Array(buffer));
+            };
+            
+
+            function addHexBytes(bytes) {
+                if (Array.isArray(bytes) || bytes instanceof Uint8Array) {
+                    outputBytes.push(...bytes);
+                } else {
+                    outputBytes.push(bytes);
+                };
+            };
+
+            function addHexBytesBlock(blockID, block) {
+                addHexBytes(blockID);
+                addHexBytes(intToHexBytes(block.length));
+                addHexBytes(block);
+            };
+
+            const textEncoder = new TextEncoder('utf-8');
+            function textToHexBytes(text) {
+                return textEncoder.encode(text);
+            };
+
+
+            const builderPretty = new fxp.XMLBuilder({
+                format: true, // Pretty print
+                ignoreAttributes: false, // If using attributes
+                suppressEmptyNode: true,
+            });
+
+            const builder = new fxp.XMLBuilder({
+                ignoreAttributes: false, // If using attributes
+                suppressEmptyNode: true,
+            });
+
             const targetPlasmid = Session.getPlasmid(plasmidIndex);
+
+            const sequence = targetPlasmid.sequence;
+            const topology = targetPlasmid.topology;
+            const primers = Object.fromEntries(Object.entries(targetPlasmid.features).filter(([_, v]) => v.type === "primer_bind"));
+            const features = Object.fromEntries(Object.entries(targetPlasmid.features).filter(([_, v]) => v.type !== "primer_bind"));
+
+            const additionalInfo = targetPlasmid.additionalInfo;
+            const blocks = additionalInfo.blocks;
+
+            let outputBytes = [];
+
+            /**
+             * Header
+             */
+            addHexBytesBlock(9, blocks[9]);
+
+
+            /**
+             * Sequence
+             */
+            const topologyByte = (topology === "linear") ? 2: 3;
+            const sequenceBlock = [topologyByte, ...textToHexBytes(sequence.toLowerCase())];
+            addHexBytesBlock(0, sequenceBlock);
+
+
+            /**
+             * Unknown blocks
+             */
+            for (const [blockID, block] of Object.entries(blocks)) {
+                if ([9].includes(blockID)) continue;
+
+                addHexBytesBlock(blockID, block);
+            };
+
+
+            /**
+             * Features
+             */
+            function makeFeaturesBlock(features) {
+                //console.log(JSON.stringify(features, null, 2));
+
+                const featureNodes = [];
+
+                const directionalityMap = { "fwd": 1, "rev": 2, "both": 0 };
+                const keysToCheck = [
+                    "locus_tag", "note", "bound_moiety", "gene", "rpt_type", "translation",
+                    "old_locus_tag", "product", "citation", "regulatory_class", "allele", "label",
+                    "ncRNA_class", "db_xref", "direction", "mobile_element_type", "gene_synonym",
+                    "codon_start", "standard_name", "protein_id", "map", "experiment", "function",
+                    "EC_number", "transl_table"
+                ];
+
+                const makeQNode = (QName, VType, VValue) => ({
+                    "@_name": QName,
+                    V: { [`@_${VType}`]: VValue },
+                });
+
+                for (const [i, feature] of Object.entries(features)) {
+                    const { label, directionality, type, span, color, translated, translationOffset = 0 } = feature;
+
+                    const node = {
+                        "@_recentID": i,
+                        "@_name": label,
+                        "@_type": type,
+                        ...(directionality && { "@_directionality": directionalityMap[directionality] })
+                    };
+            
+
+                    node.Segment = {
+                        "@_range": `${span[0]}-${span[1]}`,
+                        "@_color": color,
+                        "@_type": "standard",
+                        ...(translated && { "@_translated": 1 }),
+                        "@_translationNumberingStartsFrom": translationOffset
+                    };
+
+                    const QNodes = keysToCheck
+                        .filter(key => key in feature)
+                        .map(key => makeQNode(key, Number.isInteger(feature[key]) ? "int" : "text", feature[key]));
+
+                    // Only add QNodes if they exist
+                    QNodes.length && (node.Q = QNodes);
+
+                    // Push to featureNodes array
+                    featureNodes.push(node);
+                };
+
+                const xmlTree = {
+                    Features: {
+                        "@_nextValidID": Object.keys(features).length,
+                        Feature: featureNodes,
+                    }
+                };
+
+                const xmlString = '<?xml version="1.0"?>' + builder.build(xmlTree);
+                //console.log(builderPretty.build(xmlTree));
+
+
+                return textToHexBytes(xmlString);
+            };
+
+            /**
+             * Primers
+             */
+            function makePrimersBlock(primers) {
+                console.log(JSON.stringify(primers, null, 2));
+
+                const primerNodes = [];
+
+
+                for (const [i, primer] of Object.entries(primers)) {
+                    const { label, directionality, note, span} = primer;
+
+                    const node = {
+                        "@_recentID": i,
+                        "@_name": label,
+                        //"@_sequence": "",
+                        "@_description": note,
+                    };
+
+                    node.BindingSite =  {
+                        "@_location": `${span[0]}-${span[1]}`,
+                        "@_boundStrand": {"fwd": 0, "rev": 1}[directionality],
+                        //"@_annealedBases": "",
+                        //"@_meltingTemperature": "",
+                        //"@_simplified": 1,
+                    };
+
+                    node.BindingSite.Component = {
+                        "@_hybridiziedRange": `${span[0]}-${span[1]}`,
+                        //"@_bases": "",
+                    };
+
+                    primerNodes.push(node);
+                };
+
+                const xmlTree = {
+                    Primers: {
+                        "@_nextValidID": Object.keys(primers).length,
+                        HybridizationParams: {
+                            "@_minContinuousMatchLen": 10,
+                            "@_allowMismatch": 1,
+                            "@_minMeltingTemperature": 40,
+                            "@_showAdditionalFivePrimeMatches": 1,
+                            "@_minimumFivePrimeAnnealing": 15,
+                        },
+                        Primer: primerNodes,
+                    }
+                };
+
+                const xmlString = '<?xml version="1.0"?>' + builder.build(xmlTree);
+                console.log(builderPretty.build(xmlTree));
+                console.log(xmlString)
+
+                return textToHexBytes(xmlString);
+            };
+
+            if (Object.keys(features).length !== 0) {
+                //addHexBytesBlock(10, makeFeaturesBlock(features));
+                /**
+                 * Right now we cannote export the primer_bind features in a way that
+                 * snapgene recognizes them as primers (SnapGene says :"N primers
+                 * have been deleted due to changes in melting temp algorithm").
+                 * 
+                 * For now, just bundle all the primers into the <Features> block.
+                 */
+                addHexBytesBlock(10, makeFeaturesBlock(targetPlasmid.features));
+            };
+            //if (Object.keys(primers).length !== 0) {
+            //    addHexBytesBlock(5, makePrimersBlock(primers));
+            //};
+
+
+            /**
+             * Notes
+             */
+            function makeNotesBlock(additionalInfo) {
+                //console.log(JSON.stringify(additionalInfo, null, 2));
+
+                if (additionalInfo["blocks"]) delete additionalInfo["blocks"];
+
+                const notesNode = {};
+
+                const requiredKeys = ["UUID", "Created", "LastModified", "Description", "References"];
+
+                const getOrGenerateValue = (key) => {
+                    switch (key) {
+                        case "UUID":
+                            return additionalInfo.UUID?.value || Utilities.newUUID();
+
+                        case "Description":
+                            return additionalInfo.DESCRIPTION?.value || null;
+                
+                        case "Created":
+                        case "LastModified": {
+                            const date = key === "Created" && additionalInfo.CREATED?.value 
+                                ? new Date(additionalInfo.CREATED.value) 
+                                : new Date();
+                            
+                            return {
+                                date: `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`,
+                                utc: `${date.getUTCHours()}:${date.getUTCMinutes()}:${date.getUTCSeconds()}`
+                            };
+                        }
+
+                        case "References":
+                            if (!additionalInfo.REFERENCES?.value) return null;
+
+                            const parsedRefs = additionalInfo.REFERENCES.value.map(ref => {
+                                const refNode = {};
+            
+                                for (const [key, value] of Object.entries(ref)) {
+                                    const adjustedKey = key
+                                        .replace(/journalname/i, "journalName")
+                                        .replace(/pubmedid/i, "pubMedID")
+                                        .toLowerCase();
+                                    
+                                    refNode[`@_${adjustedKey}`] = value;
+                                }
+            
+                                return refNode;
+                            });
+
+                            if (!parsedRefs.some(ref => ref["@_journal"]?.includes("IVA Prime"))) {
+                                parsedRefs.push({
+                                    "@_journal": "Exported with IVA Prime :) \nhttps://www.ivaprime.com",
+                                    "@_authors": ".",
+                                    "@_title": "Direct Submission",
+                                });
+                            }
+
+                            return parsedRefs;
+                
+                        default:
+                            return null;
+                    }
+                };
+
+                requiredKeys.forEach(key => {
+                    const value = getOrGenerateValue(key);
+            
+                    if (!value) return;
+            
+                    if (key === "UUID") {
+                        notesNode.UUID = { "#text": value };
+            
+                    } else if (key === "Description") {
+                        notesNode.Description = { "#text": value };
+            
+                    } else if (key === "References") {
+                        if (value.length) notesNode.References = { Reference: value };
+            
+                    } else {
+                        notesNode[key] = { "#text": value.date, "@_UTC": value.utc };
+                    }
+                });
+
+
+                const xmlTree = { Notes: notesNode };
+
+                const xmlString = builder.build(xmlTree);
+                console.log(builderPretty.build(xmlTree));
+                console.log(xmlString)
+
+                return textToHexBytes(xmlString);
+            };
+            addHexBytesBlock(6, makeNotesBlock(additionalInfo));
+
+
+            //console.log(outputBytes);
+            //console.log(printHexBytes(outputBytes, "14F0", "1540"));
+
+            this.downloadFile(
+                targetPlasmid.name + ".dna",
+                outputBytes
+            );
         },
 
         /**
