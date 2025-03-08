@@ -344,6 +344,18 @@ const Nucleotides = new class {
             return 1/reciprocT2;
         }
     };
+
+
+    validatePrimerSequence(seq) {
+        const validBases = new Set(["A", "C", "T", "G"]);
+
+        for (let i = 0, len = seq.length; i < len; i++) {
+            const base = seq[i];
+            if (!validBases.has(base)) {
+                throw new AmbiguousBaseError(seq)
+            };
+        };
+    };
 };
 
 // Load codon weights once document is loaded

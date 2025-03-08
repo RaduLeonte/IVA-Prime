@@ -784,6 +784,7 @@ const PlasmidViewer = new class {
 
             // Find out if the event was a click event by checking if the elements the mouse is over have changed
             const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+            if (!elementsAtPoint || !this.elementsAtMouseDown) return;
             const clicked = elementsAtPoint.every((ele, i) => ele === this.elementsAtMouseDown[i]);
 
             

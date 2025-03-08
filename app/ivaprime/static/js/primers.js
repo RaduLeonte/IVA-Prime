@@ -73,6 +73,8 @@ const Primers = new class {
               * and return either the current primer or the previous one, whichever
               * is closest to the target temperature
              */ 
+            Nucleotides.validatePrimerSequence(primerSequence);
+
             if (
                 currTM >= targetTM &&
                 primerSequence.length >= minimumLength
@@ -87,22 +89,33 @@ const Primers = new class {
                 };
             } else {
                 // Save current sequence and tm, then recalculate current seq and tm
-                if (!/^[ACTG]$/i.test(primerSequence)) {
-                    Alerts.error(
-                        "Ambigous base encountered",
-                        "Primers could not be generated in regions with ambigous bases."
-                    );
-                    return;
-                };
                 prevPrimerSequence = primerSequence;
                 prevTM = currTM;
                 
                 extensionLength += 1;
+
+                const nextBaseIndices = (direction === "fwd")
+                    ? [startingIndex, startingIndex + extensionLength - 1]
+                    : [startingIndex - extensionLength + 1, startingIndex];
+                const [nextStartIndex, nextEndIndex] = nextBaseIndices;
+                
+                const primerOutOfBounds =  plasmidSequence.length - nextEndIndex < 0;
+
+                console.log(
+                    plasmidSequence.length - nextEndIndex, 
+                    Utilities.repeatingSlice(plasmidSequence, ...nextBaseIndices),
+                    primerOutOfBounds,
+                );
+
+                if (Session.activePlasmid().topology === "circular" && primerOutOfBounds) {
+                    throw new OutOfBasesError()
+                };
                 
                 primerSequence = (direction === "fwd")
-                ? initialSequence + Utilities.repeatingSlice(plasmidSequence, startingIndex, startingIndex + extensionLength - 1)
-                : Utilities.repeatingSlice(plasmidSequence, startingIndex - extensionLength + 1, startingIndex) + initialSequence;
+                ? initialSequence + Utilities.repeatingSlice(plasmidSequence, nextStartIndex, nextEndIndex)
+                : Utilities.repeatingSlice(plasmidSequence, nextStartIndex, nextEndIndex) + initialSequence;
                 
+
                 currTM = Nucleotides.getMeltingTemperature(primerSequence, tmMethod);
             };
         };

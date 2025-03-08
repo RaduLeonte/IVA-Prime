@@ -584,69 +584,85 @@ class Plasmid {
 
         if (targetOrganism !== UserPreferences.get("preferredOrganism")) UserPreferences.set("preferredOrganism", targetOrganism);
 
-        let seqToInsert;
-        let primerSet;
-        if (operationType !== "Subcloning") {
-            seqToInsert = (insertionSeqAA && insertionSeqAA !== null && insertionSeqAA !== "" && targetOrganism !== null)
-            ? Nucleotides.optimizeAA(insertionSeqAA, targetOrganism)
-            : insertionSeqDNA;
+        try {
+            let seqToInsert;
+            let primerSet;
+            if (operationType !== "Subcloning") {
+                seqToInsert = (insertionSeqAA && insertionSeqAA !== null && insertionSeqAA !== "" && targetOrganism !== null)
+                ? Nucleotides.optimizeAA(insertionSeqAA, targetOrganism)
+                : insertionSeqDNA;
+    
+                primerSet = Primers.generateSet(
+                    operationType,
+                    this.selectionIndices,
+                    this.sequence,
+                    seqToInsert,
+                );
+            } else {
+                const seq5PrimeDNA = (typeof insertionSeqDNA !== "string") ? insertionSeqDNA[0]: "";
+                const seq3PrimeDNA = (typeof insertionSeqDNA !== "string") ? insertionSeqDNA[1]: "";
+                
+                const seq5PrimeAA = (typeof insertionSeqAA !== "string") ? insertionSeqAA[0]: "";
+                const seq3PrimeAA = (typeof insertionSeqAA !== "string") ? insertionSeqAA[1]: "";
+    
+                const seq5Prime = (seq5PrimeAA && seq5PrimeAA !== null && seq5PrimeAA !== "" && targetOrganism !== null)
+                ? Nucleotides.optimizeAA(seq5PrimeAA, targetOrganism)
+                : seq5PrimeDNA;
+    
+                const seq3Prime = (seq3PrimeAA && seq3PrimeAA !== null && seq3PrimeAA !== "" && targetOrganism !== null)
+                ? Nucleotides.optimizeAA(seq3PrimeAA, targetOrganism)
+                : seq3PrimeDNA;
+    
+                const subclonignOriginPlasmid = Session.getPlasmid(Session.subcloningOriginPlasmidIndex);
+                const subcloningOriginSpan = Session.subcloningOriginSpan;
+                const subcloningTarget = subclonignOriginPlasmid.sequence.slice(subcloningOriginSpan[0] - 1, subcloningOriginSpan[1])
+                const subcloningSequenceFull = seq5Prime + subcloningTarget + seq3Prime;
+                seqToInsert = subcloningSequenceFull;
+    
+                primerSet = Primers.generateSubcloningSet(
+                    this.selectionIndices,
+                    this.sequence,
+                    seq5Prime,
+                    seq3Prime,
+                );
+            };
+    
+    
+            this.primers.push(primerSet);
+    
+            this.sliceSequence(this.selectionIndices, seqToInsert);
+    
+            this.shiftFeatures(this.selectionIndices, seqToInsert);
+    
+            if (operationType !== "Deletion") {
+                this.newFeature(
+                    [this.selectionIndices[0], this.selectionIndices[0]+seqToInsert.length-1],
+                    "fwd",
+                    operationType,
+                    null,
+                    "#c83478",
+                    translateFeature,
+                    ""
+                );
+            } else {
+                PlasmidViewer.deselectBases();
+                PlasmidViewer.redraw();
+                Sidebar.update();
+            };
+        } catch(error) {
+            switch (true) {
+                case (error instanceof AmbiguousBaseError):
+                    handleError(error);
+                    break;
 
-            primerSet = Primers.generateSet(
-                operationType,
-                this.selectionIndices,
-                this.sequence,
-                seqToInsert,
-            );
-        } else {
-            const seq5PrimeDNA = (typeof insertionSeqDNA !== "string") ? insertionSeqDNA[0]: "";
-            const seq3PrimeDNA = (typeof insertionSeqDNA !== "string") ? insertionSeqDNA[1]: "";
-            
-            const seq5PrimeAA = (typeof insertionSeqAA !== "string") ? insertionSeqAA[0]: "";
-            const seq3PrimeAA = (typeof insertionSeqAA !== "string") ? insertionSeqAA[1]: "";
+                case (error instanceof OutOfBasesError):
+                    handleError(error);
+                    break;
 
-            const seq5Prime = (seq5PrimeAA && seq5PrimeAA !== null && seq5PrimeAA !== "" && targetOrganism !== null)
-            ? Nucleotides.optimizeAA(seq5PrimeAA, targetOrganism)
-            : seq5PrimeDNA;
-
-            const seq3Prime = (seq3PrimeAA && seq3PrimeAA !== null && seq3PrimeAA !== "" && targetOrganism !== null)
-            ? Nucleotides.optimizeAA(seq3PrimeAA, targetOrganism)
-            : seq3PrimeDNA;
-
-            const subclonignOriginPlasmid = Session.getPlasmid(Session.subcloningOriginPlasmidIndex);
-            const subcloningOriginSpan = Session.subcloningOriginSpan;
-            const subcloningTarget = subclonignOriginPlasmid.sequence.slice(subcloningOriginSpan[0] - 1, subcloningOriginSpan[1])
-            const subcloningSequenceFull = seq5Prime + subcloningTarget + seq3Prime;
-            seqToInsert = subcloningSequenceFull;
-
-            primerSet = Primers.generateSubcloningSet(
-                this.selectionIndices,
-                this.sequence,
-                seq5Prime,
-                seq3Prime,
-            );
-        };
-
-
-        this.primers.push(primerSet);
-
-        this.sliceSequence(this.selectionIndices, seqToInsert);
-
-        this.shiftFeatures(this.selectionIndices, seqToInsert);
-
-        if (operationType !== "Deletion") {
-            this.newFeature(
-                [this.selectionIndices[0], this.selectionIndices[0]+seqToInsert.length-1],
-                "fwd",
-                operationType,
-                null,
-                "#c83478",
-                translateFeature,
-                ""
-            );
-        } else {
-            PlasmidViewer.deselectBases();
-            PlasmidViewer.redraw();
-            Sidebar.update();
+                default: {
+                    throw error;
+                };
+            };
         };
     };
 
