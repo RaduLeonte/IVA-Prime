@@ -65,6 +65,17 @@ const PlasmidViewer = new class {
         document.addEventListener('DOMContentLoaded', function() {
             PlasmidViewer.initMeasurementSVG();
         });
+
+
+        /**
+         * CTRL + A
+         */
+        document.addEventListener("keydown", function(event) {
+            if ((event.ctrlKey || event.metaKey) && event.key === "a") {
+                event.preventDefault();
+                PlasmidViewer.selectAll();
+            };
+        });
     };
 
 
@@ -2389,6 +2400,12 @@ const PlasmidViewer = new class {
         this.highlightBases(span, "base-selected");
 
         Session.activePlasmid().setSelectionIndices(span);
+    };
+
+
+    selectAll() {
+        const sequenceLength = Session.activePlasmid().sequence.length;
+        this.selectBases([1, sequenceLength]);
     };
 
 
