@@ -2,3 +2,4 @@
 .CNAME
 
 **/__pycache__/
+*.bat
