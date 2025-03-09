@@ -1681,7 +1681,7 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   -ms-user-select: none;
   user-select: none;
 }
-.base-ambigous-text {
+.base-ambiguous-text {
   font-size: 14px;
   fill: var(--text-color);
 
