@@ -1,2 +1,5 @@
 .DS_store
 .CNAME
+
+**/__pycache__/
+*.bat

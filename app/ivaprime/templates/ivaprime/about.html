@@ -10,8 +10,13 @@
             <!-- Styling -->
             <link rel="shortcut icon" href="{% static 'favicon.ico' %}">
             <link rel="stylesheet" type="text/css" href="{% static 'styles.css' %}">
+            <link rel="stylesheet" type="text/css" href="{% static 'about_page_styles.css' %}">
+
+            <script src="{% static 'js/userPreferences.js' %}"></script>
             <script>
-                document.querySelector("html").setAttribute("data-theme", "light");
+                document.addEventListener("DOMContentLoaded", function () {
+                    document.querySelector("html").setAttribute("data-theme", UserPreferences.get("theme"));
+                });
             </script>
         </head>
         <body>
@@ -21,61 +26,85 @@
                         <!-- Main header -->
                         <div class="about-header">
                             <img src="{% static 'IVA Prime Logo.png' %}" width="300px">
-                            <h1> IVA Prime</h1>
+                            <div class="about-header-title">
+                                IVA Prime
+                            </div>
                         </div>
 
                         <!-- About IVA Prime -->
                         <div class="about-section" id="about">
-                            <h2>About IVA Prime</h2>
+                            <div class="about-section-title">
+                                About IVA Prime
+                            </div>
                             <p>
                                 IVA Prime is a web application that allows you to import plasmid files (.gb and .dna), and then easily generate primers for IVA cloning as you edit your plasmid file. The primers can be then easily exported to a read-to-order format and the altered plasmid file can be saved.
                             </p>
                             <p>
-                                The primer design technique is originally based on the work by García-Nafría et al.: <a href="https://www.nature.com/articles/srep27459">DOI: 10.1038/srep27459</a>.
+                                The primer design technique is originally based on the work by García-Nafría et al.: <a href="https://www.nature.com/articles/srep27459" target="_blank" class="underlined-link">DOI: 10.1038/srep27459</a>.
                             </p>
                             <p>
-                                The source code for IVA Prime can be found in the <a href="https://github.com/RaduLeonte/IVA-Prime">GitHub repository</a>.
+                                The source code for IVA Prime can be found in the <a href="https://github.com/RaduLeonte/IVA-Prime" target="_blank" class="underlined-link">GitHub repository</a>.
                             </p>
                         </div>
 
                         <!-- How to use -->
                         <div class="about-section" id="how-to-use">
-                            <h2>How to use</h2>
-                            <h3>Importing</h3>
+                            <div class="about-section-title">
+                                How to use
+                            </div>
+                            <div class="about-section-subtitle">
+                                Importing
+                            </div>
                             <ol>
-                                <li><p>Click on <span id="import-btn"><a class="info-window-btn" href="#">Import File</a></span> to import either a
-                                    .gb or .dna file. (Or click <span id="import-demo-btn"><a class="info-window-btn" href="#">Try Demo File</a></span> to
+                                <li><p>Click on <span class="button-about button-round button-green">Import File</span> to import either a
+                                    .gb or .dna file. (Or click <span class="button-about button-round button-orange">Demo File</span> to
                                     import an empty pET-28a(+) vector.)</p>
                                 </li>
                                 <li>Navigate using the sequence grid on the right or by clicking on a specific feature in the sidebar.</li>
-                                <li>Import more plasmids by clicking <span id="import-btn"><a class="info-window-btn" href="#">Import File</a></span> again.
+                                <li>Import more plasmids by clicking <span class="button-about button-round button-green">Import File</span> again.
                                 </li>
                             </ol>
 
-                            <h3>Insertions</h3>
+                            <div class="about-section-subtitle">
+                                Insertions
+                            </div>
                             <ol>
                                 <li>
                                     <p>
                                         Left click at the position you would like to insert a sequence.
                                     </p>
+
                                     <p>
                                         <img src="{% static 'assets/gifs/insertion position selection.gif' %}">
                                     </p>
                                 </li>
+
                                 <li>
                                     <p>
                                         Right-click to open the context menu and select <span class="info-window-menu-btn">Insert here</span>.
                                     </p>
+
                                     <p>
                                         <img src="{% static 'assets/gifs/insertion menu item selection.gif' %}">
                                     </p>
                                 </li>
-                                <li>Enter a DNA or amino acid sequence to insert.</li>
-                                <li>Select a target organism for codon optimisation (Escherichia coli, human, yeast etc.).</li>
-                                <li>Press <button id="create-primers-button" class="info-window-create-primers-btn">Create Primers</button>.</li>
+
+                                <li>
+                                    Enter a DNA or amino acid sequence to insert.
+                                </li>
+
+                                <li>
+                                    Select a target organism for codon optimisation (Escherichia coli, human, yeast etc.).
+                                </li>
+
+                                <li>
+                                    Press <span class="button-about button-round button-green">Create primers</span>.
+                                </li>
                             </ol>
 
-                            <h3>Deletions</h3>
+                            <div class="about-section-subtitle">
+                                Deletions
+                            </div>
                             <ol>
                                 <li>
                                     <p>
@@ -95,7 +124,10 @@
                                 </li>
                             </ol>
 
-                            <h3>Mutations & Replacements</h3>
+
+                            <div class="about-section-subtitle">
+                                Mutations
+                            </div>
                             <ol>
                                 <li>
                                     <p>
@@ -113,12 +145,27 @@
                                         <img src="{% static 'assets/gifs/mutation menu item selection.gif' %}">
                                     </p>
                                 </li>
-                                <li>Enter a DNA or amino acid sequence.</li>
-                                <li>Select a target organism for codon optimisation (Escherichia coli, human, yeast etc.).</li>
-                                <li>Press <button id="create-primers-button" class="info-window-create-primers-btn">Create Primers</button>.</li>
+                                <li>
+                                    <p>
+                                        Enter a DNA or amino acid sequence.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        Select a target organism for codon optimisation (Escherichia coli, human, yeast etc.).
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        Press <span class="button-about button-round button-green">Create primers</span>.
+                                    </p>
+                                </li>
                             </ol>
 
-                            <h3>Subcloning</h3>
+
+                            <div class="about-section-subtitle">
+                                Subcloning
+                            </div>
                             <ol>
                                 <li>
                                     <p>
@@ -129,31 +176,52 @@
                                     </p>
                                 </li>
 
-                                <li>Right-click to open the context menu and select <span class="info-window-menu-btn">Mark selection for subcloning</span>. A highlight color advanced 
-                                    dashed lines demarcate your <span class="subcloning-target-cell-info-window">marked sequence</span>.
+                                <li>
+                                    <p>
+                                        Right-click to open the context menu and select <span class="info-window-menu-btn">Mark selection for subcloning</span>. A highlight color advanced 
+                                        dashed lines demarcate your <span class="subcloning-target-cell-info-window">marked sequence</span>.
+                                    </p>
                                 </li>
 
-                                <li>Now open the destination plasmid, navigate to where the marked sequence will be inserted.
+                                <li>
+                                    <p>
+                                        Now open the destination plasmid, navigate to where the marked sequence will be inserted.
+                                    </p>
                                 </li>
 
-                                <li>To subclone into a region between bases, left-click at 
-                                    desired position to set the cursor, then right click and choose <span class="info-window-menu-btn">Subclone into selection</span>
+                                <li>
+                                    <p>
+                                        To subclone into a region between bases, left-click at 
+                                        desired position to set the cursor, then right click and choose <span class="info-window-menu-btn">Subclone into selection</span>
+                                    </p>
                                 </li>
 
-                                <li>If you wish to at the same time insert additional sequences adjacent to the subcloned sequence at the destination, choose 
-                                    <span class="info-window-menu-btn">Subclone with insertion into selection</span>. This will open a window where you can 
-                                    specify the additional sequences that will be included at the 5' and 3' prime ends individually. Once you are done, press 
-                                    <button id="create-primers-button" class="info-window-create-primers-btn">Create Primers</button>.
+                                <li>
+                                    <p>
+                                        If you wish to at the same time insert additional sequences adjacent to the subcloned sequence at the destination, choose 
+                                        <span class="info-window-menu-btn">Subclone with insertion into selection</span>. This will open a window where you can 
+                                        specify the additional sequences that will be included at the 5' and 3' prime ends individually. Once you are done, press 
+                                        <span class="button-about button-round button-green">Create primers</span>.
+                                    </p>
                                 </li>
                             </ol>
 
-                            <h3>Saving the primers and modified plasmid to file</h3>
+
+                            <div class="about-section-subtitle">
+                                Saving the primers and modified plasmid to file
+                            </div>
                             <ul>
-                                <li>To export the generated primers, click on the downwards arrow next to the plasmid name <span class="plasmid-tab plasmid-tab-selected" style="text-align: center; padding: 5px"><a class="plasmid-tab-dropdown" href="#" style="padding: 3px; margin: 0px">▼</a></span>. 
-                                    This will open a dropdown menu where you can choose your desired format for the primer list.
+                                <li>
+                                    <p>
+                                        To export the generated primers, click on the downwards arrow next to the plasmid name. 
+                                        This will open a dropdown menu where you can choose your desired format for the primer list.
+                                    </p>
                                 </li>
-                                <li>To save the modified plasmid file, click on the downwards arrow next to the plasmid name <span class="plasmid-tab plasmid-tab-selected" style="text-align: center; padding: 5px"><a class="plasmid-tab-dropdown" href="#" style="padding: 3px; margin: 0px">▼</a></span>. 
-                                    This will open a dropdown menu where you can choose your desired format for plasmid file.
+                                <li>
+                                    <p>
+                                        To save the modified plasmid file, click on the downwards arrow next to the plasmid name. 
+                                        This will open a dropdown menu where you can choose your desired format for plasmid file.
+                                    </p>
                                 </li>
                             </ul>
                         </div>
@@ -161,15 +229,15 @@
 
                         <!-- Privacy policy -->
                         <div class="about-section" id="privacy-policy">
-                            <h2>Privacy policy</h2>
+                            <div class="about-section-title">
+                                Privacy policy
+                            </div>
                             <p>IVA Prime uses first-party cookies to improve the user experience by storing user preferences, such as preferred display options or algorithm settings, between sessions. No third-party cookies are used to track or profile users.</p>
                         </div>
 
                         <!-- Footer -->
                         <div class="about-footer">
-                            <p>
-                                <a href="javascript:history.back()">Back to IVA Prime</a>
-                            </p>
+                            <a href="/" class="underlined-link">Back to IVA Prime</a>
                         </div>
                     </div>
                 </div>
