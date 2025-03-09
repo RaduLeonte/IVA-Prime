@@ -177,6 +177,8 @@ class Plasmid {
                 this.topology
             );
         });
+
+        Toolbar.updateUndoRedoButtonsStates();
     };
 
 
