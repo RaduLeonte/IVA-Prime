@@ -91,7 +91,7 @@ const Sidebar = new class {
 
             const hrInfo = document.createElement("DIV");
             hrInfo.classList.add("primers-set-hr-info");
-            hrInfo.innerHTML = "<span>HR Info</span>";
+            //hrInfo.innerHTML = "<span>HR Info</span>";
             primerSetBody.appendChild(hrInfo);
 
             const primersContainer = document.createElement("DIV");
