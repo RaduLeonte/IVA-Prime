@@ -395,9 +395,14 @@ const Sidebar = new class {
             <label class="collapsible-content-hgroup-label">Translate</label>
             <div class="collapsible-content-hgroup-input">
                 <input type="checkbox" id="translated-checkbox" name="translated-checkbox" checked="${featureIsTranslated}">
-                <label for="translated-checkbox" class="custom-checkbox"></label>
             </div>
             `;
+            /**
+             * <div class="collapsible-content-hgroup-input">
+                <input type="checkbox" id="translated-checkbox" name="translated-checkbox" checked="${featureIsTranslated}">
+                <label for="translated-checkbox" class="custom-checkbox"></label>
+            </div>
+             */
             translateDiv.getElementsByTagName("input")[0].checked = featureIsTranslated;
             collapsibleContent.appendChild(translateDiv);
 

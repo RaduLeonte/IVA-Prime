@@ -163,10 +163,6 @@ input {
 /* 
  * MARK: Checkboxes
  */
-input[type="checkbox"] {
-  display: none;
-}
-
 input[incorrect="true"] {
   outline: 2px solid var(--btn-red) !important;
 }
@@ -694,6 +690,13 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
   gap: 10px;
 }
 
+.collapsible-content-hgroup {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
 .collapsible-content-hgroup-label {
   display: flex;
   align-items: center;
@@ -1184,16 +1187,18 @@ html[data-theme="dark"] .boolean-switch-slider:before {
  */
 /* #region Footer */
 .footer {
-  background-color: var(--bg-color2);
-  border-top: 2px var(--border-color) solid;
-
   display: flex;
   flex-direction: row;
   align-items: stretch;
 
+  
   height: 100%;
   padding: 5px 10px;
   box-sizing: border-box;
+  
+  font-size: 14px;
+  background-color: var(--bg-color2);
+  border-top: 2px var(--border-color) solid;
 }
 
 .footer-search {
@@ -1237,6 +1242,11 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   flex-direction: row;
   align-items: center;
   gap: 5px;
+}
+
+.footer-search-options-container input[type="checkbox"] {
+  height: 18px;
+  width: 18px;
 }
 
 .footer-search-option {
