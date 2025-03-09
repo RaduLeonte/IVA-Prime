@@ -216,13 +216,13 @@ const PlasmidTabs = new class {
         };
     };
     enableScrollButtons() {
-        console.log("PlasmidTabs.enableScrollButtons => ");
+        //console.log("PlasmidTabs.enableScrollButtons => ");
         document.querySelectorAll(".plasmid-tabs-scroll-button").forEach(button => {
             button.removeAttribute('disabled');
         });
     };
     disableScrollButtons() {
-        console.log("PlasmidTabs.disableScrollButtons => ");
+        //console.log("PlasmidTabs.disableScrollButtons => ");
         document.querySelectorAll(".plasmid-tabs-scroll-button").forEach(button => {
             button.setAttribute('disabled', '');
         });

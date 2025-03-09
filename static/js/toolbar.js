@@ -234,4 +234,52 @@ const Toolbar = new class {
         };
 
     };
+
+
+    updateUndoRedoButtonsStates() {
+        const activePlasmid = Session.activePlasmid();
+        if (!activePlasmid) return;
+
+        const stateIndex = activePlasmid.stateIndex;
+        const stateHistoryLength = activePlasmid.stateHistory.length;
+
+        const undoButton = document.getElementById("undo-button");
+        const redoButton = document.getElementById("redo-button");
+
+        console.log("Toolbar.updateUndoRedoButtonsStates ->", stateIndex, stateHistoryLength);
+
+        if (stateIndex >= stateHistoryLength - 1) {
+            // We're on the earliest state, disalbe redo button
+            undoButton.setAttribute("disabled", "");
+
+            undoButton.setAttribute(
+                "title",
+                `Undo (Ctrl + Z)`,
+            );
+        } else {
+            undoButton.removeAttribute("disabled");
+
+            undoButton.setAttribute(
+                "title",
+                `Undo: ${activePlasmid.stateHistory[stateIndex].actionDescription} (Ctrl + Z)`,
+            );
+        };
+
+        if (stateIndex <= 0) {
+            // We're on latest state, disable redo button
+            redoButton.setAttribute("disabled", "");
+
+            redoButton.setAttribute(
+                "title",
+                `Redo (Ctrl + Shift + Z)`,
+            );
+        } else {
+            redoButton.removeAttribute("disabled");
+
+            redoButton.setAttribute(
+                "title",
+                `Redo: ${activePlasmid.stateHistory[stateIndex - 1].actionDescription} (Ctrl + Shift + Z)`,
+            );
+        };
+    };
 };

@@ -339,10 +339,12 @@ const Utilities = new class {
      */
     updateTheme() {
         document.querySelector("html").setAttribute("data-theme", UserPreferences.get("theme"));
-        Coloris({
-            themeMode: UserPreferences.get("theme"),
-            alpha: false
-        });
+        if (Coloris) {
+            Coloris({
+                themeMode: UserPreferences.get("theme"),
+                alpha: false
+            });
+        };
     };
 
 
