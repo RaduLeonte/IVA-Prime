@@ -616,143 +616,205 @@ const PlasmidViewer = new class {
         /**
          * Settings
          */
-        const svgMinHeight = 140;
+        const gridViewSettings = {
+            svgMinHeight: 140,
+            singleStrandHeight: 38,
+            baseTextOffset: 12,
+            strandFeatureSpacing: 5,
+            aaIndexHeight: 15,
+            featureGroupGap: 1,
+            aaBlockHeight: 20,
+            featureAnnotationHeight: 25,
+            featureAnnotationsSpacing: 5,
+            gridMargin: 50
+        };
 
-        const singleStrandHeight = 38;
-        const baseTextOffset = 12;
-
-        const strandFeatureSpacing = 5;
-
-        const aaIndexHeight = 15;
-        const featureGroupGap = 1
-        const aaBlockHeight = 20;
-        const featureAnnotationHeight = 25;
-
-        const featureAnnotationsSpacing = 5;
-
-        const gridMargin = 50; // margin on each side
+        const { gridMargin, singleStrandHeight, baseTextOffset } = gridViewSettings;
         
 
-        /**
-         * Figure out how wide the drawable area is
-         */
-        const viewerContainer = document.getElementById("viewer");
-        const svgWrapperPadding = 40;
-        const scrollBarWidth = Utilities.getScrollbarWidth();
-        let maxWidth = viewerContainer.clientWidth - svgWrapperPadding - scrollBarWidth;
-        
-        maxWidth -= gridMargin*2;
-
-        const baseWidth = UserPreferences.get("baseWidth");
-
-        const basesPerLine = Math.floor(maxWidth / baseWidth)
+        const { maxWidth, basesPerLine, basesWidth, basesPositions } = this.computeGridLayout(gridMargin);
 
 
-        // Sequence coordinate to pixel in axis
-        let seqToPixel = (s) => (s / basesPerLine)*(maxWidth) + gridMargin;
+        const segments = this.prepareGridSegments(sequence, complementarySequence, basesPerLine, topology);
 
-        /**
-         * Prepare segments
-         */
-        const nrOfSegments = Math.ceil(sequence.length/basesPerLine);
-        const segments = [];
-        for (let i = 0; i < nrOfSegments; i++) {
-            const sequenceStartIndex = i*basesPerLine;
-            const sequenceEndIndex = sequenceStartIndex + basesPerLine;
-            const sequenceFwd = sequence.slice(sequenceStartIndex, sequenceEndIndex);
-            const sequenceRev = complementarySequence.slice(sequenceStartIndex, sequenceEndIndex);
 
-            segments.push(
-                {
-                    "segmentIndexStart": sequenceStartIndex,
-                    "segmentIndexEnd": sequenceEndIndex,
-                    "sequenceFwd": sequenceFwd,
-                    "sequenceRev": sequenceRev,
-                    "features": {}
-                }
+        this.assignFeaturesToSegments(features, segments, basesPerLine);
+
+        const svgWrapper = document.createElement("div");
+        svgWrapper.classList.add("svg-wrapper-grid");
+        this.addGridEventListeners(svgWrapper);
+
+
+        const templates = this.createBaseTemplates(singleStrandHeight, baseTextOffset, basesWidth);
+        templates.svgCanvasTemplate = this.createSVGTemplate(maxWidth, gridMargin);
+    
+
+        const nrSegments = segments.length;
+        for (let i = 0; i < nrSegments; i++) {
+            const segment = segments[i];
+            svgWrapper.appendChild(
+                this.drawSegment(
+                    segment, i,
+                    gridViewSettings,
+                    { maxWidth, basesPerLine, basesWidth, basesPositions },
+                    templates,
+                    { sequence, complementarySequence, features }
+                )
             );
         };
 
-        // Figure out which features are drawn on which segments
-        for (const [featureID, featureDict] of Object.entries(features)) {
-            const featureSpanStart = featureDict["span"][0];
-            const featureSpanEnd = featureDict["span"][1];
-            const featureDirectionality = featureDict["directionality"];
-            const segmentListIndexStart = Math.floor((featureSpanStart-1) / basesPerLine);
-            const segmentListIndexEnd = Math.floor(featureSpanEnd / basesPerLine);
+        return svgWrapper;
+    };
 
-            for (let i = segmentListIndexStart; i <= segmentListIndexEnd; i++) {
-                segments[i]["features"][featureID] = Utilities.deepClone(featureDict);
+    computeGridLayout(gridMargin) {
+        const viewerContainer = document.getElementById("viewer");
+        const svgWrapperPadding = 40;
+        const scrollBarWidth = Utilities.getScrollbarWidth();
+        
+        const maxWidth = viewerContainer.clientWidth - svgWrapperPadding - scrollBarWidth - gridMargin * 2;
+        const baseWidth = UserPreferences.get("baseWidth");
+        const basesPerLine = Math.floor(maxWidth / baseWidth);
+        const basesWidth = maxWidth / basesPerLine;
+        
+        const basesPositions = Array.from({ length: basesPerLine }, (_, i) => basesWidth / 2 + i * basesWidth + gridMargin);
+        
+        return { maxWidth, basesPerLine, basesWidth, basesPositions };
+    };
 
-                const featureSegmentSpanStart = Math.max((segments[i]["segmentIndexStart"] + 1), featureSpanStart);
-                const featureSegmentSpanEnd = Math.min(segments[i]["segmentIndexEnd"], featureSpanEnd);
-                
-                segments[i]["features"][featureID]["span"] = [
-                    featureSegmentSpanStart - segments[i]["segmentIndexStart"],
-                    featureSegmentSpanEnd - segments[i]["segmentIndexStart"]
+
+    prepareGridSegments(sequence, complementarySequence, basesPerLine, topology) {
+        return Array.from({ length: Math.ceil(sequence.length / basesPerLine) }, (_, i) => {
+            const sequenceStartIndex = i * basesPerLine;
+            const sequenceEndIndex = sequenceStartIndex + basesPerLine;
+            
+            return {
+                segmentIndexStart: sequenceStartIndex,
+                segmentIndexEnd: sequenceEndIndex,
+                sequenceFwd: sequence.slice(sequenceStartIndex, sequenceEndIndex),
+                sequenceRev: complementarySequence.slice(sequenceStartIndex, sequenceEndIndex),
+                features: {},
+                segmentBounds: [
+                    i === 0 && topology === "circular" ? "continued" : "index",
+                    i === Math.ceil(sequence.length / basesPerLine) - 1 && topology === "circular" ? "continued" : "index"
                 ]
+            };
+        });
+    };
 
-                const aaIndices = [];
-                const nrAA = Math.ceil((featureSpanEnd - featureSpanStart + 1) / 3);
-                let aaIndex = (featureDirectionality === "fwd") ?  featureSpanStart: featureSpanEnd;
-                for (let j = 0; j < nrAA; j++) {
-                    aaIndices.push([aaIndex, (featureDirectionality === "fwd")? aaIndex + 2: aaIndex - 2])
-                    aaIndex += (featureDirectionality === "fwd") ? 3: -3
-                };
 
-                segments[i]["features"][featureID]["aaIndices"] = aaIndices;
-
-                // Figure out shape of this segment -> left=arrow/continued/none, right=arrow/continued/none
-                segments[i]["features"][featureID]["shape-left"] = null;
-                segments[i]["features"][featureID]["shape-right"] = null;
-                const isFirstSegment = (i == segmentListIndexStart) ? true: false;
-                const isLastSegment = (i == segmentListIndexEnd) ? true: false;
-                const isMiddleSegment = (!isFirstSegment && !isLastSegment) ? true: false;
-                
-                // If we're first segment
-                if (isFirstSegment) {
-                    // Left side
-                    segments[i]["features"][featureID]["shape-left"] = (featureDirectionality == "fwd") ? "null" : "arrow";
-
-                    // Right side
-                    if (isLastSegment) {
-                        // One single segment, draw blunt end or arrow end
-                        segments[i]["features"][featureID]["shape-right"] = (featureDirectionality == "fwd") ? "arrow" : null;
-                    } else {
-                        // The feature continues, draw break shape
-                        segments[i]["features"][featureID]["shape-right"] = "break";
-                    };
-                    continue;
-                };
-
-                // If we're middle segment
-                if (isMiddleSegment) {
-                    // The feature continues in both directions, draw break shapes on both ends
-                    segments[i]["features"][featureID]["shape-left"] = "break";
-                    segments[i]["features"][featureID]["shape-right"] = "break";
-                    continue;
-                };
-
-                // If this is the last segment
-                if (isLastSegment) {
-                    // Always set break shape to the left side
-                    // if it were the first segment it case would've already been handled
-                    segments[i]["features"][featureID]["shape-left"] = "break";
-
-                    segments[i]["features"][featureID]["shape-right"] = (featureDirectionality == "fwd") ? "arrow" : null;
-                    continue;
+    assignFeaturesToSegments(features, segments, basesPerLine) {
+        Object.entries(features).forEach(([featureID, featureDict]) => {
+            const { span, directionality } = featureDict;
+            const [featureSpanStart, featureSpanEnd] = span;
+            const segmentListIndexStart = Math.floor((featureSpanStart - 1) / basesPerLine);
+            const segmentListIndexEnd = Math.floor(featureSpanEnd / basesPerLine);
+    
+            for (let i = segmentListIndexStart; i <= segmentListIndexEnd; i++) {
+                const segment = segments[i];
+                segment.features[featureID] = Utilities.deepClone(featureDict);
+    
+                // Adjust span
+                segment.features[featureID].span = [
+                    Math.max(segment.segmentIndexStart + 1, featureSpanStart) - segment.segmentIndexStart,
+                    Math.min(segment.segmentIndexEnd, featureSpanEnd) - segment.segmentIndexStart
+                ];
+    
+                segment.features[featureID].aaIndices = Array.from(
+                    { length: Math.ceil((featureSpanEnd - featureSpanStart + 1) / 3) }, (_, j) => {
+                        const aaStart = directionality === "fwd"
+                            ? featureSpanStart + j * 3
+                            : featureSpanEnd - j * 3;
+                        
+                        return [aaStart, directionality === "fwd"
+                            ? aaStart + 2
+                            : aaStart - 2];
+                    }
+                );
+    
+                if (i === segmentListIndexStart) {
+                    segment.features[featureID]["shape-left"] = directionality === "fwd" ? null : "arrow";
+                    segment.features[featureID]["shape-right"] =
+                        i === segmentListIndexEnd ? (directionality === "fwd" ? "arrow" : null) : "break";
+                } 
+                else if (i === segmentListIndexEnd) {
+                    segment.features[featureID]["shape-left"] = "break";
+                    segment.features[featureID]["shape-right"] = directionality === "fwd" ? "arrow" : null;
+                } 
+                else {
+                    segment.features[featureID]["shape-left"] = "break";
+                    segment.features[featureID]["shape-right"] = "break";
                 };
             };
+        });
+    };
 
+    
+    createBaseTemplates(singleStrandHeight, baseTextOffset, basesWidth) {
+        const baseBoxTemplateFwd = this.createShapeElement("rect");
+        baseBoxTemplateFwd.setAttribute("y", 0);
+        baseBoxTemplateFwd.setAttribute("height", singleStrandHeight);
+        baseBoxTemplateFwd.setAttribute("width", basesWidth);
+        baseBoxTemplateFwd.classList.add("base");
+
+        const baseBoxTemplateRev = baseBoxTemplateFwd.cloneNode();
+        baseBoxTemplateRev.setAttribute("y", singleStrandHeight);
+
+        const baseTextTemplateFwd = this.createShapeElement("text");
+        baseTextTemplateFwd.setAttribute("dy", 0);      
+        baseTextTemplateFwd.setAttribute("text-anchor", "middle");
+        baseTextTemplateFwd.setAttribute("y", singleStrandHeight - baseTextOffset);
+        baseTextTemplateFwd.setAttribute("class", "base-text");
+
+        const baseTextTemplateRev = baseTextTemplateFwd.cloneNode();
+        baseTextTemplateRev.setAttribute("y", singleStrandHeight*2 - baseTextOffset);
+    
+        return {
+            baseBoxTemplateFwd,
+            baseBoxTemplateRev,
+            baseTextTemplateFwd,
+            baseTextTemplateRev
         };
+    };
 
-        // Main wrapper
-        // #region Main
 
-        const svgWrapper = document.createElement("DIV");
-        svgWrapper.classList.add("svg-wrapper-grid");
+    createSVGTemplate(maxWidth, gridMargin) {
+        const svgCanvasTemplate = this.createShapeElement("svg");
+        svgCanvasTemplate.setAttribute("width", maxWidth + gridMargin * 2);
 
-        // #region Event_listeners
+        // Group housing all strand elements
+        const strandGroup = this.createGroup("strand-group", svgCanvasTemplate);
+        strandGroup.setAttribute("transform", "translate(0, 5)");
+
+            // strandGroup -> sequenceGroup: Bases and axis
+            const groupSequence = this.createGroup("sequence-group", strandGroup);
+
+                // strandGroup -> sequence Group -> Forward Strand
+                const groupStrandFwd = this.createGroup("strand-fwd", groupSequence);
+                this.createGroup("strand-rects", groupStrandFwd);
+                this.createGroup("strand-text", groupStrandFwd);
+
+                // strandGroup -> sequence Group -> Reverse Strand
+                const groupStrandRev = this.createGroup("strand-rev", groupSequence);
+                this.createGroup("strand-rects", groupStrandRev);
+                this.createGroup("strand-text", groupStrandRev);
+
+                // strandGroup -> sequence Group -> Axis
+                const axisGroup = this.createGroup("axis-group", groupSequence);
+                this.createGroup("axis-ticks", axisGroup);
+                this.createGroup("strand-indices", axisGroup);
+
+            // Features group
+            this.createGroup("svg-features", strandGroup);
+
+        // Groups to house selection cursors
+        this.createGroup("selection-preview-cursor-group", svgCanvasTemplate);
+        this.createGroup("selection-cursor-group", svgCanvasTemplate);
+        
+        return svgCanvasTemplate;
+    };
+
+
+    addGridEventListeners(svgWrapper) {
         /**
          * Mouse down
          */
@@ -993,438 +1055,297 @@ const PlasmidViewer = new class {
             // If we click outside the viewer, deselect bases
             PlasmidViewer.deselectBases();
         });
-        // #endregion Event_listeners
+    };
 
 
-        const basesWidth = maxWidth/basesPerLine;
-        const basesPositions = [];
-        for (let i = 0; i < basesPerLine; i++) {
-            basesPositions.push(basesWidth/2 + i*basesWidth + gridMargin)
+    drawSegment(
+        segment, segmentIndex,
+        gridViewSettings,
+        gridViewComputedParameters,
+        templates,
+        plasmid
+    ) {
+        const { singleStrandHeight, baseTextOffset, gridMargin } = gridViewSettings;
+    
+        const { maxWidth, basesPerLine, basesPositions } = gridViewComputedParameters;
+        const { svgCanvasTemplate, baseBoxTemplateFwd, baseBoxTemplateRev, baseTextTemplateFwd, baseTextTemplateRev } = templates;
+        const { features } = plasmid;
+
+        const segmentIndexStart = segment["segmentIndexStart"];
+        const segmentIndexEnd = segment["segmentIndexEnd"];
+        
+        const seqToPixel = (s) => (s / basesPerLine)*(maxWidth) + gridMargin;
+        
+        // Clone template
+        const svgCanvas = svgCanvasTemplate.cloneNode(true);
+        svgCanvas.setAttribute("indices", [segmentIndexStart+1, segmentIndexEnd]);
+
+        const strandGroup = svgCanvas.querySelector("#strand-group");
+            const groupSequence = strandGroup.querySelector("#sequence-group");
+                const groupStrandFwd = groupSequence.querySelector("#strand-fwd");
+                    const groupStrandFwdRects = groupStrandFwd.querySelector("#strand-rects");
+                    const groupStrandFwdText = groupStrandFwd.querySelector("#strand-text");
+                    
+                const groupStrandRev = groupSequence.querySelector("#strand-rev");
+                    const groupStrandRevRects = groupStrandRev.querySelector("#strand-rects");
+                    const groupStrandRevText = groupStrandRev.querySelector("#strand-text");
+                    
+                const groupAxis = groupSequence.querySelector("#axis-group");
+                    const groupTicks = groupAxis.querySelector("#axis-ticks");
+                    const groupStrandIndices = groupAxis.querySelector("#strand-indices");
+            const segmentFeaturesGroup = strandGroup.querySelector("#svg-features");
+
+
+        // Draw bases
+        for (let i = 0; i < 2; i++) {
+            this.drawBases(
+                [segment.sequenceFwd, segment.sequenceRev][i],
+                segmentIndex,
+                [baseBoxTemplateFwd, baseBoxTemplateRev][i],
+                [baseTextTemplateFwd, baseTextTemplateRev][i],
+                [groupStrandFwdRects, groupStrandRevRects][i],
+                [groupStrandFwdText, groupStrandRevText][i],
+                basesPerLine,
+                basesPositions,
+                [false, true][i]
+            );
         };
 
-        /**
-         * Iterate over segments and draw
-         */
-        // #region Draw_segments
-        const baseBoxTemplate = this.createShapeElement("rect");
-
-        
-        segments.forEach((segment) => {
-            const segmentIndexStart = segment["segmentIndexStart"];
-            const segmentIndexEnd = segment["segmentIndexEnd"];
-            
-
-            // #region SVG_canvas
-            const svgCanvas = this.createShapeElement("svg");
-            svgCanvas.setAttribute("version", "1.2");
-            svgCanvas.setAttribute("width", maxWidth + gridMargin*2); // add margin for strokes back in 
-            svgCanvas.setAttribute("indices", [segmentIndexStart+1, segmentIndexEnd])
-            svgWrapper.appendChild(svgCanvas);
-            // #endregion SVG_canvas
+        this.drawGridAxis(
+            groupAxis,
+            groupTicks,
+            groupStrandIndices,
+            groupSequence,
+            segment,
+            segmentIndexStart,
+            segmentIndexEnd,
+            basesPositions,
+            singleStrandHeight,
+            gridMargin,
+            maxWidth,
+            basesPerLine
+        );
 
 
-            // #region Main_group
-            const groupMain = this.createShapeElement("g");
-            groupMain.setAttribute("id", "strand-group");
-            groupMain.setAttribute("transform", "translate(0, 5)");
-            svgCanvas.appendChild(groupMain);
+        let svgHeight = this.drawGridFeatures(
+            segment,
+            segmentIndexStart,
+            segmentIndexEnd,
+            seqToPixel,
+            segmentFeaturesGroup,
+            gridViewSettings,
+            features,
+            plasmid,
+        );
+
+
+        svgCanvas.setAttribute("height", svgHeight);
+        return svgCanvas;
+    };
+
+
+    drawBases(
+        segmentSequence, segmentIndex, baseBoxTemplate, baseTextTemplate, groupStrandRects, groupStrandText,
+        basesPerLine, basesPositions, isReverse = false
+    ) {
+        const baseWidth = UserPreferences.get("baseWidth");
+        for (let i = 0; i < basesPerLine; i++) {
+            const baseChar = segmentSequence[i];
+            if (!baseChar) continue;
     
-
-            // #region Sequence_group
-            const groupSequence = this.createShapeElement("g");
-            groupSequence.setAttribute("id", "sequence-group");
-            groupMain.appendChild(groupSequence);
-            
-
-            // #region Forward_strand
-            const groupStrandFwd = this.createShapeElement("g");
-            groupStrandFwd.setAttribute("id", "strand-fwd");
-            groupSequence.appendChild(groupStrandFwd);
-
-            const groupStrandFwdRects = this.createShapeElement("g");
-            groupStrandFwdRects.setAttribute("id", "strand-rects");
-            groupStrandFwd.appendChild(groupStrandFwdRects);
-            const groupStrandFwdText = this.createShapeElement("g");
-            groupStrandFwdText.setAttribute("id", "strand-text");
-            groupStrandFwd.appendChild(groupStrandFwdText);
-
-            for (let i = 0; i < basesPerLine; i++) {
-                if (!segment["sequenceFwd"][i]) {continue};
-
-                const baseBox = baseBoxTemplate.cloneNode();
-                baseBox.setAttribute("x", basesPositions[i] - basesWidth/2);
-                baseBox.setAttribute("y", 0);
-                baseBox.setAttribute("height", singleStrandHeight);
-                baseBox.setAttribute("width", basesWidth);
-                baseBox.classList.add("base");
-                //if (!/^[ACTG]$/i.test(segment["sequenceFwd"][i])) {
-                //    baseBox.classList.add("base-ambigous");
-                //};
-                baseBox.setAttribute("base-index", segments.indexOf(segment)*basesPerLine + i + 1)
-                groupStrandFwdRects.appendChild(baseBox);
-
-                this.baseRectsMap["fwd"].push(baseBox);
-                
-                const textClass = (/^[ACTG]$/i.test(segment["sequenceFwd"][i]))
-                ? "base-text"
-                : "base-ambigous-text";
-                
-                const base = this.text(
-                    [basesPositions[i], singleStrandHeight - baseTextOffset],
-                    segment["sequenceFwd"][i],
-                    null,
-                    textClass,
-                    "middle"
-                );
-                groupStrandFwdText.appendChild(base);
+            const baseBox = baseBoxTemplate.cloneNode();
+            baseBox.setAttribute("x", basesPositions[i] - baseWidth / 2);
+            baseBox.setAttribute("base-index", segmentIndex * basesPerLine + i + 1);
+            groupStrandRects.appendChild(baseBox);
+    
+            this.baseRectsMap[isReverse ? "rev" : "fwd"].push(baseBox);
+    
+            const baseText = baseTextTemplate.cloneNode();
+            baseText.setAttribute("x", basesPositions[i]);
+            baseText.textContent = baseChar;
+            if (!/^[ACTG]$/i.test(baseChar)) {
+                baseText.setAttribute("class", "base-ambiguous-text")
             };
-            // #endregion Forward_strand
+
+            groupStrandText.appendChild(baseText);
+        };
+    };
 
 
-            // #region Reverse_strand
-            const groupStrandRev = this.createShapeElement("g");
-            groupStrandRev.setAttribute("id", "strand-rev");
-            groupSequence.appendChild(groupStrandRev);
-
-            const groupStrandRevRects = this.createShapeElement("g");
-            groupStrandRevRects.setAttribute("id", "strand-rects");
-            groupStrandRev.appendChild(groupStrandRevRects);
-            const groupStrandRevText = this.createShapeElement("g");
-            groupStrandRevText.setAttribute("id", "strand-text");
-            groupStrandRev.appendChild(groupStrandRevText);
-
-            for (let i = 0; i < basesPerLine; i++) {
-                if (!segment["sequenceRev"][i]) {continue};
-
-                const baseBox = baseBoxTemplate.cloneNode();
-                baseBox.setAttribute("x", basesPositions[i] - basesWidth/2);
-                baseBox.setAttribute("y", singleStrandHeight);
-                baseBox.setAttribute("height", singleStrandHeight);
-                baseBox.setAttribute("width", basesWidth);
-                baseBox.classList.add("base");
-                //if (!/^[ACTG]$/i.test(segment["sequenceRev"][i])) {
-                //    baseBox.classList.add("base-ambigous");
-                //};
-                baseBox.setAttribute("base-index", segments.indexOf(segment)*basesPerLine + i + 1)
-                groupStrandRevRects.appendChild(baseBox);
-
-                this.baseRectsMap["rev"].push(baseBox);
-                
-                const textClass = (/^[ACTG]$/i.test(segment["sequenceFwd"][i]))
-                ? "base-text"
-                : "base-ambigous-text";
-                const base = this.text(
-                    [basesPositions[i], singleStrandHeight*2  - baseTextOffset],
-                    segment["sequenceRev"][i],
+    drawGridAxis(
+        groupAxis, groupTicks, groupStrandIndices, groupSequence, segment, segmentIndexStart, segmentIndexEnd,
+        basesPositions, singleStrandHeight, gridMargin, maxWidth, basesPerLine
+    ) {
+        // Main line
+        const axisEndX = (segment.sequenceFwd.length / basesPerLine) * maxWidth + gridMargin;
+        groupAxis.appendChild(this.line(
+            [gridMargin, singleStrandHeight],
+            [axisEndX, singleStrandHeight], 
+            null,
+            "svg-sequence-axis-grid"
+        ));
+    
+        // Ticks
+        const ticksConfig = [
+            { increment: 10, length: 14 },
+            { increment: 5, length: 7 }
+        ];
+        ticksConfig.forEach(({ increment, length }) => {
+            for (
+                let num = Math.ceil(segmentIndexStart / increment) * increment;
+                num <= segmentIndexEnd;
+                num += increment
+            ) {
+                if (num - segmentIndexStart === 0) continue;
+                if (num - segmentIndexStart > segment.sequenceFwd.length) continue;
+    
+                const tickX = basesPositions[num - segmentIndexStart - 1];
+                groupTicks.appendChild(this.line(
+                    [tickX, singleStrandHeight - length / 2],
+                    [tickX, singleStrandHeight + length / 2],
                     null,
-                    textClass,
-                    "middle"
-                );
-                groupStrandRevText.appendChild(base);
-            };
-            // #endregion Reverse_strand
-
-            
-            // #region Axis
-            groupSequence.appendChild(this.line(
-                [0 + gridMargin, singleStrandHeight],
-                [(segment["sequenceFwd"].length/basesPerLine)*maxWidth + gridMargin, singleStrandHeight],
-                null,
-                "svg-sequence-axis-grid"
-            ));
-            // #endregion Axis
-
-
-            // #region Ticks
-            const groupTicks = this.createShapeElement("g");
-            groupSequence.appendChild(groupTicks);
-
-            const ticksIncrement = [10, 5];
-            const ticksLength = [14, 7];
-            for (let i = 0; i < 2; i++) {
-                for (
-                    let num = Math.ceil(segmentIndexStart / ticksIncrement[i]) * ticksIncrement[i];
-                    num <= segmentIndexEnd;
-                    num += ticksIncrement[i]
-                ) {
-                    if (num - segmentIndexStart === 0) {continue};
-                    if (num - segmentIndexStart > segment["sequenceFwd"].length) {continue}
-                    groupTicks.appendChild(this.line(
-                        [
-                            basesPositions[num - segmentIndexStart - 1],
-                            singleStrandHeight-ticksLength[i]/2
-                        ],
-                        [
-                            basesPositions[num - segmentIndexStart - 1],
-                            singleStrandHeight+ticksLength[i]/2
-                        ],
-                        null,
-                        "svg-sequence-axis-grid"
-                    ));
-                };
-            };
-            // #endregion Ticks
-
-
-            // #region Sequence_indices
-            // Sequence indices or
-            // dots on each side of the axis for circular plasmids
-            const groupStrandIndices = this.createShapeElement("g");
-            groupStrandIndices.setAttribute("id", "strand-indices");
-            groupSequence.appendChild(groupStrandIndices);
-
-            const dotsOffset = 8;
-            const dotsWidth = 4;
-            const startingOffset = 4;
-            if (topology === "circular" && segments.indexOf(segment) == 0){
-                for (let i = 0; i < 3; i++){
-                    groupStrandIndices.appendChild(this.line(
-                        [gridMargin - startingOffset - i*dotsOffset, singleStrandHeight],
-                        [gridMargin - startingOffset - i*dotsOffset - dotsWidth, singleStrandHeight],
-                        null,
-                        "svg-sequence-axis-grid"
-                    ));
-                };
-            } else {
-                groupStrandIndices.appendChild(this.text(
-                    [gridMargin - 8, singleStrandHeight],
-                    `${segmentIndexStart + 1}`,
-                    null,
-                    "svg-sequence-indices",
-                    "end",
-                    5
+                    "svg-sequence-axis-grid"
                 ));
-            };
-
-            // Dots on each side of the axis for circular plasmids
-            const startX = gridMargin + (segment["sequenceFwd"].length/basesPerLine)*maxWidth
-            if (topology === "circular" && segments.indexOf(segment) == segments.length - 1){
-                for (let i = 0; i < 3; i++) {
-                    groupSequence.appendChild(this.line(
-                        [startX + startingOffset + i*dotsOffset, singleStrandHeight],
-                        [startX + startingOffset + i*dotsOffset + dotsWidth, singleStrandHeight],
-                        null,
-                        "svg-sequence-axis-grid"
-                    ));
-                };
-            } else {
-                groupSequence.appendChild(this.text(
-                    [startX + 8, singleStrandHeight],
-                    `${segmentIndexEnd}`,
-                    null,
-                    "svg-sequence-indices",
-                    "start",
-                    5
-                ));
-            };
-            // #endregion Sequence_indices
-            
-            // #endregion Sequence_group
-
-
-            // #region Features
-            const segmentFeatures = this.createShapeElement("g");
-            segmentFeatures.setAttribute("id", "svg-features");
-            groupMain.appendChild(segmentFeatures);
-
-            let levels = {};
-            for (let key in segment["features"]) {
-                let level = segment["features"][key]["level"];
-                
-                if (!levels[level]) {
-                    levels[level] = [];
-                };
-                levels[level].push(key);
-            };
-            levels = Object.values(levels)
-        
-            const featuresLevelStart = singleStrandHeight*2 + strandFeatureSpacing;
-            let featureGroupTopY = featuresLevelStart;
-            let aaIndexY;
-            let aaBlockY;
-            let annotationY;
-            
-            let svgHeight = svgMinHeight;
-            // Iterate over levels
-            for (let i = 0; i < levels.length; i++) {
-                if (i !== 0) {
-                    featureGroupTopY = annotationY + featureAnnotationHeight/2 + featureAnnotationsSpacing;
-                };
-
-                const featuresInLevel = levels[i];
-                let translatedFeatureInLevel = false;
-                for (let j = 0; j < featuresInLevel.length; j++) {
-                    const currFeatureID = featuresInLevel[j];
-                    const featureDict = segment["features"][currFeatureID];
-                    if (featureDict["translation"]) {
-                        translatedFeatureInLevel = true
-                    };
-                };
-
-                // Iterate over features in level
-                if (translatedFeatureInLevel) {
-                    aaIndexY = featureGroupTopY;
-                    aaBlockY = aaIndexY + aaIndexHeight + featureGroupGap;
-                    annotationY = aaBlockY + aaBlockHeight + featureGroupGap + featureAnnotationHeight/2;
-                } else {
-                    annotationY = featureGroupTopY + featureAnnotationHeight/2;
-                };
-
-                svgHeight = Math.max(
-                    annotationY + featureAnnotationHeight/2 + featureAnnotationsSpacing + 5,
-                    svgMinHeight,
-                );
-
-                for (let j = 0; j < featuresInLevel.length; j++) {
-                    const currFeatureID = featuresInLevel[j];
-                    const featureDict = segment["features"][currFeatureID];
-    
-    
-                    let featureLengthPixels = seqToPixel(featureDict["span"][1]) - seqToPixel(featureDict["span"][0]-1);
-                    featureLengthPixels -= (featureDict["shape-left"] !== null) ? 10: 0;
-                    featureLengthPixels -= (featureDict["shape-right"] !== null) ? 10: 0;
-                    const featureLabel = this.fitTextInRectangle(
-                        featureDict["label"],
-                        featureLengthPixels,
-                        "svg-feature-label-black",
-                    );
-
-                    const featureElement = this.gridFeature(
-                        currFeatureID,
-                        [
-                            seqToPixel(featureDict["span"][0]-1),
-                            seqToPixel(featureDict["span"][1])
-                        ],
-                        annotationY,
-                        featureAnnotationHeight,
-                        featureDict["shape-left"],
-                        featureDict["shape-right"],
-                        featureLabel,
-                        featureDict["color"],
-                        null,
-                        "svg-feature-arrow"
-                    );
-                    segmentFeatures.appendChild(featureElement);
-
-                    if (!this.featureSegmentsMap[currFeatureID]) {
-                        this.featureSegmentsMap[currFeatureID] = [];
-                    };
-                    this.featureSegmentsMap[currFeatureID].push(featureElement);
-    
-    
-                    // #region Translation
-                    if (featureDict["translation"]) {
-                        translatedFeatureInLevel = true;
-
-                        const featureSpan = featureDict["span"]
-                        const featureSegmentSpan = [
-                            featureDict["span"][0] + segmentIndexStart,
-                            featureDict["span"][1] + segmentIndexStart,
-                        ];
-    
-                        
-                        const translation = this.createShapeElement("g");
-                        translation.setAttribute("id", "svg-feature-translation");
-                        segmentFeatures.appendChild(translation);
-    
-                        const direction = features[currFeatureID]["directionality"];
-                        const aaIndices = featureDict["aaIndices"]
-
-                        let codonStart = (direction === "fwd") ? featureSegmentSpan[0]: featureSegmentSpan[1];
-                        
-                        let aaRangeIndex = aaIndices.findIndex(([a, b]) => codonStart >= Math.min(a, b) && codonStart <= Math.max(a, b));
-                        
-                        while (aaIndices[aaRangeIndex]) {
-                            const aaRangeFull = aaIndices[aaRangeIndex];
-    
-                            if (direction === "fwd" && aaRangeFull[0] > segmentIndexEnd) break;
-                            if (direction === "rev" && aaRangeFull[0] < segmentIndexStart+1) break;
-    
-                            const codon = (direction === "fwd") 
-                            ? sequence.slice(Math.min(...aaRangeFull) - 1, Math.max(...aaRangeFull))
-                            : complementarySequence.slice(Math.min(...aaRangeFull) - 1, Math.max(...aaRangeFull)).split("").reverse().join("");
-                            
-                            const aa = Nucleotides.translate(codon);
-    
-                            const aaShapeRange = (direction === "fwd")
-                            ? [Math.max(aaRangeFull[0], segmentIndexStart + 1), Math.min(aaRangeFull[1], segmentIndexEnd)]
-                            : [Math.min(aaRangeFull[0], segmentIndexEnd), Math.max(aaRangeFull[1], segmentIndexStart+1)];
-    
-    
-                            const aaBlockXStart = seqToPixel(Math.min(...aaShapeRange) - segmentIndexStart) - baseWidth;
-                            const aaBlockWidthBases = Math.abs(aaShapeRange[0] - aaShapeRange[1]) + 1
-                            const aaBlockWidthPx = aaBlockWidthBases*baseWidth;
-                            let aaTextPos = (aaBlockWidthBases >= 2)
-                            ? (direction === "fwd")
-                                ? aaRangeFull[0] + (aaRangeFull[1] - aaRangeFull[0])/2
-                                : aaRangeFull[0] - (aaRangeFull[0] - aaRangeFull[1])/2
-                            : null;
-                            let aaTextPosPx = seqToPixel(aaTextPos - segmentIndexStart) - baseWidth/2;
-                            
-                            if (aaBlockWidthBases === 2) {
-                                const closerEdge = Math.abs(aaShapeRange[0] - aaRangeFull[0]) < Math.abs(aaShapeRange[1] - aaRangeFull[1]) ? "back" : "front";
-                                if (closerEdge === "front") {
-                                    aaTextPos = aaShapeRange[0] + ((direction === "fwd") ? 0.2: -0.2);
-                                } else {
-                                    aaTextPos = aaShapeRange[0] + ((direction === "fwd") ? 1: -1);
-                                };
-                                
-                                aaTextPosPx = seqToPixel(aaTextPos - segmentIndexStart) - baseWidth/2;
-                            } else if (aaBlockWidthBases === 3) {
-                                aaTextPos = aaRangeFull[0] + ((direction === "fwd") ? 1: -1);
-                                aaTextPosPx = seqToPixel(aaTextPos - segmentIndexStart) - baseWidth/2;
-                            } else {
-                                aaTextPosPx = null;
-                            };
-
-                            const aaIndex = ((aaRangeIndex + 1) % 5 === 0 || aaRangeIndex === 0) ? aaRangeIndex + 1: null;
-    
-
-                            const aaBlock = this.aaBlock(
-                                aaBlockXStart,
-                                aaBlockY,
-                                aaBlockWidthPx,
-                                aaBlockHeight,
-                                direction,
-                                aaTextPosPx,
-                                aa,
-                                aaIndexY,
-                                aaIndexHeight,
-                                aaIndex,
-                            );
-                            aaBlock.setAttribute("feature-id", currFeatureID);
-                            aaBlock.setAttribute("aa-index", aaRangeIndex);
-                            aaBlock.setAttribute("aa-span", aaRangeFull);
-                            aaBlock.setAttribute("aa", aa);
-                            translation.appendChild(aaBlock);
-    
-                            aaRangeIndex++;
-                        };
-                    };
-                    // #endregion Translation
-                };
-            };
-            svgCanvas.setAttribute("height", svgHeight);
-            //#endregion Features
-            // #endregion Main_group
-
-
-            //#region Cursors_groups 
-            const groupSelectionPreviewCursor = this.createShapeElement("g");
-            groupSelectionPreviewCursor.setAttribute("id", "selection-preview-cursor-group");
-            svgCanvas.appendChild(groupSelectionPreviewCursor);
-
-            const groupSelectionCursor = this.createShapeElement("g");
-            groupSelectionCursor.setAttribute("id", "selection-cursor-group");
-            svgCanvas.appendChild(groupSelectionCursor);
-            //#endregion Cursors_groups
-
+            }
         });
-        // #endregion
+    
+        const [leftBound, rightBound] = segment.segmentBounds;
+        this.drawSegmentBoundary(groupStrandIndices, leftBound, gridMargin, singleStrandHeight, segmentIndexStart + 1, "end");
+        this.drawSegmentBoundary(groupSequence, rightBound, axisEndX, singleStrandHeight, segmentIndexEnd, "start");
+    };
 
 
-        // #endregion Main
-        return svgWrapper;
+    drawSegmentBoundary(parentGroup, boundaryType, x, y, label, textAnchor) {
+        const dotsOffset = 8;
+        const dotsWidth = 4;
+        const startingOffset = 4;
+    
+        if (boundaryType === "continued") {
+            // Draw 3 dots for a continued segment
+            for (let i = 0; i < 3; i++) {
+                const dotX = x + ((textAnchor === "start") ? (startingOffset + i * dotsOffset) : (-startingOffset - i * dotsOffset));
+                parentGroup.appendChild(this.line(
+                    [dotX, y],
+                    [dotX + ((textAnchor === "start") ? dotsWidth : -dotsWidth), y],
+                    null,
+                    "svg-sequence-axis-grid"
+                ));
+            }
+        } else {
+            // Draw sequence index
+            parentGroup.appendChild(this.text(
+                [(textAnchor === "start") ? x + 8 : x - 8, y],
+                `${label}`,
+                null,
+                "svg-sequence-indices",
+                textAnchor,
+                5
+            ));
+        };
+    };
+    
+
+
+    drawGridFeatures(segment, segmentIndexStart, segmentIndexEnd, seqToPixel, segmentFeaturesGroup, gridViewSettings, features, plasmid) {
+        const {
+            svgMinHeight, singleStrandHeight, strandFeatureSpacing, featureAnnotationHeight,
+            featureAnnotationsSpacing, aaIndexHeight, featureGroupGap,
+            aaBlockHeight
+        } = gridViewSettings;
+        
+        // Group features by level
+        let levels = Object.values(
+            Object.entries(segment.features).reduce((acc, [key, feature]) => {
+                acc[feature.level] = acc[feature.level] || [];
+                acc[feature.level].push(key);
+                return acc;
+            }, {})
+        );
+        
+    
+        let svgHeight = svgMinHeight;
+        let featureGroupTopY = singleStrandHeight * 2 + strandFeatureSpacing;
+    
+        levels.forEach((featuresInLevel, levelIndex) => {
+            featureGroupTopY = levelIndex === 0
+                ? featureGroupTopY
+                : annotationY + featureAnnotationHeight / 2 + featureAnnotationsSpacing;
+    
+            const { annotationY, aaIndexY, aaBlockY } = this.calculateFeatureElementsPositions(
+                segment, featuresInLevel, featureGroupTopY, aaIndexHeight, featureGroupGap,
+                aaBlockHeight, featureAnnotationHeight
+            );
+    
+            svgHeight = Math.max(annotationY + featureAnnotationHeight / 2 + featureAnnotationsSpacing + 5, svgHeight);
+    
+            featuresInLevel.forEach(currFeatureID => {
+                const featureDict = segment.features[currFeatureID];
+
+                let featureLengthPixels = seqToPixel(featureDict.span[1]) - seqToPixel(featureDict.span[0] - 1);
+                featureLengthPixels -= featureDict["shape-left"] !== null ? 10 : 0;
+                featureLengthPixels -= featureDict["shape-right"] !== null ? 10 : 0;
+                
+                const featureLabel = this.fitTextInRectangle(featureDict.label, featureLengthPixels, "svg-feature-label-black");
+
+                const featureElement = this.gridFeature(
+                    currFeatureID,
+                    [seqToPixel(featureDict.span[0] - 1), seqToPixel(featureDict.span[1])],
+                    annotationY,
+                    featureAnnotationHeight,
+                    featureDict["shape-left"],
+                    featureDict["shape-right"],
+                    featureLabel,
+                    featureDict.color,
+                    null,
+                    "svg-feature-arrow"
+                );
+                segmentFeaturesGroup.appendChild(featureElement);
+                
+                this.featureSegmentsMap[currFeatureID] = this.featureSegmentsMap[currFeatureID] || [];
+                this.featureSegmentsMap[currFeatureID].push(featureElement);
+    
+                if (featureDict.translation) {
+                    this.drawGridTranslation(
+                        segmentFeaturesGroup,
+                        currFeatureID,
+                        featureDict,
+                        segmentIndexStart,
+                        segmentIndexEnd,
+                        seqToPixel,
+                        aaIndexY,
+                        aaBlockY,
+                        aaIndexHeight,
+                        aaBlockHeight,
+                        features,
+                        plasmid,
+                    );
+                };
+            });
+        });
+    
+        return svgHeight;
+    };
+
+
+    calculateFeatureElementsPositions(
+        segment, featuresInLevel, featureGroupTopY, aaIndexHeight, featureGroupGap,
+        aaBlockHeight, featureAnnotationHeight
+    ) {
+        const translatedFeatureInLevel = featuresInLevel.some(featureID => segment.features[featureID].translation);
+    
+        if (translatedFeatureInLevel) {
+            const aaIndexY = featureGroupTopY;
+            const aaBlockY = aaIndexY + aaIndexHeight + featureGroupGap;
+            return {
+                aaIndexY,
+                aaBlockY,
+                annotationY: aaBlockY + aaBlockHeight + featureGroupGap + featureAnnotationHeight / 2
+            };
+        };
+        
+        return {
+            annotationY: featureGroupTopY + featureAnnotationHeight / 2
+        };
     };
 
 
@@ -1440,7 +1361,11 @@ const PlasmidViewer = new class {
      * @param {*} cssClass 
      * @returns 
      */
-    gridFeature(featureId, span, levelHeight, featureHeight, featureShapeLeft, featureShapeRight, label, color, elementId, cssClass) {
+    gridFeature(
+        featureId, span, levelHeight, featureHeight,
+        featureShapeLeft, featureShapeRight, label,
+        color, elementId, cssClass
+    ) {
         
         const featureArrowWidth = featureHeight; //px
         const featureHeadMinWidth = 10; //px
@@ -1558,7 +1483,76 @@ const PlasmidViewer = new class {
 
         return featureGroup;
     };
+
+
+    drawGridTranslation(
+        segmentFeaturesGroup, currFeatureID, featureDict, segmentIndexStart, segmentIndexEnd,
+        seqToPixel, aaIndexY, aaBlockY, aaIndexHeight, aaBlockHeight, features, plasmid
+    ) {
+        const baseWidth = UserPreferences.get("baseWidth");
+        const {sequence, complementarySequence} = plasmid;
+
+        const translation = this.createShapeElement("g");
+        translation.setAttribute("id", "svg-feature-translation");
+        segmentFeaturesGroup.appendChild(translation);
     
+        const direction = features[currFeatureID].directionality;
+        const aaIndices = featureDict.aaIndices;
+    
+        let codonStart = direction === "fwd"
+            ? featureDict.span[0] + segmentIndexStart
+            : featureDict.span[1] + segmentIndexStart;
+        let aaRangeIndex = aaIndices.findIndex(([a, b]) => codonStart >= Math.min(a, b) && codonStart <= Math.max(a, b));
+    
+        while (aaIndices[aaRangeIndex]) {
+            const aaRangeFull = aaIndices[aaRangeIndex];
+    
+            if ((direction === "fwd" && aaRangeFull[0] > segmentIndexEnd) || 
+                (direction === "rev" && aaRangeFull[0] < segmentIndexStart + 1)) break;
+    
+            const codon = direction === "fwd"
+                ? sequence.slice(Math.min(...aaRangeFull) - 1, Math.max(...aaRangeFull))
+                : complementarySequence.slice(Math.min(...aaRangeFull) - 1, Math.max(...aaRangeFull)).split("").reverse().join("");
+            const aa = Nucleotides.translate(codon);
+    
+            const aaShapeRange = direction === "fwd"
+                ? [Math.max(aaRangeFull[0], segmentIndexStart + 1), Math.min(aaRangeFull[1], segmentIndexEnd)]
+                : [Math.min(aaRangeFull[0], segmentIndexEnd), Math.max(aaRangeFull[1], segmentIndexStart + 1)];
+            
+            let aaTextPos = (Math.abs(aaShapeRange[0] - aaShapeRange[1]) + 1 >= 2)
+                ? (
+                    direction === "fwd"
+                        ? aaRangeFull[0] + (aaRangeFull[1] - aaRangeFull[0]) / 2
+                        : aaRangeFull[0] - (aaRangeFull[0] - aaRangeFull[1]) / 2
+                    )
+                : null;
+
+            const aaTextPosPx = aaTextPos !== null
+                ? seqToPixel(aaTextPos - segmentIndexStart) - baseWidth / 2
+                : null;
+    
+            const aaBlock = this.aaBlock(
+                seqToPixel(Math.min(...aaShapeRange) - segmentIndexStart) - baseWidth,
+                aaBlockY,
+                (Math.abs(aaShapeRange[0] - aaShapeRange[1]) + 1) * baseWidth,
+                aaBlockHeight,
+                direction,
+                aaTextPosPx,
+                aa,
+                aaIndexY,
+                aaIndexHeight,
+                (aaRangeIndex + 1) % 5 === 0 || aaRangeIndex === 0 ? aaRangeIndex + 1 : null
+            );
+    
+            aaBlock.setAttribute("feature-id", currFeatureID);
+            aaBlock.setAttribute("aa-index", aaRangeIndex);
+            aaBlock.setAttribute("aa-span", aaRangeFull);
+            aaBlock.setAttribute("aa", aa);
+            translation.appendChild(aaBlock);
+    
+            aaRangeIndex++;
+        };
+    };
     
     aaBlock(x, y, width, height, direction, textPosX, aa, aaIndexY, aaIndexHeight, aaIndex) {
         const headWidth = 3;
@@ -1764,6 +1758,13 @@ const PlasmidViewer = new class {
      */
     createShapeElement(shape) {
         return document.createElementNS(this.svgNameSpace, shape)
+    };
+
+    createGroup(id, parent) {
+        const group = this.createShapeElement("g");
+        group.setAttribute("id", id);
+        parent.appendChild(group);
+        return group;
     };
 
 
