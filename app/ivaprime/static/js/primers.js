@@ -50,7 +50,7 @@ const Primers = new class {
         // Adjust starting index
         startingIndex = (targetStrand === 'top') ? startingIndex: plasmidSequence.length - startingIndex + 1;
         
-        console.log(`Primers.extendSequence -> startingIndex=${startingIndex} [${plasmidSequence.slice(startingIndex, startingIndex+3)}...]`);
+        //console.log(`Primers.extendSequence -> startingIndex=${startingIndex} [${plasmidSequence.slice(startingIndex, startingIndex+3)}...]`);
 
         // Initial extension length minus the initial sequence
         let extensionLength = minimumLength - initialSequence.length;
@@ -101,11 +101,6 @@ const Primers = new class {
                 
                 const primerOutOfBounds =  plasmidSequence.length - nextEndIndex < 0;
 
-                console.log(
-                    plasmidSequence.length - nextEndIndex, 
-                    Utilities.repeatingSlice(plasmidSequence, ...nextBaseIndices),
-                    primerOutOfBounds,
-                );
 
                 if (Session.activePlasmid().topology === "linear" && primerOutOfBounds) {
                     throw new OutOfBasesError()
@@ -212,8 +207,6 @@ const Primers = new class {
         );
 
         // #endregion HR
-
-        console.log(`Primers.generateSet -> primersSet=\n${JSON.stringify(primersSet, null, 2)}`);
 
         return primersSet;
     };

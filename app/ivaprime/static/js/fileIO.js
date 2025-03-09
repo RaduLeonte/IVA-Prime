@@ -624,7 +624,6 @@ const FileIO = new class {
                 fileAdditionalInfo = parseNotes(blocks[6]);
             };
 
-            console.log("notes", fileAdditionalInfo)
 
             const accountedBlockKeys = [0, 10, 5, 6];
             const unaccountedBlocks = Object.keys(blocks).reduce((obj, key) => {

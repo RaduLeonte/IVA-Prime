@@ -153,8 +153,7 @@ class Plasmid {
 
         this.previousCell = null;
 
-
-        this.saveState("Create plasmid")
+        this.saveState("Create plasmid");
     };
 
 
@@ -230,10 +229,10 @@ class Plasmid {
 
                 if (span1Start < span2Start && span1End < span2Start) {
                     // Feature1 is before Feature2 -> No overlap and break inner loop
-                    console.log("Plasmid.checkFeatureOverlap -> No overlap, break loop","\n",
-                        label1, featureDict1["level"], [span1Start, span1End], "\n",
-                        label2, featureDict2["level"], [span2Start, span2End]
-                    );
+                    //console.log("Plasmid.checkFeatureOverlap -> No overlap, break loop","\n",
+                    //    label1, featureDict1["level"], [span1Start, span1End], "\n",
+                    //    label2, featureDict2["level"], [span2Start, span2End]
+                    //);
                     break;
                 };
 
@@ -249,10 +248,10 @@ class Plasmid {
 
                 if (featureDict1["level"] !== featureDict2["level"]) {
                     // Features are on different levels and could not possibly overlap
-                    console.log("Plasmid.checkFeatureOverlap -> Different levels", "\n",
-                        label1, featureDict1["level"], [span1Start, span1End], "\n",
-                        label2, featureDict2["level"], [span2Start, span2End]
-                    );
+                    //console.log("Plasmid.checkFeatureOverlap -> Different levels", "\n",
+                    //    label1, featureDict1["level"], [span1Start, span1End], "\n",
+                    //    label2, featureDict2["level"], [span2Start, span2End]
+                    //);
                     continue;
                 };
 
@@ -294,10 +293,61 @@ class Plasmid {
     /**
      * Save current state of plasmid.
      * 
+     * Save:
+     * - name
+     * - sequence
+     * - complementary sequence
+     * - features
+     * - topology
+     * - primers
+     * 
+     * States:
+     * 
+     *   [ {},    {},    {}, ...]
+     *     0      1      2
+     *     |      |____________|
+     *     |             |
+     *  Current        Prev.
+     *   state        states
+     * 
+     * If we are in a previous state and we save a new state,
+     * overwrite preceding states and new state will be 0.
+     *  [ {},    {},    {}, ...]
+     *     0      1      2
+     *                   |      |____________|
+     *                   |             |
+     *                Current        Prev.
+     *                 state        states
+     * 
+     * 
      * @param {string} actionDescription - Description of the action that caused the checkpoint.
      */
     saveState(actionDescription) {
-        console.log(`Plasmid.saveState -> ${this.index} Saving state: "${actionDescription}"`)
+        const currState = {
+            actionDescription: actionDescription,
+            name: this.name,
+            sequence: this.sequence,
+            complementarySequence: this.complementarySequence,
+            topology: this.topology,
+            primers: structuredClone(this.primers),
+            features: structuredClone(this.features),
+        };
+
+        if (this.stateIndex !== 0) {
+            this.stateHistory.splice(0, this.stateIndex);
+        };
+
+        this.stateHistory.unshift(currState);
+
+        if (this.stateHistory.length > 100) {
+            this.stateHistory.pop();
+        };
+
+        this.stateIndex = 0;
+
+        
+        console.log(`Plasmid.saveState -> ${this.index} Saving state: "${actionDescription}"`);
+        Toolbar.updateUndoRedoButtonsStates();
     };
 
 
@@ -307,7 +357,26 @@ class Plasmid {
      * @param {int} stateIndex - Index of state to be loaded [-100, 0] 
      */
     loadState(stateIndex) {
-        console.log(`Plasmid.loadState -> ${this.index} Loading state: ${stateIndex}`)
+        console.log(`Plasmid.loadState -> Loading state: ${stateIndex} (curr:${this.stateIndex})`)
+    
+        const stateToLoad = this.stateHistory[stateIndex];
+
+        this.name = stateToLoad.name;
+        this.sequence = stateToLoad.sequence;
+        this.complementarySequence = stateToLoad.complementarySequence;
+        this.topology = stateToLoad.topology;
+        this.primers = stateToLoad.primers;
+        this.features = stateToLoad.features;
+
+        PlasmidViewer.deselectBases();
+        PlasmidViewer.redraw();
+        Sidebar.update();
+
+        this.stateIndex = stateIndex;
+
+        if (Session.subcloningOriginPlasmidIndex === this.index) Session.removeMarkForSubcloning();
+
+        Toolbar.updateUndoRedoButtonsStates();
     };
 
 
@@ -315,10 +384,11 @@ class Plasmid {
      * Load the previous state of the plasmid.
      */
     undo() {
-        // Return immediately if we're on the last possible state
-        if ((this.stateIndex*-1 + 1) == this.stateHistory.length) {return};
+        // Return immediately if we're on the earliest
+        //  state (stateHistory.length - 1)
+        if (this.stateIndex  >= this.stateHistory.length - 1) return;
 
-        this.loadState(this.stateIndex - 1);
+        this.loadState(this.stateIndex + 1);
     };
 
 
@@ -326,10 +396,11 @@ class Plasmid {
      * Load the next state of the plasmid.
      */
     redo() {
-        // Return immediately if we're on the lastest state
-        if (this.stateIndex == 0) {return};
+        // Return immediately if we're on 
+        // the latest state (0)
+        if (this.stateIndex <= 0) return;
 
-        this.loadState(this.stateIndex + 1);
+        this.loadState(this.stateIndex - 1);
     };
 
 
@@ -389,6 +460,8 @@ class Plasmid {
             Sidebar.update();
         };
 
+        if (Session.subcloningOriginPlasmidIndex === this.index) Session.removeMarkForSubcloning();
+
         this.saveState("Flip plasmid")
     };
 
@@ -425,7 +498,9 @@ class Plasmid {
             Sidebar.update();
         };
 
-        this.saveState("Changed plasmid origin");
+        if (Session.subcloningOriginPlasmidIndex === this.index) Session.removeMarkForSubcloning();
+
+        this.saveState("Change plasmid origin");
     };
 
 
@@ -440,7 +515,8 @@ class Plasmid {
             Sidebar.update();
         };
 
-        this.saveState("Changed file topology");
+
+        this.saveState(`Change file topology to ${newTopology}`);
     };
 
 
@@ -542,6 +618,12 @@ class Plasmid {
         PlasmidViewer.deselectBases();
         PlasmidViewer.redraw();
         Sidebar.update();
+
+        if (!label) {
+            this.saveState(`Add new feature at [${span[0]}, ${span[1]}]`);
+        } else if (label === "New translation") {
+            this.saveState(`Add new ${(directionality === "fwd") ? "forward": "reverse"} translation at [${span[0]}, ${span[1]}]`);
+        };
     };
 
 
@@ -590,6 +672,8 @@ class Plasmid {
         console.log(`Plasmid.newTranslationAtFirstStart ->`, strand, cursorIndex, span);
         
         this.newFeature(span, strand, "New translation", "CDS", null, true);
+    
+        this.saveState(`New translation at first START (starting pos: ${cursorIndex})`);
     };
 
 
@@ -664,6 +748,9 @@ class Plasmid {
                 PlasmidViewer.redraw();
                 Sidebar.update();
             };
+
+            this.saveState(`IVA Operation: ${operationType}`);
+
         } catch(error) {
             switch (true) {
                 case (error instanceof AmbiguousBaseError):
@@ -693,6 +780,8 @@ class Plasmid {
 
         this.sequence = this.sequence.slice(0, sliceRange[0] - 1) + newSequence + this.sequence.slice(sliceRange[1]);
         this.complementarySequence = Nucleotides.complementary(this.sequence);
+
+        if (Session.subcloningOriginPlasmidIndex === this.index) Session.removeMarkForSubcloning();
     };
 
 
@@ -742,43 +831,43 @@ class Plasmid {
                 case "shift":
                     // Shift feature position based on inserted length
                     this.features[featureID]["span"] = [spanStart + shiftAmount, spanEnd + shiftAmount];
-                    console.log(
-                        "Plasmid.shiftFeatures ->",
-                        this.features[featureID]["label"],
-                        overlapType,
-                        featureSpan,
-                        this.features[featureID]["span"],
-                    )
+                    //console.log(
+                    //    "Plasmid.shiftFeatures ->",
+                    //    this.features[featureID]["label"],
+                    //    overlapType,
+                    //    featureSpan,
+                    //    this.features[featureID]["span"],
+                    //)
                     break;
     
                 case "inside":
                     this.features[featureID]["span"] = [spanStart, spanEnd + shiftAmount];
-                    console.log(
-                        "Plasmid.shiftFeatures ->",
-                        this.features[featureID]["label"],
-                        overlapType,
-                        featureSpan,
-                        this.features[featureID]["span"],
-                    )
+                    //console.log(
+                    //    "Plasmid.shiftFeatures ->",
+                    //    this.features[featureID]["label"],
+                    //    overlapType,
+                    //    featureSpan,
+                    //    this.features[featureID]["span"],
+                    //)
                     break;
     
                 case "delete":
-                    console.log(
-                        "Plasmid.shiftFeatures ->",
-                        this.features[featureID]["label"],
-                        overlapType,
-                        featureSpan,
-                    )
+                    //console.log(
+                    //    "Plasmid.shiftFeatures ->",
+                    //    this.features[featureID]["label"],
+                    //    overlapType,
+                    //    featureSpan,
+                    //)
                     delete this.features[featureID];
                     break;
 
                 default:
-                    console.log(
-                        "Plasmid.shiftFeatures ->",
-                        this.features[featureID]["label"],
-                        "leave alone",
-                        featureSpan,
-                    )
+                    //console.log(
+                    //    "Plasmid.shiftFeatures ->",
+                    //    this.features[featureID]["label"],
+                    //    "leave alone",
+                    //    featureSpan,
+                    //)
                     break;
             };
         };

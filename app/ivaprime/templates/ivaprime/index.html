@@ -429,9 +429,11 @@
                     <!-- Undo Redo -->
                     <div class="toolbar-group">
                         <div
+                            id="undo-button"
                             class="toolbar-button"
                             disabled
                             title="Undo action (Ctrl + Z)"
+                            onclick="Session.activePlasmid().undo()"
                         >
                             <span
                                 class="toolbar-undo-button"
@@ -439,9 +441,11 @@
                         </div>
 
                         <div
+                            id="redo-button"
                             class="toolbar-button"
                             disabled
                             title="Redo action (Ctrl + Shift + Z)"
+                            onclick="Session.activePlasmid().redo()"
                         >
                             <span
                                 class="toolbar-redo-button"
