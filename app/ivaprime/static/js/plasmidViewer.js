@@ -1265,16 +1265,19 @@ const PlasmidViewer = new class {
     
         let svgHeight = svgMinHeight;
         let featureGroupTopY = singleStrandHeight * 2 + strandFeatureSpacing;
+        let annotationY = featureGroupTopY + featureAnnotationHeight / 2;
+        let aaIndexY;
+        let aaBlockY;
     
         levels.forEach((featuresInLevel, levelIndex) => {
             featureGroupTopY = levelIndex === 0
                 ? featureGroupTopY
                 : annotationY + featureAnnotationHeight / 2 + featureAnnotationsSpacing;
     
-            const { annotationY, aaIndexY, aaBlockY } = this.calculateFeatureElementsPositions(
+            ({ annotationY, aaIndexY, aaBlockY } = this.calculateFeatureElementsPositions(
                 segment, featuresInLevel, featureGroupTopY, aaIndexHeight, featureGroupGap,
                 aaBlockHeight, featureAnnotationHeight
-            );
+            ));
     
             svgHeight = Math.max(annotationY + featureAnnotationHeight / 2 + featureAnnotationsSpacing + 5, svgHeight);
     
