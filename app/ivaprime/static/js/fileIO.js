@@ -357,6 +357,8 @@ const FileIO = new class {
 
                 const featuresDict = {};
 
+                console.log(JSON.stringify(featuresXMLDoc, null, 2));
+
 
                 // Select all <Features> nodes and iterate over them
                 const featureNodes = featuresXMLDoc.Features.Feature;
@@ -378,30 +380,36 @@ const FileIO = new class {
                     featureInfo["directionality"] = {"1": "fwd", "2": "rev", "3": "both"}[featureNode['@_directionality']] || null;
     
                     // Iterate over <Feature> node children (<Q> and <Segment>) to find properties
-                    const qNodes = Array.isArray(featureNode.Q) ? featureNode.Q : [featureNode.Q];
-                    for (let j = 0; j < qNodes.length; j++) {
-                        const QNode = qNodes[j];
-                        const QNodeName = QNode["@_name"];
+                    if (featureNode.Q) {
+                        const qNodes = Array.isArray(featureNode.Q) ? featureNode.Q : [featureNode.Q];
+                        for (let j = 0; j < qNodes.length; j++) {
+                            const QNode = qNodes[j];
+                            const QNodeName = QNode["@_name"];
+        
+                            /**
+                             * Nodes with the name "Q" and its "V" children are "Query-Value" nodes.
+                             * The information is not useful for us, but we keep it to maybe use it
+                             * at some later point.
+                             */
+                            const VNode = QNode.V;
+                            if (VNode) {
+                                if ("@_int" in VNode) {
+                                    featureInfo[QNodeName] = parseInt(VNode["@_int"], 10);
+                                } else if ("@_text" in VNode) {
+                                    
+                                    const needsParsing = /[<>]|&(?:[a-z\d#]+);/i.test(VNode["@_text"]);
     
-                        /**
-                         * Nodes with the name "Q" and its "V" children are "Query-Value" nodes.
-                         * The information is not useful for us, but we keep it to maybe use it
-                         * at some later point.
-                         */
-                        const VNode = QNode.V;
-                        if (VNode) {
-                            if ("@_int" in VNode) {
-                                featureInfo[QNodeName] = parseInt(VNode["@_int"], 10);
-                            } else if ("@_text" in VNode) {
-                                const needsParsing = /[<>]|&(?:[a-z\d#]+);/i.test(VNode["@_text"]);
-
-                                featureInfo[QNodeName] = needsParsing
-                                    ? VNode["@_text"].replace(/<\/?[^>]+(>|$)/g, "").replace(/&[a-z\d#]+;/gi, "").trim()
-                                    : VNode["@_text"].trim();
+                                    featureInfo[QNodeName] = (VNode["@_text"])
+                                        ? needsParsing
+                                            ? VNode["@_text"].replace(/<\/?[^>]+(>|$)/g, "").replace(/&[a-z\d#]+;/gi, "").trim()
+                                            : VNode["@_text"].trim()
+                                        : "";
+                                };
                             };
                         };
                     };
 
+                    if (!featureNode.Segment) continue;
                     const segments = Array.isArray(featureNode.Segment) ? featureNode.Segment : [featureNode.Segment];
                     for (let j = 0; j < segments.length; j++) {
                         const segment = segments[j];
