@@ -202,19 +202,17 @@ const FileIO = new class {
             };
 
             if (!blocks[9]) {
-                Alerts.error(
-                    "Parsing error",
+                throw new ParsingError(
+                    "Cannot Parse .dna File",
                     "Uploaded file is not a valid .dna file."
                 );
-                return;
             };
 
             if (!blocks[0]) {
-                Alerts.error(
-                    "Parsing error",
+                throw new ParsingError(
+                    "Cannot Parse .dna File",
                     "No sequence could be found in the uploaded file."
                 );
-                return;
             };
 
             /**
@@ -355,8 +353,10 @@ const FileIO = new class {
 
                 // Extract XML tree
                 const featuresXMLDoc = xmlParser.parse(bytesToText(bytes));
+                if (!featuresXMLDoc.Features ||  !featuresXMLDoc.Features.Feature) return;
 
                 const featuresDict = {};
+
 
                 // Select all <Features> nodes and iterate over them
                 const featureNodes = featuresXMLDoc.Features.Feature;
@@ -471,6 +471,7 @@ const FileIO = new class {
                 // Extract XML tree
 
                 const primersXMLDoc = xmlParser.parse(bytesToText(bytes));
+                if (!primersXMLDoc.Primers ||  !primersXMLDoc.Primers.Primer) return;
     
                 const primersDict = {};
 
@@ -570,6 +571,7 @@ const FileIO = new class {
                 const notesXMLString = bytesToText(bytes);
 
                 const notesXMLDoc = xmlParser.parse(notesXMLString);
+                if (!notesXMLDoc.Notes) return;
 
                 const notesDict = {};
 
@@ -870,12 +872,10 @@ const FileIO = new class {
             // #region Sequence
             const originMatch = fileContent.match(/ORIGIN[\s\S]*?\n([\s\S]*?)\n\/\//);
             if (!originMatch) {
-                Alerts.error(
-                    "Parsing error",
+                throw new ParsingError(
+                    "Cannot Parse .gb File",
                     "No sequence could be found in the uploaded file."
                 );
-                console.error("No sequence found in .gb file");
-                return;
             };
 
             const rawSequence = originMatch[1];
@@ -914,22 +914,19 @@ const FileIO = new class {
             const lines = fileContent.split("\n");
 
             if (lines.length < 2) {
-                Alerts.error(
-                    "Parsing error",
-                    "No sequence found in FASTA file."
+                throw new ParsingError(
+                    "Cannot Parse .fasta File",
+                    "No sequence could be found in the uploaded file."
                 );
-                console.error("No sequence found in FASTA file.")
             };
 
             const fileSequence = lines[1];
 
             if (!Nucleotides.isNucleotideSequence(fileSequence)) {
-                Alerts.error(
-                    "Parsing error",
+                throw new ParsingError(
+                    "Cannot Parse .fasta File",
                     "FASTA sequence contains non-nucleotide codes."
                 );
-                console.error("FASTA sequence contains non-nucleotide codes.");
-                return;
             };
 
             const fileComplementarySequence = Nucleotides.complementary(fileSequence);
@@ -1007,7 +1004,7 @@ const FileIO = new class {
                 if (start < 0 || end > bytes.length || start >= end) {
                     console.error("Invalid address range.");
                     return;
-                }
+                };
             
                 const hexStrings = bytes.map(byte => byte.toString(16).toUpperCase().padStart(2, "0"));
             
@@ -1016,10 +1013,10 @@ const FileIO = new class {
                     const addressLabel = i.toString(16).toUpperCase().padStart(8, "0"); // Format address
                     const hexSegment = hexStrings.slice(i, Math.min(i + bytesPerLine, end)).join(" ");
                     lines.push(`${addressLabel}: ${hexSegment}`);
-                }
+                };
             
                 console.log("\n" + lines.join("\n"));
-            }
+            };
 
 
             function intToHexBytes(int) {
@@ -1835,19 +1832,17 @@ const FileIO = new class {
         const detectCommonFeatures = document.getElementById("new-file-annotate-features-checkbox").checked;
     
         if (!newFileSequenceInput ||newFileSequenceInput.length === 0) {
-            Alerts.error(
-                "Parsing error",
+            throw new ParsingError(
+                "Cannot Create New File",
                 "No sequence specified."
             );
-            return;
         };
 
         if (newFileSequenceInput.includes("U")) {
-            Alerts.error(
-                "Parsing error",
+            throw new ParsingError(
+                "Cannot Create New File",
                 "IVA Prime does not support RNA sequences."
             );
-            return;
         };
 
         /** 
