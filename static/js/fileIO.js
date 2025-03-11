@@ -202,19 +202,17 @@ const FileIO = new class {
             };
 
             if (!blocks[9]) {
-                Alerts.error(
-                    "Parsing error",
+                throw new ParsingError(
+                    "Cannot Parse .dna File",
                     "Uploaded file is not a valid .dna file."
                 );
-                return;
             };
 
             if (!blocks[0]) {
-                Alerts.error(
-                    "Parsing error",
+                throw new ParsingError(
+                    "Cannot Parse .dna File",
                     "No sequence could be found in the uploaded file."
                 );
-                return;
             };
 
             /**
@@ -355,8 +353,12 @@ const FileIO = new class {
 
                 // Extract XML tree
                 const featuresXMLDoc = xmlParser.parse(bytesToText(bytes));
+                if (!featuresXMLDoc.Features ||  !featuresXMLDoc.Features.Feature) return;
 
                 const featuresDict = {};
+
+                console.log(JSON.stringify(featuresXMLDoc, null, 2));
+
 
                 // Select all <Features> nodes and iterate over them
                 const featureNodes = featuresXMLDoc.Features.Feature;
@@ -378,30 +380,36 @@ const FileIO = new class {
                     featureInfo["directionality"] = {"1": "fwd", "2": "rev", "3": "both"}[featureNode['@_directionality']] || null;
     
                     // Iterate over <Feature> node children (<Q> and <Segment>) to find properties
-                    const qNodes = Array.isArray(featureNode.Q) ? featureNode.Q : [featureNode.Q];
-                    for (let j = 0; j < qNodes.length; j++) {
-                        const QNode = qNodes[j];
-                        const QNodeName = QNode["@_name"];
+                    if (featureNode.Q) {
+                        const qNodes = Array.isArray(featureNode.Q) ? featureNode.Q : [featureNode.Q];
+                        for (let j = 0; j < qNodes.length; j++) {
+                            const QNode = qNodes[j];
+                            const QNodeName = QNode["@_name"];
+        
+                            /**
+                             * Nodes with the name "Q" and its "V" children are "Query-Value" nodes.
+                             * The information is not useful for us, but we keep it to maybe use it
+                             * at some later point.
+                             */
+                            const VNode = QNode.V;
+                            if (VNode) {
+                                if ("@_int" in VNode) {
+                                    featureInfo[QNodeName] = parseInt(VNode["@_int"], 10);
+                                } else if ("@_text" in VNode) {
+                                    
+                                    const needsParsing = /[<>]|&(?:[a-z\d#]+);/i.test(VNode["@_text"]);
     
-                        /**
-                         * Nodes with the name "Q" and its "V" children are "Query-Value" nodes.
-                         * The information is not useful for us, but we keep it to maybe use it
-                         * at some later point.
-                         */
-                        const VNode = QNode.V;
-                        if (VNode) {
-                            if ("@_int" in VNode) {
-                                featureInfo[QNodeName] = parseInt(VNode["@_int"], 10);
-                            } else if ("@_text" in VNode) {
-                                const needsParsing = /[<>]|&(?:[a-z\d#]+);/i.test(VNode["@_text"]);
-
-                                featureInfo[QNodeName] = needsParsing
-                                    ? VNode["@_text"].replace(/<\/?[^>]+(>|$)/g, "").replace(/&[a-z\d#]+;/gi, "").trim()
-                                    : VNode["@_text"].trim();
+                                    featureInfo[QNodeName] = (VNode["@_text"])
+                                        ? needsParsing
+                                            ? VNode["@_text"].replace(/<\/?[^>]+(>|$)/g, "").replace(/&[a-z\d#]+;/gi, "").trim()
+                                            : VNode["@_text"].trim()
+                                        : "";
+                                };
                             };
                         };
                     };
 
+                    if (!featureNode.Segment) continue;
                     const segments = Array.isArray(featureNode.Segment) ? featureNode.Segment : [featureNode.Segment];
                     for (let j = 0; j < segments.length; j++) {
                         const segment = segments[j];
@@ -471,6 +479,7 @@ const FileIO = new class {
                 // Extract XML tree
 
                 const primersXMLDoc = xmlParser.parse(bytesToText(bytes));
+                if (!primersXMLDoc.Primers ||  !primersXMLDoc.Primers.Primer) return;
     
                 const primersDict = {};
 
@@ -570,6 +579,7 @@ const FileIO = new class {
                 const notesXMLString = bytesToText(bytes);
 
                 const notesXMLDoc = xmlParser.parse(notesXMLString);
+                if (!notesXMLDoc.Notes) return;
 
                 const notesDict = {};
 
@@ -870,12 +880,10 @@ const FileIO = new class {
             // #region Sequence
             const originMatch = fileContent.match(/ORIGIN[\s\S]*?\n([\s\S]*?)\n\/\//);
             if (!originMatch) {
-                Alerts.error(
-                    "Parsing error",
+                throw new ParsingError(
+                    "Cannot Parse .gb File",
                     "No sequence could be found in the uploaded file."
                 );
-                console.error("No sequence found in .gb file");
-                return;
             };
 
             const rawSequence = originMatch[1];
@@ -914,22 +922,19 @@ const FileIO = new class {
             const lines = fileContent.split("\n");
 
             if (lines.length < 2) {
-                Alerts.error(
-                    "Parsing error",
-                    "No sequence found in FASTA file."
+                throw new ParsingError(
+                    "Cannot Parse .fasta File",
+                    "No sequence could be found in the uploaded file."
                 );
-                console.error("No sequence found in FASTA file.")
             };
 
             const fileSequence = lines[1];
 
             if (!Nucleotides.isNucleotideSequence(fileSequence)) {
-                Alerts.error(
-                    "Parsing error",
+                throw new ParsingError(
+                    "Cannot Parse .fasta File",
                     "FASTA sequence contains non-nucleotide codes."
                 );
-                console.error("FASTA sequence contains non-nucleotide codes.");
-                return;
             };
 
             const fileComplementarySequence = Nucleotides.complementary(fileSequence);
@@ -1007,7 +1012,7 @@ const FileIO = new class {
                 if (start < 0 || end > bytes.length || start >= end) {
                     console.error("Invalid address range.");
                     return;
-                }
+                };
             
                 const hexStrings = bytes.map(byte => byte.toString(16).toUpperCase().padStart(2, "0"));
             
@@ -1016,10 +1021,10 @@ const FileIO = new class {
                     const addressLabel = i.toString(16).toUpperCase().padStart(8, "0"); // Format address
                     const hexSegment = hexStrings.slice(i, Math.min(i + bytesPerLine, end)).join(" ");
                     lines.push(`${addressLabel}: ${hexSegment}`);
-                }
+                };
             
                 console.log("\n" + lines.join("\n"));
-            }
+            };
 
 
             function intToHexBytes(int) {
@@ -1835,19 +1840,17 @@ const FileIO = new class {
         const detectCommonFeatures = document.getElementById("new-file-annotate-features-checkbox").checked;
     
         if (!newFileSequenceInput ||newFileSequenceInput.length === 0) {
-            Alerts.error(
-                "Parsing error",
+            throw new ParsingError(
+                "Cannot Create New File",
                 "No sequence specified."
             );
-            return;
         };
 
         if (newFileSequenceInput.includes("U")) {
-            Alerts.error(
-                "Parsing error",
+            throw new ParsingError(
+                "Cannot Create New File",
                 "IVA Prime does not support RNA sequences."
             );
-            return;
         };
 
         /** 

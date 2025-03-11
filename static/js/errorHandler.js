@@ -1,3 +1,17 @@
+/**
+ * FileIO
+ */
+class ParsingError extends Error {
+    constructor(name, description) {
+        super(description);
+        this.name = `Parsing error: ${name}`;
+    };
+};
+
+
+/**
+ * Primers
+ */
 class AmbiguousBaseError extends Error {
     constructor(seq) {
         super(`While extending the primers an ambigous base was encountered: ${seq}`);

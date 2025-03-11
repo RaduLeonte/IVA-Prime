@@ -70,7 +70,6 @@ const Modals = new class {
         <div class="modal-hgroup">
             <label>Annotate common features:</label>
             <input type="checkbox" id="new-file-annotate-features-checkbox" name="new-file-annotate-features-checkbox" checked="true">
-            <label for="new-file-annotate-features-checkbox" class="custom-checkbox"></label>
         </div>
 
         <div class="modal-hgroup">
@@ -174,7 +173,6 @@ const Modals = new class {
         <div class="modal-hgroup">
             <label>Translate new feature:</label>
             <input type="checkbox" id="insertion-checkbox-translate" name="insertion-checkbox-translate" checked="false">
-            <label for="insertion-checkbox-translate" class="custom-checkbox"></label>
         </div>
 
         
@@ -267,7 +265,6 @@ const Modals = new class {
         <div class="modal-hgroup">
             <label>Translate new feature:</label>
             <input type="checkbox" id="insertion-checkbox-translate" name="insertion-checkbox-translate" checked="false">
-            <label for="insertion-checkbox-translate" class="custom-checkbox"></label>
         </div>
 
         
