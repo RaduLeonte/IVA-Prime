@@ -40,11 +40,16 @@
             <script src="{% static 'js/toolbar.js' %}"></script>
             <script src="{% static 'js/errorHandler.js' %}"></script>
 
-            <tag autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
         </head>
         
-        <body ondragover="FileIO.importDragOver(event)" ondragleave="FileIO.importDragLeave(event)" ondrop="FileIO.importDrop(event)">
+        <body
+            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+            ondragover="FileIO.importDragOver(event)"
+            ondragleave="FileIO.importDragLeave(event)"
+            ondrop="FileIO.importDrop(event)"
+        >
             <!-- Prevents flashing bug in Firefox -->
             <script>let FF_FOUC_FIX;</script>
 
