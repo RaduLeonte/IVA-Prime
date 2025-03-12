@@ -55,15 +55,29 @@
                             <div class="about-section-subtitle">
                                 Importing
                             </div>
-                            <ol>
-                                <li><p>Click on <span class="button-about button-round button-green">Import File</span> to import either a
-                                    .gb or .dna file. (Or click <span class="button-about button-round button-orange">Demo File</span> to
-                                    import an empty pET-28a(+) vector.)</p>
+                            <ul>
+                                <li>
+                                    <p>
+                                        Plasmid files can be imported by clicking on
+                                        <span class="button-about button-round button-green">Import File</span> to import a
+                                        .gb or .dna file. Files can also be imported by dragging files over the page and
+                                        then dropping them by releasing the mouse.
+                                    </p>
                                 </li>
-                                <li>Navigate using the sequence grid on the right or by clicking on a specific feature in the sidebar.</li>
-                                <li>Import more plasmids by clicking <span class="button-about button-round button-green">Import File</span> again.
+                                <li>
+                                    <p>
+                                        New files can be created by clicking on <span class="button-about button-round button-green">New File</span>
+                                        and specifying a DNA sequence. By default, common features will be automatically annotated, but can be turned
+                                        off. The topology of the pasted sequence can also be specified.
+                                    </p>
                                 </li>
-                            </ol>
+                                <li>
+                                    <p>
+                                        A common pET-28a(+) vector can be imported by clicking on
+                                        <span class="button-about button-round button-orange">Demo File</span>.
+                                    </p>
+                                </li>
+                            </ul>
 
                             <div class="about-section-subtitle">
                                 Insertions
@@ -71,34 +85,46 @@
                             <ol>
                                 <li>
                                     <p>
-                                        Left click at the position you would like to insert a sequence.
+                                        Left click at the position you would like to insert a sequence to set the sequence cursor.
                                     </p>
 
-                                    <p>
+                                    <!-- <p>
                                         <img src="{% static 'assets/gifs/insertion position selection.gif' %}">
-                                    </p>
+                                    </p> -->
                                 </li>
 
                                 <li>
                                     <p>
-                                        Right-click to open the context menu and select <span class="info-window-menu-btn">Insert here</span>.
+                                        Right-click to open the context menu and select "Insert here".
                                     </p>
 
-                                    <p>
+                                    <!-- <p>
                                         <img src="{% static 'assets/gifs/insertion menu item selection.gif' %}">
+                                    </p> -->
+                                </li>
+
+                                <li>
+                                    <p>
+                                        Enter a DNA or amino acid sequence to insert.
                                     </p>
                                 </li>
 
                                 <li>
-                                    Enter a DNA or amino acid sequence to insert.
+                                    <p>
+                                        Optionally, select a target organism for codon optimisation (Escherichia coli, human, yeast etc.).
+                                    </p>
                                 </li>
 
                                 <li>
-                                    Select a target organism for codon optimisation (Escherichia coli, human, yeast etc.).
+                                    <p>
+                                        If you wish for the insertion to be translated, check the "Translate new feature" checkbox.
+                                    </p>
                                 </li>
 
                                 <li>
-                                    Press <span class="button-about button-round button-green">Create primers</span>.
+                                    <p>
+                                        Press <span class="button-about button-round button-green">Create primers</span>.
+                                    </p>
                                 </li>
                             </ol>
 
@@ -108,19 +134,19 @@
                             <ol>
                                 <li>
                                     <p>
-                                        Select a region to be deleted.
+                                        Select a region to be deleted by clicking and then draggin the mouse to set the selection cursors.
                                     </p>
-                                    <p>
+                                    <!-- <p>
                                         <img src="{% static 'assets/gifs/deletion selection.gif' %}" alt="Selecting region to be deleted.">
-                                    </p>
+                                    </p> -->
                                 </li>
                                 <li>
                                     <p>
-                                        Right-click to open the context menu and select <span class="info-window-menu-btn">Delete selection</span>.
+                                        Right-click to open the context menu and select "Delete selection".
                                     </p>
-                                    <p>
+                                    <!-- <p>
                                         <img src="{% static 'assets/gifs/deletion menu item selection.gif' %}">
-                                    </p>
+                                    </p> -->
                                 </li>
                             </ol>
 
@@ -131,19 +157,19 @@
                             <ol>
                                 <li>
                                     <p>
-                                        Select a region to be mutated/replaced.
+                                        Select a region to be mutated by clicking and then draggin the mouse to set the selection cursors..
                                     </p>
-                                    <p>
+                                    <!-- <p>
                                         <img src="{% static 'assets/gifs/mutation selection.gif' %}">
-                                    </p>
+                                    </p> -->
                                 </li>
                                 <li>
                                     <p>
-                                        Right-click to open the context menu and select <span class="info-window-menu-btn">Mutate selection</span> or <span class="info-window-menu-btn">Mutate selection</span>.
+                                        Right-click to open the context menu and select "Mutate selection".
                                     </p>
-                                    <p>
+                                    <!-- <p>
                                         <img src="{% static 'assets/gifs/mutation menu item selection.gif' %}">
-                                    </p>
+                                    </p> -->
                                 </li>
                                 <li>
                                     <p>
@@ -152,7 +178,12 @@
                                 </li>
                                 <li>
                                     <p>
-                                        Select a target organism for codon optimisation (Escherichia coli, human, yeast etc.).
+                                        Optionally, select a target organism for codon optimisation (Escherichia coli, human, yeast etc.).
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        If you wish for the insertion to be translated, check the "Translate new feature" checkbox.
                                     </p>
                                 </li>
                                 <li>
@@ -171,36 +202,38 @@
                                     <p>
                                         To subclone navigate to your region of interest and select it.
                                     </p>
-                                    <p>
+                                    <!-- <p>
                                         <img src="{% static 'assets/gifs/subcloning selection.gif' %}">
+                                    </p> -->
+                                </li>
+
+                                <li>
+                                    <p>
+                                        Right-click to open the context menu and select "Mark selection for subcloning". The sequence
+                                        will  then be highlighted, confirming the region as marked.
                                     </p>
                                 </li>
 
                                 <li>
                                     <p>
-                                        Right-click to open the context menu and select <span class="info-window-menu-btn">Mark selection for subcloning</span>. A highlight color advanced 
-                                        dashed lines demarcate your <span class="subcloning-target-cell-info-window">marked sequence</span>.
+                                        Now switch to the destination plasmid and navigate to where the marked sequence will be inserted.
                                     </p>
                                 </li>
 
                                 <li>
                                     <p>
-                                        Now open the destination plasmid, navigate to where the marked sequence will be inserted.
+                                        To subclone between two bases, left-click at desired position to set the cursor, then right-click 
+                                        and choose "Subclone into selection". Alternatively, if you wish to replace a region with the subcloning
+                                        target, select the region and then right-click and select "Subclone into selection".
                                     </p>
                                 </li>
 
                                 <li>
                                     <p>
-                                        To subclone into a region between bases, left-click at 
-                                        desired position to set the cursor, then right click and choose <span class="info-window-menu-btn">Subclone into selection</span>
-                                    </p>
-                                </li>
-
-                                <li>
-                                    <p>
-                                        If you wish to at the same time insert additional sequences adjacent to the subcloned sequence at the destination, choose 
-                                        <span class="info-window-menu-btn">Subclone with insertion into selection</span>. This will open a window where you can 
-                                        specify the additional sequences that will be included at the 5' and 3' prime ends individually. Once you are done, press 
+                                        Optioally, if you wish to at the same time insert additional sequences adjacent to the subcloning target 
+                                        sequence at the destination, choose "Subclone with insertion into selection" in the context menu. 
+                                        This will open a window where you can specify the additional sequences that will be included at the 
+                                        5' and 3' prime ends individually. Once you are done, press 
                                         <span class="button-about button-round button-green">Create primers</span>.
                                     </p>
                                 </li>
@@ -210,20 +243,158 @@
                             <div class="about-section-subtitle">
                                 Saving the primers and modified plasmid to file
                             </div>
+                            <p>
+                                Primers and the modified plasmid file can be exported to a variety of formats by
+                                clicking on the downwards pointing arrow on the tab of your plasmid. This will open
+                                a dropdown menu where you may select the output format.
+                            </p>
+                        </div>
+
+                        <div class="about-section" id="privacy-policy">
+                            <div class="about-section-title">
+                                IVA Prime settings
+                            </div>
+
+                            <div class="about-section-subtitle">
+                                Basic settings
+                            </div>
+
                             <ul>
                                 <li>
                                     <p>
-                                        To export the generated primers, click on the downwards arrow next to the plasmid name. 
-                                        This will open a dropdown menu where you can choose your desired format for the primer list.
+                                        <b>Primer type:</b> Asymmetric (Asym.) / Symmetric (Sym.)
+                                    </p>
+                                    <p>
+                                        Asymmetric primers will have their Homologous Region (HR) distributed to only the forward 
+                                        primer, while symmetric primers will have their HR distributed evenly amongst the forward 
+                                        and reverse primer. Asymmetric primers are useful when doing many operations starting at 
+                                        the same position, as that will allow the reuse of the reverse primer. Symmetric primers 
+                                        have their forward and reverse primer lengths averaged and thus can save costs depending 
+                                        on the pricing of your local oligo supplier.
                                     </p>
                                 </li>
                                 <li>
                                     <p>
-                                        To save the modified plasmid file, click on the downwards arrow next to the plasmid name. 
-                                        This will open a dropdown menu where you can choose your desired format for plasmid file.
+                                        <b>Theme:</b> Light / Dark
+                                    </p>
+                                    <p>
+                                        IVA Prime offers an alternative theme with the dark theme for users who want to reduce 
+                                        eye strain.
                                     </p>
                                 </li>
                             </ul>
+                            
+                            <div class="about-section-subtitle">
+                                Advanced settings
+                            </div>
+
+                            <ul>
+                                <li>
+                                    <p>
+                                        <b>Primer concentration</b>
+                                    </p>
+                                    <p>
+                                        The primer concentration in nM specifies the amount of DNA for the purposes of calculating
+                                        the Tm. This value is only relevant for the Nearest-neighbor algorithm.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <b>Algorithm:</b> Basic (Oligo Calc) / Nearest-neighbor (SantaLucia)
+                                    </p>
+                                    <p>
+                                        This setting specifies the algorithm that is to be used for calculting the melting temperatures
+                                        of DNA sequences. The Oligo Calc algorithm (<a href="https://doi.org/10.1093/nar/gkm234" target="_blank">DOI: 10.1093/nar/gkm234</a>) 
+                                        is quite basic but has proven robust for IVA Clonig. 
+                                        If a more realistic algorithm is desired, the Nearest-neihbour algorithm by SantaLucia (<a href="https://doi.org/10.1021/bi951907q" target="_blank">DOI: 10.1021/bi951907q</a>) can be chosen. 
+                                        This setting only affects the primer generation of the template binding regions 
+                                        (TBRs) as the generation of the homologous regions (HRs) have been optimized previously using the 
+                                        Oligo Calc algorithm. The exact equation of the selected algorithm is displayed in the settings panel.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <b>Salt concentration</b>
+                                    </p>
+                                    <p>
+                                        The concentration of salt in M for the purposes of calculating the Tm correction due to ions interacting
+                                        with the DNA.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <b>Salt correction: </b> Schildkraut-Lifson / Owczarzy
+                                    </p>
+                                    <p>
+                                        The method for the salt correction can be specified here. Two common salt correction methods are offered:
+                                        the correction by Shildkraut and Lifson (<a href="https://doi.org/10.1002/bip.360030207" target="_blank">DOI: 10.1002/bip.360030207</a>), which depends solely on the concentration of ions, or the higher 
+                                        order correction by Owczarzy (<a href="https://doi.org/10.1021/bi034621r" target="_blank">DOI: 10.1021/bi034621r</a>), which includes the GC fractional content of the sequence. The exact equation 
+                                        of the selected salt correction is displayed in the settings panel.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <b>DMSO concentration</b>
+                                    </p>
+                                    <p>
+                                        The concentration of DMSO in M used in the DMSO correction (equation displayed in the settings panel).
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <b>HR minimum length</b>
+                                    </p>
+                                    <p>
+                                        Minimum length in bp of the homologous region (HR). In cases of high GC content, the primers may reach their
+                                        target melting temperatuer Tm with very short sequences. However, very short primer sequences have lower
+                                        recombination efficiency and may therefore fail. Thus, by default the HRs have a minimum length, but this 
+                                        may be turned off.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <b>HR target Tm</b>
+                                    </p>
+                                    <p>
+                                        The target melting temperature (Tm) of the homologous region (HR). This setting specifies the value for the Tm
+                                        of the HR sequence that should be achieved when extending the primer sequence for non-subcloning operations.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <b>Subcloning HR target Tm</b>
+                                    </p>
+                                    <p>
+                                        The target melting temperature (Tm) of the homologous region (HR) for subcloning operations. Subcloning operations
+                                        have lower recombination efficiencies due to the increased number of recombination events (2) needed when compared 
+                                        to the basic operations (Insertions, deletions, mutations; 1 recombination event). Therefore, the target Tm that
+                                        the HRs must reach when extending the primer sequences is set by default to a higher value than for the basic 
+                                        operations, but this may changed if so desired.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <b>TBR target tm</b>
+                                    </p>
+                                    <p>
+                                        The target melting temperatuer (Tm) for the template binding region (TBR), which linearize the plasmid. When extending
+                                        the primer sequence, the Tm algorithm specified in the "Algorithm" setting will be used to determine the Tm of the primer. 
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <b>Maximum Tm for short insertions</b>
+                                    </p>
+                                    <p>
+                                        The maximum melting temperature (Tm) for short insertions. When generating asymmetric primers (see "Primer type" setting),
+                                        the homologous region (HR), which in the case of insertions or mutations will contain the new sequence, will be distributed 
+                                        only on the forward primer. However, for long insertions, which contain new sequences longer than what the HR needs to be,
+                                        the entire new sequence will be on the forward primer and only a shorter part (enough to server as the HR) will be on the 
+                                        reverse primer. This setting specifies the maximum Tm that new sequences can have and still generate short insertion primers. 
+                                    </p>
+                                </li>
+                            </ul>
+
                         </div>
 
 
@@ -232,7 +403,9 @@
                             <div class="about-section-title">
                                 Privacy policy
                             </div>
-                            <p>IVA Prime uses first-party cookies to improve the user experience by storing user preferences, such as preferred display options or algorithm settings, between sessions. No third-party cookies are used to track or profile users.</p>
+                            <p>IVA Prime uses first-party cookies to improve the user experience by storing user preferences, 
+                                such as preferred display options or algorithm settings, between sessions. No third-party 
+                                cookies are used to track or profile users.</p>
                         </div>
 
                         <!-- Footer -->
