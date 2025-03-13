@@ -1084,7 +1084,11 @@ const FileIO = new class {
             /**
              * Header
              */
-            addHexBytesBlock(9, blocks[9]);
+            if (blocks && blocks[9]) {
+                addHexBytesBlock(9, blocks[9]);
+            } else {
+                addHexBytesBlock(9, [83,110,97,112,71,101,110,101,0,1,0,15,0,19]);
+            };
 
 
             /**
@@ -1098,10 +1102,12 @@ const FileIO = new class {
             /**
              * Unknown blocks
              */
-            for (const [blockID, block] of Object.entries(blocks)) {
-                if ([9].includes(blockID)) continue;
-
-                addHexBytesBlock(blockID, block);
+            if (blocks != null) {
+                for (const [blockID, block] of Object.entries(blocks)) {
+                    if ([9].includes(blockID)) continue;
+    
+                    addHexBytesBlock(blockID, block);
+                };
             };
 
 
