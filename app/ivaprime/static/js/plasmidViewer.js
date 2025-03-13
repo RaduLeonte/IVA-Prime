@@ -73,6 +73,9 @@ const PlasmidViewer = new class {
         document.addEventListener("keydown", function(event) {
             if ((event.ctrlKey || event.metaKey) && event.key === "a") {
                 if (Session.activePlasmid().getSelectionIndices() == null) return;
+
+                if (document.getElementById("modal").style.display !== "none") return;
+
                 event.preventDefault();
                 PlasmidViewer.selectAll();
             };
