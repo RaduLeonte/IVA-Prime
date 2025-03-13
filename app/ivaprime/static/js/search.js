@@ -56,7 +56,7 @@ const Search = new class {
      * Search for DNA or AA sequence in plasmid
      */
     search() {
-        const query = document.getElementById("search-bar").value;
+        const query = document.getElementById("search-bar").value.toUpperCase();
         const searchAASeq = document.getElementById("search-aa").checked;
 
         this.clear(false);
@@ -294,6 +294,9 @@ const Search = new class {
             document.getElementById("search-bar"),
             (isChecked) ? "aa": "dna",
         );
+
+        let inputEvent = new Event('input', { bubbles: true, });
+        document.getElementById("search-bar").dispatchEvent(inputEvent);
 
         this.search();
     };
