@@ -685,6 +685,10 @@ class Plasmid {
 
         if (targetOrganism !== UserPreferences.get("preferredOrganism")) UserPreferences.set("preferredOrganism", targetOrganism);
 
+        if (insertionSeqAA) {
+            insertionSeqAA = insertionSeqAA.replace("-", "*").replace("X", "*")
+        };
+
         try {
             let seqToInsert;
             let primerSet;
