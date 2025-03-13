@@ -39,6 +39,7 @@ const Utilities = new class {
             integer: (value) => /^-?\d+$/.test(value),
             float: (value) => /^-?\d*\.?\d*$/.test(value),
             dna: (value) => /^[ATCG]*$/i.test(value),
+            iupacBases: (value) => /^[ACGTURYSWKMBDHVN.-]*$/i.test(value),
             aa: (value) => /^[ACDEFGHIKLMNPQRSTVWY*X-]*$/i.test(value)
         };
         document.addEventListener("DOMContentLoaded", function (event) {
@@ -313,7 +314,7 @@ const Utilities = new class {
         console.log("Utilities.copySequence ->", selection, mode);
         Alerts.showAlert(
             "Copied sequence to clipboard",
-            `Sequence: "${selection}" (${selection.length} bp).`,
+            `Sequence: "${selection.length > 12 ? selection.slice(0, 6) + "..." + selection.slice(-6) : selection}" (${selection.length} bp).`,
             3,
             "green",
         )
