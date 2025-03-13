@@ -185,7 +185,7 @@ const Modals = new class {
 
         const action = () => {
             Session.activePlasmid().IVAOperation(
-                "Insertion",
+                (type === "insertion") ? "Insertion": "Mutation",
                 document.getElementById("insertion-input-dna").value,
                 document.getElementById("insertion-input-aa").value,
                 document.getElementById("insertion-select-organism").value,

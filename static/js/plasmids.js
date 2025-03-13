@@ -606,12 +606,14 @@ class Plasmid {
             note: note,
         };
 
+        console.log("newFeature", span, Nucleotides.reverseComplementary(this.sequence.slice(span[0] - 1, span[1])))
         if (translated) {
             newFeatureDict.translation = Nucleotides.translate(
                 directionality === "fwd"
-                ? this.sequence.slice(...span)
-                : Nucleotides.reverseComplementary(this.sequence).slice(...span)
+                ? this.sequence.slice(span[0] - 1, span[1])
+                : Nucleotides.reverseComplementary(this.sequence.slice(span[0] - 1, span[1]))
             );
+            newFeatureDict.translated = true;
         };
 
         this.features[Utilities.newUUID()] = newFeatureDict;
@@ -681,12 +683,17 @@ class Plasmid {
 
     IVAOperation(operationType, insertionSeqDNA="", insertionSeqAA="", targetOrganism=null, translateFeature=false) {
         if (this.selectionIndices === null) {return};
+        console.log(`Plasmid.IVAOperation ->`, operationType, insertionSeqDNA, insertionSeqAA, targetOrganism, translateFeature);
         console.log(`Plasmid.IVAOperation -> this.selectionIndices=${this.selectionIndices}`);
 
         if (targetOrganism !== UserPreferences.get("preferredOrganism")) UserPreferences.set("preferredOrganism", targetOrganism);
 
         if (insertionSeqAA) {
-            insertionSeqAA = insertionSeqAA.replace("-", "*").replace("X", "*")
+            if (typeof insertionSeqAA === "string"){
+                insertionSeqAA = insertionSeqAA.replace("-", "*").replace("X", "*")
+            } else {
+                insertionSeqAA = insertionSeqAA.map(seq => seq.replace("-", "*").replace("X", "*"))
+            };
         };
 
         try {
