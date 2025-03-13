@@ -167,6 +167,10 @@ input[incorrect="true"] {
   outline: 2px solid var(--btn-red) !important;
 }
 
+textarea[incorrect="true"] {
+  outline: 2px solid var(--btn-red) !important;
+}
+
 .custom-checkbox {
   display: inline-flex;
   align-items: center;

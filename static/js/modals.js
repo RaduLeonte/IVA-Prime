@@ -11,6 +11,25 @@ const Modals = new class {
         const modal = document.querySelector("div.modal");
         modal.style.display = "block";
         modal.appendChild(modalWindow);
+
+        
+        const inputElements = modalWindow.querySelectorAll("input[validator], textarea[validator]");
+        inputElements.forEach((input) => {
+            const validatorType = input.getAttribute("validator");
+            Utilities.addInputValidator(input, validatorType);
+
+
+            input.addEventListener("input", function () {
+                const actionButton = document.getElementById(`${id}-action-button`);
+    
+                const inputFailedValidator = modalWindow.querySelector("[incorrect]") !== null;
+                if (inputFailedValidator) {
+                    actionButton.setAttribute("disabled", "");
+                } else {
+                    actionButton.removeAttribute("disabled");
+                };
+            });
+        });
     
     
         document.getElementById(`${id}-action-button`).addEventListener("click", function (event) {
@@ -64,7 +83,7 @@ const Modals = new class {
         
         <div class="modal-vgroup modal-new-file-sequence-input">
             <label>DNA Sequence:</label>
-            <textarea id="new-file-sequence-input" class="modal-input modal-textarea" spellcheck="false"></textarea>
+            <textarea id="new-file-sequence-input" class="modal-input modal-textarea" spellcheck="false" validator="iupacBases"></textarea>
         </div>
 
         <div class="modal-hgroup">
@@ -147,12 +166,12 @@ const Modals = new class {
 
         <div class="modal-vgroup">
             <label>DNA sequence:</label>
-            <input type="text" id="insertion-input-dna" class="modal-input" value="">
+            <input type="text" id="insertion-input-dna" class="modal-input" value="" validator="dna">
         </div>
 
         <div class="modal-vgroup">
             <label>Amino acid sequence:</label>
-            <input type="text" id="insertion-input-aa" class="modal-input" value="">
+            <input type="text" id="insertion-input-aa" class="modal-input" value="" validator="aa">
             <div class="modal-hint">
                 Accepted STOP letter codes: "*", "-", "X".
             </div>
@@ -223,12 +242,12 @@ const Modals = new class {
 
         <div class="modal-vgroup">
             <label>DNA sequence:</label>
-            <input type="text" id="insertion-input-5dna" class="modal-input" value="">
+            <input type="text" id="insertion-input-5dna" class="modal-input" value="" validator="dna">
         </div>
 
         <div class="modal-vgroup">
             <label>Amino acid sequence:</label>
-            <input type="text" id="insertion-input-5aa" class="modal-input" value="">
+            <input type="text" id="insertion-input-5aa" class="modal-input" value="" validator="aa">
             <div class="modal-hint">
                 Accepted STOP letter codes: "*", "-", "X".
             </div>
@@ -239,12 +258,12 @@ const Modals = new class {
 
         <div class="modal-vgroup">
             <label>DNA sequence:</label>
-            <input type="text" id="insertion-input-3dna" class="modal-input" value="">
+            <input type="text" id="insertion-input-3dna" class="modal-input" value="" validator="dna">
         </div>
 
         <div class="modal-vgroup">
             <label>Amino acid sequence:</label>
-            <input type="text" id="insertion-input-3aa" class="modal-input" value="">
+            <input type="text" id="insertion-input-3aa" class="modal-input" value="" validator="aa">
             <div class="modal-hint">
                 Accepted STOP letter codes: "*", "-", "X".
             </div>
