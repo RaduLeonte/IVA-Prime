@@ -826,8 +826,10 @@ const FileIO = new class {
                     const featureSpanMatch = featureInfoLines[0].match(/(\d+)\.\.(\d+)/);
                     if (!featureSpanMatch) continue;
 
-                    featureDict["span"] = [parseInt(featureSpanMatch[1], 10), parseInt(featureSpanMatch[2], 10)];
                     featureDict["directionality"] = featureInfoLines[0].includes("complement") ? "rev" : "fwd";
+                    featureDict["span"] = (featureDict["directionality"] === "fwd")
+                        ? [parseInt(featureSpanMatch[1], 10), parseInt(featureSpanMatch[2], 10)]
+                        : [parseInt(featureSpanMatch[1], 10) - 1, parseInt(featureSpanMatch[2], 10) - 1];
 
                     const featureInfo = [];
                     let currentInfoString = "";
