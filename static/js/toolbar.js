@@ -223,7 +223,7 @@ const Toolbar = new class {
         const tmSpan = document.getElementById(`tm-calc-tm${index}`);
         const infoSpan = document.getElementById(`tm-calc-info${index}`);
         
-        if (seq.length > 0 && Nucleotides.isNucleotideSequence(seq)) {
+        if (seq.length > 0 && Nucleotides.isNucleotideSequence(seq) && /^[ATCG]*$/i.test(seq)) {
             tmSpan.textContent = Nucleotides.getMeltingTemperature(seq).toFixed(2);
             infoSpan.textContent = `(${UserPreferences.get("TmAlgorithm")}, ${UserPreferences.get("primerConc")} nM)`;
 
