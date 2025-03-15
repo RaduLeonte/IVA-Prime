@@ -191,6 +191,11 @@ const Toolbar = new class {
         UserPreferences.setBulk(preferences);
 
         Utilities.updateTheme();
+
+        let inputEvent = new Event('input', { bubbles: false, });
+        document.getElementById("toolbar-panel-settings").querySelectorAll("input[validator]").forEach(function (input) {
+            input.dispatchEvent(inputEvent);
+        });
     };
 
 
@@ -208,6 +213,7 @@ const Toolbar = new class {
     checkValidationState() {
         const settingsPanel = document.getElementById("toolbar-panel-settings");
         const updateButton = document.getElementById("update-settings-button");
+
 
         const inputFailedValidator = settingsPanel.querySelector("[incorrect]") !== null;
 
