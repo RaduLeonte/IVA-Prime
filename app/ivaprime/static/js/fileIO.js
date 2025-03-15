@@ -1,10 +1,7 @@
 const FileIO = new class {
     constructor() {
-        document.addEventListener("DOMContentLoaded", function() {
-            console.log("FileIO -> Page is done loading.");
-            
-        });
     };
+
 
     /**
      * Import file, read contents and pass to appropriate parser.
@@ -31,6 +28,7 @@ const FileIO = new class {
                 return;
             };
 
+            // Read gbk files as gb
             fileExtension = (fileExtension == ".gbk") ? ".gb": fileExtension;
 
             // Initialise file reader
@@ -66,6 +64,7 @@ const FileIO = new class {
             }, 1000); 
         });
     };
+
 
     /**
      * Imports the demo pET-28a(+).dna file.
@@ -103,16 +102,33 @@ const FileIO = new class {
     /** 
      * Drag and drop import
      */
+    // TO DO: Check if payload is list of files and only show overlay then
+    // TO DO: Check if payload contains correct plasmid files and warn user if
+    /**
+     * Show import overlay when user dangles a payload over the page
+     * 
+     * @param {Event} e - Drag over event
+     */
     importDragOver(e) {
         e.preventDefault();
         document.body.classList.add('drag-import-overlay');
     };
     
+    /**
+     * Remove overlay when there is no more payload
+     * 
+     * @param {Event} e - Drag leave event
+     */
     importDragLeave(e) {
         e.preventDefault();
         document.body.classList.remove('drag-import-overlay');
     };
     
+    /**
+     * Send dropped files to the import queue
+     * 
+     * @param {Event} e - Drop event
+     */
     async importDrop(e) {
         e.preventDefault();
         document.body.classList.remove('drag-import-overlay');
@@ -168,15 +184,34 @@ const FileIO = new class {
          * }
          */
         dna : (fileArrayBuffer) => {
+            /**
+             * Print list of bytes as hex bytes for debugging.
+             * 
+             * @param {Array<number>} bytes - Array of hex bytes
+             * @returns 
+             */
             function bytesToString(bytes) {
                 return Array.from(bytes, byte => byte.toString(16).padStart(2, "0").toUpperCase()).join(" ");
-            }
+            };
 
+            /**
+             * Parse the length of a data block to an integer.
+             * 
+             * @param {Array<number>} bytes - Array of 4 hex bytes
+             * @returns {Number} - Data block length as decimal integer
+             */
             function parseLength(bytes) {
                 return new DataView(new Uint8Array(bytes).buffer).getUint32(0);
             };
 
-            const textDecoder = new TextDecoder("utf-8")
+            // Hex bytes to text decoder
+            const textDecoder = new TextDecoder("utf-8");
+            /**
+             * Decode array of hex bytes to text.
+             * 
+             * @param {Array<number>} bytes - Array of hex bytes
+             * @returns {String} - Decoded string
+             */
             function bytesToText(bytes) {
                 return textDecoder.decode(new Uint8Array(bytes));
             };
@@ -185,22 +220,26 @@ const FileIO = new class {
             // Read array as list of 8 bit integers
             const arrayBuf = new Uint8Array(fileArrayBuffer);
             const bytes = Array.from(arrayBuf);
-            // Decode file content as string
-            //let fileContent = new TextDecoder().decode(arrayBuf);
-            // Init XML parser
+
+            // Init XML parser (fast-xml-parser)
             const xmlParser = new fxp.XMLParser({ ignoreAttributes: false });
 
 
+            // Get data blocks from .dna file
             const blocks = {};
             while (bytes.length > 6) {
+                // First byte is block id
                 const blockType = bytes.splice(0,1);
+                // Next four bytes are the data block length
                 const blockLengthBytes = bytes.splice(0,4)
                 const blockLength = parseLength(blockLengthBytes);
+                // Get block data
                 const blockData = bytes.splice(0, blockLength);
                 
                 blocks[blockType] = blockData;
             };
 
+            // Snapgene maps always start with a data block with id 09
             if (!blocks[9]) {
                 throw new ParsingError(
                     "Cannot Parse .dna File",
@@ -208,6 +247,7 @@ const FileIO = new class {
                 );
             };
 
+            // Sequence will always be in the datablock with id 00
             if (!blocks[0]) {
                 throw new ParsingError(
                     "Cannot Parse .dna File",
@@ -215,7 +255,9 @@ const FileIO = new class {
                 );
             };
 
-            /**
+            /**Notes on SnapGene file format
+             * 
+             * 
              *        00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F   10 11 12 13 14 15 160 17 18 19 1A 1B 1C 1D 1E 1F 
              * 
              * 0x00   09 00 00 00 0E 53 6E 61 70 47 65 6E 65 00 01 00   0F 00 13 00 00 00 1B F0 03 63 67 74 74 61 63 61
@@ -224,7 +266,7 @@ const FileIO = new class {
              *      block  block          "Snapgene"        seq  exported imported  seq   topology    sequence
              *       id    length                          type  version? version? length+1  byte      starts
              * 
-             * Section indices
+             * Known
              * 00 -> sequence
              * 01 -> enzyme recognition patterns?
              * 02 -> unknown data block
@@ -259,13 +301,16 @@ const FileIO = new class {
 
             // #region Sequence
             /**
-             * Extract sequence type and topology
+             * Extract sequence type and topology.
              * 
-             * @param {Aray} bytes 
-             * @returns 
+             * @param {Array<number>} bytes - Data block
+             * @returns {[string, string]} - Tuple:
+             *   - Sequence topology ("linear" || "circular")
+             *   - DNA sequence
              */
             function parseSequence(bytes) {
-                /**
+                /**Known topology bytes
+                 * 
                  * 00 -> ss linear
                  * 01 -> ss circular
                  * 02 -> ds linear
@@ -275,81 +320,85 @@ const FileIO = new class {
                  * 06 -> ds linear methylated
                  * 07 -> ds circular methylated
                  */
+                
+                // Get topology byte
                 const topologyByte = bytes.splice(0,1)[0];
                 const topology = ([0, 2].includes(topologyByte % 4)) ? "linear" : "circular";
 
+                // Get sequence
                 const sequence = bytesToText(bytes);
 
                 return [topology, sequence];
             };
             let [fileTopology, sequence] = parseSequence(blocks[0]);
             const fileSequence = Nucleotides.sanitizeSequence(sequence);
+            // Generate complementary sequence
             const fileComplementarySequence = Nucleotides.complementary(fileSequence);
             // #endregion Sequence
 
 
             // #region Features
-            
             /**
-             * Parse features from xml tree
-             */
-            /** Info on features xml tree
+             * Parse features from xml tree.
              * 
-             * 
-             * <Features>
-             *      Attributes:
-             *          nextValidID: int => id of next feature that would be added 
-             *      <Feature>
-             *          Attributes:
-             *              recentID: int => id of feature [0,n]
-             *              name: str => feature label
-             *              directionality: int => 1 -> fwd, 2 -> rev, 3 -> both, attribute missing for no directionality
-             *              
-             *              type: str => feature type (5'UTR, misc_signal, LTR, misc_recomb, enhancer, exon, promoter, 
-             *                  rep_origin, gene, polyA_signal, CDS, oriT, sig_peptide, regulatory, misc_RNA, intron, primer_bind, 
-             *                  misc_feature, ncRNA, protein_bind, RBS, tRNA, repeat_region, terminator, mobile_element, 3'UTR)
-             * 
-             *              allowSegmentOverlaps: int => ? 0
-             *              consecutiveTranslationNumbering: int => ? 0, 1
-             *              swappedSegmentNumbering: int => ? 1
-             *              translationMW: float => molecular weight of translation product in Da
-             *              readingFrame: int=> -3, -1, 3, -2, 2
-             *              hitsStopCodon: int => 1
-             *              cleavageArrows: int => position indicating a cleavage site
-             *              detectionMode: exactProteinMatch
-             *              maxRunOn: int => ?
-             *              maxFusedRunOn: int => ?
-             *              consecutiveNumberingStartsFrom: int => ? 
-             *              isFavorite: int=> 1
-             *              translateFirstCodonAsMet:int => 1
-             *              geneticCode: int => -1
-             *              originalSequence: str => ?
-             *              prioritize: int=> 1
-             *              originalName: str=> ? loxP
-             *          <Q>
-             *              Attributes:
-             *                  name: str => name of query (locus_tag, note, bound_moiety, gene, rpt_type, translation, 
-             *                      old_locus_tag, product, citation, regulatory_class, allele, label, ncRNA_class, db_xref, direction, 
-             *                      mobile_element_type, gene_synonym, codon_start, standard_name, protein_id, map, experiment, function, 
-             *                      EC_number, transl_table)
-             *              <V>
-             *                  Attributes:
-             *                      text: str => property value
-             *                      int: int => property value 
-             *                      predef: str => ? (possible values; hammerhead_ribozyme, miRNA, ribozyme, inverted, transposon,
-             *                          insertion sequence, other, GI)
-             *          <Segment>
-             *              Attributes:
-             *                  range: int-int => feature span
-             *                  color: str => hex color
-             *                  type: str => standard, gap
-             *                  translated: int => 1 if translated, attribute missing if not translated
-             *                  name: str => label of segment
-             *                  translationNumberingStartsFrom: int => value to offset start of translation 0, 241, 239, 2
-             * 
-             * @param {Array} bytes 
+             * @param {Array<number>} bytes - Data block
+             * @returns 
              */
             function parseFeatures(bytes) {
+                /** Info on features xml tree
+                 * 
+                 * 
+                 * <Features>
+                 *      Attributes:
+                 *          nextValidID: int => id of next feature that would be added 
+                 *      <Feature>
+                 *          Attributes:
+                 *              recentID: int => id of feature [0,n]
+                 *              name: str => feature label
+                 *              directionality: int => 1 -> fwd, 2 -> rev, 3 -> both, attribute missing for no directionality
+                 *              
+                 *              type: str => feature type (5'UTR, misc_signal, LTR, misc_recomb, enhancer, exon, promoter, 
+                 *                  rep_origin, gene, polyA_signal, CDS, oriT, sig_peptide, regulatory, misc_RNA, intron, primer_bind, 
+                 *                  misc_feature, ncRNA, protein_bind, RBS, tRNA, repeat_region, terminator, mobile_element, 3'UTR)
+                 * 
+                 *              allowSegmentOverlaps: int => ? 0
+                 *              consecutiveTranslationNumbering: int => ? 0, 1
+                 *              swappedSegmentNumbering: int => ? 1
+                 *              translationMW: float => molecular weight of translation product in Da
+                 *              readingFrame: int=> -3, -1, 3, -2, 2
+                 *              hitsStopCodon: int => 1
+                 *              cleavageArrows: int => position indicating a cleavage site
+                 *              detectionMode: exactProteinMatch
+                 *              maxRunOn: int => ?
+                 *              maxFusedRunOn: int => ?
+                 *              consecutiveNumberingStartsFrom: int => ? 
+                 *              isFavorite: int=> 1
+                 *              translateFirstCodonAsMet:int => 1
+                 *              geneticCode: int => -1
+                 *              originalSequence: str => ?
+                 *              prioritize: int=> 1
+                 *              originalName: str=> ? loxP
+                 *          <Q>
+                 *              Attributes:
+                 *                  name: str => name of query (locus_tag, note, bound_moiety, gene, rpt_type, translation, 
+                 *                      old_locus_tag, product, citation, regulatory_class, allele, label, ncRNA_class, db_xref, direction, 
+                 *                      mobile_element_type, gene_synonym, codon_start, standard_name, protein_id, map, experiment, function, 
+                 *                      EC_number, transl_table)
+                 *              <V>
+                 *                  Attributes:
+                 *                      text: str => property value
+                 *                      int: int => property value 
+                 *                      predef: str => ? (possible values; hammerhead_ribozyme, miRNA, ribozyme, inverted, transposon,
+                 *                          insertion sequence, other, GI)
+                 *          <Segment>
+                 *              Attributes:
+                 *                  range: int-int => feature span
+                 *                  color: str => hex color
+                 *                  type: str => standard, gap
+                 *                  translated: int => 1 if translated, attribute missing if not translated
+                 *                  name: str => label of segment
+                 *                  translationNumberingStartsFrom: int => value to offset start of translation 0, 241, 239, 2
+                 */
 
                 // Extract XML tree
                 const featuresXMLDoc = xmlParser.parse(bytesToText(bytes));
@@ -357,15 +406,13 @@ const FileIO = new class {
 
                 const featuresDict = {};
 
-                console.log(JSON.stringify(featuresXMLDoc, null, 2));
-
-
                 // Select all <Features> nodes and iterate over them
                 const featureNodes = featuresXMLDoc.Features.Feature;
                 for (let i = 0; i < featureNodes.length; i++) {
                     // Current node
-                    const featureNode = featureNodes[i]; // Current feature
-                    //console.log(featureNode)
+                    const featureNode = featureNodes[i];
+
+                    // New feature dict
                     const featureInfo = {}
 
                     // Feature label
@@ -373,14 +420,15 @@ const FileIO = new class {
 
                     // Feature type
                     featureInfo["type"] = featureNode['@_type'];
+                    // Skip source feature
                     if (featureInfo["type"] === "source") continue;
-
 
                     // Get feature directionaliy, fwd, rev, both, or null
                     featureInfo["directionality"] = {"1": "fwd", "2": "rev", "3": "both"}[featureNode['@_directionality']] || null;
     
                     // Iterate over <Feature> node children (<Q> and <Segment>) to find properties
                     if (featureNode.Q) {
+                        // Current Q node, if there is only one, then featureNode.Q will be an Object so convert first
                         const qNodes = Array.isArray(featureNode.Q) ? featureNode.Q : [featureNode.Q];
                         for (let j = 0; j < qNodes.length; j++) {
                             const QNode = qNodes[j];
@@ -436,46 +484,45 @@ const FileIO = new class {
             // #endregion Features
 
 
-
             // #region Primers
-            
             /**
+             * Parse primers from xml tree.
              * 
-             * @param {*} bytes 
+             * @param {Array<number>} bytes - Data block
              * @returns 
              */
-            /**Info on primers xml tree
-             * 
-             * 	<Primers>
-             *      Attributes:
-             *          recycledIDs: int => ids that have already been used
-             *          nextValidID: int => next available id for a primer
-             *      <HybridizationParams>
-             *          Attributes:
-             *              minContinuousMatchLen: int => ? 10
-             *              allowMismatch: int => ? 1
-             *              minMeltingTemperature: int => 40
-             *              showAdditionalFivePrimeMatches: int => ? 1
-             *              minimumFivePrimeAnnealing: int => ? 15
-             *      <Primer>
-             *          Attributes:
-             *              recentID: int => recently used ids
-             *              name: str => primer label
-             *              sequence: str => nucleotide sequence of primer
-             *              description: str => primer description
-             *          <BindingSite>
-             *              Attributes:
-             *                  location: int-int => Span of primer binding site
-             *                  boundStrand: int => 0 -> top strand "fwd" or 1 -> bottom strand "rev"
-             *                  annealedBases: str => ?
-             *                  meltingTemperature: int => ?
-             *                  simplified: int => ? 1
-             *              <Component>
-             *                  Attributes:
-             *                      hybridizedRange: int-int => ?
-             *                      bases: str => ?
-             */
             function parsePrimers(bytes) {
+                /**Info on primers xml tree
+                 * 
+                 * 	<Primers>
+                 *      Attributes:
+                 *          recycledIDs: int => ids that have already been used
+                 *          nextValidID: int => next available id for a primer
+                 *      <HybridizationParams>
+                 *          Attributes:
+                 *              minContinuousMatchLen: int => ? 10
+                 *              allowMismatch: int => ? 1
+                 *              minMeltingTemperature: int => 40
+                 *              showAdditionalFivePrimeMatches: int => ? 1
+                 *              minimumFivePrimeAnnealing: int => ? 15
+                 *      <Primer>
+                 *          Attributes:
+                 *              recentID: int => recently used ids
+                 *              name: str => primer label
+                 *              sequence: str => nucleotide sequence of primer
+                 *              description: str => primer description
+                 *          <BindingSite>
+                 *              Attributes:
+                 *                  location: int-int => Span of primer binding site
+                 *                  boundStrand: int => 0 -> top strand "fwd" or 1 -> bottom strand "rev"
+                 *                  annealedBases: str => ?
+                 *                  meltingTemperature: int => ?
+                 *                  simplified: int => ? 1
+                 *              <Component>
+                 *                  Attributes:
+                 *                      hybridizedRange: int-int => ?
+                 *                      bases: str => ?
+                 */
                 // Extract XML tree
 
                 const primersXMLDoc = xmlParser.parse(bytesToText(bytes));
@@ -534,47 +581,47 @@ const FileIO = new class {
             /**
              * Parse features from xml tree
              * 
-             * @param {*} bytes 
-             */
-            /**Info on notes xml tree
-             * 
-             * 	<Notes>
-             *      <ConfirmedExperimentally>
-             *          Possible Values: int => 0
-             *      <TransformedInto>
-             *          Possible Values: str => "unspecified"
-             *      <SequenceClass>
-             *          Possible Values: str => ? UNA
-             *      <LastModified>
-             *          Possible Values: date => date of last modification
-             *          Attributes:
-             *              UTC: time => time of last modification
-             *      <UUID>
-             *          Possible Values: str => uuid of plasmid
-             *      <Description>
-             *          Possible Values: str => description of plasmid
-             *      <References>
-             *          <Reference>
-             *              Attributes:
-             *                  journal: str => journal of publication
-             *                  title: str => title of publication
-             *                  pages: str => ?
-             *                  volume: str => ?
-             *                  type: Journal Article
-             *                  authors: str => list of authors
-             *                  date: str => YYYY-MM-DD
-             *                  journalName: str => (Genes Dev, Nat Struct Biol, Nature, Genetics, Science)
-             *                  pubMedID: int => pubmed identifier
-             *                  issue: int => journal issue
-             *                  doi: str => doi
-             *      <Created>
-             *          Possible Values: date => creation date of plasmid
-             *          Attributes:
-             *              UTC: time => creation time of plasmid
-             *      <Type>
-             *          Possible Values: str => "Natural" || "Synthetic"
+             * @param {Array<number>} bytes - Data block
              */
             function parseNotes(bytes) {
+                /**Info on notes xml tree
+                 * 
+                 * 	<Notes>
+                 *      <ConfirmedExperimentally>
+                 *          Possible Values: int => 0
+                 *      <TransformedInto>
+                 *          Possible Values: str => "unspecified"
+                 *      <SequenceClass>
+                 *          Possible Values: str => ? UNA
+                 *      <LastModified>
+                 *          Possible Values: date => date of last modification
+                 *          Attributes:
+                 *              UTC: time => time of last modification
+                 *      <UUID>
+                 *          Possible Values: str => uuid of plasmid
+                 *      <Description>
+                 *          Possible Values: str => description of plasmid
+                 *      <References>
+                 *          <Reference>
+                 *              Attributes:
+                 *                  journal: str => journal of publication
+                 *                  title: str => title of publication
+                 *                  pages: str => ?
+                 *                  volume: str => ?
+                 *                  type: Journal Article
+                 *                  authors: str => list of authors
+                 *                  date: str => YYYY-MM-DD
+                 *                  journalName: str => (Genes Dev, Nat Struct Biol, Nature, Genetics, Science)
+                 *                  pubMedID: int => pubmed identifier
+                 *                  issue: int => journal issue
+                 *                  doi: str => doi
+                 *      <Created>
+                 *          Possible Values: date => creation date of plasmid
+                 *          Attributes:
+                 *              UTC: time => creation time of plasmid
+                 *      <Type>
+                 *          Possible Values: str => "Natural" || "Synthetic"
+                 */
                 // Extract XML tree
                 const notesXMLString = bytesToText(bytes);
 

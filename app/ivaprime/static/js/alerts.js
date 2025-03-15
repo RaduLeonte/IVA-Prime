@@ -1,9 +1,12 @@
 const Alerts = new class {
     constructor () {
+        // Show cookie info alert if the user has not previously dismissed it
         document.addEventListener("DOMContentLoaded", () => {
             if (!UserPreferences.get("cookieConsentGiven")) Alerts.showCookieConsentDisclaimer();
         });
     };
+
+
     /**
      * Create an orange alert with a lifetime of 5 s.
      * 
@@ -96,9 +99,11 @@ const Alerts = new class {
         });
         alert.appendChild(closeButton);
 
+        // Insert new alert as first child
         alertsContainer.insertBefore(alert, alertsContainer.firstChild);
 
 
+        // If the alert has a finite lifetime, remove it after the amount specified
         if (lifetime !== -1) {
             setTimeout(function (e) {
                 Alerts.removeAlert(alert)
@@ -135,6 +140,9 @@ const Alerts = new class {
     };
 
 
+    /**
+     * Show the cookie info alert
+     */
     showCookieConsentDisclaimer() {
         // Select alert parent container
         const alertsContainer = document.getElementById("alerts-container");
@@ -179,12 +187,14 @@ const Alerts = new class {
             Alerts.removeAlert(alert);
         });
         
-        //alertBody.append(alertTitle)
+        
+        // Construct element
         alertBody.append(alertText)
         alertBody.appendChild(agreeButton);
         alert.appendChild(alertBody);
 
 
+        // Add alert
         alertsContainer.insertBefore(alert, alertsContainer.firstChild);
     };
 };
