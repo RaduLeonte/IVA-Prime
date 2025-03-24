@@ -854,11 +854,23 @@ const PlasmidViewer = new class {
                 const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
                 this.elementsAtMouseDown = elementsAtPoint;
 
+                const closestSelectionCursor = this.findClosesSelectionCursor(e);
+                if (closestSelectionCursor && Session.activePlasmid().getSelectionIndices()[1] !== null) {
+                    //this.currentlyResizingSelection = true;
+
+                    const selectionCursors = this.cursors["sequence-cursor-selection"];
+                    const otherCursor = selectionCursors.find(el => el !== closestSelectionCursor);
+                    
+                    this.currentlySelecting = true;
+                    this.selectionStartSpan = parseInt(otherCursor.getAttribute("base-index"));
+
+                    return;
+                };
+
                 // Find nearest base rect
                 const nearestBaseRect = elementsAtPoint.find(
                     (el) => el.tagName === 'rect' && el.classList.contains('base')
                 );
-
                 if (nearestBaseRect) {
                     // Start selection
                     const baseIndex = parseInt(nearestBaseRect.getAttribute("base-index"));
@@ -907,6 +919,7 @@ const PlasmidViewer = new class {
 
             // Stop selection
             this.currentlySelecting = false;
+            this.currentlyResizingSelection = false;
 
             // Find out if the event was a click event by checking if the elements the mouse is over have changed
             const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
@@ -988,59 +1001,82 @@ const PlasmidViewer = new class {
             if (!this.currentlySelecting) {
                 // If we're not currently selecting
 
+                /**
+                 * If we're hovering near a sequence cursor
+                 */
+                const closestSelectionCursor = this.findClosesSelectionCursor(e);
+                if (closestSelectionCursor && Session.activePlasmid().getSelectionIndices()[1] !== null) {
+                    this.hideSequenceTooltip();
+                    document.body.style.cursor = "ew-resize";
+                    return;
+                };
+                document.body.style.cursor = "auto";
+
                 // If we're not hovering over anything, remove tooltip and hover cursors
                 if (shapesAtPoint.length == 0) {
                     this.hideSequenceTooltip();
                     this.removeCursors("sequence-cursor-hover");
                 };
 
-                // If we're hovering over feature annotation
-                if (shapesAtPoint[0] && shapesAtPoint[0].parentElement) {
-                    if (shapesAtPoint[0].parentElement.matches('g.svg-feature-arrow')) {
-                        // Find its ID
-                        const featureID = shapesAtPoint[0].parentElement.parentElement.getAttribute("feature-id")
+                /**
+                 * Hovering annotation
+                 */
+                const nearestFeatureAnnotation = elementsAtPoint.find(
+                    (el) => el.tagName === 'polygon' && el.parentElement.classList.contains('svg-feature-arrow')
+                );
+                if (nearestFeatureAnnotation) {
+                    // Find its ID
+                    const featureID = nearestFeatureAnnotation.parentElement.parentElement.getAttribute("feature-id")
                         
-                        // Find all segments with same ID and add hover styling to them
-                        this.addFeatureHover(featureID);
+                    // Find all segments with same ID and add hover styling to them
+                    this.addFeatureHover(featureID);
+
+                    if (this.currentTooltipTarget !== featureID) {
+                        // Create feature description for tooltip
+                        const tooltipBody = this.createFeatureHoverTooltip(featureID);
     
-                        if (this.currentTooltipTarget !== featureID) {
-                            // Create feature description for tooltip
-                            const tooltipBody = this.createFeatureHoverTooltip(featureID);
-        
-                            // Set tooltip
-                            this.setSequenceTooltip(tooltipBody.innerHTML);
-                            this.currentTooltipTarget = featureID;
-                        };
-                        
-                        this.positionSequenceTooltip(e.pageX, e.pageY);
-
-                    } else if (shapesAtPoint[0].parentElement.matches('g#aa-block-group')) {
-                        const targetShape = shapesAtPoint[0].parentElement;
-                        const featureID = targetShape.getAttribute("feature-id");
-                        const aaIndex = targetShape.getAttribute("aa-index");
-                        const aa = targetShape.getAttribute("aa");
-                        const aaString = `${aa}${parseInt(aaIndex)+1}`;
-                        this.addAABlocksHover(featureID, aaIndex);
-
-                        // Show tooltip
-                        if (this.currentTooltipTarget !== aaString) {
-                            this.setSequenceTooltip(aaString);
-                            this.currentTooltipTarget = aaString;
-                        };
-
-                        this.positionSequenceTooltip(e.pageX, e.pageY);
+                        // Set tooltip
+                        this.setSequenceTooltip(tooltipBody.innerHTML);
+                        this.currentTooltipTarget = featureID;
                     };
+                    
+                    this.positionSequenceTooltip(e.pageX, e.pageY);
                 };
 
-                // Check to see if we're hovering over a base
-                const nearestRect = elementsAtPoint.find((el) => el.tagName === 'rect' && el.classList.contains("base"));
-                if (nearestRect) {
-                    const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
+                const nearestAABlock = elementsAtPoint.find(
+                    (el) => el.tagName === 'polygon' && el.classList.contains('aa-block')
+                );
+                if (nearestAABlock) {
+                    const targetShape = nearestAABlock.parentElement;
+                    const featureID = targetShape.getAttribute("feature-id");
+                    const aaIndex = targetShape.getAttribute("aa-index");
+                    const aa = targetShape.getAttribute("aa");
+                    const aaString = `${aa}${parseInt(aaIndex)+1}`;
+                    this.addAABlocksHover(featureID, aaIndex);
+
+                    // Show tooltip
+                    if (this.currentTooltipTarget !== aaString) {
+                        this.setSequenceTooltip(aaString);
+                        this.currentTooltipTarget = aaString;
+                    };
+
+                    this.positionSequenceTooltip(e.pageX, e.pageY);
+                    return;
+                };
+
+                /**
+                 * Hovering Base
+                 */
+                const nearestBaseRect = elementsAtPoint.find(
+                    (el) => el.tagName === 'rect' && el.classList.contains('base')
+                );
+                if (nearestBaseRect) {
+                    const baseIndex = parseInt(nearestBaseRect.getAttribute("base-index"));
 
                     // Add the hover styling to it
                     this.highlightBases([baseIndex, baseIndex], "base-hover");
     
-                    const rectBounds = nearestRect.getBoundingClientRect();
+                    const rectBounds = nearestBaseRect.getBoundingClientRect();
                     const midX = rectBounds.left + rectBounds.width / 2;
                     const adjustedBaseIndex = (e.clientX < midX) ? baseIndex : baseIndex + 1;
 
@@ -1049,8 +1085,13 @@ const PlasmidViewer = new class {
             
                     this.removeCursors("sequence-cursor-hover");
                     this.placeCursor(adjustedBaseIndex);
+
+                    return;
                 };
-            } else if (this.currentlySelecting) {
+            };
+
+
+            if (this.currentlySelecting) {
                 // We're selecting
 
                 const nearestAABlock = elementsAtPoint.find(
@@ -1087,6 +1128,8 @@ const PlasmidViewer = new class {
                     this.setSequenceTooltip(selectionEndIndex);
                     this.positionSequenceTooltip(e.pageX, e.pageY);
                 };
+
+                return;
             };
         });
 
@@ -1111,6 +1154,45 @@ const PlasmidViewer = new class {
             // If we click outside the viewer, deselect bases
             PlasmidViewer.deselectBases();
         });
+    };
+
+
+    findClosesSelectionCursor(e) {
+        const selectionCursors = this.cursors["sequence-cursor-selection"];
+        if (!selectionCursors || selectionCursors.length === 0) return null;
+
+        const hoverSpacing = 10; // px
+        let closestLine = null;
+        let minDistance = Infinity;
+
+        for (const line of selectionCursors) {
+            const x1 = parseFloat(line.getAttribute('x1'));
+            const y1 = parseFloat(line.getAttribute('y1'));
+            const x2 = parseFloat(line.getAttribute('x2'));
+            const y2 = parseFloat(line.getAttribute('y2'));
+
+            const svg = line.ownerSVGElement;
+            const pt = svg.createSVGPoint();
+            pt.x = e.clientX;
+            pt.y = e.clientY;
+            const svgPoint = pt.matrixTransform(svg.getScreenCTM().inverse());
+
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const lenSq = dx * dx + dy * dy;
+            let t = ((svgPoint.x - x1) * dx + (svgPoint.y - y1) * dy) / lenSq;
+            t = Math.max(0, Math.min(1, t));
+            const nearestX = x1 + t * dx;
+            const nearestY = y1 + t * dy;
+            const dist = Math.hypot(svgPoint.x - nearestX, svgPoint.y - nearestY);
+
+            if (dist <= hoverSpacing && dist < minDistance) {
+                minDistance = dist;
+                closestLine = line;
+            };
+        };
+
+        return closestLine;
     };
 
 
@@ -2121,6 +2203,8 @@ const PlasmidViewer = new class {
                 null,
                 ["sequence-cursor", cssClass]
             );
+            const baseIndex = parseInt(rectMatch.getAttribute("base-index"));
+            cursorElement.setAttribute("base-index", (!placeCursorOnLastBase) ? baseIndex: baseIndex + 1);
             cursorGroup.appendChild(cursorElement);
             
             cursorsPlaced.push(cursorElement);
