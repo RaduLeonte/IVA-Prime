@@ -18,10 +18,10 @@ const Search = new class {
             );
 
             searchBar.addEventListener("keydown", function(event) {
-                if (event.key === "ArrowUp") {
+                if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
                     event.preventDefault();
                     Search.navigateResults(-1);
-                } else if (event.key === "ArrowDown") {
+                } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
                     event.preventDefault();
                     Search.navigateResults(1);
                 };

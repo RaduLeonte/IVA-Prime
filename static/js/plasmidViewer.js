@@ -105,6 +105,126 @@ const PlasmidViewer = new class {
                 Session.activePlasmid().IVAOperation("Subcloning", "", "", null, true)
             };
         });
+
+
+        /**
+         * Move selection cursors keyboard shortcuts
+         */
+        document.addEventListener("keydown", function(event) {
+            if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) return;
+
+            if (document.activeElement && document.activeElement !== document.body && document.activeElement !== document.documentElement) return;
+            
+            event.preventDefault();
+
+            if (!Session.activePlasmid()) return;
+
+            const selectionIndices = Session.activePlasmid().getSelectionIndices();
+            if (!selectionIndices) return;
+
+            let baseIndexToScrollTo;
+
+            if (selectionIndices[1] !== null) {
+                let newSelectionSpan;
+                switch(event.key) {
+                    case "ArrowLeft":
+                        newSelectionSpan = (!event.altKey)
+                            ? [selectionIndices[0], Math.max(selectionIndices[0], selectionIndices[1] - 1)]
+                            : [selectionIndices[0] - 1, selectionIndices[1]]
+
+                        break;
+    
+                    case "ArrowRight":
+                        newSelectionSpan = (!event.altKey)
+                            ? [selectionIndices[0], selectionIndices[1] + 1]
+                            : [Math.min(selectionIndices[0] + 1, selectionIndices[1]), selectionIndices[1]]
+
+                        break;
+    
+                    case "ArrowUp":
+                        newSelectionSpan = (!event.altKey)
+                            ? [selectionIndices[0], Math.max(selectionIndices[0], selectionIndices[1] - PlasmidViewer.basesPerLine)]
+                            : [selectionIndices[0] - PlasmidViewer.basesPerLine, selectionIndices[1]]
+                        break;
+    
+                    case "ArrowDown":
+                        newSelectionSpan = (!event.altKey)
+                            ? [selectionIndices[0], selectionIndices[1] + PlasmidViewer.basesPerLine]
+                            : [Math.min(selectionIndices[0] + PlasmidViewer.basesPerLine, selectionIndices[1]), selectionIndices[1]]
+                        break;
+                };
+
+                baseIndexToScrollTo = (!event.altKey)
+                    ? newSelectionSpan[1]
+                    : newSelectionSpan[0]
+
+                const baseToScrollTo = PlasmidViewer.baseRectsMap["fwd"][baseIndexToScrollTo - 1];
+                baseToScrollTo.scrollIntoView(
+                    {
+                        behavior: "smooth",
+                        block: "center",
+                    }
+                );
+    
+                if (newSelectionSpan){
+                    PlasmidViewer.selectBases(
+                        [
+                            Math.max(1, newSelectionSpan[0]),
+                            Math.min(newSelectionSpan[1], Session.activePlasmid().sequence.length)
+                        ],
+                    );
+                };
+                return;
+            };
+
+            let baseIndex = selectionIndices[0];
+            let newIndex = baseIndex;
+            switch(event.key) {
+                case "ArrowLeft":
+                    newIndex--;
+                    break;
+
+                case "ArrowRight":
+                    newIndex++;
+                    break;
+
+                case "ArrowUp":
+                    newIndex -= PlasmidViewer.basesPerLine;
+                    break;
+
+                case "ArrowDown":
+                    newIndex += PlasmidViewer.basesPerLine;
+                    break;
+
+                };
+
+            if (event.shiftKey) {
+                const newSpan = [Math.min(baseIndex, newIndex), Math.max(baseIndex, newIndex)];
+                PlasmidViewer.selectBases(
+                    [
+                        Math.max(1, newSpan[0]),
+                        Math.min(newSpan[1], Session.activePlasmid().sequence.length) - 1,
+                    ],
+                );
+
+                baseIndexToScrollTo = newSpan[1];
+
+            } else {
+                newIndex = Math.min(Math.max(1, newIndex), Session.activePlasmid().sequence.length + 1);
+                PlasmidViewer.selectBase(newIndex);
+
+                baseIndexToScrollTo = newIndex;
+            };
+
+            const baseToScrollTo = PlasmidViewer.baseRectsMap["fwd"][baseIndexToScrollTo - 1];
+            baseToScrollTo.scrollIntoView(
+                {
+                    behavior: "smooth",
+                    block: "center",
+                }
+            );
+            return;
+        });
     };
 
 
@@ -662,6 +782,7 @@ const PlasmidViewer = new class {
         
 
         const { maxWidth, basesPerLine, basesWidth, basesPositions } = this.computeGridLayout(gridMargin);
+        this.basesPerLine = basesPerLine;
 
 
         const segments = this.prepareGridSegments(sequence, complementarySequence, basesPerLine, topology);
