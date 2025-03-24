@@ -75,26 +75,6 @@ const PlasmidTabs = new class {
         PlasmidViewer.redraw();
 
         Sidebar.update();
-
-        return;
-    
-        // Refresh undo buttons and set disabled/enabled states
-        refreshUndoRedoButtons();
-    
-        // Update selection info in the footer
-        updateFooterSelectionInfo();
-    
-    
-        const subcloningOriginPlasmidIndex = Session.subcloningOriginIndex;
-        if (subcloningOriginPlasmidIndex !== null && Session.activePlasmidIndex === subcloningOriginPlasmidIndex) {
-            markSelectionForSubcloning(
-                Session.activePlasmidIndex,
-                Session.subcloningOriginSpan[0],
-                Session.subcloningOriginSpan[1]
-            );
-        } else {
-            clearAllSubcloningSelections(clearVariables=false);
-        };
     };
 
 
