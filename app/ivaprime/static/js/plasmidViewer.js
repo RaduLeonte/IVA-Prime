@@ -76,6 +76,35 @@ const PlasmidViewer = new class {
                 PlasmidViewer.selectAll();
             };
         });
+
+
+        /**
+         * Subcloning keyboard shortcuts
+         */
+        document.addEventListener("keydown", function(event) {
+            if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === "C") {
+                const selectionIndices = Session.activePlasmid().getSelectionIndices();
+                
+                if (selectionIndices == null || selectionIndices[1] === null) return;
+
+                event.preventDefault();
+
+                Session.markForSubcloning();
+            };
+        });
+
+        document.addEventListener("keydown", function(event) {
+            if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === "V") {
+                const subcloningOriginPlasmidIndex = Session.subcloningOriginPlasmidIndex;
+                const subcloningOriginSpan = Session.subcloningOriginSpan;
+                
+                if (subcloningOriginPlasmidIndex == null || subcloningOriginSpan === null) return;
+
+                event.preventDefault();
+
+                Session.activePlasmid().IVAOperation("Subcloning", "", "", null, true)
+            };
+        });
     };
 
 
