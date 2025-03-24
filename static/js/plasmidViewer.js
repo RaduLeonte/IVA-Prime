@@ -2009,9 +2009,26 @@ const PlasmidViewer = new class {
 
     positionSequenceTooltip(posX, posY) {
         const tooltip = document.getElementById("sequence-tooltip");
-        tooltip.style.left = `${posX + 12}px`;
-        tooltip.style.top = `${posY + 15}px`;
-        
+
+        // Position context menu
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        const tooltipWidth = tooltip.offsetWidth;
+        const tooltipHeight = tooltip.offsetHeight;
+
+        if (posX + tooltipWidth > viewportWidth) {
+            posX -= tooltipWidth;
+        };
+        if (posY + tooltipHeight > viewportHeight) {
+            posY -= tooltipHeight;
+        };
+
+        posX = Math.max(0, posX);
+        posY = Math.max(0, posY);
+
+        tooltip.style.top = `${posY}px`;
+        tooltip.style.left = `${posX}px`;
         tooltip.setAttribute("visible", "");
     };
 

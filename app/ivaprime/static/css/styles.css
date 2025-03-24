@@ -1789,6 +1789,7 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   gap: 5px;
 
   position: absolute;
+  min-width: 200px;
   max-width: 300px;
   padding: 5px 10px;
 
