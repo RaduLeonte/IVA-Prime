@@ -186,8 +186,9 @@ class Plasmid {
      * 
      * @param {*} indices 
      */
-    setSelectionIndices(indices) {
+    setSelectionIndices(indices, selectedFeatureID = null) {
         this.selectionIndices = indices;
+        this.selectedFeatureID = selectedFeatureID;
 
         Utilities.removeUserSelection();
         PlasmidViewer.updateFooterSelectionInfo();
@@ -196,6 +197,8 @@ class Plasmid {
 
     clearSelectionIndices() {
         this.selectionIndices = null;
+        this.selectedFeatureID = null;
+
         PlasmidViewer.updateFooterSelectionInfo();
     };
 
@@ -206,6 +209,11 @@ class Plasmid {
      */
     getSelectionIndices() {
         return this.selectionIndices;
+    };
+
+
+    getSelectedFeatureID() {
+        return this.selectedFeatureID;
     };
 
 
