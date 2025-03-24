@@ -1,7 +1,7 @@
 const Nucleotides = new class {
     constructor() {
         this.commonFeatures = null;
-        fetch('static/commonFeatures.json')
+        fetch('static/data/commonFeatures.json')
             .then(response => response.json())
             .then(json => {
                 this.commonFeatures = json;
@@ -69,11 +69,10 @@ const Nucleotides = new class {
 
 
     loadCodonWeights() {
-        fetch('static/codonWeights.json')
+        fetch('static/data/codonWeights.json')
         .then(response => response.json())
         .then(json => {
             Nucleotides.codonWeights = json;
-            //populateOrganismDropdown();
         });
     };
 

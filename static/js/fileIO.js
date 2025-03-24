@@ -70,7 +70,7 @@ const FileIO = new class {
      * Imports the demo pET-28a(+).dna file.
      */
     async importDemoFile() {
-        const filePath = "\\static\\plasmids\\pET-28a(+).dna"
+        const filePath = "static\\files\\pET-28a(+).dna"
         const response = await fetch(filePath);
         const blob = await response.blob();
         const file = new File([blob], filePath.split('\\').pop());
@@ -1808,7 +1808,7 @@ const FileIO = new class {
             ]);
 
             // Fetch default file and modify using xlsx-populate
-            fetch("/static/MicrosynthUploadFormDNA.xlsx")
+            fetch("/static/files/MicrosynthUploadFormDNA.xlsx")
                 .then(res => res.arrayBuffer())
                 .then(arrayBuffer => XlsxPopulate.fromDataAsync(arrayBuffer))
                 .then(workbook => {
