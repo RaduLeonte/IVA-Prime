@@ -1788,12 +1788,12 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   justify-content: flex-start;
   gap: 5px;
 
-  position: absolute;
-  min-width: 200px;
+  position: fixed;
+  min-width: 0px;
   max-width: 300px;
   padding: 5px 10px;
 
-  visibility: hidden;
+  opacity: 0;
   color: var(--text-color);
   font-size: 11px;
   background-color: var(--bg-color1);
@@ -1804,7 +1804,7 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   z-index: 100;
 }
 .sequence-tooltip[visible] {
-  visibility: visible;
+  opacity: 100;
 }
 
 .sequence-tooltip-title {
@@ -1816,7 +1816,7 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   display: flex;
   gap: 5px;
 
-  width: 100%;
+  width: 300px;
 }
 
 .sequence-tooltip-row-key {

@@ -983,10 +983,8 @@ const PlasmidViewer = new class {
                             // Create feature description for tooltip
                             const tooltipBody = this.createFeatureHoverTooltip(featureID);
         
-                            // Show tooltip
+                            // Set tooltip
                             this.setSequenceTooltip(tooltipBody.innerHTML);
-                            this.showSequenceTooltip();
-
                             this.currentTooltipTarget = featureID;
                         };
                         
@@ -1003,10 +1001,9 @@ const PlasmidViewer = new class {
                         // Show tooltip
                         if (this.currentTooltipTarget !== aaString) {
                             this.setSequenceTooltip(aaString);
-                            this.showSequenceTooltip();
-
                             this.currentTooltipTarget = aaString;
                         };
+
                         this.positionSequenceTooltip(e.pageX, e.pageY);
                     };
                 };
@@ -1023,9 +1020,8 @@ const PlasmidViewer = new class {
                     const midX = rectBounds.left + rectBounds.width / 2;
                     const adjustedBaseIndex = (e.clientX < midX) ? baseIndex : baseIndex + 1;
 
-                    this.showSequenceTooltip();
-                    this.positionSequenceTooltip(e.pageX, e.pageY);
                     this.setSequenceTooltip(adjustedBaseIndex);
+                    this.positionSequenceTooltip(e.pageX, e.pageY);
             
                     this.removeCursors("sequence-cursor-hover");
                     this.placeCursor(adjustedBaseIndex);
@@ -1041,9 +1037,8 @@ const PlasmidViewer = new class {
                     // before it
                     const selectionEndIndex = parseInt(nearestRect.getAttribute("base-index"));
     
-                    this.showSequenceTooltip();
-                    this.positionSequenceTooltip(e.pageX, e.pageY);
                     this.setSequenceTooltip(selectionEndIndex);
+                    this.positionSequenceTooltip(e.pageX, e.pageY);
 
 
                     let selectionSpan;
@@ -2003,10 +1998,6 @@ const PlasmidViewer = new class {
      * @param {int} posX 
      * @param {int} posY 
      */
-    showSequenceTooltip() {
-        document.getElementById("sequence-tooltip").setAttribute("visible", "");;
-    };
-
     positionSequenceTooltip(posX, posY) {
         const tooltip = document.getElementById("sequence-tooltip");
         const margin = 15; //px
@@ -2022,10 +2013,10 @@ const PlasmidViewer = new class {
         posY += margin;
 
         if (posX + tooltipWidth > viewportWidth) {
-            posX -= tooltipWidth + margin;
+            posX -= tooltipWidth + 2*margin;
         };
         if (posY + tooltipHeight > viewportHeight) {
-            posY -= tooltipHeight + margin;
+            posY -= tooltipHeight + 2*margin;
         };
 
         posX = Math.max(0, posX);
@@ -2053,9 +2044,7 @@ const PlasmidViewer = new class {
      */
     setSequenceTooltip(body) {
         const tooltip = document.getElementById("sequence-tooltip");
-        requestAnimationFrame(() => {
-            tooltip.innerHTML = body;
-        });
+        tooltip.innerHTML = body;
     };
     // #endregion Sequence_tooltip 
 
