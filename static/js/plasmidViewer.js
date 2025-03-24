@@ -855,13 +855,15 @@ const PlasmidViewer = new class {
                 this.elementsAtMouseDown = elementsAtPoint;
 
                 // Find nearest base rect
-                const nearestRect = elementsAtPoint.find((el) => el.tagName === 'rect');
+                const nearestBaseRect = elementsAtPoint.find(
+                    (el) => el.tagName === 'rect' && el.classList.contains('base')
+                );
 
-                if (nearestRect) {
+                if (nearestBaseRect) {
                     // Start selection
-                    const baseIndex = parseInt(nearestRect.getAttribute("base-index"));
+                    const baseIndex = parseInt(nearestBaseRect.getAttribute("base-index"));
                     
-                    const rectBounds = nearestRect.getBoundingClientRect();
+                    const rectBounds = nearestBaseRect.getBoundingClientRect();
                     const midX = rectBounds.left + rectBounds.width / 2;
                     const adjustedBaseIndex = (e.clientX < midX) ? baseIndex : baseIndex + 1;
                     
@@ -872,8 +874,30 @@ const PlasmidViewer = new class {
                     };
                     
                     this.currentlySelecting = true;
-                    this.selectionStartIndex = adjustedBaseIndex;
+                    this.selectionType = "base";
+                    this.selectionStartSpan = [adjustedBaseIndex, adjustedBaseIndex];
+
+                    return;
                 };
+
+                const nearestAABlock = elementsAtPoint.find(
+                    (el) => el.tagName === 'polygon' && el.classList.contains('aa-block')
+                );
+                if (nearestAABlock) {
+                    // Start selection
+                    const aaSpan = nearestAABlock.parentElement.getAttribute("aa-span").split(",").map(n => Number(n));
+                    console.log(nearestAABlock.parentElement, aaSpan, Math.min(...aaSpan))
+                    
+                    this.selectAA(aaSpan, e.shiftKey);
+                    
+                    this.currentlySelecting = true;
+                    this.selectionType = "aaBlock";
+                    this.selectionStartSpan = aaSpan;
+
+                    return;
+                };
+
+
             };
         });
         /**
@@ -1029,31 +1053,39 @@ const PlasmidViewer = new class {
             } else if (this.currentlySelecting) {
                 // We're selecting
 
-                const nearestRect = this.findNearestBaseRect(e);
+                const nearestAABlock = elementsAtPoint.find(
+                    (el) => el.tagName === 'polygon' && el.classList.contains('aa-block')
+                );
+                if (nearestAABlock) {
+                    const aaBlockGroup = nearestAABlock.parentElement;
+                    const aaIndex = aaBlockGroup.getAttribute("aa-index");
+                    const aa = aaBlockGroup.getAttribute("aa");
+                    const aaString = `${aa}${parseInt(aaIndex)+1}`;
+
+                    const aaSpan = aaBlockGroup.getAttribute("aa-span").split(",").map(n => Number(n));
+                    this.selectBases(this.combineSpans(this.selectionStartSpan, aaSpan));
+
+                    if (this.currentTooltipTarget !== aaString) {
+                        this.setSequenceTooltip(aaString);
+                        this.currentTooltipTarget = aaString;
+                    };
+
+                    this.positionSequenceTooltip(e.pageX, e.pageY);
                 
+                    return;
+                };
+
+                const nearestRect = this.findNearestBaseRect(e);
                 
                 if (nearestRect) {
                     // Make the nearest rectangle to the mouse the end index and select everything
                     // before it
                     const selectionEndIndex = parseInt(nearestRect.getAttribute("base-index"));
     
+                    this.selectBases(this.combineSpans(this.selectionStartSpan, selectionEndIndex));
+
                     this.setSequenceTooltip(selectionEndIndex);
                     this.positionSequenceTooltip(e.pageX, e.pageY);
-
-
-                    let selectionSpan;
-                    if (this.selectionStartIndex <= selectionEndIndex) {
-                        selectionSpan = [
-                            this.selectionStartIndex,
-                            selectionEndIndex
-                        ];
-                    } else {
-                        selectionSpan = [
-                            this.selectionStartIndex - 1,
-                            selectionEndIndex
-                        ];
-                    }
-                    this.selectBases(selectionSpan);
                 };
             };
         });
@@ -2461,43 +2493,31 @@ const PlasmidViewer = new class {
     };
 
 
-    combineSpans(span) {
-        const singleIndexInput = !Array.isArray(span);
-
-        const currentSelection = Session.activePlasmid().getSelectionIndices();
-        if (!currentSelection) {
-            if (singleIndexInput) {
-                return span
-            } else {
-                return [
-                    Math.min(...span),
-                    Math.max(...span)
-                ];
-            };
-        };
+    combineSpans(span1, span2 = null) {
+        if (span2 === null) span2 = Session.activePlasmid().getSelectionIndices();
         
-        const currentSelectionFiltered = currentSelection.filter(item => item != null);
-        if (singleIndexInput) {
-            if (Math.max(...currentSelectionFiltered) < span) {
-                span -= 1;
-            } else if (currentSelectionFiltered.length == 1 && span < currentSelectionFiltered[0]) {
-                currentSelectionFiltered[0] -= 1
-            };
-        } else {
-            if (currentSelectionFiltered.length == 1 && Math.max(...span) < currentSelectionFiltered[0]) {
-                currentSelectionFiltered[0] -= 1
-            };
+        span1 = Array.isArray(span1) ? span1: [span1];
+        span1 = span1.filter(item => item != null);
+
+        span2 = Array.isArray(span2) ? span2: [span2];
+        span2 = span2.filter(item => item != null);
+
+        
+        const singleSpan1 = span1.length === 1;
+        const singleSpan2 = span2.length === 1;
+
+        if (singleSpan1 && Math.max(...span2) < span1[0]) {
+            span1[0] -= 1;
+        } else if (singleSpan1 && singleSpan2 && span1[0] < span2[0]) {
+            span2[0] -= 1;
+        } else if (!singleSpan1 && singleSpan2 && Math.max(...span1) < span2[0]) {
+            span2[0] -= 1;
         };
 
-        span = singleIndexInput ? [span] : span;
-        const combinedIndices = [
-            ...span,
-            ...currentSelectionFiltered
-        ];
-
+        const allIndices = [...span1, ...span2];
         return [
-            Math.min(...combinedIndices),
-            Math.max(...combinedIndices)
+            Math.min(...allIndices),
+            Math.max(...allIndices)
         ];
     };
 
