@@ -75,6 +75,12 @@ const KeyboardShortcuts = new class {
                     return;
                 };
             };
+
+            // F2 -> Rename current plasmid
+            if (key === "f2") {
+                KeyboardShortcuts.renamePlasmid(event);
+                return;
+            };
         });
     };
 
@@ -295,5 +301,18 @@ const KeyboardShortcuts = new class {
 
         event.preventDefault();
         document.getElementById("search-bar").focus();
+    };
+
+
+    /**
+     * 
+     * @param {*} event 
+     */
+    renamePlasmid(event) {
+        // Check that there is no modal active
+        if (Modals.isActive()) return;
+
+        event.preventDefault();
+        PlasmidTabs.renamePlasmid(Session.activePlasmidIndex);
     };
 };
