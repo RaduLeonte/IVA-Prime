@@ -186,6 +186,27 @@ const Sidebar = new class {
         const spanStart = parseInt(primerRegionElement.getAttribute("start"));
         const length = primerRegionElement.innerText.length;
         const direction = primerRegionElement.getAttribute("direction");
+        const primerSequence = primerRegionElement.innerText;
+        
+        const activePlasmid = Session.activePlasmid();
+        if (!activePlasmid) return;
+        
+        const sequence = {"fwd": activePlasmid.sequence, "rev": activePlasmid.complementarySequence}[direction];
+        const query = {"fwd": primerSequence, "rev": primerSequence.split("").reverse().join("")}[direction];;
+        let indices = [];
+        let index = sequence.indexOf(query);
+        while (index !== -1) {
+            indices.push(index);
+            index = sequence.indexOf(query, index + 1);
+        };
+
+        console.log(indices);
+        indices.forEach((index) => {
+            PlasmidViewer.highlightBases([index + 1, index + query.length], baseClass, direction)
+        });
+        
+
+        return;
 
         let regionSpan;
         switch (type) {

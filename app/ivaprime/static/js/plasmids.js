@@ -36,6 +36,7 @@ class Plasmid {
         
         this.primers = [];
         this.operationNr = 1;
+        this.deletionMarks = [];
 
         // Check feature overlap and assign feature levels
         // to describe how they stack
@@ -253,6 +254,7 @@ class Plasmid {
             topology: this.topology,
             primers: structuredClone(this.primers),
             features: structuredClone(this.features),
+            deletionMarks: structuredClone(this.deletionMarks)
         };
 
         if (this.stateIndex !== 0) {
@@ -289,6 +291,7 @@ class Plasmid {
         this.topology = stateToLoad.topology;
         this.primers = stateToLoad.primers;
         this.features = stateToLoad.features;
+        this.deletionMarks = stateToLoad.deletionMarks;
 
         PlasmidViewer.deselectBases();
         PlasmidViewer.redraw();
@@ -677,6 +680,8 @@ class Plasmid {
                     ""
                 );
             } else {
+                this.deletionMarks.push(this.selectionIndices[0]);
+
                 PlasmidViewer.deselectBases();
                 PlasmidViewer.redraw();
                 Sidebar.update();
@@ -728,14 +733,6 @@ class Plasmid {
             const featureSpan = this.features[featureID]["span"];
             const [spanStart, spanEnd] = featureSpan;
     
-            //// Adjust indices for pure insertions
-            //if (sliceRangeStart === sliceRangeEnd) {
-            //    sliceRangeStart++;
-            //    sliceRangeEnd++;
-            //} else {
-            //    sliceRangeStart++;
-            //};
-    
             let overlapType = null;
             if (isSimpleInsertion) {
                 if (sliceRangeStart <= spanStart) overlapType = "shift";
@@ -764,43 +761,17 @@ class Plasmid {
                 case "shift":
                     // Shift feature position based on inserted length
                     this.features[featureID]["span"] = [spanStart + shiftAmount, spanEnd + shiftAmount];
-                    //console.log(
-                    //    "Plasmid.shiftFeatures ->",
-                    //    this.features[featureID]["label"],
-                    //    overlapType,
-                    //    featureSpan,
-                    //    this.features[featureID]["span"],
-                    //)
                     break;
     
                 case "inside":
                     this.features[featureID]["span"] = [spanStart, spanEnd + shiftAmount];
-                    //console.log(
-                    //    "Plasmid.shiftFeatures ->",
-                    //    this.features[featureID]["label"],
-                    //    overlapType,
-                    //    featureSpan,
-                    //    this.features[featureID]["span"],
-                    //)
                     break;
     
                 case "delete":
-                    //console.log(
-                    //    "Plasmid.shiftFeatures ->",
-                    //    this.features[featureID]["label"],
-                    //    overlapType,
-                    //    featureSpan,
-                    //)
                     delete this.features[featureID];
                     break;
 
                 default:
-                    //console.log(
-                    //    "Plasmid.shiftFeatures ->",
-                    //    this.features[featureID]["label"],
-                    //    "leave alone",
-                    //    featureSpan,
-                    //)
                     break;
             };
         };

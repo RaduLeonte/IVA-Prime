@@ -15,7 +15,7 @@ const KeyboardShortcuts = new class {
 
 
             // Delete -> Delete selection (IVA Operation)
-            if (key === "Delete") {
+            if (key === "delete") {
                 KeyboardShortcuts.deleteSelection(event);
                 return;
             };
