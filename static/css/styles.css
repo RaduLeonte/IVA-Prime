@@ -1078,6 +1078,32 @@ input, select, textarea {
   font-size: 14px !important;
 }
 
+
+.tm-overlap-svg-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+
+  margin-bottom: 10px;
+}
+
+.toolbar-panel-tm-overlap-svg {
+  width: 80%;
+  display: block;
+  height: auto;
+}
+
+.toolbar-panel-tm-overlap-text {
+  font-size: 14px;
+  fill: var(--text-color);
+
+  pointer-events: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
 .toolbar-panel-settings {
   min-width: 400px !important;
   max-width: 80vh !important;

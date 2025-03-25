@@ -239,6 +239,7 @@ const Toolbar = new class {
 
         };
 
+        this.calculatePrimerOverlap();
     };
 
 
@@ -286,6 +287,86 @@ const Toolbar = new class {
                 "title",
                 `Redo: ${activePlasmid.stateHistory[stateIndex - 1].actionDescription} (Ctrl + Shift + Z)`,
             );
+        };
+    };
+
+
+    calculatePrimerOverlap(seq1 = null, seq2 = null) {
+        const primer1 = (seq1) ? seq1 : document.getElementById("tm-calc-input1").value;
+        if (!/^[ATCG]*$/i.test(primer1) || primer1.trim().length === 0) return;
+
+        const primer2 = (seq2) ? seq2 : document.getElementById("tm-calc-input2").value;
+        if (!/^[ATCG]*$/i.test(primer2) || primer2.trim().length === 0) return;
+
+        const primer2RC = Nucleotides.reverseComplementary(primer2);
+
+        console.log(primer1, primer2RC)
+        
+        const minLength = Math.min(primer1.length, primer2RC.length);
+        let overlap = 0;
+        for (let i = minLength; i > 0; i--) {
+            if (primer2RC.slice(-i) === primer1.slice(0, i)) {
+                overlap = i;
+                break;
+            };
+        };
+        const primer2Rev = primer2.split("").reverse().join("")
+
+        const overlappingSequence = primer1.slice(0, overlap);
+
+        const svgWrapper = document.getElementById("tm-overlap-svg-wrapper");
+        if (svgWrapper.firstElementChild) {
+            svgWrapper.removeChild(svgWrapper.firstElementChild);
+        };
+
+        const overlapTmSpan = document.getElementById("tm-calc-overlap-tm");
+        const overlapLengthSpan = document.getElementById("tm-calc-overlap-length");
+        const overlapInfoSpan = document.getElementById("tm-calc-overlap-info");
+        if (overlap === 0) {
+            overlapTmSpan.textContent = "--";
+            overlapLengthSpan.textContent = "";
+            overlapInfoSpan.textContent = "--";
+        } else {
+            overlapTmSpan.textContent = Nucleotides.getMeltingTemperature(overlappingSequence).toFixed(2);
+            overlapLengthSpan.textContent = `(${overlap} bp)`
+            overlapInfoSpan.textContent = `(${UserPreferences.get("TmAlgorithm")}, ${UserPreferences.get("primerConc")} nM)`;
+        };
+        
+
+        const maxLength = 40;
+        const primer1Truncated = primer1.slice(0, Math.min(maxLength, primer1.length));
+        const primer2Truncated = primer1.slice(-Math.min(maxLength, primer2.length));
+
+        const maxWidth = primer2Truncated.length + primer1Truncated.length - overlap;
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svgWrapper.appendChild(svg);
+        svg.id = "toolbar-panel-tm-overlap-svg";
+        svg.classList.add("toolbar-panel-tm-overlap-svg");
+        
+        
+        const scaleFactor = 14; // Font size in px
+        svg.setAttribute("viewBox", `0 0 ${maxWidth*scaleFactor} ${2*scaleFactor}`);
+
+        const primer1Offset = primer2Truncated.length - overlap;
+        for (let i = 0; i < primer1.length; i++) {
+            svg.appendChild(PlasmidViewer.text(
+                [(i + 0.5 + primer1Offset)*scaleFactor, 0*scaleFactor],
+                primer1.slice(i, i+1),
+                null,
+                "toolbar-panel-tm-overlap-text",
+                "middle",
+                "1em"
+            ))
+        };
+        for (let i = 0; i < primer2Rev.length; i++) {
+            svg.appendChild(PlasmidViewer.text(
+                [(i + 0.5)*scaleFactor, 1*scaleFactor],
+                primer2Rev.slice(i, i+1),
+                null,
+                "toolbar-panel-tm-overlap-text",
+                "middle",
+                "1em"
+            ))
         };
     };
 };
