@@ -2201,16 +2201,22 @@ const PlasmidViewer = new class {
      * @param {string} cssClass 
      */
     highlightBases(span, cssClass = "base-hover", strand=null) {
+        //console.log("PlasmidViewer.highlightBases ->", span, cssClass, strand)
         const [start, end] = span;
     
         let basesHighlighted = [];
 
-        const strands = (strand) ? [strand]: ["fwd", "rev"]
+        const sequenceLength = Session.activePlasmid().sequence.length
+        const strands = (strand) ? [strand]: ["fwd", "rev"];
         for (let i = 0; i < strands.length; i++) {
             const currMap = this.baseRectsMap[strands[i]];
 
             for (let j = start; j <= end; j++) {
-                const rect = currMap[j-1];
+                let baseIndex = j;
+                if (baseIndex <= 0) baseIndex += sequenceLength;
+                if (baseIndex > sequenceLength) baseIndex -= sequenceLength;
+
+                const rect = currMap[baseIndex-1];
                 rect.classList.add(cssClass);
                 basesHighlighted.push(rect);
             };

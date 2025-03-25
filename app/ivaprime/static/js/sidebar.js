@@ -191,14 +191,28 @@ const Sidebar = new class {
         const activePlasmid = Session.activePlasmid();
         if (!activePlasmid) return;
         
-        const sequence = {"fwd": activePlasmid.sequence, "rev": activePlasmid.complementarySequence}[direction];
+        let sequence = {"fwd": activePlasmid.sequence, "rev": activePlasmid.complementarySequence}[direction];
         const query = {"fwd": primerSequence, "rev": primerSequence.split("").reverse().join("")}[direction];;
+        
         let indices = [];
-        let index = sequence.indexOf(query);
-        while (index !== -1) {
-            indices.push(index);
-            index = sequence.indexOf(query, index + 1);
-        };
+        if (Session.activePlasmid().topology === "linear") {
+            let index = sequenceRepeating.indexOf(query);
+            while (index !== -1) {
+                indices.push(index);
+                index = sequence.indexOf(query, index + 1);
+            };
+        } else {
+            const sequenceLength = sequence.length;
+            const sequenceRepeating = sequence.repeat(3);
+            let index = sequenceRepeating.indexOf(query);
+            while (index !== -1) {
+                const resultSpan = [index - sequenceLength, index + query.length - sequenceLength]
+                if (resultSpan[1] >= 0 && resultSpan[1] <= sequenceLength ) {
+                    indices.push(index - sequenceLength);
+                };
+                index = sequenceRepeating.indexOf(query, index + 1);
+            };
+        }
 
         console.log(indices);
         indices.forEach((index) => {
