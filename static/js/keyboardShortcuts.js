@@ -4,29 +4,29 @@ const KeyboardShortcuts = new class {
          * Document
          */
         document.addEventListener("keydown", function(event) {
-            const key = event.key.toLowerCase();
+            const key = event.key
             const ctrlOrCmd = event.ctrlKey || event.metaKey;
 
             // CTRL+ A -> Select entire plasmid sequence
-            if (ctrlOrCmd && key === "a") {
+            if (ctrlOrCmd && key.toLowerCase() === "a") {
                 KeyboardShortcuts.selectAll(event);
                 return;
             };
 
 
             // Delete -> Delete selection (IVA Operation)
-            if (key === "delete") {
+            if (key === "Delete") {
                 KeyboardShortcuts.deleteSelection(event);
                 return;
             };
 
 
             // CTRL + SHIFT + X/V -> Subcloning (IVA Operation) 
-            if (ctrlOrCmd && event.shiftKey && key === "x") {
+            if (ctrlOrCmd && event.shiftKey && key.toLowerCase() === "x") {
                 KeyboardShortcuts.markSelectionForSubcloning(event);
                 return;
             };
-            if (ctrlOrCmd && event.shiftKey && key === "v") {
+            if (ctrlOrCmd && event.shiftKey && key.toLowerCase() === "v") {
                 KeyboardShortcuts.subcloneIntoSelection(event);
                 return;
             };
@@ -40,13 +40,13 @@ const KeyboardShortcuts = new class {
 
 
             // CTRL + F -> Focus search bar
-            if (ctrlOrCmd && key === "f") {
+            if (ctrlOrCmd && key.toLowerCase() === "f") {
                 KeyboardShortcuts.focusSearchBar(event);
                 return;
             };
 
             // CTRL + C -> Copy sequence to clipboard from selection
-            if (ctrlOrCmd && key === "c") {
+            if (ctrlOrCmd && key.toLowerCase() === "c") {
                 if (!Session.activePlasmid().selectionIsRange()) return;
                 
                 event.preventDefault();
@@ -77,7 +77,7 @@ const KeyboardShortcuts = new class {
             };
 
             // F2 -> Rename current plasmid
-            if (key === "f2") {
+            if (key.toLowerCase() === "f2") {
                 KeyboardShortcuts.renamePlasmid(event);
                 return;
             };
