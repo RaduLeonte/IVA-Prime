@@ -29,6 +29,8 @@ class Plasmid {
         this.complementarySequence = Nucleotides.complementary(sequence);
         this.features = features;
         this.topology = topology;
+
+        this.scrollTop = 0;
         
         this.selectionIndices = null;
         

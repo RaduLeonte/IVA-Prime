@@ -52,9 +52,17 @@ const PlasmidTabs = new class {
         // Close dropdown menus
         this.removeAllPlasmidTabDropdownMenus();
 
+        
         console.log(`PlasmidTabs.switch -> plasmidIndex=${plasmidIndex} (active=${Session.activePlasmidIndex}, ${(Session.activePlasmidIndex !== null && Session.activePlasmidIndex === plasmidIndex)})`)
         if (Session.activePlasmidIndex !== null && Session.activePlasmidIndex === plasmidIndex) {
             return;
+        };
+
+
+        // Save current scroll level
+        const viewer = document.getElementById("viewer");
+        if (Session.activePlasmid()) {
+            Session.activePlasmid().scrollTop = viewer.scrollTop;
         };
         
         // Deselect plasmid tab
@@ -75,6 +83,9 @@ const PlasmidTabs = new class {
         PlasmidViewer.redraw();
 
         Sidebar.update();
+
+        // Set scroll of viewer to scroll level of new plasmid
+        viewer.scrollTop = Session.activePlasmid().scrollTop;
     };
 
 
