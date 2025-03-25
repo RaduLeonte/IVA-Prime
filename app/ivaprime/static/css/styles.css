@@ -1563,6 +1563,13 @@ html[data-theme="dark"] .boolean-switch-slider:before {
 }
 
 
+.deletion-marking {
+  stroke-width: 2;
+  stroke: var(--btn-red);
+  stroke-dasharray: 8, 4;
+}
+
+
 /* 
  * MARK: Linear
  */

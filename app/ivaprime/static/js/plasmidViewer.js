@@ -55,7 +55,7 @@ const PlasmidViewer = new class {
             this.resFillColors[res] = this.getCssFillColor("aa-block-" + res)
         };
 
-        
+
         /**
          * Init measurement svg for annotation text
          */
@@ -2058,7 +2058,8 @@ const PlasmidViewer = new class {
             PlasmidViewer.updateViewer();
         };
 
-        this.highlightSubcloningTarget()
+        this.highlightSubcloningTarget();
+        this.addDeletionMarkings();
     };
     
     // #endregion Render_functions
@@ -2305,6 +2306,22 @@ const PlasmidViewer = new class {
             this.subcloningRects[i].remove()
         };
         this.subcloningRects = [];
+    };
+
+
+    addDeletionMarkings() {
+        this.removeDeletionMarkings();
+
+        const deletionMarkings = Session.activePlasmid().deletionMarks;
+        for (let i = 0; i < deletionMarkings.length; i++) {
+            const pos = deletionMarkings[i];
+
+            this.placeCursor(pos, "deletion-marking");
+        };
+    };
+
+    removeDeletionMarkings() {
+        this.removeCursors("deletion-marking")
     };
 
 

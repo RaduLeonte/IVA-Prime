@@ -668,6 +668,7 @@ class Plasmid {
             this.sliceSequence(this.selectionIndices, seqToInsert);
     
             this.shiftFeatures(this.selectionIndices, seqToInsert);
+            this.shiftDeletionMarks(this.selectionIndices, seqToInsert);
     
             if (operationType !== "Deletion") {
                 this.newFeature(
@@ -775,5 +776,55 @@ class Plasmid {
                     break;
             };
         };
+    };
+
+
+    shiftDeletionMarks(sliceRange, newSequence) {
+        if (sliceRange[1] === null) sliceRange = [sliceRange[0], sliceRange[0]];
+
+        const [sliceRangeStart, sliceRangeEnd] = sliceRange;
+
+        const isSimpleInsertion = (sliceRangeStart === sliceRangeEnd);
+        const shiftAmount = (isSimpleInsertion)
+            ? newSequence.length
+            : newSequence.length - (sliceRange[1] - sliceRange[0] + 1);
+
+        const newDeletionMarks = [];
+        for (let i = 0; i < this.deletionMarks.length; i++) {
+            let deletionMarkPos =  this.deletionMarks[i];
+            let overlapType = null;
+            
+            if (isSimpleInsertion) {
+                // There was an insertion upstream of the deletion mark, shift it
+                if (sliceRangeStart <= deletionMarkPos) overlapType = "shift";
+            } else {
+                // Sequence changed upstream, shift the deletion mark
+                if (sliceRangeEnd < deletionMarkPos) {
+                    overlapType = "shift";
+                // Sequence changed downstream, do not change deletion mark
+                } else if (sliceRangeStart > deletionMarkPos) {
+                    overlapType = null;
+                // Deletion mark is inside the changed sequence, delete it
+                } else if (sliceRangeStart <= deletionMarkPos && deletionMarkPos <= sliceRangeEnd) {
+                    overlapType = "delete";
+                };
+            };
+    
+            // Apply the determined action
+            switch (overlapType) {
+                case "shift":
+                    newDeletionMarks.push(deletionMarkPos + shiftAmount);
+                    break;
+
+                case "delete":
+                    break;
+
+                default:
+                    newDeletionMarks.push(deletionMarkPos);
+                    break;
+            };
+        };
+
+        this.deletionMarks = newDeletionMarks;
     };
 };
