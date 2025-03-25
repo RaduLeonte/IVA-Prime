@@ -27,14 +27,6 @@ const Search = new class {
                 };
             });
         });
-
-
-        document.addEventListener("keydown", function(event) {
-            if ((event.ctrlKey || event.metaKey) && event.key === "f") {
-                event.preventDefault();
-                document.getElementById("search-bar").focus();
-            };
-        });
     };
 
     /**

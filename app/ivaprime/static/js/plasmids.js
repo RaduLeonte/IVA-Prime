@@ -120,6 +120,15 @@ class Plasmid {
     };
 
 
+    selectionIsSingle() {
+        return this.selectionIndices !== null && this.selectionIndices[1] === null;
+    };
+
+    selectionIsRange() {
+        return this.selectionIndices !== null && this.selectionIndices[1] !== null;
+    };
+
+
     /**
      *  Iterate over features and assign them to rows so that they do not overlap.
      */

@@ -94,4 +94,9 @@ const Session = new class {
 
         PlasmidViewer.highlightSubcloningTarget();
     };
+
+
+    isSubcloningRegionMarked() {
+        return this.subcloningOriginPlasmidIndex != null && this.subcloningOriginSpan != null;
+    };
 };

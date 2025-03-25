@@ -57,11 +57,17 @@ const Modals = new class {
         document.addEventListener("keydown", onEscapeKey);
     };
 
+    
     remove(modalWindowId) {
         const modalWindow = document.getElementById(modalWindowId);
         const modal = modalWindow.parentNode;
         modal.style.display = "none"
         modal.removeChild(modalWindow);
+    };
+
+
+    isActive() {
+        return document.getElementById("modal").style.display === "block"
     };
 
 
