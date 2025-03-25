@@ -11,26 +11,6 @@ const Utilities = new class {
         ];
 
 
-        /**
-         * CTRL+C
-         */
-        document.addEventListener("keydown", function(event) {
-            if ((event.ctrlKey || event.metaKey) && (event.key === "c" || event.key === "C")) {
-                const currSelection = Session.activePlasmid().getSelectionIndices();
-                if (currSelection && currSelection !== null && currSelection[1] !== null) {
-                    console.log("Copying from viewer")
-                    event.preventDefault();
-    
-                    if (event.altKey) {
-                        Utilities.copySequence("reverse complement");
-                    } else {
-                        Utilities.copySequence();
-                    };
-                };
-            };
-        });
-
-
         document.addEventListener('DOMContentLoaded', function() {
             Utilities.getScrollbarWidth();
         });

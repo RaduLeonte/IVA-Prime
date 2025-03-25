@@ -4,7 +4,7 @@ const KeyboardShortcuts = new class {
          * Document
          */
         document.addEventListener("keydown", function(event) {
-            const key = event.key;
+            const key = event.key.toLowerCase();
             const ctrlOrCmd = event.ctrlKey || event.metaKey;
 
             // CTRL+ A -> Select entire plasmid sequence
@@ -20,13 +20,13 @@ const KeyboardShortcuts = new class {
                 return;
             };
 
-            
-            // CTRL + SHIFT + C/V -> Subcloning (IVA Operation) 
-            if (ctrlOrCmd && event.shiftKey && key === "C") {
+
+            // CTRL + SHIFT + X/V -> Subcloning (IVA Operation) 
+            if (ctrlOrCmd && event.shiftKey && key === "x") {
                 KeyboardShortcuts.markSelectionForSubcloning(event);
                 return;
             };
-            if (ctrlOrCmd && event.shiftKey && key === "V") {
+            if (ctrlOrCmd && event.shiftKey && key === "v") {
                 KeyboardShortcuts.subcloneIntoSelection(event);
                 return;
             };
@@ -43,6 +43,37 @@ const KeyboardShortcuts = new class {
             if (ctrlOrCmd && key === "f") {
                 KeyboardShortcuts.focusSearchBar(event);
                 return;
+            };
+
+            // CTRL + C -> Copy sequence to clipboard from selection
+            if (ctrlOrCmd && key === "c") {
+                if (!Session.activePlasmid().selectionIsRange()) return;
+                
+                event.preventDefault();
+
+                // CTRl + C -> Top strand 5'->3'
+                if (!event.shiftKey && !event.altKey) {
+                    Utilities.copySequence();
+                    return;
+                };
+
+                // CTRl + Shift + C -> Bottom strand 5'->3'
+                if (event.shiftKey && !event.altKey) {
+                    Utilities.copySequence("reverse complement");
+                    return;
+                };
+
+                // CTRl + Alt + C -> Top strand 3'->5'
+                if (!event.shiftKey && event.altKey) {
+                    Utilities.copySequence("reverse");
+                    return;
+                };
+
+                // CTRl + Shift + Alt + C -> Bottom strand 3'->5'
+                if (event.shiftKey && event.altKey) {
+                    Utilities.copySequence("complement");
+                    return;
+                };
             };
         });
     };
