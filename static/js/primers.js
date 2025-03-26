@@ -1,4 +1,5 @@
 const Primers = new class {
+    // #region extendSequence
     /**
      * Extends the primer from the starting position in the specified direction on the specified strand
      * 
@@ -33,7 +34,6 @@ const Primers = new class {
      * @param {String} initialSequence - Starting sequence for the primer
      * @returns {String} - Output sequence
      */
-    // TO DO: Fail conditions (reaching edge of linear plasmid, going over ambigous bases etc)
     extendSequence(
         plasmidSequence,
         startingIndex,
@@ -117,12 +117,14 @@ const Primers = new class {
     };
 
 
+    // #region generateSet
     /**
+     * Generate the set of primers for a given IVA Operation.
      * 
-     * @param {*} operationType 
-     * @param {*} operationRange 
-     * @param {*} plasmidSequence 
-     * @param {*} seqToInsert 
+     * @param {String} operationType - Type of IVA Operation
+     * @param {Array<Number>} operationRange - Operation range/span
+     * @param {String} plasmidSequence - DNA sequence of the plasmid
+     * @param {String} seqToInsert - DNA sequence to be inserted
      * @returns 
      */
     // TO DO: warn user if TBRs bind somewhere else and give the option to extend them unti they dont
@@ -133,7 +135,9 @@ const Primers = new class {
         seqToInsert,
     ) {
         // Target Tm for homologous region
-        const targetTMHR = (operationType !== "Subcloning") ? UserPreferences.get("HRTm"): UserPreferences.get("HRSubcloningTm");
+        const targetTMHR = (operationType !== "Subcloning")
+            ? UserPreferences.get("HRTm")
+            : UserPreferences.get("HRSubcloningTm");
 
         // Make sure indices are sorted
         if (operationRange[1] === null) {
@@ -177,6 +181,7 @@ const Primers = new class {
         const isShortInsertion = Nucleotides.getMeltingTemperature(seqToInsert, "oligoCalc") < UserPreferences.get("maxTmSi");
         const symmetricPrimers = UserPreferences.get("symmetricPrimers");
 
+        // Find appropriate generator for the primers
         const generator = (isShortInsertion)
         ? (symmetricPrimers)
             ? this.generateSymShortSet.bind(this)
@@ -185,17 +190,7 @@ const Primers = new class {
             ? this.generateSymLongSet.bind(this)
             : this.generateAsymLongSet.bind(this)
 
-        console.log(`Primers.generateSet.${generator.name} -> `,
-            //plasmidSequence.slice(0, 20),
-            operationRange,
-            tempFwd,
-            tempRev,
-            seqToInsert,
-            targetTMHR,
-            operationType,
-            //primerColors
-        );
-
+        // Generate the primers
         const primersSet = generator(
             plasmidSequence,
             operationRange,
@@ -205,13 +200,26 @@ const Primers = new class {
             targetTMHR,
             operationType,
         );
-
         // #endregion HR
 
         return primersSet;
     };
 
 
+    // #region Symmetric Short
+    /**
+     * Generate a set of symmetric primers for short insertions/mutations
+     * 
+     * @param {String} plasmidSequence - Sequence of the plasmid
+     * @param {Array<Number>} operationRange - Operation range/span
+     * @param {String} tempFwd - DNA sequence of the template binding region of the forward primer
+     * @param {String} tempRev - DNA sequence of the template binding region of the reverse primer
+     * @param {String} seqToInsert - DNA sequence to be inserted
+     * @param {Number} targetTMHR - Targer melting temperature for the homologous region
+     * @param {String} operationType - Type of IVA operation
+     * 
+     * @returns {Object} - Primers set dictionary
+     */
     generateSymShortSet(
         plasmidSequence,
         operationRange,
@@ -314,6 +322,20 @@ const Primers = new class {
     };
 
 
+    // #region Asymmetric Short
+    /**
+     * Generate a set of asymmetric primers for short insertions/mutations
+     * 
+     * @param {String} plasmidSequence - Sequence of the plasmid
+     * @param {Array<Number>} operationRange - Operation range/span
+     * @param {String} tempFwd - DNA sequence of the template binding region of the forward primer
+     * @param {String} tempRev - DNA sequence of the template binding region of the reverse primer
+     * @param {String} seqToInsert - DNA sequence to be inserted
+     * @param {Number} targetTMHR - Targer melting temperature for the homologous region
+     * @param {String} operationType - Type of IVA operation
+     * 
+     * @returns {Object} - Primers set dictionary
+     */
     generateAsymShortSet(
         plasmidSequence,
         operationRange,
@@ -361,6 +383,20 @@ const Primers = new class {
     };
 
 
+    // #region Symmetric Long
+    /**
+     * Generate a set of symmetric primers for long insertions/mutations
+     * 
+     * @param {String} plasmidSequence - Sequence of the plasmid
+     * @param {Array<Number>} operationRange - Operation range/span
+     * @param {String} tempFwd - DNA sequence of the template binding region of the forward primer
+     * @param {String} tempRev - DNA sequence of the template binding region of the reverse primer
+     * @param {String} seqToInsert - DNA sequence to be inserted
+     * @param {Number} targetTMHR - Targer melting temperature for the homologous region
+     * @param {String} operationType - Type of IVA operation
+     * 
+     * @returns {Object} - Primers set dictionary
+     */
     generateSymLongSet(
         plasmidSequence,
         operationRange,
@@ -431,6 +467,20 @@ const Primers = new class {
     };
 
 
+    // #region Asymmetric Long
+    /**
+     * Generate a set of asymmetric primers for long insertions/mutations
+     * 
+     * @param {String} plasmidSequence - Sequence of the plasmid
+     * @param {Array<Number>} operationRange - Operation range/span
+     * @param {String} tempFwd - DNA sequence of the template binding region of the forward primer
+     * @param {String} tempRev - DNA sequence of the template binding region of the reverse primer
+     * @param {String} seqToInsert - DNA sequence to be inserted
+     * @param {Number} targetTMHR - Targer melting temperature for the homologous region
+     * @param {String} operationType - Type of IVA operation
+     * 
+     * @returns {Object} - Primers set dictionary
+     */
     generateAsymLongSet(
         plasmidSequence,
         operationRange,
@@ -491,12 +541,24 @@ const Primers = new class {
     };
 
 
+    // #region Subcloning
+    /**
+     * Generate subcloning primers
+     * 
+     * @param {Array<Number>} operationRange - Operation range/span
+     * @param {String} plasmidSequence - Sequence of the plasmid
+     * @param {String} seq5Prime - DNA sequence to be inserted at the 5' end
+     * @param {String} seq3Prime - DNA sequence to be inserted at the 3' end
+     * 
+     * @returns {Object} - Primers set dictionary
+     */
     generateSubcloningSet(
         operationRange,
         plasmidSequence,
         seq5Prime,
         seq3Prime,
     ) {
+        // Adjust range if pure insertion
         if (operationRange[1] === null) {
             operationRange = [
                 operationRange[0],
@@ -509,15 +571,21 @@ const Primers = new class {
             ];
         };
 
+        // Get subcloning target sequence
         const subclonignOriginPlasmid = Session.getPlasmid(Session.subcloningOriginPlasmidIndex);
         const subcloningOriginSpan = Session.subcloningOriginSpan;
         const subcloningTarget = subclonignOriginPlasmid.sequence.slice(subcloningOriginSpan[0] - 1, subcloningOriginSpan[1])
     
-
+        // Get current plasmid sequence
         const activePlasmidSequence = plasmidSequence;
+        /**
+         * Create pseudo plasmid sequence
+         * We pretend the subcloning target is already in the target 
+         * vector and that we're doing a simple insertion at the 5' end
+         */
         const pseudoPlasmidSequence5Prime = activePlasmidSequence.slice(0, operationRange[0]-1) + subcloningTarget + activePlasmidSequence.slice(operationRange[1]);
-        console.log("Primers.generateSubcloningSet -> pseudoPlasmidSequence5Prime", pseudoPlasmidSequence5Prime)
 
+        // Generate first primer set using pseudo plasmid sequence
         const primerSet5Prime = Primers.generateSet(
             "Insertion",
             [operationRange[0], null],
@@ -525,11 +593,16 @@ const Primers = new class {
             seq5Prime
         );
         
+        /**
+         * Create pseudo plasmid sequence
+         * We pretend the subcloning target is already in the target 
+         * vector and that we're doing a simple insertion at the 3' end
+         */
         const pseudoPlasmidSequence3Prime = Nucleotides.reverseComplementary(pseudoPlasmidSequence5Prime);
-        console.log("Primers.generateSubcloningSet -> pseudoPlasmidSequence3Prime", pseudoPlasmidSequence3Prime)
+        // Adjust operation position because the 3' pseudo plasmid sequence is flipped
         const operationPos =  pseudoPlasmidSequence3Prime.length - operationRange[0] - subcloningTarget.length + 2
-        console.log("Primers.generateSubcloningSet -> operationPos", operationPos)
 
+        // Generate second primer set using pseudo plasmid sequence
         const primerSet3Prime = Primers.generateSet(
             "Insertion",
             [operationPos, null],
@@ -537,12 +610,13 @@ const Primers = new class {
             Nucleotides.reverseComplementary(seq3Prime)
         );
 
-        //console.log("Primers.generateSubcloningSet -> Subcloning", JSON.stringify(primerSet5Prime, null, 2), JSON.stringify(primerSet3Prime, null, 2) )
-    
+        // Shorthand
         const sets = [primerSet5Prime, primerSet3Prime];
 
+        // The full insertion sequence
         const insertionSequenceFull = seq5Prime + subcloningTarget + seq3Prime;
 
+        // Return primer set dict
         return {
             title: "Subcloning",
             type: "Subcloning",
@@ -644,5 +718,163 @@ const Primers = new class {
                 },
             ]
         }
+    };
+
+
+    // #region Linear fragment
+    insertFromLinearFragment(operationRange, plasmidSequence, seqToInsert, linFragName, translateFeature) {
+        // "Subclone" from pseudo linear fragment
+        // Adjust range if pure insertion
+        if (operationRange[1] === null) {
+            operationRange = [
+                operationRange[0],
+                operationRange[0] - 1
+            ];
+        } else {
+            operationRange = [
+                Math.min(...operationRange),
+                Math.max(...operationRange)
+            ];
+        };
+    
+        // Get current plasmid sequence
+        const activePlasmidSequence = plasmidSequence;
+        /**
+         * Create pseudo plasmid sequence
+         * We pretend the ins target is already in the target 
+         * vector and that we're doing a simple insertion at the 5' end
+         */
+        const pseudoPlasmidSequence5Prime = activePlasmidSequence.slice(0, operationRange[0]-1) + seqToInsert + activePlasmidSequence.slice(operationRange[1]);
+
+        // Generate first primer set using pseudo plasmid sequence
+        const primerSet5Prime = Primers.generateSet(
+            "Insertion",
+            [operationRange[0], null],
+            pseudoPlasmidSequence5Prime,
+            ""
+        );
+        
+        /**
+         * Create pseudo plasmid sequence
+         * We pretend the subcloning target is already in the target 
+         * vector and that we're doing a simple insertion at the 3' end
+         */
+        const pseudoPlasmidSequence3Prime = Nucleotides.reverseComplementary(pseudoPlasmidSequence5Prime);
+        // Adjust operation position because the 3' pseudo plasmid sequence is flipped
+        const operationPos =  pseudoPlasmidSequence3Prime.length - operationRange[0] - seqToInsert.length + 2
+
+        // Generate second primer set using pseudo plasmid sequence
+        const primerSet3Prime = Primers.generateSet(
+            "Insertion",
+            [operationPos, null],
+            pseudoPlasmidSequence3Prime,
+            ""
+        );
+
+        // Shorthand
+        const sets = [primerSet5Prime, primerSet3Prime];
+
+        // The full insertion sequence
+        const insertionSequenceFull = seqToInsert;
+
+        // Return primer set dict
+        const primerSet = {
+            title: "Insertion from linear fragment",
+            type: "Subcloning",
+            hrLength: [sets[0].hrLength, sets[1].hrLength],
+            hrTm: [sets[0].hrTm, sets[1].hrTm],
+            symmetry: sets[0].symmetry,
+            primers: [
+                {
+                    name: "Vector forward primer",
+                    regions: [
+                        {
+                            sequence: sets[1].primers[1].regions[0].sequence,
+                            type: "subHR",
+                            start: operationRange[0] + insertionSequenceFull.length - 1,
+                            direction: "fwd",
+                        },
+                        {
+                            sequence: sets[1].primers[1].regions[1].sequence,
+                            type: "INS",
+                            start: operationRange[0] + insertionSequenceFull.length  - 1,
+                            direction: "fwd",
+                        },
+                        {
+                            sequence: sets[1].primers[1].regions[2].sequence,
+                            type: "subTBR",
+                            start: operationRange[0] + insertionSequenceFull.length,
+                            direction: "fwd",
+                        },
+                    ],
+                },
+                {
+                    name: "Vector reverse primer",
+                    regions: [
+                        {
+                            sequence: sets[0].primers[1].regions[0].sequence,
+                            type: "subHR",
+                            start: operationRange[0],
+                            direction: "rev",
+                        },
+                        {
+                            sequence: sets[0].primers[1].regions[1].sequence,
+                            type: "INS",
+                            start: operationRange[0],
+                            direction: "rev",
+                        },
+                        {
+                            sequence: sets[0].primers[1].regions[2].sequence,
+                            type: "subTBR",
+                            start: operationRange[0],
+                            direction: "rev",
+                        },
+                    ],
+                },
+            ]
+        };
+
+
+        /**
+         * Create new file with overhangs
+         */
+        const overhang5Prime = sets[0].primers[0].regions[0].sequence;
+        const overhang3Prime = Nucleotides.reverseComplementary(sets[1].primers[0].regions[0].sequence);
+        const linearFragmentSequence = overhang5Prime + seqToInsert + overhang3Prime;
+
+        // Initialize features dict with default
+        let newFileFeatures = {
+            "LOCUS": {
+            label: "",
+            note: "",
+            span: ""
+            }
+        };
+    
+        // Add plasmid object to project
+        const newPlasmid = new Plasmid(
+            null, // index
+            linFragName,
+            ".fasta", // extension
+            linearFragmentSequence,
+            newFileFeatures,
+            "linear",
+            null, // additional info
+        );
+        Session.addPlasmid(newPlasmid);
+
+        // Annotate main sequence of interest
+        const sequenceSpan = [overhang5Prime.length + 1, overhang5Prime.length + seqToInsert.length];
+        newPlasmid.newFeature(
+            sequenceSpan,
+            "fwd",
+            linFragName,
+            null,
+            null,
+            translateFeature,
+            ""
+        );
+
+        return primerSet;
     };
 };

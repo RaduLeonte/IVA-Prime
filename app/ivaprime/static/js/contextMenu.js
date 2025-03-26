@@ -21,6 +21,14 @@ const ContextMenu = new class {
                 { separator: "" },
 
                 {
+                    item: "Insert from linear fragment",
+                    conditions:  {any: ["single", "range", "feature"]},
+                    action: () => Modals.createInsertFromLinearFragmentModal()
+                },
+
+                { separator: "" },
+
+                {
                     item: "Mark selection for subcloning",
                     conditions:  {any: ["range", "feature"]},
                     action: () => Session.markForSubcloning()

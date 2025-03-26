@@ -373,4 +373,127 @@ const Nucleotides = new class {
             };
         };
     };
+
+
+    detectCommonFeatures(plasmidSequence) {
+        const plasmidSequenceComp = this.complementary(plasmidSequence);
+        let detectedFeatures = {}
+        // Check for common features first in the forward strand then
+        // then once more for the complementary strand
+        for (let i = 0; i < 2; i++) {
+            // Select current sequence in 5'->3'
+            const currentSequence = (i === 0) ? plasmidSequence: plasmidSequenceComp.split("").reverse().join("");
+            
+            // Iterate over all features in the database and check if
+            // they are present
+            for (const commonFeatureIndex in Nucleotides.commonFeatures) {
+                // Get current feature info
+                const commonFeatureDict = Nucleotides.commonFeatures[commonFeatureIndex];
+                const featureLabel = commonFeatureDict["label"];
+                const featureSequenceType = commonFeatureDict["sequence type"];
+                const featureSequence = commonFeatureDict["sequence"];
+                
+                // Initialize regex
+                const regex = new RegExp(featureSequence, 'g');
+                let match;
+    
+                // Check if a feature with the same name is already present and
+                // save its span
+                const similarFeatures = [];
+                // Iterate over the values in the dictionary
+                Object.values(detectedFeatures).forEach((feature) => {
+                    if (feature.label == featureLabel) {
+                        similarFeatures.push(feature.span);
+                    };
+                });
+    
+                /**
+                 * If checking for amino acid sequence
+                 */
+                if (featureSequenceType === "AA") {
+                    // Generate reading frames offset by 1 nucleotide
+                    const readingFrames = [
+                        Nucleotides.translate(currentSequence),
+                        Nucleotides.translate(currentSequence.slice(1) + currentSequence.slice(0, 1)),
+                        Nucleotides.translate(currentSequence.slice(2) + currentSequence.slice(0, 2))
+                    ];
+                    // Iterate over reading frames and check for features
+                    for (let j = 0; j < 3; j++) {
+                        // While there are matches
+                        while ((match = regex.exec(readingFrames[j])) !== null) {
+                            // Generate new feature info
+                            const newFeatureId = Utilities.newUUID();
+                            const newFeatureDirectionality = (i === 0) ? "fwd": "rev";
+                            const newFeatureSpanStart = (i === 0) ? match.index*3 + j + 1: currentSequence.length - j - match.index*3 - featureSequence.length*3 + 1;
+                            const newFeaturSpanEnd = newFeatureSpanStart + featureSequence.length*3 - 1;
+                            const newFeatureSpan = [newFeatureSpanStart, newFeaturSpanEnd];
+                            
+                            // Check if any feature in similarFeatures has an
+                            // overlapping span with the new feature. If there's
+                            // at least one hit, do not add the new feature.
+                            let canAdd = true;
+                            Object.values(similarFeatures).forEach((similarFeatureSpan) => {
+                                if (similarFeatureSpan[0] <= newFeatureSpanStart && newFeaturSpanEnd <= similarFeatureSpan[1]) {
+                                    canAdd = false;
+                                };
+                            });
+            
+                            // Add new feature.
+                            if (canAdd) {
+                                detectedFeatures[newFeatureId] = {
+                                    label: featureLabel,
+                                    type: commonFeatureDict["type"],
+                                    directionality: newFeatureDirectionality,
+                                    span: newFeatureSpan,
+                                    translation: featureSequence,
+                                    note: (commonFeatureDict["note"] !== null) ? commonFeatureDict["note"]: "",
+                                    color: Utilities.getRandomDefaultColor()
+                                };
+                            };
+                        };
+                    };
+
+                /**
+                 * If checking for DNA sequence
+                 */
+                } else if (featureSequenceType === "DNA") {
+                    // While there are matches
+                    while ((match = regex.exec(currentSequence)) !== null) {
+                        // Generate new feature info
+                        const newFeatureId = Utilities.newUUID();
+                        const newFeatureDirectionality = (i === 0) ? "fwd": "rev";
+                        const newFeatureSpanStart = (i === 0) ? match.index + 1: currentSequence.length - match.index - featureSequence.length + 1;
+                        const newFeaturSpanEnd = newFeatureSpanStart + featureSequence.length - 1;
+                        const newFeatureSpan = [newFeatureSpanStart, newFeaturSpanEnd];
+                        
+                        
+                        // Check if any feature in similarFeatures has an
+                        // overlapping span with the new feature. If there's
+                        // at least one hit, do not add the new feature.
+                        let canAdd = true;
+                        Object.values(similarFeatures).forEach((similarFeatureSpan) => {
+                            if (similarFeatureSpan[0] <= newFeatureSpanStart && newFeaturSpanEnd <= similarFeatureSpan[1]) {
+                                canAdd = false;
+                            };
+                        });
+        
+                        // Add new feature.
+                        if (canAdd) {
+                            detectedFeatures[newFeatureId] = {
+                                label: featureLabel,
+                                type: commonFeatureDict["type"],
+                                directionality: newFeatureDirectionality,
+                                span: newFeatureSpan,
+                                note: (commonFeatureDict["note"] !== null) ? commonFeatureDict["note"]: "",
+                                color: Utilities.getRandomDefaultColor()
+                            };
+                        };
+                    };
+                };
+            };
+        };
+
+
+        return detectedFeatures;
+    };
 };

@@ -825,10 +825,12 @@ class Plasmid {
      * @param {String | null} targetOrganism - Target organism for codon optimization
      * @param {Boolean} translateFeature - Flag for translation newly generated annotation
      */
-    IVAOperation(operationType, insertionSeqDNA="", insertionSeqAA="", targetOrganism=null, translateFeature=false) {
+    IVAOperation(operationType, insertionSeqDNA="", insertionSeqAA="", targetOrganism=null, translateFeature=false, linFragName="Linear Fragment") {
         if (!this.selectionExists()) {return};
         console.log(`Plasmid.IVAOperation ->`, operationType, insertionSeqDNA, insertionSeqAA, targetOrganism, translateFeature);
         console.log(`Plasmid.IVAOperation -> this.selectionIndices=${this.selectionIndices}`);
+
+        const operationRange = this.selectionIndices;
 
         // Update organism preference for codon optimization
         if (targetOrganism !== UserPreferences.get("preferredOrganism")) UserPreferences.set("preferredOrganism", targetOrganism);
@@ -845,68 +847,87 @@ class Plasmid {
         try {
             let seqToInsert;
             let primerSet;
-            if (operationType !== "Subcloning") {
-                // Non-subcloning operations
+            switch(operationType) {
+                case "Subcloning":
+                    // Get 5' and 3' sequences from the arrays
+                    const seq5PrimeDNA = (typeof insertionSeqDNA !== "string") ? insertionSeqDNA[0]: "";
+                    const seq3PrimeDNA = (typeof insertionSeqDNA !== "string") ? insertionSeqDNA[1]: "";
+                    
+                    const seq5PrimeAA = (typeof insertionSeqAA !== "string") ? insertionSeqAA[0]: "";
+                    const seq3PrimeAA = (typeof insertionSeqAA !== "string") ? insertionSeqAA[1]: "";
+        
+                    // Optimize AA sequences if available
+                    const seq5Prime = (seq5PrimeAA && seq5PrimeAA !== null && seq5PrimeAA !== "" && targetOrganism !== null)
+                    ? Nucleotides.optimizeAA(seq5PrimeAA, targetOrganism)
+                    : seq5PrimeDNA;
+                    const seq3Prime = (seq3PrimeAA && seq3PrimeAA !== null && seq3PrimeAA !== "" && targetOrganism !== null)
+                    ? Nucleotides.optimizeAA(seq3PrimeAA, targetOrganism)
+                    : seq3PrimeDNA;
+        
+                    // Get subcloning target from source plasmid
+                    const subclonignOriginPlasmid = Session.getPlasmid(Session.subcloningOriginPlasmidIndex);
+                    const subcloningOriginSpan = Session.subcloningOriginSpan;
+                    const subcloningTarget = subclonignOriginPlasmid.sequence.slice(subcloningOriginSpan[0] - 1, subcloningOriginSpan[1])
+                    const subcloningSequenceFull = seq5Prime + subcloningTarget + seq3Prime;
+                    seqToInsert = subcloningSequenceFull;
+        
+                    // Generate primers
+                    primerSet = Primers.generateSubcloningSet(
+                        operationRange,
+                        this.sequence,
+                        seq5Prime,
+                        seq3Prime,
+                    );
 
-                // If there is an AA sequence, optimize it, otherwise use given DNA sequence
-                seqToInsert = (insertionSeqAA && insertionSeqAA !== null && insertionSeqAA !== "" && targetOrganism !== null)
-                ? Nucleotides.optimizeAA(insertionSeqAA, targetOrganism)
-                : insertionSeqDNA;
-    
-                // Generate primers
-                primerSet = Primers.generateSet(
-                    operationType,
-                    this.selectionIndices,
-                    this.sequence,
-                    seqToInsert,
-                );
-            } else {
-                // Subcloning
+                    break;
 
-                // Get 5' and 3' sequences from the arrays
-                const seq5PrimeDNA = (typeof insertionSeqDNA !== "string") ? insertionSeqDNA[0]: "";
-                const seq3PrimeDNA = (typeof insertionSeqDNA !== "string") ? insertionSeqDNA[1]: "";
-                
-                const seq5PrimeAA = (typeof insertionSeqAA !== "string") ? insertionSeqAA[0]: "";
-                const seq3PrimeAA = (typeof insertionSeqAA !== "string") ? insertionSeqAA[1]: "";
-    
-                // Optimize AA sequences if available
-                const seq5Prime = (seq5PrimeAA && seq5PrimeAA !== null && seq5PrimeAA !== "" && targetOrganism !== null)
-                ? Nucleotides.optimizeAA(seq5PrimeAA, targetOrganism)
-                : seq5PrimeDNA;
-                const seq3Prime = (seq3PrimeAA && seq3PrimeAA !== null && seq3PrimeAA !== "" && targetOrganism !== null)
-                ? Nucleotides.optimizeAA(seq3PrimeAA, targetOrganism)
-                : seq3PrimeDNA;
-    
-                // Get subcloning target from source plasmid
-                const subclonignOriginPlasmid = Session.getPlasmid(Session.subcloningOriginPlasmidIndex);
-                const subcloningOriginSpan = Session.subcloningOriginSpan;
-                const subcloningTarget = subclonignOriginPlasmid.sequence.slice(subcloningOriginSpan[0] - 1, subcloningOriginSpan[1])
-                const subcloningSequenceFull = seq5Prime + subcloningTarget + seq3Prime;
-                seqToInsert = subcloningSequenceFull;
-    
-                // Generate primers
-                primerSet = Primers.generateSubcloningSet(
-                    this.selectionIndices,
-                    this.sequence,
-                    seq5Prime,
-                    seq3Prime,
-                );
+                case "Linear fragment":
+                    // If there is an AA sequence, optimize it, otherwise use given DNA sequence
+                    seqToInsert = (insertionSeqAA && insertionSeqAA !== null && insertionSeqAA !== "" && targetOrganism !== null)
+                    ? Nucleotides.optimizeAA(insertionSeqAA, targetOrganism)
+                    : insertionSeqDNA;
+                    
+                    if (linFragName.trim().length === 0) linFragName = "Linear fragment";
+
+                    // Generate primers
+                    primerSet = Primers.insertFromLinearFragment(
+                        operationRange,
+                        this.sequence,
+                        seqToInsert,
+                        linFragName,
+                        translateFeature,
+                    );
+                    break;
+
+                default:
+                    // If there is an AA sequence, optimize it, otherwise use given DNA sequence
+                    seqToInsert = (insertionSeqAA && insertionSeqAA !== null && insertionSeqAA !== "" && targetOrganism !== null)
+                    ? Nucleotides.optimizeAA(insertionSeqAA, targetOrganism)
+                    : insertionSeqDNA;
+        
+                    // Generate primers
+                    primerSet = Primers.generateSet(
+                        operationType,
+                        operationRange,
+                        this.sequence,
+                        seqToInsert,
+                    );
+                    break;
             };
     
             // Save primers 
             this.primers.push(primerSet);
     
             // Adjust sequence
-            this.sliceSequence(this.selectionIndices, seqToInsert);
+            this.sliceSequence(operationRange, seqToInsert);
             // Adjust features and deletion marks
-            this.shiftFeatures(this.selectionIndices, seqToInsert);
-            this.shiftDeletionMarks(this.selectionIndices, seqToInsert);
+            this.shiftFeatures(operationRange, seqToInsert);
+            this.shiftDeletionMarks(operationRange, seqToInsert);
     
             if (operationType !== "Deletion") {
                 // For non-deletions, create a new feature annotation for the inserted sequence
                 this.newFeature(
-                    [this.selectionIndices[0], this.selectionIndices[0]+seqToInsert.length-1],
+                    [operationRange[0], operationRange[0]+seqToInsert.length-1],
                     "fwd",
                     operationType,
                     null,
@@ -916,7 +937,7 @@ class Plasmid {
                 );
             } else {
                 // Deletion operations ->  add deletion mark
-                this.deletionMarks.push(this.selectionIndices[0]);
+                this.deletionMarks.push(operationRange[0]);
 
                 // Redraw
                 PlasmidViewer.deselectBases();

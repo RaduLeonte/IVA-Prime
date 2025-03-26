@@ -1403,6 +1403,24 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   flex-grow: 1;
 }
 
+.lin-frag-sequence-input textarea {
+  resize: vertical;
+  max-height: 15vh;
+}
+
+.lin-frag-hint[visible] {
+  visibility: visible;
+}
+.lin-frag-hint:not([visible]) {
+  visibility: collapse;
+}
+
+.lin-frag-hint-span {
+  color: var(--btn-red);
+  font-weight: bold;
+  line-height: 1.5;
+}
+
 .modal-input-wrapper {
   display: flex;
   align-items: center;
