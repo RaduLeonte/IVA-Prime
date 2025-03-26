@@ -644,5 +644,5 @@ const Primers = new class {
                 },
             ]
         }
-};
+    };
 };
