@@ -85,49 +85,68 @@ class Plasmid {
         Toolbar.updateUndoRedoButtonsStates();
     };
 
+    // #region Selection
 
     /**
-     * 
-     * @param {*} indices 
+     * Set the current selection indices of the plasmid or 
+     * the currently selected featureID
+     * @param {Array<Number>} indices 
      */
     setSelectionIndices(indices, selectedFeatureID = null) {
         this.selectionIndices = indices;
         this.selectedFeatureID = selectedFeatureID;
 
-        Utilities.removeUserSelection();
-        PlasmidViewer.updateFooterSelectionInfo();
+        Utilities.removeUserSelection(); // Unselect conventionally selected text
+        PlasmidViewer.updateFooterSelectionInfo(); // Update footer
     };
-
-
+    /**
+     * Reset the selection indices
+     */
     clearSelectionIndices() {
         this.selectionIndices = null;
         this.selectedFeatureID = null;
 
-        PlasmidViewer.updateFooterSelectionInfo();
+        PlasmidViewer.updateFooterSelectionInfo();  // Update footer
     };
 
 
     /**
-     * 
-     * @returns 
+     * Return the current selection indices
+     * @returns {Array<Number>}
      */
     getSelectionIndices() {
         return this.selectionIndices;
     };
-
-
+    /**
+     * Return the ID of the currently selected feature
+     * @returns {String}
+     */
     getSelectedFeatureID() {
         return this.selectedFeatureID;
     };
-
-
+    /**
+     * Returns true if a selection exists
+     * @returns {Boolean}
+     */
+    selectionExists() {
+        return this.selectionIndices !== null && this.selectionIndices[0] !== null;
+    };
+    /**
+     * Returns true if the the selection is a single base
+     * @returns {Boolean}
+     */
     selectionIsSingle() {
         return this.selectionIndices !== null && this.selectionIndices[1] === null;
     };
-
+    /**
+     * Returns true if the selection is a range
+     * @returns {Boolean}
+     */
     selectionIsRange() {
         return this.selectionIndices !== null && this.selectionIndices[1] !== null;
     };
+
+    // #endregion Selection 
 
 
     /**
@@ -245,32 +264,39 @@ class Plasmid {
      * 
      * @param {string} actionDescription - Description of the action that caused the checkpoint.
      */
+    STATE_PROPERTIES = [
+        "name", "sequence", "complementarySequence", "topology", "primers", "features", "deletionMarks"
+    ]
     saveState(actionDescription) {
-        const currState = {
-            actionDescription: actionDescription,
-            name: this.name,
-            sequence: this.sequence,
-            complementarySequence: this.complementarySequence,
-            topology: this.topology,
-            primers: structuredClone(this.primers),
-            features: structuredClone(this.features),
-            deletionMarks: structuredClone(this.deletionMarks)
+        console.log(`Plasmid.saveState -> ${this.index} Saving state: "${actionDescription}"`);
+        // State dictionary
+        const currentState = {
+            actionDescription
         };
 
+        // Iterate over the state properties and save them to the state dict, making deep clones where necessary
+        for (const property of this.STATE_PROPERTIES) {
+            const value = this[property];
+            currentState[property] = (typeof value === 'object' && value !== null) ? structuredClone(value) : value;
+        };
+
+        // If we're not on the latest state, delete all newer state to have this state be the newest one
         if (this.stateIndex !== 0) {
             this.stateHistory.splice(0, this.stateIndex);
         };
 
-        this.stateHistory.unshift(currState);
+        // Add this state as the first entry in the list
+        this.stateHistory.unshift(currentState);
 
+        // Delete oldest state if we reach the cap
         if (this.stateHistory.length > 100) {
             this.stateHistory.pop();
         };
 
+        // Reset state index
         this.stateIndex = 0;
 
-        
-        console.log(`Plasmid.saveState -> ${this.index} Saving state: "${actionDescription}"`);
+        // Update toolbar buttons
         Toolbar.updateUndoRedoButtonsStates();
     };
 
@@ -283,24 +309,28 @@ class Plasmid {
     loadState(stateIndex) {
         console.log(`Plasmid.loadState -> Loading state: ${stateIndex} (curr:${this.stateIndex})`)
     
+        // Get state to load
         const stateToLoad = this.stateHistory[stateIndex];
 
-        this.name = stateToLoad.name;
-        this.sequence = stateToLoad.sequence;
-        this.complementarySequence = stateToLoad.complementarySequence;
-        this.topology = stateToLoad.topology;
-        this.primers = stateToLoad.primers;
-        this.features = stateToLoad.features;
-        this.deletionMarks = stateToLoad.deletionMarks;
+        // Iterate over properties and load them
+        for (const property of this.STATE_PROPERTIES) {
+            this[property] = stateToLoad[property];
+        };
 
+        // Deselect
         PlasmidViewer.deselectBases();
+        // Redraw plasmid
         PlasmidViewer.redraw();
+        // Update sidebar
         Sidebar.update();
 
+        // Update state tracker
         this.stateIndex = stateIndex;
 
+        // If there is a subcloning marking in this plasmid, remove it
         if (Session.subcloningOriginPlasmidIndex === this.index) Session.removeMarkForSubcloning();
 
+        // Update toolbar buttons
         Toolbar.updateUndoRedoButtonsStates();
     };
 
