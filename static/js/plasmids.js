@@ -20,7 +20,6 @@ class Plasmid {
         topology,
         additionalInfo
     ) {
-        // Plasmid index, generate new one if none given
         this.index = (index !== null) ? index: Session.nextFreeIndex();
         this.name = name;
         this.extension = extension;
@@ -30,33 +29,28 @@ class Plasmid {
         this.features = features;
         this.topology = topology;
 
-        this.scrollTop = 0;
+        this.scrollTop = 0; // Plasmid scroll level
+    
+        this.selectionIndices = null; // Selection range
         
-        this.selectionIndices = null;
-        
-        this.primers = [];
-        this.operationNr = 1;
-        this.deletionMarks = [];
+        this.primers = []; // Generated primers
+        this.operationNr = 1; // Nr of operations done
+        this.deletionMarks = []; // Deletion markings
 
-        // Check feature overlap and assign feature levels
-        // to describe how they stack
+        // Check feature overlap and assign feature levels to describe how they stack
         this.checkFeatureOverlap();
 
-        // Generate views (circular, linear, grid)
+        // Init views (circular, linear, grid)
         this.views = {
             "circular": null,
             "linear": null,
             "grid": null,
         };
-        //this.generateViews();
 
-        
-        this.stateHistory = [];
+        this.stateHistory = []; // Array holding state objects
+        this.stateIndex = 0; // State history tracker
 
-        this.stateIndex = 0;
-
-        this.previousCell = null;
-
+        // Create initial state
         this.saveState("Create plasmid");
     };
 
@@ -85,8 +79,8 @@ class Plasmid {
         Toolbar.updateUndoRedoButtonsStates();
     };
 
-    // #region Selection
 
+    // #region Selection
     /**
      * Set the current selection indices of the plasmid or 
      * the currently selected featureID
@@ -129,7 +123,7 @@ class Plasmid {
      * @returns {Boolean}
      */
     selectionExists() {
-        return this.selectionIndices !== null && this.selectionIndices[0] !== null;
+        return this.selectionIndices && this.selectionIndices !== null && this.selectionIndices[0] !== null;
     };
     /**
      * Returns true if the the selection is a single base
@@ -145,93 +139,10 @@ class Plasmid {
     selectionIsRange() {
         return this.selectionIndices !== null && this.selectionIndices[1] !== null;
     };
-
     // #endregion Selection 
 
 
-    /**
-     *  Iterate over features and assign them to rows so that they do not overlap.
-     */
-    checkFeatureOverlap() {
-        this.features = Utilities.sortFeaturesDictBySpan(this.features);
-        for (const [featureID, featureDict] of Object.entries(this.features)) {
-            featureDict["level"] = 0;
-        };
-
-        let levelTracker = {};
-
-        for (const [featureID1, featureDict1] of Object.entries(this.features)) {
-            const label1 = featureDict1["label"];
-            const [span1Start, span1End] = featureDict1["span"];
-            for (const [featureID2, featureDict2] of Object.entries(this.features)) {
-                if (featureID1 === featureID2) continue; // Skip self-comparison
-
-                const label2 = featureDict2["label"];
-                const [span2Start, span2End] = featureDict2["span"];
-
-                if (span1Start < span2Start && span1End < span2Start) {
-                    // Feature1 is before Feature2 -> No overlap and break inner loop
-                    //console.log("Plasmid.checkFeatureOverlap -> No overlap, break loop","\n",
-                    //    label1, featureDict1["level"], [span1Start, span1End], "\n",
-                    //    label2, featureDict2["level"], [span2Start, span2End]
-                    //);
-                    break;
-                };
-
-                if (span2Start < span1Start && span2End < span1Start) {
-                    // Feature 2 is before Feature 1 -> No overlap, don't break inner loop
-                    //console.log(
-                    //    "Plasmid.checkFeatureOverlap -> No overlap 2","\n",
-                    //    label1, level1, [span1Start, span1End], "\n",
-                    //    label2, level2, [span2Start, span2End]
-                    //);
-                    continue;
-                };
-
-                if (featureDict1["level"] !== featureDict2["level"]) {
-                    // Features are on different levels and could not possibly overlap
-                    //console.log("Plasmid.checkFeatureOverlap -> Different levels", "\n",
-                    //    label1, featureDict1["level"], [span1Start, span1End], "\n",
-                    //    label2, featureDict2["level"], [span2Start, span2End]
-                    //);
-                    continue;
-                };
-
-
-                let featureToMove, spanToMove;
-                if ((span1End - span1Start) >= (span2End - span2Start)) {
-                    featureToMove = featureDict2;
-                    spanToMove = [span2Start, span2End];
-                } else {
-                    featureToMove = featureDict1;
-                    spanToMove = [span1Start, span1End];
-                }
-
-                let newLevel = featureToMove["level"] + 1;
-
-                // Ensure the new level is not occupied at this span range
-                while (levelTracker[newLevel] && levelTracker[newLevel].some(existingSpan =>
-                    Math.max(existingSpan[0], spanToMove[0]) < Math.min(existingSpan[1], spanToMove[1])
-                )) {
-                    newLevel += 1; // Keep moving up until there's space
-                }
-
-                featureToMove["level"] = newLevel;
-
-                // Register the new occupied level for this span
-                if (!levelTracker[newLevel]) {
-                    levelTracker[newLevel] = [];
-                }
-                levelTracker[newLevel].push(spanToMove);
-
-                console.log("Plasmid.checkFeatureOverlap -> Overlap detected, move feature up", "\n",
-                    featureToMove["label"], featureToMove["level"], spanToMove
-                );
-            };
-        };
-    };
-
-
+    // #region Undo/Redo
     /**
      * Save current state of plasmid.
      * 
@@ -339,43 +250,44 @@ class Plasmid {
      * Load the previous state of the plasmid.
      */
     undo() {
-        // Return immediately if we're on the earliest
-        //  state (stateHistory.length - 1)
+        // Return immediately if we're on the earliest state (stateHistory.length - 1)
         if (this.stateIndex  >= this.stateHistory.length - 1) return;
 
         this.loadState(this.stateIndex + 1);
     };
-
-
     /**
      * Load the next state of the plasmid.
      */
     redo() {
-        // Return immediately if we're on 
-        // the latest state (0)
+        // Return immediately if we're on the latest state (0)
         if (this.stateIndex <= 0) return;
 
         this.loadState(this.stateIndex - 1);
     };
+    // #endregion Undo/Redo
 
 
+    // #region Plasmid actions
     /**
      * Rename the plasmid.
      * 
      * @param {string} newName - New plasmid name 
      */
     rename(newName) {
-
-        console.log(`Plasmid.rename -> ${this.index} ${newName}`)
+        // Update plasmid property
         this.name = newName;
 
+        // Update plasmid tab
         const plasmidTab = document.querySelector(`div#plasmid-tab-${this.index}`);
         plasmidTab.firstElementChild.innerText = this.name + this.extension
         
+        // If we're renaming the currently active plasmid, redraw the circular and linear
+        // views since they display the plasmid name
         if (Session.activePlasmidIndex == this.index) {
             PlasmidViewer.redraw(["circular", "linear"]);
         };
 
+        // Save
         this.saveState("Rename plasmid")
     };
 
@@ -384,17 +296,14 @@ class Plasmid {
      * Flip the plasmid sequence.
      */
     flip() {
-        console.log(`Plasmid.flip -> ${this.index}`);
-
         // Flip sequence
         const flippedSequence = this.complementarySequence.split("").reverse().join("");
         const flippedCompSequence = this.sequence.split("").reverse().join("");
         this.sequence = flippedSequence;
         this.complementarySequence = flippedCompSequence;
 
-        const sequenceLength = flippedSequence.length;
-
         // Flip features
+        const sequenceLength = flippedSequence.length;
         Object.entries(this.features).forEach(([featureId, featureDict]) => {
             const currentSpan = featureDict["span"];
 
@@ -406,17 +315,22 @@ class Plasmid {
             this.features[featureId]["span"] = newSpan;
             this.features[featureId]["directionality"] = (featureDict["directionality"] == "fwd") ? "rev": "fwd";
         });
-
+        // Sort features
         this.sortFeatures();
 
+        // If this is the currently active plasmid, redraw
+        // TO DO: Keep selection
         if (Session.activePlasmidIndex == this.index) {
             PlasmidViewer.deselectBases();
             PlasmidViewer.redraw();
             Sidebar.update();
         };
 
+        // If there is a subcloning marking in this plasmid, remove it
+        // TO DO: Keep subcloning marking
         if (Session.subcloningOriginPlasmidIndex === this.index) Session.removeMarkForSubcloning();
 
+        // Save
         this.saveState("Flip plasmid")
     };
 
@@ -427,13 +341,14 @@ class Plasmid {
      * @param {int} newOrigin - Index of the base to be the new origin.
      */
     setOrigin(newOrigin) {
+        // Convert sequence index to array index
         newOrigin = parseInt(newOrigin) - 1;
-        console.log(`Plasmid.setorigin -> ${this.index} newOrigin=${newOrigin}`);
 
-
+        // Shift sequences
         this.sequence = this.sequence.slice(newOrigin) + this.sequence.slice(0, newOrigin);
         this.complementarySequence = Nucleotides.complementary(this.sequence);
 
+        // Shift features
         Object.entries(this.features).forEach(([featureId, featureDict]) => {
             const currentSpan = featureDict["span"];
 
@@ -444,34 +359,132 @@ class Plasmid {
 
             this.features[featureId]["span"] = newSpan;
         });
-
+        // Sort
         this.sortFeatures();
 
+        // Redraw
+        // TO DO: Keep selection
         if (Session.activePlasmidIndex == this.index) {
             PlasmidViewer.deselectBases();
             PlasmidViewer.redraw();
             Sidebar.update();
         };
-
+        // Remove subcloning marking
+        // TO DO: Keep subcloning marking
         if (Session.subcloningOriginPlasmidIndex === this.index) Session.removeMarkForSubcloning();
 
         this.saveState("Change plasmid origin");
     };
 
 
+    /**
+     * Set the topology of the plasmid
+     * 
+     * @param {String} newTopology - "linear" | "circular" 
+     */
     setTopology(newTopology) {
-        console.log(`Plasmid.setTopology -> ${this.topology} => ${newTopology}`);
-
+        // Save var
         this.topology = newTopology;
 
+        // Redraw
+        // TO DO: Keep selection
         if (Session.activePlasmidIndex == this.index) {
             PlasmidViewer.deselectBases();
             PlasmidViewer.redraw();
             Sidebar.update();
         };
 
-
+        // Save
         this.saveState(`Change file topology to ${newTopology}`);
+    };
+    // #endregion Plasmid actions
+
+
+    // #region Features
+    /**
+     *  Iterate over features and assign them to rows so that they do not overlap.
+     */
+    checkFeatureOverlap() {
+        // Sort features
+        this.features = Utilities.sortFeaturesDictBySpan(this.features);
+
+        // Set all feature levels to 0
+        for (const [featureID, featureDict] of Object.entries(this.features)) {
+            featureDict["level"] = 0;
+        };
+
+        // Iterate over features
+        let levelTracker = {}; // Keep track of occupied levels
+        for (const [featureID1, featureDict1] of Object.entries(this.features)) {
+            const [span1Start, span1End] = featureDict1["span"];
+
+            // Compare against all other features
+            for (const [featureID2, featureDict2] of Object.entries(this.features)) {
+                // Skip self-comparison
+                if (featureID1 === featureID2) continue;
+
+                const [span2Start, span2End] = featureDict2["span"];
+
+                // If feature1 is upstream of feature2 -> stop comparing
+                // as features are always sorted and there will never be
+                // another feature that could possibly overlap
+                if (span1Start < span2Start && span1End < span2Start) {
+                    break;
+                };
+
+                // If feature1 is downstream of feature2 -> no overlap, pass
+                if (span2Start < span1Start && span2End < span1Start) {
+                    continue;
+                };
+
+                // If the features are on different levels -> no overlap, pass
+                if (featureDict1["level"] !== featureDict2["level"]) {
+                    continue;
+                };
+
+                // Features are overlapping
+                let featureToMove, spanToMove;
+                // Figure out which feature is longer and move the shorter one
+                if ((span1End - span1Start) >= (span2End - span2Start)) {
+                    // Feature 2 is shorter
+                    featureToMove = featureDict2;
+                    spanToMove = [span2Start, span2End];
+                } else {
+                    // Feature 1 is shorter
+                    featureToMove = featureDict1;
+                    spanToMove = [span1Start, span1End];
+                }
+
+                // Increment level
+                let newLevel = featureToMove["level"] + 1;
+
+                // Ensure the new level is not occupied at this span range
+                while (levelTracker[newLevel] && levelTracker[newLevel].some(existingSpan =>
+                    Math.max(existingSpan[0], spanToMove[0]) < Math.min(existingSpan[1], spanToMove[1])
+                )) {
+                    // Keep moving up until there's space
+                    newLevel += 1;
+                };
+
+                // Set new feature level
+                featureToMove["level"] = newLevel;
+
+                // Register the new occupied level for this span
+                if (!levelTracker[newLevel]) {
+                    levelTracker[newLevel] = [];
+                };
+                levelTracker[newLevel].push(spanToMove);
+            };
+        };
+    };
+
+
+    /**
+     * Sorts the plasmid's features by span
+     */
+    sortFeatures() {
+        this.features = Utilities.sortFeaturesDictBySpan(this.features);
+        this.checkFeatureOverlap();
     };
 
 
@@ -481,6 +494,7 @@ class Plasmid {
      * @param {String} featureID - UUID of feature to be updated
      */
     updateFeatureProperties(featureID) {
+        // Select sidebar element
         const collapsibleContent = document.getElementById(featureID).querySelector(".collapsible-content");
         
         // Label
@@ -541,15 +555,18 @@ class Plasmid {
 
 
     /**
-     * Sorts the plasmid's features by span
+     * Create new feature annotation.
+     * 
+     * @param {Array<Number>} span - Span to annotated 
+     * @param {String} directionality - "fwd" | "rev" Directionality of annotation 
+     * @param {String} label - Label/name
+     * @param {String} type - Annotation type (CDS, primer, misc_feature etc.)
+     * @param {String} color - Hex color of annotation 
+     * @param {Boolean} translated - Flag to translate feature or not 
+     * @param {String} note - Note/comment 
      */
-    sortFeatures() {
-        this.features = Utilities.sortFeaturesDictBySpan(this.features);
-        this.checkFeatureOverlap();
-    };
-
-
     newFeature(span, directionality="fwd", label=null, type=null, color=null, translated=false, note="") {
+        // Initialized feature dict
         const newFeatureDict = {
             label: (label) ? label: "New feature",
             type: (type) ? type: (translated) ? "CDS": "misc_feature",
@@ -559,7 +576,7 @@ class Plasmid {
             note: note,
         };
 
-        console.log("newFeature", span, Nucleotides.reverseComplementary(this.sequence.slice(span[0] - 1, span[1])))
+        // Translate span if necessary
         if (translated) {
             newFeatureDict.translation = Nucleotides.translate(
                 directionality === "fwd"
@@ -569,6 +586,7 @@ class Plasmid {
             newFeatureDict.translated = true;
         };
 
+        // Add feature
         this.features[Utilities.newUUID()] = newFeatureDict;
         this.sortFeatures();
 
@@ -576,6 +594,7 @@ class Plasmid {
         PlasmidViewer.redraw();
         Sidebar.update();
 
+        // Save
         if (!label) {
             this.saveState(`Add new feature at [${span[0]}, ${span[1]}]`);
         } else if (label === "New translation") {
@@ -603,140 +622,46 @@ class Plasmid {
     };
 
 
+    /**
+     * Start a new translation at the first START codon until a STOP codon is encountered.
+     * 
+     * @param {String} strand - "fwd" | "rev" Top or bottom strand respectively 
+     * @returns 
+     */
     newTranslationAtFirstStart(strand="fwd") {
-        if (!this.selectionIndices || this.selectionIndices === null || this.selectionIndices[1] !== null) return;
+        // Check if selection exists
+        if (!this.selectionExists()) return;
 
+        // Get starting position
         const cursorIndex = this.selectionIndices[0];
         
+        // Select appropriate strand sequence
         const sequenceToSearch = (strand === "fwd")
         ? this.sequence.slice(cursorIndex - 1)
         : this.complementarySequence.slice(0, cursorIndex - 1).split("").reverse().join("");
         
-        console.log(`Plasmid.newTranslationAtFirstStart ->`, sequenceToSearch);
 
+        // Regex pattern: ATG, followed by DNA codons, terminated by a STOP codon
         const pattern = /(ATG)((?:[ATCG]{3})*?)(TAA|TAG|TGA)/;
 
+        // Find first match
         const match = pattern.exec(sequenceToSearch);
         if (!match) {
             Alerts.warning("Failure: New translation at first START codon", "No coding sequence was found.");
             return;
         };
 
+        // Determine span of translation
         const span = (strand === "fwd") 
         ? [cursorIndex + match.index, cursorIndex + match.index + match[0].length - 1]
         : [sequenceToSearch.length - match.index - match[0].length + 1, sequenceToSearch.length - match.index];
 
-        console.log(`Plasmid.newTranslationAtFirstStart ->`, strand, cursorIndex, span);
-        
+        // Create translation
         this.newFeature(span, strand, "New translation", "CDS", null, true);
     
+        // Save
         this.saveState(`New translation at first START (starting pos: ${cursorIndex})`);
     };
-
-
-    IVAOperation(operationType, insertionSeqDNA="", insertionSeqAA="", targetOrganism=null, translateFeature=false) {
-        if (this.selectionIndices === null) {return};
-        console.log(`Plasmid.IVAOperation ->`, operationType, insertionSeqDNA, insertionSeqAA, targetOrganism, translateFeature);
-        console.log(`Plasmid.IVAOperation -> this.selectionIndices=${this.selectionIndices}`);
-
-        if (targetOrganism !== UserPreferences.get("preferredOrganism")) UserPreferences.set("preferredOrganism", targetOrganism);
-
-        if (insertionSeqAA) {
-            if (typeof insertionSeqAA === "string"){
-                insertionSeqAA = insertionSeqAA.replace("-", "*").replace("X", "*")
-            } else {
-                insertionSeqAA = insertionSeqAA.map(seq => seq.replace("-", "*").replace("X", "*"))
-            };
-        };
-
-        try {
-            let seqToInsert;
-            let primerSet;
-            if (operationType !== "Subcloning") {
-                seqToInsert = (insertionSeqAA && insertionSeqAA !== null && insertionSeqAA !== "" && targetOrganism !== null)
-                ? Nucleotides.optimizeAA(insertionSeqAA, targetOrganism)
-                : insertionSeqDNA;
-    
-                primerSet = Primers.generateSet(
-                    operationType,
-                    this.selectionIndices,
-                    this.sequence,
-                    seqToInsert,
-                );
-            } else {
-                const seq5PrimeDNA = (typeof insertionSeqDNA !== "string") ? insertionSeqDNA[0]: "";
-                const seq3PrimeDNA = (typeof insertionSeqDNA !== "string") ? insertionSeqDNA[1]: "";
-                
-                const seq5PrimeAA = (typeof insertionSeqAA !== "string") ? insertionSeqAA[0]: "";
-                const seq3PrimeAA = (typeof insertionSeqAA !== "string") ? insertionSeqAA[1]: "";
-    
-                const seq5Prime = (seq5PrimeAA && seq5PrimeAA !== null && seq5PrimeAA !== "" && targetOrganism !== null)
-                ? Nucleotides.optimizeAA(seq5PrimeAA, targetOrganism)
-                : seq5PrimeDNA;
-    
-                const seq3Prime = (seq3PrimeAA && seq3PrimeAA !== null && seq3PrimeAA !== "" && targetOrganism !== null)
-                ? Nucleotides.optimizeAA(seq3PrimeAA, targetOrganism)
-                : seq3PrimeDNA;
-    
-                const subclonignOriginPlasmid = Session.getPlasmid(Session.subcloningOriginPlasmidIndex);
-                const subcloningOriginSpan = Session.subcloningOriginSpan;
-                const subcloningTarget = subclonignOriginPlasmid.sequence.slice(subcloningOriginSpan[0] - 1, subcloningOriginSpan[1])
-                const subcloningSequenceFull = seq5Prime + subcloningTarget + seq3Prime;
-                seqToInsert = subcloningSequenceFull;
-    
-                primerSet = Primers.generateSubcloningSet(
-                    this.selectionIndices,
-                    this.sequence,
-                    seq5Prime,
-                    seq3Prime,
-                );
-            };
-    
-    
-            this.primers.push(primerSet);
-    
-            this.sliceSequence(this.selectionIndices, seqToInsert);
-    
-            this.shiftFeatures(this.selectionIndices, seqToInsert);
-            this.shiftDeletionMarks(this.selectionIndices, seqToInsert);
-    
-            if (operationType !== "Deletion") {
-                this.newFeature(
-                    [this.selectionIndices[0], this.selectionIndices[0]+seqToInsert.length-1],
-                    "fwd",
-                    operationType,
-                    null,
-                    "#c83478",
-                    translateFeature,
-                    ""
-                );
-            } else {
-                this.deletionMarks.push(this.selectionIndices[0]);
-
-                PlasmidViewer.deselectBases();
-                PlasmidViewer.redraw();
-                Sidebar.update();
-            };
-
-            this.saveState(`IVA Operation: ${operationType}`);
-
-        } catch(error) {
-            switch (true) {
-                case (error instanceof AmbiguousBaseError):
-                    handleError(error);
-                    break;
-
-                case (error instanceof OutOfBasesError):
-                    handleError(error);
-                    break;
-
-                default: {
-                    throw error;
-                };
-            };
-        };
-    };
-
 
     /**
      * Insert new sequence into plasmid sequence
@@ -745,49 +670,63 @@ class Plasmid {
      * @param {String} newSequence - New sequence to insert
      */
     sliceSequence(sliceRange, newSequence) {
+        // Adjust slice range for pure insertions
         if (sliceRange[1] === null) sliceRange = [sliceRange[0], sliceRange[0]-1];
 
+        // Slice sequences and insert new sequence
         this.sequence = this.sequence.slice(0, sliceRange[0] - 1) + newSequence + this.sequence.slice(sliceRange[1]);
         this.complementarySequence = Nucleotides.complementary(this.sequence);
 
+        // Remove subcloning marking
         if (Session.subcloningOriginPlasmidIndex === this.index) Session.removeMarkForSubcloning();
     };
 
 
+    /**
+     * Shift features after a sequence-altering operation
+     * 
+     * @param {Array<Number>} sliceRange - Range that was sliced 
+     * @param {String} newSequence - New sequence that was inserted
+     */
     shiftFeatures(sliceRange, newSequence) {
+        // Adjust slice range for pure insertions
         if (sliceRange[1] === null) sliceRange = [sliceRange[0], sliceRange[0]];
 
         const [sliceRangeStart, sliceRangeEnd] = sliceRange;
         const isSimpleInsertion = (sliceRangeStart === sliceRangeEnd)
 
+        const shiftAmount = (isSimpleInsertion)
+            ? newSequence.length
+            : newSequence.length - (sliceRange[1] - sliceRange[0] + 1);
+
+        // Iterate over features and decide what to do with them
         for (let featureID in this.features) {
-            const featureSpan = this.features[featureID]["span"];
-            const [spanStart, spanEnd] = featureSpan;
+            const [spanStart, spanEnd] = this.features[featureID]["span"];
     
+            // Decide the kind of overlap that operation had with the feature
             let overlapType = null;
             if (isSimpleInsertion) {
-                if (sliceRangeStart <= spanStart) overlapType = "shift";
-                else if (sliceRangeStart < spanEnd) overlapType = "inside";
+                // Simple insertions
+                if (sliceRangeStart <= spanStart) overlapType = "shift"; // Insertion is upstream of feature
+                else if (sliceRangeStart < spanEnd) overlapType = "inside"; // Insertion is inside feature
             } else {
+                // Mutations/replacements
                 if (sliceRangeStart === spanStart && sliceRangeEnd === spanEnd) {
                     overlapType = "delete"; // Exact replacement
                 } else if (sliceRangeEnd < spanStart) {
-                    overlapType = "shift"; // New feature is completely before old
+                    overlapType = "shift"; // Operation is upstream of feature
                 } else if (sliceRangeStart > spanEnd) {
-                    overlapType = null; // New feature is completely after old
+                    overlapType = null; // Operation is downstream of feature
                 } else if (sliceRangeStart >= spanStart && sliceRangeEnd <= spanEnd) {
-                    overlapType = "inside"; // Fully inside old feature
+                    overlapType = "inside"; // Operation is fully inside feature
                 } else if (sliceRangeStart <= spanStart && sliceRangeEnd >= spanEnd) {
-                    overlapType = "delete"; // Encompasses old feature
+                    overlapType = "delete"; // Operation encompases feature
                 } else {
-                    overlapType = "delete"; // Overlapping cases
+                    overlapType = "delete"; // Default
                 };
             };
     
             // Apply the determined action
-            const shiftAmount = (isSimpleInsertion)
-            ? newSequence.length
-            : newSequence.length - (sliceRange[1] - sliceRange[0] + 1);
             switch (overlapType) {
                 case "shift":
                     // Shift feature position based on inserted length
@@ -795,35 +734,48 @@ class Plasmid {
                     break;
     
                 case "inside":
+                    // Adjust feature span
                     this.features[featureID]["span"] = [spanStart, spanEnd + shiftAmount];
                     break;
     
                 case "delete":
+                    // Delete feature
                     delete this.features[featureID];
                     break;
 
                 default:
+                    // Pass
                     break;
             };
         };
     };
 
 
+    /**
+     * Shift deletion markings after a sequence-altering operation
+     * 
+     * @param {Array<Number>} sliceRange - Range that was sliced 
+     * @param {String} newSequence - New sequence that was inserted
+     */
     shiftDeletionMarks(sliceRange, newSequence) {
+        // Adjust slice range for pure insertions
         if (sliceRange[1] === null) sliceRange = [sliceRange[0], sliceRange[0]];
 
         const [sliceRangeStart, sliceRangeEnd] = sliceRange;
-
         const isSimpleInsertion = (sliceRangeStart === sliceRangeEnd);
+        
         const shiftAmount = (isSimpleInsertion)
             ? newSequence.length
             : newSequence.length - (sliceRange[1] - sliceRange[0] + 1);
 
+        // Iterate over deletion marks
         const newDeletionMarks = [];
         for (let i = 0; i < this.deletionMarks.length; i++) {
+            // Deletion mark position index
             let deletionMarkPos =  this.deletionMarks[i];
-            let overlapType = null;
             
+            // Decide the kind of overlap that operation had with the deletion mark
+            let overlapType = null;
             if (isSimpleInsertion) {
                 // There was an insertion upstream of the deletion mark, shift it
                 if (sliceRangeStart <= deletionMarkPos) overlapType = "shift";
@@ -843,18 +795,150 @@ class Plasmid {
             // Apply the determined action
             switch (overlapType) {
                 case "shift":
+                    // Shift deletion mark
                     newDeletionMarks.push(deletionMarkPos + shiftAmount);
                     break;
 
                 case "delete":
+                    // Delete (don't add to new array)
                     break;
 
                 default:
+                    // Push deletion mark as is
                     newDeletionMarks.push(deletionMarkPos);
                     break;
             };
         };
 
+        // Save adjusted deletion marks
         this.deletionMarks = newDeletionMarks;
     };
+    // #endregion Features
+
+    // #region IVA Operation
+    /**
+     * Perform IVA Operation and generate primers
+     * 
+     * @param {String} operationType - IVA Operation type (Insertion | Deletion | Mutation | Subcloning)
+     * @param {String | Array<String>} insertionSeqDNA - DNA sequence to be inserted (or array of two sequences [5', 3'] for subcloning)
+     * @param {String | Array<String>} insertionSeqAA - AA sequence to be inserted (or array of two sequences [5', 3'] for subcloning)
+     * @param {String | null} targetOrganism - Target organism for codon optimization
+     * @param {Boolean} translateFeature - Flag for translation newly generated annotation
+     */
+    IVAOperation(operationType, insertionSeqDNA="", insertionSeqAA="", targetOrganism=null, translateFeature=false) {
+        if (!this.selectionExists()) {return};
+        console.log(`Plasmid.IVAOperation ->`, operationType, insertionSeqDNA, insertionSeqAA, targetOrganism, translateFeature);
+        console.log(`Plasmid.IVAOperation -> this.selectionIndices=${this.selectionIndices}`);
+
+        // Update organism preference for codon optimization
+        if (targetOrganism !== UserPreferences.get("preferredOrganism")) UserPreferences.set("preferredOrganism", targetOrganism);
+
+        // Sanitize AA sequence stop codons
+        if (insertionSeqAA) {
+            if (typeof insertionSeqAA === "string"){
+                insertionSeqAA = insertionSeqAA.replace("-", "*").replace("X", "*")
+            } else {
+                insertionSeqAA = insertionSeqAA.map(seq => seq.replace("-", "*").replace("X", "*"))
+            };
+        };
+
+        try {
+            let seqToInsert;
+            let primerSet;
+            if (operationType !== "Subcloning") {
+                // Non-subcloning operations
+
+                // If there is an AA sequence, optimize it, otherwise use given DNA sequence
+                seqToInsert = (insertionSeqAA && insertionSeqAA !== null && insertionSeqAA !== "" && targetOrganism !== null)
+                ? Nucleotides.optimizeAA(insertionSeqAA, targetOrganism)
+                : insertionSeqDNA;
+    
+                // Generate primers
+                primerSet = Primers.generateSet(
+                    operationType,
+                    this.selectionIndices,
+                    this.sequence,
+                    seqToInsert,
+                );
+            } else {
+                // Subcloning
+
+                // Get 5' and 3' sequences from the arrays
+                const seq5PrimeDNA = (typeof insertionSeqDNA !== "string") ? insertionSeqDNA[0]: "";
+                const seq3PrimeDNA = (typeof insertionSeqDNA !== "string") ? insertionSeqDNA[1]: "";
+                
+                const seq5PrimeAA = (typeof insertionSeqAA !== "string") ? insertionSeqAA[0]: "";
+                const seq3PrimeAA = (typeof insertionSeqAA !== "string") ? insertionSeqAA[1]: "";
+    
+                // Optimize AA sequences if available
+                const seq5Prime = (seq5PrimeAA && seq5PrimeAA !== null && seq5PrimeAA !== "" && targetOrganism !== null)
+                ? Nucleotides.optimizeAA(seq5PrimeAA, targetOrganism)
+                : seq5PrimeDNA;
+                const seq3Prime = (seq3PrimeAA && seq3PrimeAA !== null && seq3PrimeAA !== "" && targetOrganism !== null)
+                ? Nucleotides.optimizeAA(seq3PrimeAA, targetOrganism)
+                : seq3PrimeDNA;
+    
+                // Get subcloning target from source plasmid
+                const subclonignOriginPlasmid = Session.getPlasmid(Session.subcloningOriginPlasmidIndex);
+                const subcloningOriginSpan = Session.subcloningOriginSpan;
+                const subcloningTarget = subclonignOriginPlasmid.sequence.slice(subcloningOriginSpan[0] - 1, subcloningOriginSpan[1])
+                const subcloningSequenceFull = seq5Prime + subcloningTarget + seq3Prime;
+                seqToInsert = subcloningSequenceFull;
+    
+                // Generate primers
+                primerSet = Primers.generateSubcloningSet(
+                    this.selectionIndices,
+                    this.sequence,
+                    seq5Prime,
+                    seq3Prime,
+                );
+            };
+    
+            // Save primers 
+            this.primers.push(primerSet);
+    
+            // Adjust sequence
+            this.sliceSequence(this.selectionIndices, seqToInsert);
+            // Adjust features and deletion marks
+            this.shiftFeatures(this.selectionIndices, seqToInsert);
+            this.shiftDeletionMarks(this.selectionIndices, seqToInsert);
+    
+            if (operationType !== "Deletion") {
+                // For non-deletions, create a new feature annotation for the inserted sequence
+                this.newFeature(
+                    [this.selectionIndices[0], this.selectionIndices[0]+seqToInsert.length-1],
+                    "fwd",
+                    operationType,
+                    null,
+                    "#c83478",
+                    translateFeature,
+                    ""
+                );
+            } else {
+                // Deletion operations ->  add deletion mark
+                this.deletionMarks.push(this.selectionIndices[0]);
+
+                // Redraw
+                PlasmidViewer.deselectBases();
+                PlasmidViewer.redraw();
+                Sidebar.update();
+            };
+
+            // Save
+            this.saveState(`IVA Operation: ${operationType}`);
+
+        } catch(error) {
+            switch (true) {
+                case (error instanceof AmbiguousBaseError):
+                case (error instanceof OutOfBasesError):
+                    handleError(error);
+                    break;
+
+                default: {
+                    throw error;
+                };
+            };
+        };
+    };
+    // #endregion IVA Operations
 };
