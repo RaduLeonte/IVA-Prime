@@ -331,7 +331,7 @@ const Utilities = new class {
 
     addInputValidator(input, validatorType) {
         function validate() {
-            const isValid = Utilities.validators[validatorType] ? Utilities.validators[validatorType](input.value) : true;
+            const isValid = Utilities.validators[validatorType] ? Utilities.validators[validatorType](input.value.replace(/\s+/g, '')) : true;
     
             if (!isValid) {
                 input.setAttribute("incorrect", "true")
