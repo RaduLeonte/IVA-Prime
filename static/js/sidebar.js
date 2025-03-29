@@ -205,82 +205,47 @@ const Sidebar = new class {
     };
 
 
-    highlightPrimerBindingSite(primerRegionElement) {
-        const type = primerRegionElement.getAttribute("type");
-        const baseClass = this.baseClasses[type];
-        const spanStart = parseInt(primerRegionElement.getAttribute("start"));
-        const length = primerRegionElement.innerText.length;
-        const direction = primerRegionElement.getAttribute("direction");
-        const primerSequence = primerRegionElement.innerText;
-        
-        const activePlasmid = Session.activePlasmid();
-        if (!activePlasmid) return;
-        
-        let sequence = {"fwd": activePlasmid.sequence, "rev": activePlasmid.complementarySequence}[direction];
-        const query = {"fwd": primerSequence, "rev": primerSequence.split("").reverse().join("")}[direction];;
-        
-        let indices = [];
-        if (Session.activePlasmid().topology === "linear") {
-            let index = sequenceRepeating.indexOf(query);
-            while (index !== -1) {
-                indices.push(index);
-                index = sequence.indexOf(query, index + 1);
-            };
-        } else {
-            const sequenceLength = sequence.length;
-            const sequenceRepeating = sequence.repeat(3);
-            let index = sequenceRepeating.indexOf(query);
-            while (index !== -1) {
-                const resultSpan = [index - sequenceLength, index + query.length - sequenceLength]
-                if (resultSpan[1] >= 0 && resultSpan[1] <= sequenceLength ) {
-                    indices.push(index - sequenceLength);
+    highlightPrimerBindingSite(sender) {
+        const primersContainer = sender.closest(".primers-container");
+
+        const primerSequences = primersContainer.querySelectorAll(".primer-sequence");
+        primerSequences.forEach((primerRegionElement) => {
+            const type = primerRegionElement.getAttribute("type");
+            const baseClass = this.baseClasses[type];
+            const direction = primerRegionElement.getAttribute("direction");
+            const primerSequence = primerRegionElement.innerText;
+            
+            const activePlasmid = Session.activePlasmid();
+            if (!activePlasmid) return;
+            
+            let sequence = {"fwd": activePlasmid.sequence, "rev": activePlasmid.complementarySequence}[direction];
+            const query = {"fwd": primerSequence, "rev": primerSequence.split("").reverse().join("")}[direction];;
+            
+            let indices = [];
+            if (Session.activePlasmid().topology === "linear") {
+                let index = sequenceRepeating.indexOf(query);
+                while (index !== -1) {
+                    indices.push(index);
+                    index = sequence.indexOf(query, index + 1);
                 };
-                index = sequenceRepeating.indexOf(query, index + 1);
+            } else {
+                const sequenceLength = sequence.length;
+                const sequenceRepeating = sequence.repeat(3);
+                let index = sequenceRepeating.indexOf(query);
+                while (index !== -1) {
+                    const resultSpan = [index - sequenceLength, index + query.length - sequenceLength]
+                    if (resultSpan[1] >= 0 && resultSpan[1] <= sequenceLength ) {
+                        indices.push(index - sequenceLength);
+                    };
+                    index = sequenceRepeating.indexOf(query, index + 1);
+                };
             };
-        }
-
-        console.log(indices);
-        indices.forEach((index) => {
-            PlasmidViewer.highlightBases([index + 1, index + query.length], baseClass, direction)
+    
+    
+            indices.forEach((index) => {
+                PlasmidViewer.highlightBases([index + 1, index + query.length], baseClass, direction)
+            });
         });
-        
-
-        return;
-
-        let regionSpan;
-        switch (type) {
-            case "INS":
-            case "HR":
-            case "subHR":
-                regionSpan = (direction === "fwd")
-                ? [spanStart - length + 1, spanStart]
-                : [spanStart, spanStart + length - 1];
-                break;
-
-            case "TBR":
-            case "subTBR":
-                regionSpan = (direction === "fwd")
-                ? [spanStart, spanStart + length - 1]
-                : [spanStart - length, spanStart - 1];
-                break;
-
-            default:
-                regionSpan = null;
-                break;
-        }
-
-        console.log(
-            `Sidebar.highlightPrimerBindingSite ->`,
-            primerRegionElement,
-            type,
-            baseClass,
-            spanStart,
-            length,
-            regionSpan,
-            direction,
-        );
-
-        if (regionSpan) PlasmidViewer.highlightBases(regionSpan, baseClass, direction);
     };
 
 
