@@ -573,7 +573,7 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
 .primers-table {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
 }
 .primers-table:has(div) {
   padding: 10px;
@@ -618,6 +618,8 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
 }
 
 .primers-container {
+  display: flex;
+  flex-direction: column;
   gap: 15px;
 }
 
@@ -635,7 +637,7 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
 
 .primer-sequence-regions {
   word-break: break-all;
-  line-height: 1.5;
+  line-height: 2;
 }
 
 .primer-sequence {
@@ -651,6 +653,20 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
 .primer-sequence-tbr { background-color: var(--tbr) }
 .primer-sequence-subhr { background-color: var(--subhr) }
 .primer-sequence-subtbr { background-color: var(--subtbr) }
+
+.primer-copy-button {
+  display: inline-flex !important;
+
+  height: 20px;
+  width: 20px !important;
+  padding: 2px !important;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.primer-copy-button span {
+  background-image: url('/static/assets/icons/copy.svg');
+}
 
 
 .primer-info {

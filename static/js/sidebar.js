@@ -138,6 +138,20 @@ const Sidebar = new class {
                 primerSequence.classList.add("primer-sequence-regions");
                 primerContainer.appendChild(primerSequence);
 
+                const copyPrimerButton = document.createElement("span");
+                copyPrimerButton.classList.add("primer-copy-button", "toolbar-button"),
+                copyPrimerButton.title = "Copy sequence to clipboard";
+                copyPrimerButton.appendChild(document.createElement("span"));
+                primerSequence.appendChild(copyPrimerButton);
+
+                copyPrimerButton.onclick = function() {
+
+                    const primerRegionSpans = primerSequence.querySelectorAll("span");
+                    const combinedSequence = Array.from(primerRegionSpans).map(span => span.textContent).join("");
+                    
+                    Utilities.copyToClipboard(combinedSequence);
+                };
+
                 let totalPrimerLength = 0;
                 primer.regions.forEach(region => {
                     if (region.sequence.length === 0) {return};
