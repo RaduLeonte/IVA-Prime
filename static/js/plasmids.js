@@ -961,5 +961,20 @@ class Plasmid {
             };
         };
     };
+
+
+    getNextOperationIndex() {
+        return this.primers.length;
+    };
+
+    renamePrimerSet(primerSetIndex, newPrimerSetName, newPrimerNames) {
+        this.primers[primerSetIndex].title = newPrimerSetName;
+
+        for (let i = 0; i < newPrimerNames.length; i++) {
+            this.primers[primerSetIndex].primers[i].label = newPrimerNames[i];
+        };
+
+        Sidebar.updatePrimersTable();
+    };
     // #endregion IVA Operations
 };

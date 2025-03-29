@@ -1,6 +1,6 @@
 
 const Modals = new class {
-    create(id, body, action) {
+    _create(id, body, action) {
         const modalWindow = document.createElement("div");
         modalWindow.id = id;
         modalWindow.classList.add("modal-window");
@@ -30,35 +30,118 @@ const Modals = new class {
                 };
             });
         });
-    
-    
-        document.getElementById(`${id}-action-button`).addEventListener("click", function (event) {
+    };
+
+
+    _createModalBody(title) {
+        const modalBody = document.createElement("div");
+
+        const modalTitle = document.createElement("DIV");
+        modalTitle.classList.add("modal-title");
+        modalTitle.innerText = title;
+        modalBody.appendChild(modalTitle)
+
+        return modalBody;
+    };
+
+
+    _createButtons(actionLabel, id, action) {
+        const buttonsContainer = document.createElement("div");
+        buttonsContainer.classList.add("modal-hgroup");
+
+        const actionButton = document.createElement("span");
+        actionButton.classList.add("button-round", "button-green");
+        actionButton.id = `${id}-action-button`;
+        actionButton.innerText = actionLabel;
+        buttonsContainer.appendChild(actionButton);
+
+        actionButton.addEventListener("click", function (event) {
             event.preventDefault();
             action();
             Modals.remove(id);
         });
+
+        const cancelButton = document.createElement("span");
+        cancelButton.classList.add("button-round", "button-red");
+        cancelButton.innerText = "Cancel";
+        cancelButton.onclick = `Modals.remove('${id}')`
+        buttonsContainer.appendChild(cancelButton);
+
+        cancelButton.addEventListener("click", function (event) {
+            Modals.remove(id);
+        });
     
-    
-        document.addEventListener("keydown", function (event) {
+
+        function modalOnEnterKey(event) {
             if (event.key === "Enter") {
                 event.preventDefault();
                 document.getElementById(`${id}-action-button`).click();
-            };
-        });
-    
-    
-        function onEscapeKey(event) {
-            if (event.key === "Escape") {
-                event.preventDefault();
-                Modals.remove(id);
-                document.removeEventListener("keydown", onEscapeKey);
+                document.removeEventListener("keydown", modalOnEnterKey);
             };
         };
-        document.addEventListener("keydown", onEscapeKey);
+        document.addEventListener("keydown", modalOnEnterKey);
+    
+    
+        function modalOnEscapeKey(event) {
+            if (event.key === "Escape") {
+                console.log("escape")
+                event.preventDefault();
+                Modals.remove(buttonsContainer.closest(".modal-window").id);
+                document.removeEventListener("keydown", modalOnEscapeKey);
+            };
+        };
+        document.addEventListener("keydown", modalOnEscapeKey);
+
+        return buttonsContainer;
+    };
+    
+
+
+    _createInput(label, id, defaultText="", validator=null, suffix=null) {
+        const inputContainer = document.createElement("DIV");
+        inputContainer.classList.add("modal-vgroup");
+
+        if (label) {
+            const inputLabel = document.createElement("label");
+            inputLabel.innerText = label;
+            inputContainer.appendChild(inputLabel);
+        };
+
+        if (!suffix) {
+            const input = document.createElement("input");
+            input.setAttribute("type", "text");
+            input.setAttribute("id", id);
+            input.classList.add("modal-input");
+            input.setAttribute("value", defaultText);
+            if (validator) input.setAttribute("validator", validator);
+            inputContainer.appendChild(input);
+
+            return inputContainer;
+        } else {
+            const inputWrapper = document.createElement("DIV");
+            inputWrapper.classList.add("modal-input-wrapper");
+            inputContainer.appendChild(inputWrapper);
+
+            const input = document.createElement("input");
+            input.setAttribute("type", "text");
+            input.setAttribute("id", id);
+            input.classList.add("modal-input", "modal-input-with-suffix");
+            input.setAttribute("value", defaultText);
+            if (validator) input.setAttribute("validator", validator);
+            inputWrapper.appendChild(input);
+
+            const suffix = document.createElement("div");
+            suffix.classList.add("modal-input-suffix");
+            suffix.innerText = suffix;
+            inputWrapper.appendChild(suffix);
+
+            return inputContainer;
+        };
     };
 
     
     remove(modalWindowId) {
+        console.log("Modals.remove ->", modalWindowId)
         const modalWindow = document.getElementById(modalWindowId);
         const modal = modalWindow.parentNode;
         modal.style.display = "none"
@@ -84,13 +167,14 @@ const Modals = new class {
     };
 
 
+    //#region New file
     createNewFileModal() {
         const body = document.createElement("div");
         body.classList.add("modal-new-file");
         const id = "modal-window-new-file";
     
         body.innerHTML = `
-        <div class="modal-title">New File</div>
+        <div class="modal-title">Create new file</div>
 
         <div class="modal-vgroup">
             <label>New plasmid name:</label>
@@ -117,26 +201,25 @@ const Modals = new class {
                 <option value="circular">Circular</option>
             </select>
         </div>
-        
-        
-        <div class="modal-hgroup">
-            <span class="button-round button-green" id="${id}-action-button">Create File</span>
-            <span class="button-round button-red" onclick="Modals.remove('${id}')">Cancel</span>
-        </div>
         `;
 
         const action = FileIO.newFileFromSequence.bind(FileIO);
+
+        body.appendChild(
+            this._createButtons("Create file", id, action)
+        );
     
-        this.create(id, body, action);
+        this._create(id, body, action);
     };
 
 
+    //#region Rename plasmid
     createRenamePlasmidModal(targetPlasmid) {
         const body = document.createElement("div");
         const id = "modal-window-rename-plasmid";
     
         body.innerHTML = `
-        <div class="modal-title">Rename Plasmid</div>
+        <div class="modal-title">Rename plasmid</div>
     
         <div class="modal-vgroup">
             <label>New plasmid name:</label>
@@ -145,23 +228,160 @@ const Modals = new class {
                 ${targetPlasmid.extension ? `<div class="modal-input-suffix">${targetPlasmid.extension}</div>` : ""}
             </div>
         </div>
-        
-        
-        <div class="modal-hgroup">
-            <span class="button-round button-green" id="${id}-action-button">Rename</span>
-            <span class="button-round button-red" onclick="Modals.remove('${id}')">Cancel</span>
-        </div>
         `;
 
         const action = () => {
-            const newName = document.getElementById("modal-window-rename-plasmid-input").value;
+            const newName = document.getElementById(`${id}-input`).value;
             targetPlasmid.rename(newName);
         };
+
+        console.log(id)
+        body.appendChild(
+            this._createButtons("Rename", id, action)
+        );
     
-        this.create(id, body, action);
+        this._create(id, body, action);
     };
 
 
+    //#region Rename primers
+    createRenamePrimersModal(primerSetIndex) {
+        const id = "rename-primers";
+
+        const modalBody = this._createModalBody("Rename primers");
+        modalBody.classList.add("modal-wide");
+
+        const primerSet = Session.activePlasmid().primers[primerSetIndex];
+
+        // Rename primer set
+        const renamePrimerSet = this._createInput("Set name", `${id}-input`, primerSet.title, null, null);
+        modalBody.appendChild(renamePrimerSet);
+
+        const individualPrimersContainer = document.createElement("div");
+        //individualPrimersContainer.style.marginLeft = "20px";
+        modalBody.appendChild(individualPrimersContainer);
+
+
+        const syncStates = {};
+        const updateSyncedPrimers = () => {
+            const baseName = document.getElementById(`${id}-input`).value;
+
+            const nrOfInputs = document.getElementById(id).querySelectorAll("input").length;
+            for (let i = 0; i < nrOfInputs - 1; i++) {
+                const primerNameInput = document.getElementById(`${id}-input${i}`);
+                const primerNameInputSync = document.getElementById(`${id}-input${i}-sync`);
+                
+                if (primerNameInputSync.hasAttribute("active")) {
+                    const suffix = primerNameInput.getAttribute("suffix");
+                    primerNameInput.value = baseName + suffix;
+                };
+            };
+        };
+        renamePrimerSet.addEventListener("input", updateSyncedPrimers);
+
+        for (let i = 0; i < primerSet.primers.length; i++) {
+            const primer = primerSet.primers[i];
+
+            const vGroup = document.createElement("div");
+            vGroup.classList.add("modal-vgroup");
+            individualPrimersContainer.appendChild(vGroup);
+
+            /**
+             * Label
+             */
+            const label = document.createElement("label");
+            label.innerText = `${primer.name}:`;
+            vGroup.appendChild(label);
+
+            const hGroup = document.createElement("div");
+            hGroup.classList.add("modal-hgroup");
+            hGroup.style.height = "40px";
+            individualPrimersContainer.appendChild(hGroup);
+
+
+            /** 
+             * Sync button
+             */
+            syncStates[i] = true;
+
+            const syncToggle = document.createElement("div");
+            syncToggle.id = `${id}-input${i}-sync`;
+            syncToggle.classList.add(
+                "modal-input-sync",
+                "toolbar-button",
+                "footer-button",
+            );
+            syncToggle.setAttribute("active", "");
+            hGroup.appendChild(syncToggle);
+
+            const syncIcon = document.createElement("span");
+            syncIcon.classList.add("modal-input-sync-icon");
+            syncToggle.appendChild(syncIcon);
+
+            // Sync toggle click handler
+            syncToggle.addEventListener("click", () => {
+                syncStates[i] = !syncStates[i];
+
+                if (syncStates[i]) {
+                    syncToggle.setAttribute("active", "")
+
+                    updateSyncedPrimers();
+                } else {
+                    syncToggle.removeAttribute("active");
+                };
+            });
+
+            /**
+             * Input
+             */
+            const input = document.createElement("input");
+            input.type = "text";
+            input.id = `${id}-input${i}`;
+            input.classList.add("modal-input");
+            input.value = primer.label;
+            input.style.flexGrow = 1;
+            input.setAttribute(
+                "suffix",
+                {
+                    "Forward primer": "_fwd",
+                    "Reverse primer": "_rev",
+                    "Vector forward primer": "_vec_fwd",
+                    "Vector reverse primer": "_vec_rev",
+                }[primer.name]
+            );
+            hGroup.appendChild(input);
+        };
+
+
+        const action = () => {
+            const newPrimerSetName = document.getElementById(`${id}-input`).value;
+
+            const nrOfInputs = document.getElementById(id).querySelectorAll("input").length;
+            const newPrimerNames = [];
+
+            for (let i = 0; i < nrOfInputs - 1; i++) {
+                newPrimerNames.push(
+                    document.getElementById(`${id}-input${i}`).value
+                );
+            };
+
+            Session.activePlasmid().renamePrimerSet(primerSetIndex, newPrimerSetName, newPrimerNames);
+        };
+
+
+        modalBody.appendChild(
+            this._createButtons(
+                "Rename",
+                id,
+                action,
+            )
+        );
+    
+        this._create(id, modalBody, action);
+    };
+
+
+    //#region Insertion
     createInsertionModal(type="insertion") {
         const body = document.createElement("div");
         body.classList.add("modal-insertion");
@@ -207,11 +427,6 @@ const Modals = new class {
                 The sequence you are trying to insert is very long. We recommend generating and ordering a linear fragment of dsDNA with overhangs to use as the insert. In the context menu, select "Insert from linear fragment" instead. An explanation of how insertions from linear fragments work can be found in the <a href="/about#lin-frag" target="_blank" class="underlined-link">About</a> page.
             </span>
         </div>
-        
-        <div class="modal-hgroup">
-            <span class="button-round button-green" id="${id}-action-button">Create primers</span>
-            <span class="button-round button-red" onclick="Modals.remove('${id}')">Cancel</span>
-        </div>
         `;
 
         const dnaSeqInput = body.querySelector("#insertion-input-dna");
@@ -237,11 +452,16 @@ const Modals = new class {
                 document.getElementById("insertion-checkbox-translate").checked,
             );
         };
+
+        body.appendChild(
+            this._createButtons("Create primers", id, action)
+        );
     
-        this.create(id, body, action);
+        this._create(id, body, action);
     };
 
 
+    //#region Subcloning 
     createSubcloningModal() {
         const body = document.createElement("div");
         body.classList.add("modal-subcloning");
@@ -298,13 +518,6 @@ const Modals = new class {
             <label>Translate new feature:</label>
             <input type="checkbox" id="insertion-checkbox-translate" name="insertion-checkbox-translate" checked="false">
         </div>
-
-        
-        
-        <div class="modal-hgroup">
-            <span class="button-round button-green" id="${id}-action-button">Create primers</span>
-            <span class="button-round button-red" onclick="Modals.remove('${id}')">Cancel</span>
-        </div>
         `;
 
         const action = () => {
@@ -322,11 +535,15 @@ const Modals = new class {
                 document.getElementById("insertion-checkbox-translate").checked,
             );
         };
-    
-        this.create(id, body, action);
+
+        body.appendChild(
+            this._createButtons("Create primers", id, action)
+        );    
+        this._create(id, body, action);
     };
 
 
+    //#region Insert from linear fragment
     createInsertFromLinearFragmentModal() {
         const body = document.createElement("div");
         body.classList.add("modal-insertion");
@@ -374,12 +591,6 @@ const Modals = new class {
             <label>Translate new feature:</label>
             <input type="checkbox" id="insertion-checkbox-translate" name="insertion-checkbox-translate" checked="false">
         </div>
-
-        
-        <div class="modal-hgroup">
-            <span class="button-round button-green" id="${id}-action-button">Create primers and linear fragment</span>
-            <span class="button-round button-red" onclick="Modals.remove('${id}')">Cancel</span>
-        </div>
         `;
 
         const action = () => {
@@ -392,11 +603,16 @@ const Modals = new class {
                 document.getElementById("lin-frag-input-name").value,
             );
         };
-    
-        this.create(id, body, action);
+
+        body.appendChild(
+            this._createButtons("Create primers and linear fragment", id, action)
+        );
+
+        this._create(id, body, action);
     };
 
 
+    //#region Set origin
     createSetOriginModal(targetPlasmid) {
         const body = document.createElement("div");
         const id = "modal-window-set-origin";
@@ -410,23 +626,21 @@ const Modals = new class {
             <label>New origin:</label>
             <input type="number" id="${id}-input" class="modal-input" min="1" max="${seqLength} step="1" value="1">
         </div>
-        
-        
-        <div class="modal-hgroup">
-            <span class="button-round button-green" id="${id}-action-button">Set origin</span>
-            <span class="button-round button-red" onclick="Modals.remove('${id}')">Cancel</span>
-        </div>
         `;
 
         const action = () => {
             const newOrigin = document.getElementById(`${id}-input`).value;
             targetPlasmid.setOrigin(newOrigin);
         };
-    
-        this.create(id, body, action);
+
+        body.appendChild(
+            this._createButtons("Set origin", id, action)
+        );    
+        this._create(id, body, action);
     };
 
 
+    //#region Set file topology
     createSetFileTopologyModal(targetPlasmid) {
         const body = document.createElement("div");
         const id = "modal-window-set-file-topology";
@@ -451,12 +665,6 @@ const Modals = new class {
                 Circular.
             </span>
         </div>
-        
-        
-        <div class="modal-hgroup">
-            <span class="button-round button-green" id="${id}-action-button">Set topology</span>
-            <span class="button-round button-red" onclick="Modals.remove('${id}')">Cancel</span>
-        </div>
         `;
 
         const action = () => {
@@ -465,7 +673,10 @@ const Modals = new class {
                 : "linear";
             targetPlasmid.setTopology(newToplogy);
         };
-    
-        this.create(id, body, action);
+
+        body.appendChild(
+            this._createButtons("Set topology", id, action)
+        );    
+        this._create(id, body, action);
     };
 };

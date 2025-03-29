@@ -1620,7 +1620,7 @@ const FileIO = new class {
                 for (let k = 0; k < primer.regions.length; k++) {
                     primerSequence += primer.regions[k].sequence;
                 };
-                table.push([primer.name, primerSequence]);
+                table.push([primer.label, primerSequence]);
             };
         };
 
@@ -1679,7 +1679,7 @@ const FileIO = new class {
                             tbrLength = region.sequence.length;
                         };
                     };
-                    lines.push(`\t${primer.name}: ${primerSequence} (Total: ${primerSequence.length} nt; TBR: ${tbrLength} nt, ${tbrTm.toFixed(2)} C)`);
+                    lines.push(`\t${primer.label}: ${primerSequence} (Total: ${primerSequence.length} nt; TBR: ${tbrLength} nt, ${tbrTm.toFixed(2)} C)`);
                 };
 
                 lines.push("");

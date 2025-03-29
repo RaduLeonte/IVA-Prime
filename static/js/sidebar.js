@@ -66,7 +66,7 @@ const Sidebar = new class {
     };
 
 
-    generatePrimersTable(plasmidIndex) {
+    generatePrimersTable(plasmidIndex=null) {
         const primersSets = (plasmidIndex) ? Session.getPlasmid(plasmidIndex).primers: Session.activePlasmid().primers;
         //console.log(`Sidebar.updatePrimersTable -> primers=\n${JSON.stringify(primersSets, null, 2)}`);
 
@@ -74,17 +74,42 @@ const Sidebar = new class {
         primersTable.id = "primers-table";
         primersTable.classList.add("primers-table");
 
-        let primersSetCounter = 1;
-        primersSets.forEach(primersSet => {
+        for (let i = 0; i < primersSets.length; i++) {
+            const primersSet = primersSets[i];
+
             const primersSetContainer = document.createElement("DIV");
             primersSetContainer.classList.add("primers-set");
             primersTable.appendChild(primersSetContainer);
 
-            const primerSetTitle = document.createElement("DIV");
-            primerSetTitle.innerHTML = `<span>${primersSetCounter}.</span> <span>${primersSet.title}</span>`;
-            primerSetTitle.classList.add("primers-set-title");
-            primersSetContainer.appendChild(primerSetTitle);
+            /**
+             * Header
+             */
+            const primerSetHeader = document.createElement("DIV");
+            primerSetHeader.classList.add("primers-set-header");
+            primersSetContainer.appendChild(primerSetHeader);
 
+            const primerSetHeaderTitle = document.createElement("span");
+            primerSetHeaderTitle.classList.add("primers-set-header-title");
+            primerSetHeaderTitle.innerText = primersSet.title;
+            primerSetHeader.appendChild(primerSetHeaderTitle);
+
+            const primerSetHeaderRenameButton = document.createElement("div");
+            primerSetHeaderRenameButton.classList.add(
+                "toolbar-button",
+                "footer-button",
+                "primers-set-header-rename-button",
+            );
+            primerSetHeaderRenameButton.appendChild(document.createElement("span"))
+            primerSetHeader.appendChild(primerSetHeaderRenameButton);
+
+            primerSetHeaderRenameButton.onclick = function() {
+                Modals.createRenamePrimersModal(i);
+            };
+                
+
+            /**
+             * Body
+             */
             const primerSetBody = document.createElement("DIV");
             primerSetBody.classList.add("primers-set-body");
             primersSetContainer.appendChild(primerSetBody);
@@ -105,7 +130,7 @@ const Sidebar = new class {
 
                 const primerTitle = document.createElement("DIV");
                 primerTitle.classList.add("primer-title");
-                primerTitle.innerText = primer.name;
+                primerTitle.innerText = primer.label;
                 primerContainer.appendChild(primerTitle);
 
                 const primerSequence = document.createElement("DIV");
@@ -152,8 +177,7 @@ const Sidebar = new class {
 
                 
             });
-            primersSetCounter++;
-        });
+        };
 
         return primersTable;
     };

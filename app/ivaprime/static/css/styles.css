@@ -210,7 +210,10 @@ input[type="checkbox"]:checked + .custom-checkbox::before {
  * MARK: Buttons
  */
 .button-round {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-items: center;
+
   cursor: pointer;
   border-radius: 5px;
   padding: 10px 20px;
@@ -568,6 +571,8 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
 }
 
 .primers-table {
+  display: flex;
+  flex-direction: column;
   gap: 20px;
 }
 .primers-table:has(div) {
@@ -578,11 +583,35 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
   gap: 15px;
 }
 
-.primers-set-title {
-  font-size: 16px;
-  font-weight: bold;
+.primers-set-header {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+
+  height: 30px;
+
   border-bottom: 2px solid var(--border-color);
 }
+
+.primers-set-header-title {
+  display: flex; 
+  align-items: center;
+  justify-content: center;
+
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.primers-set-header-rename-button {
+
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.primers-set-header-rename-button span {
+  background-image: url('/static/assets/icons/pencil.svg');
+}
+
 
 .primers-set-body {
   gap: 10px;
@@ -693,6 +722,8 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
   align-items: flex-start;
   justify-content: flex-start;
   gap: 10px;
+
+  height: 40px;
 }
 
 .collapsible-content-hgroup {
@@ -1352,6 +1383,14 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   gap: 10px;
 }
 
+.modal-wide {
+  min-width: 20vw;
+}
+
+.modal-very-wide{
+  min-width: 50vw;
+}
+
 .modal-title {
   color: var(--text-color);
   font-size: 18px;
@@ -1373,6 +1412,7 @@ html[data-theme="dark"] .boolean-switch-slider:before {
 .modal-hgroup {
   margin: 0 0 10px;
   display: flex;
+  align-items: stretch;
   flex-direction: row;
   gap: 10px;
 }
@@ -1460,6 +1500,34 @@ html[data-theme="dark"] .boolean-switch-slider:before {
 
   color: var(--border-color);
   font-size: 14px;
+}
+
+.modal-input-sync {
+  height: 100%;
+}
+
+.modal-input-sync[active] {
+  background-color: var(--footer-icon-hover);
+}
+
+.modal-input-sync[active] span  {
+  filter: none;
+  opacity: 1;
+}
+
+.modal-input-sync:not([active]) span {
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+
+.modal-input-sync-icon {
+  background-image: url('/static/assets/icons/chain.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
 }
 /* #endregion Modal_windows  */
 
