@@ -99,6 +99,7 @@ const Sidebar = new class {
                 "footer-button",
                 "primers-set-header-rename-button",
             );
+            primerSetHeaderRenameButton.title = "Rename primers";
             primerSetHeaderRenameButton.appendChild(document.createElement("span"))
             primerSetHeader.appendChild(primerSetHeaderRenameButton);
 
