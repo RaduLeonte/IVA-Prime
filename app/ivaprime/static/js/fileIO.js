@@ -1598,13 +1598,49 @@ const FileIO = new class {
         }
     };
 
-
-    exportPrimers(plasmidIndex, fileType="txt") {
+    exportPrimersSingle(plasmidIndex, fileType) {
         const primerSets = Session.getPlasmid(plasmidIndex).primers;
         const plasmidName = Session.getPlasmid(plasmidIndex).name
+
+        const outputFileName = plasmidName + "primers";
+
+        this.exportPrimers(outputFileName, fileType, primerSets);
+    };
+
+    exportPrimersAll(fileType) {
+        let primerSets = [];
+        for (const plasmidIndex in Session.plasmids) {
+            primerSets.push(...Session.plasmids[plasmidIndex].primers)
+        };
+        this.exportPrimers("All primers", fileType, primerSets);
+    };
+
+
+    exportPrimers(outputFileName, fileType, primerSets) {
+        console.log(outputFileName, fileType, primerSets.length)
         if (primerSets.length === 0) return;
 
-        this.primerExporters[fileType](plasmidIndex, plasmidName, primerSets);
+        switch(fileType) {
+            case "txt":
+                this.exportPrimersAsTxt(outputFileName, primerSets);
+                break;
+
+            case "doc":
+                this.exportPrimersAsDoc(outputFileName, primerSets);
+                break;
+
+            case "csv":
+                this.exportPrimersAsCsv(outputFileName, primerSets);
+                break;
+
+            case "xlsx":
+                this.exportPrimersAsXlsx(outputFileName, primerSets);
+                break;
+
+            case "microsynth":
+                this.exportPrimersAsMicrosynth(outputFileName, primerSets);
+                break;
+        };
     };
 
 
@@ -1648,185 +1684,167 @@ const FileIO = new class {
     };
 
 
-    /**
-     * Dictionary of primers exporters.
-     */
-    primerExporters = {
-        /**
-         * Txt format.
-         */
-        txt: (plasmidIndex, plasmidName, primerSets) => {
-            let lines = [];
-            for (let i = 0; i < primerSets.length; i++) {
-                const set = primerSets[i];
-                if (set.type === "Subcloning") {
-                    lines.push(`${i+1}. ${set.title} (${set.symmetry}; HR1: ${set.hrLength[0]} nt, ${set.hrTm[0].toFixed(2)} C; HR2: ${set.hrLength[1]} nt, ${set.hrTm[1].toFixed(2)} C)`);
-                } else {
-                    lines.push(`${i+1}. ${set.title} (${set.symmetry}; HR: ${set.hrLength} nt, ${set.hrTm.toFixed(2)} C)`);
-                };
-                
-                for (let j = 0; j < set.primers.length; j++) {
-                    const primer = set.primers[j];
+    exportPrimersAsTxt(outputFileName, primerSets) {
+        console.log("FileIO.exportPrimersAsTxt ->", outputFileName, primerSets.length)
+        let lines = [];
+        for (let i = 0; i < primerSets.length; i++) {
+            const set = primerSets[i];
+            if (set.type === "Subcloning") {
+                lines.push(`${i+1}. ${set.title} (${set.symmetry}; HR1: ${set.hrLength[0]} nt, ${set.hrTm[0].toFixed(2)} C; HR2: ${set.hrLength[1]} nt, ${set.hrTm[1].toFixed(2)} C)`);
+            } else {
+                lines.push(`${i+1}. ${set.title} (${set.symmetry}; HR: ${set.hrLength} nt, ${set.hrTm.toFixed(2)} C)`);
+            };
+            
+            for (let j = 0; j < set.primers.length; j++) {
+                const primer = set.primers[j];
 
-                    let primerSequence = ""
-                    let tbrLength = 0;
-                    let tbrTm = 0;
-                    for (let k = 0; k < primer.regions.length; k++) {
-                        const region = primer.regions[k];
-                        primerSequence += region.sequence;
-                        if (["TBR", "subTBR"].includes(region.type)) {
-                            tbrTm = Nucleotides.getMeltingTemperature(region.sequence);
-                            tbrLength = region.sequence.length;
-                        };
+                let primerSequence = ""
+                let tbrLength = 0;
+                let tbrTm = 0;
+                for (let k = 0; k < primer.regions.length; k++) {
+                    const region = primer.regions[k];
+                    primerSequence += region.sequence;
+                    if (["TBR", "subTBR"].includes(region.type)) {
+                        tbrTm = Nucleotides.getMeltingTemperature(region.sequence);
+                        tbrLength = region.sequence.length;
                     };
-                    lines.push(`\t${primer.label}: ${primerSequence} (Total: ${primerSequence.length} nt; TBR: ${tbrLength} nt, ${tbrTm.toFixed(2)} C)`);
                 };
-
-                lines.push("");
+                lines.push(`\t${primer.label}: ${primerSequence} (Total: ${primerSequence.length} nt; TBR: ${tbrLength} nt, ${tbrTm.toFixed(2)} C)`);
             };
 
-            const fileText = lines.join("\n");
+            lines.push("");
+        };
 
-            this.downloadFile(
-                plasmidName + " primers" + ".txt",
-                fileText
-            );
-        },
+        const fileText = lines.join("\n");
 
-        /**
-         * Doc format.
-         */
-        doc: (plasmidIndex, plasmidName, primerSets) => {
-            const tempContainer = document.createElement("div");
-            tempContainer.appendChild(Sidebar.generatePrimersTable(plasmidIndex));
-            document.body.appendChild(tempContainer);
-        
-            function applyComputedStyles(node) {
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                    const computedStyles = window.getComputedStyle(node);
-                    let inlineStyles = "";
-        
-                    ["color", "background-color", "font-weight", "font-family", "font-size", "text-align", "border", "padding", "margin"]
-                        .forEach(style => {
-                            inlineStyles += `${style}: ${computedStyles.getPropertyValue(style)}; `;
-                        });
-        
-                    node.setAttribute("style", inlineStyles);
-        
-                    node.childNodes.forEach(applyComputedStyles);
-                };
+        this.downloadFile(
+            outputFileName + ".txt",
+            fileText
+        );
+    };
+
+    exportPrimersAsDoc(outputFileName, primerSets) {
+        const tempContainer = document.createElement("div");
+        tempContainer.appendChild(Sidebar.createPrimersTableElement(primerSets));
+        document.body.appendChild(tempContainer);
+    
+        function applyComputedStyles(node) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                const computedStyles = window.getComputedStyle(node);
+                let inlineStyles = "";
+    
+                ["color", "background-color", "font-weight", "font-family", "font-size", "text-align", "border", "padding", "margin"]
+                    .forEach(style => {
+                        inlineStyles += `${style}: ${computedStyles.getPropertyValue(style)}; `;
+                    });
+    
+                node.setAttribute("style", inlineStyles);
+    
+                node.childNodes.forEach(applyComputedStyles);
             };
+        };
 
-            applyComputedStyles(tempContainer);
+        applyComputedStyles(tempContainer);
+    
+        const extractedContent = tempContainer.innerHTML.trim();
+        const fullHTML = `<!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Primers</title>
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                </style>
+            </head>
+            <body>
+                ${extractedContent} <!-- Extract only the actual content -->
+            </body>
+            </html>`;
+    
+        const blob = window.htmlDocx.asBlob(fullHTML);
+        document.body.removeChild(tempContainer);
+        saveAs(blob, `${outputFileName}.docx`);
+    };
+
+    exportPrimersAsCsv(outputFileName, primerSets) {
+        const table = this.primersToTable(primerSets, true);
+
+        let csvLines = table.map(function(row) {
+            return row.map(function(cell) {
+                return '"' + String(cell).replace(/"/g, '""') + '"';
+            }).join(',');
+        });
+        const fileText = csvLines.join('\n');
+
+        this.downloadFile(
+            outputFileName + ".csv",
+            fileText
+        );
+    };
+
+    exportPrimersAsXlsx(outputFileName, primerSets) {
+        const table = this.primersToTable(primerSets, true);
+
+        XlsxPopulate.fromBlankAsync()
+            .then((workbook) => {
+                // Iterate over primers and add the entries to the sheet
+                for (let i = 0; i < table.length; i++) {
+                    const currentRow = table[i]
+                    for (let j = 0; j < currentRow.length; j++) {
+                        const targetCell = this.intToSpreadsheetColumn(j + 1) + (i + 1);
+                        workbook.sheet(0).cell(targetCell).value(currentRow[j]);
+                    };
+                };
+                // Return blob
+                return workbook.outputAsync();
+            })
+            .then((blob) => {
+                saveAs(blob, outputFileName + ".xlsx");
+            })
+    };
+
+    exportPrimersAsMicrosynth(outputFileName, primerSets) {
+        console.log("FileIO.exportPrimersAsMicrosynth ->", outputFileName, primerSets.length)
         
-            const extractedContent = tempContainer.innerHTML.trim();
-            const fullHTML = `<!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <title>${plasmidName} Primers</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; }
-                    </style>
-                </head>
-                <body>
-                    ${extractedContent} <!-- Extract only the actual content -->
-                </body>
-                </html>`;
-        
-            const blob = window.htmlDocx.asBlob(fullHTML);
-            document.body.removeChild(tempContainer);
-            saveAs(blob, `${plasmidName} primers.docx`);
-        },
+        const table = this.primersToTable(primerSets, false);
 
-        /**
-         * Csv format.
-         */
-        csv: (plasmidIndex, plasmidName, primerSets) => {
-            const table = this.primersToTable(primerSets, true);
+        // Create a list of rows to append to the microsynth form
+        const primerList = table.map(([primerId, primerSeq]) => [
+            primerId, // DNA Oligo Name
+            primerSeq, // DNA Sequence (5' -> 3')
+            null, // Length
+            "DES", // DNA Purification
+            primerSeq.length <= 60 ? "GEN" : 0.04, // DNA Scale
+            null, // DNA Scale
+            null, // Inner Modification (5)
+            null, // Inner Modification (6)
+            null, // Inner Modification (7)
+            null, // Inner Modification (8)
+            null, // 3' Modification
+            "Dried", // Physical Condition
+            "Standard", // Datasheet
+            "No" // Aliquots
+        ]);
 
-            let csvLines = table.map(function(row) {
-                return row.map(function(cell) {
-                    return '"' + String(cell).replace(/"/g, '""') + '"';
-                }).join(',');
-            });
-            const fileText = csvLines.join('\n');
-
-            this.downloadFile(
-                plasmidName + " primers" + ".csv",
-                fileText
-            );
-        },
-
-        /**
-         * Xlsx format.
-         */
-        xlsx: (plasmidIndex, plasmidName, primerSets) => {
-            const table = this.primersToTable(primerSets, true);
-
-            XlsxPopulate.fromBlankAsync()
-                        .then((workbook) => {
-                            // Iterate over primers and add the entries to the sheet
-                            for (let i = 0; i < table.length; i++) {
-                                const currentRow = table[i]
-                                for (let j = 0; j < currentRow.length; j++) {
-                                    const targetCell = this.intToSpreadsheetColumn(j + 1) + (i + 1);
-                                    workbook.sheet(0).cell(targetCell).value(currentRow[j]);
-                                };
-                            };
-                            // Return blob
-                            return workbook.outputAsync();
-                        })
-                        .then((blob) => {
-                            saveAs(blob, plasmidName + " primers" + ".xlsx");
-                        })
-            return
-        },
-
-        /**
-         * Microsynth format.
-         */
-        microsynth: (plasmidIndex, plasmidName, primerSets) => {
-            const table = this.primersToTable(primerSets, false);
-
-            // Create a list of rows to append to the microsynth form
-            const primerList = table.map(([primerId, primerSeq]) => [
-                primerId, // DNA Oligo Name
-                primerSeq, // DNA Sequence (5' -> 3')
-                null, // Length
-                "DES", // DNA Purification
-                primerSeq.length <= 60 ? "GEN" : 0.04, // DNA Scale
-                null, // DNA Scale
-                null, // Inner Modification (5)
-                null, // Inner Modification (6)
-                null, // Inner Modification (7)
-                null, // Inner Modification (8)
-                null, // 3' Modification
-                "Dried", // Physical Condition
-                "Standard", // Datasheet
-                "No" // Aliquots
-            ]);
-
-            // Fetch default file and modify using xlsx-populate
-            fetch("/static/files/MicrosynthUploadFormDNA.xlsx")
-                .then(res => res.arrayBuffer())
-                .then(arrayBuffer => XlsxPopulate.fromDataAsync(arrayBuffer))
-                .then(workbook => {
-                    // Iterate over primers and add the entries to the sheet
-                    for (let i = 0; i < primerList.length; i++) {
-                        const currentRow = primerList[i]
-                        for (let j = 0; j < currentRow.length; j++) {
-                            if (currentRow[j] !== null) {
-                                const cellAddress = this.intToSpreadsheetColumn(j + 1) + (i + 2);
-                                workbook.sheet(1).cell(cellAddress).value(currentRow[j]);
-                            };
+        // Fetch default file and modify using xlsx-populate
+        fetch("/static/files/MicrosynthUploadFormDNA.xlsx")
+            .then(res => res.arrayBuffer())
+            .then(arrayBuffer => XlsxPopulate.fromDataAsync(arrayBuffer))
+            .then(workbook => {
+                // Iterate over primers and add the entries to the sheet
+                for (let i = 0; i < primerList.length; i++) {
+                    const currentRow = primerList[i]
+                    for (let j = 0; j < currentRow.length; j++) {
+                        if (currentRow[j] !== null) {
+                            const cellAddress = this.intToSpreadsheetColumn(j + 1) + (i + 2);
+                            workbook.sheet(1).cell(cellAddress).value(currentRow[j]);
                         };
                     };
-                    // Return blob
-                    return workbook.outputAsync();
-                })
-                .then(blob => saveAs(blob, plasmidName + " microsynth order form"));
-        },
+                };
+                // Return blob
+                return workbook.outputAsync();
+            })
+            .then(blob => saveAs(blob, outputFileName));
     };
 
 

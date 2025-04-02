@@ -67,15 +67,20 @@ const Sidebar = new class {
 
 
     generatePrimersTable(plasmidIndex=null) {
-        const primersSets = (plasmidIndex) ? Session.getPlasmid(plasmidIndex).primers: Session.activePlasmid().primers;
+        const primerSets = (plasmidIndex) ? Session.getPlasmid(plasmidIndex).primers: Session.activePlasmid().primers;
         //console.log(`Sidebar.updatePrimersTable -> primers=\n${JSON.stringify(primersSets, null, 2)}`);
 
+        return this.createPrimersTableElement(primerSets);
+    };
+
+
+    createPrimersTableElement(primerSets) {
         const primersTable = document.createElement("DIV");
         primersTable.id = "primers-table";
         primersTable.classList.add("primers-table");
 
-        for (let i = 0; i < primersSets.length; i++) {
-            const primersSet = primersSets[i];
+        for (let i = 0; i < primerSets.length; i++) {
+            const primersSet = primerSets[i];
 
             const primersSetContainer = document.createElement("DIV");
             primersSetContainer.classList.add("primers-set");

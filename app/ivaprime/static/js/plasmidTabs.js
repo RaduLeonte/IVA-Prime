@@ -286,11 +286,11 @@ const PlasmidTabs = new class {
         dropdownMenu.innerHTML = `
         <div class="plasmid-tab-dropdown-menu-section-title">Export primers</div>
         <ul>
-            <li><span fileType="txt" onclick="FileIO.exportPrimers(${plasmidIndex}, 'txt')">Plaint text (.txt)</span></li>
-            <li><span fileType="doc" onclick="FileIO.exportPrimers(${plasmidIndex}, 'doc')">MS Word file (.doc)</span></li>
-            <li><span fileType="csv" onclick="FileIO.exportPrimers(${plasmidIndex}, 'csv')">CSV file (.csv)</span></li>
-            <li><span fileType="xlsx" onclick="FileIO.exportPrimers(${plasmidIndex}, 'xlsx')">Excel file (.xlsx)</span></li>
-            <li><span fileType="microsynth" onclick="FileIO.exportPrimers(${plasmidIndex}, 'microsynth')">Microsynth order form (.xlsx)</span></li>
+            <li><span fileType="txt" onclick="FileIO.exportPrimersSingle(${plasmidIndex}, 'txt')">Plaint text (.txt)</span></li>
+            <li><span fileType="doc" onclick="FileIO.exportPrimersSingle(${plasmidIndex}, 'doc')">MS Word file (.doc)</span></li>
+            <li><span fileType="csv" onclick="FileIO.exportPrimersSingle(${plasmidIndex}, 'csv')">CSV file (.csv)</span></li>
+            <li><span fileType="xlsx" onclick="FileIO.exportPrimersSingle(${plasmidIndex}, 'xlsx')">Excel file (.xlsx)</span></li>
+            <li><span fileType="microsynth" onclick="FileIO.exportPrimersSingle(${plasmidIndex}, 'microsynth')">Microsynth order form (.xlsx)</span></li>
         </ul>
         <div class="plasmid-tab-dropdown-menu-section-title">Export plasmid file</div>
         <ul>
