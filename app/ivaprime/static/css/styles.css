@@ -212,7 +212,7 @@ input[type="checkbox"]:checked + .custom-checkbox::before {
 .button-round {
   display: flex;
   align-items: center;
-  justify-items: center;
+  justify-content: center;
 
   cursor: pointer;
   border-radius: 5px;
