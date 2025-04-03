@@ -1725,7 +1725,7 @@ const FileIO = new class {
 
     exportPrimersAsDoc(outputFileName, primerSets) {
         const tempContainer = document.createElement("div");
-        tempContainer.appendChild(Sidebar.createPrimersTableElement(primerSets));
+        tempContainer.appendChild(Sidebar.createPrimersTableContainer(primerSets));
         document.body.appendChild(tempContainer);
     
         function applyComputedStyles(node) {

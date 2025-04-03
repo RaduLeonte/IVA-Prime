@@ -70,136 +70,148 @@ const Sidebar = new class {
         const primerSets = (plasmidIndex) ? Session.getPlasmid(plasmidIndex).primers: Session.activePlasmid().primers;
         //console.log(`Sidebar.updatePrimersTable -> primers=\n${JSON.stringify(primersSets, null, 2)}`);
 
-        return this.createPrimersTableElement(primerSets);
+        return this.createPrimersTableContainer(primerSets);
     };
 
 
-    createPrimersTableElement(primerSets) {
+    createPrimersTableContainer(primerSets) {
         const primersTable = document.createElement("DIV");
         primersTable.id = "primers-table";
         primersTable.classList.add("primers-table");
 
         for (let i = 0; i < primerSets.length; i++) {
-            const primersSet = primerSets[i];
+            const primerSet = primerSets[i];
 
-            const primersSetContainer = document.createElement("DIV");
-            primersSetContainer.classList.add("primers-set");
-            primersTable.appendChild(primersSetContainer);
-
-            /**
-             * Header
-             */
-            const primerSetHeader = document.createElement("DIV");
-            primerSetHeader.classList.add("primers-set-header");
-            primersSetContainer.appendChild(primerSetHeader);
-
-            const primerSetHeaderTitle = document.createElement("span");
-            primerSetHeaderTitle.classList.add("primers-set-header-title");
-            primerSetHeaderTitle.innerText = primersSet.title;
-            primerSetHeader.appendChild(primerSetHeaderTitle);
-
-            const primerSetHeaderRenameButton = document.createElement("div");
-            primerSetHeaderRenameButton.classList.add(
-                "toolbar-button",
-                "footer-button",
-                "primers-set-header-rename-button",
-            );
-            primerSetHeaderRenameButton.title = "Rename primers";
-            primerSetHeaderRenameButton.appendChild(document.createElement("span"))
-            primerSetHeader.appendChild(primerSetHeaderRenameButton);
-
-            primerSetHeaderRenameButton.onclick = function() {
-                Modals.createRenamePrimersModal(i);
-            };
-                
-
-            /**
-             * Body
-             */
-            const primerSetBody = document.createElement("DIV");
-            primerSetBody.classList.add("primers-set-body");
-            primersSetContainer.appendChild(primerSetBody);
-
-            const hrInfo = document.createElement("DIV");
-            hrInfo.classList.add("primers-set-hr-info");
-            //hrInfo.innerHTML = "<span>HR Info</span>";
-            primerSetBody.appendChild(hrInfo);
-
-            const primersContainer = document.createElement("DIV");
-            primersContainer.classList.add("primers-container"); 
-            primerSetBody.appendChild(primersContainer);
-
-            primersSet.primers.forEach(primer => {
-                const primerContainer = document.createElement("DIV");
-                primerContainer.classList.add("primer-container");
-                primersContainer.appendChild(primerContainer);
-
-                const primerTitle = document.createElement("DIV");
-                primerTitle.classList.add("primer-title");
-                primerTitle.innerText = primer.label;
-                primerContainer.appendChild(primerTitle);
-
-                const primerSequence = document.createElement("DIV");
-                primerSequence.classList.add("primer-sequence-regions");
-                primerContainer.appendChild(primerSequence);
-
-                const copyPrimerButton = document.createElement("span");
-                copyPrimerButton.classList.add("primer-copy-button", "toolbar-button"),
-                copyPrimerButton.title = "Copy sequence to clipboard";
-                copyPrimerButton.appendChild(document.createElement("span"));
-                primerSequence.appendChild(copyPrimerButton);
-
-                copyPrimerButton.onclick = function() {
-
-                    const primerRegionSpans = primerSequence.querySelectorAll("span");
-                    const combinedSequence = Array.from(primerRegionSpans).map(span => span.textContent).join("");
-                    
-                    Utilities.copyToClipboard(combinedSequence);
-                };
-
-                let totalPrimerLength = 0;
-                primer.regions.forEach(region => {
-                    if (region.sequence.length === 0) {return};
-
-                    const regionSequence = document.createElement("span");
-                    regionSequence.classList.add("primer-sequence");
-                    regionSequence.classList.add(this.primerRegionsClasses[region.type]);
-                    regionSequence.setAttribute("type", region.type);
-                    regionSequence.setAttribute("start", region.start);
-                    regionSequence.setAttribute("direction", region.direction);
-                    regionSequence.innerText = region.sequence;
-                    primerSequence.appendChild(regionSequence);
-
-                    regionSequence.addEventListener("mouseenter", (event) => {
-                        this.highlightPrimerBindingSite(event.target);
-                    });
-
-                    regionSequence.addEventListener("mouseleave", () => {
-                        this.unhighlightPrimerBindingSites();
-                    });
-
-                    totalPrimerLength += region.sequence.length;
-                });
-
-                const primerInfo = document.createElement("DIV");
-                primerInfo.classList.add("primer-info")
-                const TBRSequence = primer.regions[primer.regions.length - 1].sequence;
-                primerInfo.innerHTML = `
-                <div>
-                    <span>TBR</span> ${TBRSequence.length} nt (${Nucleotides.getMeltingTemperature(TBRSequence).toFixed(2)} °C)
-                </div>
-                <div>
-                    <span>Total</span> ${totalPrimerLength} nt
-                </div>
-                `;
-                primerContainer.appendChild(primerInfo);
-                
-
-                
-            });
+            primersTable.appendChild(this._createPrimerSetContainer(primerSet))
         };
 
         return primersTable;
+    };
+
+
+    _createPrimerSetContainer(primerSet) {
+        const primerSetContainer = document.createElement("DIV");
+        primerSetContainer.classList.add("primers-set");
+
+        /**
+         * Header
+         */
+        const primerSetHeader = document.createElement("DIV");
+        primerSetHeader.classList.add("primers-set-header");
+        primerSetContainer.appendChild(primerSetHeader);
+
+        const primerSetHeaderTitle = document.createElement("span");
+        primerSetHeaderTitle.classList.add("primers-set-header-title");
+        primerSetHeaderTitle.innerText = primerSet.title;
+        primerSetHeader.appendChild(primerSetHeaderTitle);
+
+        const primerSetHeaderRenameButton = document.createElement("div");
+        primerSetHeaderRenameButton.classList.add(
+            "toolbar-button",
+            "footer-button",
+            "primers-set-header-rename-button",
+        );
+        primerSetHeaderRenameButton.title = "Rename primers";
+        primerSetHeaderRenameButton.appendChild(document.createElement("span"))
+        primerSetHeader.appendChild(primerSetHeaderRenameButton);
+
+        primerSetHeaderRenameButton.onclick = function() {
+            Modals.createRenamePrimersModal(i);
+        };
+            
+
+        /**
+         * Body
+         */
+        const primerSetBody = document.createElement("DIV");
+        primerSetBody.classList.add("primers-set-body");
+        primerSetContainer.appendChild(primerSetBody);
+
+        /** Primer set HR info */
+        const hrInfo = document.createElement("DIV");
+        hrInfo.classList.add("primers-set-hr-info");
+        //hrInfo.innerHTML = "<span>HR Info</span>";
+        primerSetBody.appendChild(hrInfo);
+
+        const primersContainer = document.createElement("DIV");
+        primersContainer.classList.add("primers-container"); 
+        primerSetBody.appendChild(primersContainer);
+
+        primerSet.primers.forEach(primer => {
+            primersContainer.appendChild(this._createPrimerContainer(primer));
+        });
+
+        return primerSetContainer;
+    };
+
+
+    _createPrimerContainer(primer) {
+        const primerContainer = document.createElement("DIV");
+        primerContainer.classList.add("primer-container");
+
+        const primerTitle = document.createElement("DIV");
+        primerTitle.classList.add("primer-title");
+        primerTitle.innerText = primer.label;
+        primerContainer.appendChild(primerTitle);
+
+        const primerSequence = document.createElement("DIV");
+        primerSequence.classList.add("primer-sequence-regions");
+        primerContainer.appendChild(primerSequence);
+
+        /** Copy primer button */
+        const copyPrimerButton = document.createElement("span");
+        copyPrimerButton.classList.add("primer-copy-button", "toolbar-button"),
+        copyPrimerButton.title = "Copy sequence to clipboard";
+        copyPrimerButton.appendChild(document.createElement("span"));
+        primerSequence.appendChild(copyPrimerButton);
+
+        copyPrimerButton.onclick = function() {
+            const primerRegionSpans = primerSequence.querySelectorAll("span");
+            const combinedSequence = Array.from(primerRegionSpans).map(span => span.textContent).join("");
+            Utilities.copyToClipboard(combinedSequence);
+        };
+
+
+        /** Primer sequence */
+        let totalPrimerLength = 0;
+        primer.regions.forEach(region => {
+            if (region.sequence.length === 0) {return};
+
+            const regionSequence = document.createElement("span");
+            regionSequence.classList.add("primer-sequence");
+            regionSequence.classList.add(this.primerRegionsClasses[region.type]);
+            regionSequence.setAttribute("type", region.type);
+            regionSequence.setAttribute("start", region.start);
+            regionSequence.setAttribute("direction", region.direction);
+            regionSequence.innerText = region.sequence;
+            primerSequence.appendChild(regionSequence);
+
+            regionSequence.addEventListener("mouseenter", (event) => {
+                this.highlightPrimerBindingSite(event.target);
+            });
+
+            regionSequence.addEventListener("mouseleave", () => {
+                this.unhighlightPrimerBindingSites();
+            });
+
+            totalPrimerLength += region.sequence.length;
+        });
+
+        /** Primer info */
+        const primerInfo = document.createElement("DIV");
+        primerInfo.classList.add("primer-info")
+        const TBRSequence = primer.regions[primer.regions.length - 1].sequence;
+        primerInfo.innerHTML = `
+        <div>
+            <span>TBR</span> ${TBRSequence.length} nt (${Nucleotides.getMeltingTemperature(TBRSequence).toFixed(2)} °C)
+        </div>
+        <div>
+            <span>Total</span> ${totalPrimerLength} nt
+        </div>
+        `;
+        primerContainer.appendChild(primerInfo);
+
+        return primerContainer;
     };
 
 
