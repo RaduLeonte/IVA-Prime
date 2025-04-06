@@ -302,13 +302,17 @@ const Primers = new class {
             hrLength: hrLength,
             hrTm: Nucleotides.getMeltingTemperature(homoFwd1 + seqToInsert + homoRev1, "oligoCalc"),
             symmetry: "symmetric",
+            currentPlasmidSequence: 
+                Session.activePlasmid().sequence.slice(0, operationRange[0] - 1)
+                + seqToInsert
+                + Session.activePlasmid().sequence.slice(operationRange[1]),
             primers: [
                 {
                     name: "Forward primer",
                     label: "Forward primer",
                     regions: [
                         {sequence: homoFwd1, type: "HR", start: operationRange[0] - 1, direction: "fwd"},
-                        {sequence: seqToInsert, type: "INS", start: operationRange[0] + seqToInsert.length - 1, direction: "fwd"},
+                        {sequence: seqToInsert, type: "INS", start: null, direction: "fwd"},
                         {sequence: tempFwd, type: "TBR", start: operationRange[0] + seqToInsert.length, direction: "fwd"}
                     ],
                 },
@@ -316,9 +320,9 @@ const Primers = new class {
                     name: "Reverse primer",
                     label: "Reverse primer",
                     regions: [
-                        {sequence: homoRev1, type:"HR", start: operationRange[0] + seqToInsertRevComp.length, direction: "rev"},
-                        {sequence: seqToInsertRevComp, type: "INS", start: operationRange[0], direction: "rev"},
-                        {sequence: tempRev, type: "TBR", start: operationRange[0], direction: "rev"}
+                        {sequence: homoRev1, type:"HR", start: operationRange[0] + seqToInsert.length, direction: "rev"},
+                        {sequence: seqToInsertRevComp, type: "INS", start: null, direction: "rev"},
+                        {sequence: tempRev, type: "TBR", start: operationRange[0] - 1, direction: "rev"}
                     ],
                 },
             ],
@@ -367,13 +371,17 @@ const Primers = new class {
             hrLength: homoFwd.length,
             hrTm: Nucleotides.getMeltingTemperature(homoFwd, "oligoCalc"),
             symmetry: "asymmetric",
+            currentPlasmidSequence: 
+                Session.activePlasmid().sequence.slice(0, operationRange[0] - 1)
+                + seqToInsert
+                + Session.activePlasmid().sequence.slice(operationRange[1]),
             primers: [
                 {
                     name: "Forward primer",
                     label: "Forward primer",
                     regions: [
                         {sequence: homoFwd, type: "HR", start: operationRange[0] - 1, direction: "fwd"},
-                        {sequence: seqToInsert, type: "INS", start: operationRange[0] - 1 + seqToInsert.length, direction: "fwd"},
+                        {sequence: seqToInsert, type: "INS", start: null, direction: "fwd"},
                         {sequence: tempFwd, type: "TBR", start: operationRange[0] + seqToInsert.length, direction: "fwd"}
                     ],
                 },
@@ -382,8 +390,8 @@ const Primers = new class {
                     label: "Reverse primer",
                     regions: [
                         {sequence: "", type: "HR", start: operationRange[0], direction: "rev"},
-                        {sequence: "", type: "INS", start: operationRange[0], direction: "rev"},
-                        {sequence: tempRev, type: "TBR", start: operationRange[0], direction: "rev"},
+                        {sequence: "", type: "INS", start: null, direction: "rev"},
+                        {sequence: tempRev, type: "TBR", start: operationRange[0] - 1, direction: "rev"},
                     ],
                 },
             ],
@@ -453,6 +461,10 @@ const Primers = new class {
             hrLength: overlappingSeq.length,
             hrTm: Nucleotides.getMeltingTemperature(overlappingSeq, "oligoCalc"),
             symmetry: "symmetric",
+            currentPlasmidSequence: 
+                Session.activePlasmid().sequence.slice(0, operationRange[0] - 1)
+                + seqToInsert
+                + Session.activePlasmid().sequence.slice(operationRange[1]),
             primers: [
                 {
                     name: "Forward primer",
@@ -469,7 +481,7 @@ const Primers = new class {
                     regions: [
                         {sequence: "", type: "HR", start: operationRange[0], direction: "rev"},
                         {sequence: homoRev, type: "INS", start: operationRange[0], direction: "rev"},
-                        {sequence: tempRev, type: "TBR", start: operationRange[0], direction: "rev"},
+                        {sequence: tempRev, type: "TBR", start: operationRange[0] - 1, direction: "rev"},
                     ],
                 },
             ],
@@ -532,6 +544,10 @@ const Primers = new class {
             hrLength: overlappingSeq.length,
             hrTm: Nucleotides.getMeltingTemperature(overlappingSeq, "oligoCalc"),
             symmetry: "asymmetric",
+            currentPlasmidSequence: 
+                Session.activePlasmid().sequence.slice(0, operationRange[0] - 1)
+                + seqToInsert
+                + Session.activePlasmid().sequence.slice(operationRange[1]),
             primers: [
                 {
                     name: "Forward primer",
@@ -548,7 +564,7 @@ const Primers = new class {
                     regions: [
                         {sequence: "", type: "HR", start: operationRange[0], direction: "rev"},
                         {sequence: homoRev, type: "INS", start: operationRange[0], direction: "rev"},
-                        {sequence: tempRev, type: "TBR", start: operationRange[0], direction: "rev"},
+                        {sequence: tempRev, type: "TBR", start: operationRange[0] - 1, direction: "rev"},
                     ],
                 },
             ],
@@ -638,6 +654,10 @@ const Primers = new class {
             hrLength: [sets[0].hrLength, sets[1].hrLength],
             hrTm: [sets[0].hrTm, sets[1].hrTm],
             symmetry: sets[0].symmetry,
+            currentPlasmidSequence: 
+                Session.activePlasmid().sequence.slice(0, operationRange[0] - 1)
+                + insertionSequenceFull
+                + Session.activePlasmid().sequence.slice(operationRange[1]),
             primers: [
                 {
                     name: "Forward primer",
@@ -682,7 +702,7 @@ const Primers = new class {
                         {
                             sequence: sets[1].primers[0].regions[2].sequence,
                             type: "subTBR",
-                            start: operationRange[0] + insertionSequenceFull.length - seq3Prime.length,
+                            start: operationRange[0] + insertionSequenceFull.length - seq3Prime.length - 1,
                             direction: "rev",
                         },
                     ],
@@ -730,7 +750,7 @@ const Primers = new class {
                         {
                             sequence: sets[0].primers[1].regions[2].sequence,
                             type: "subTBR",
-                            start: operationRange[0],
+                            start: operationRange[0] - 1,
                             direction: "rev",
                         },
                     ],
@@ -803,6 +823,10 @@ const Primers = new class {
             hrLength: [sets[0].hrLength, sets[1].hrLength],
             hrTm: [sets[0].hrTm, sets[1].hrTm],
             symmetry: sets[0].symmetry,
+            currentPlasmidSequence: 
+                Session.activePlasmid().sequence.slice(0, operationRange[0] - 1)
+                + insertionSequenceFull
+                + Session.activePlasmid().sequence.slice(operationRange[1]),
             primers: [
                 {
                     name: "Vector forward primer",

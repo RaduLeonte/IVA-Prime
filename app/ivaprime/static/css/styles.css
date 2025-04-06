@@ -668,6 +668,50 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
   background-image: url('/static/assets/icons/copy.svg');
 }
 
+.primer-increment-buttons-wrapper {
+  display: flex;
+  align-content: stretch;
+  justify-content: flex-start;
+  gap: 5px;
+
+  height: 100%;
+}
+
+.primer-increment-buttons-container {
+  display: flex;
+  align-content: stretch;
+  justify-content: flex-start;
+  gap: 2px;
+}
+
+.primer-increment-buttons-divider {
+  width: 2px;
+  background-color: var(--border-color);
+}
+
+.primer-increment-label {
+  align-content: center;
+
+  font-weight: bold;
+}
+
+.primer-increment-button {
+  display: inline-flex !important;
+
+  height: 20px;
+  width: 20px !important;
+  padding: 4px !important;
+  vertical-align: middle;
+}
+
+.primer-increment-plus span {
+  background-image: url('/static/assets/icons/plus.svg');
+}
+
+.primer-increment-minus span {
+  background-image: url('/static/assets/icons/minus.svg');
+}
+
 
 .primer-info {
   display: flex;

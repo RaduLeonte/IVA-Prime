@@ -977,4 +977,48 @@ class Plasmid {
         Sidebar.updatePrimersTable();
     };
     // #endregion IVA Operations
+
+
+    incrementPrimerSequence(primerSetIndex, primerIndex, direction, increment) {
+        console.log("Plasmid.incrementPrimerSequence ->", primerSetIndex, primerIndex, direction, increment);
+
+        const targetPrimerSet = this.primers[primerSetIndex];
+        console.log(JSON.stringify(targetPrimerSet, (key, value) => {
+            return key === "primers" | key === "currentPlasmidSequence" ? undefined : value;
+        }, 2));
+
+        const plasmidSequence = targetPrimerSet.currentPlasmidSequence;
+
+        const targetPrimer = targetPrimerSet.primers[primerIndex];
+        console.log(JSON.stringify(targetPrimer, null, 2));
+
+
+        const targetPrimerRegion = (direction === "5'")
+            ? targetPrimer.regions.find(r => r.sequence !== "")
+            : targetPrimer.regions[targetPrimer.regions.length - 1];
+        console.log(JSON.stringify(targetPrimerRegion, null, 2));
+
+        const regionSequence = targetPrimerRegion.sequence;
+        const targetStrand = (targetPrimerRegion.direction === "fwd") ? "top": "bottom";
+
+        
+        let startPos = targetPrimerRegion.start;
+        console.log(startPos);
+
+        const directionMap = {
+            "5'": { top: -1, bottom: 1 },
+            "3'": { top: 1, bottom: -1 },
+        };
+        const offset = directionMap[direction]?.[targetStrand] ?? 0;
+        startPos += offset * regionSequence.length;
+
+
+        let newBase = Utilities.repeatingSlice(targetSequence, startPos - 1, startPos);
+        if (targetStrand === "bottom") newBase = Nucleotides.complementary(newBase);
+        console.log(
+            startPos,
+            Utilities.repeatingSlice(targetSequence, startPos - 1, startPos + 4),
+            newBase
+        );
+    };
 };
