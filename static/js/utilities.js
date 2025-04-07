@@ -347,6 +347,23 @@ const Utilities = new class {
         input.currentValidator = validate;
         input.addEventListener("input", validate);
     };
+
+
+    findCSSRuleByClassName(className) {
+        const targetSelector = `.${className}`;
+
+        for (let sheet of document.styleSheets) {
+            // Skip cross-site style sheets
+            if (sheet.href && !sheet.href.startsWith(window.location.origin)) continue;
+            
+            const rules = sheet.cssRules;
+            for (let rule of rules) {
+                if (rule.selectorText === targetSelector) return rule;
+            };
+        };
+        
+        return null;
+    };
 };
 
 

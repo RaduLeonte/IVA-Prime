@@ -1770,9 +1770,9 @@ html[data-theme="dark"] .boolean-switch-slider:before {
  * MARK: Grid
  */
 /* #region Grid_view */
-.viewer-grid-view {
+/* .viewer-grid-view {
   overflow-y: scroll;
-}
+} */
 
 .grid-view-segments-container {
   width: 100%;
@@ -1780,6 +1780,65 @@ html[data-theme="dark"] .boolean-switch-slider:before {
 
 .grid-view-segments-container svg {
   width: 100%;
+}
+
+.grid-view {
+  overflow-y: scroll;
+  overflow-x: hidden;
+
+  width: 100%;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+.grid-view-minimap {
+  position: sticky;
+  top: 0;
+  right: 0;
+
+  min-width: 40px;
+  width: 40px;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 5px;
+
+  /* background-color: var(--bg-color2); */
+  opacity: 0.5;
+
+  overflow: hidden;
+
+  transition: opacity 0.1s ease-out;
+}
+
+.grid-view-minimap:hover {
+  opacity: 1;
+}
+
+.grid-view-minimap div {
+  width: 100%;
+  height: 100%;
+}
+
+.grid-view-minimap div svg {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.minimap-rect {
+  stroke: var(--border-color);
+  stroke-width: 1;
+}
+
+.minimap-bar {
+  fill: var(--text-color);
+  opacity: 0.2;
+}
+
+.minimap-bar:hover {
+  cursor: grab;
 }
 
 .svg-wrapper-grid {
@@ -1935,6 +1994,7 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   }
 }
 /* #endregion Bases */
+
 
 /* #endregion Grid_view */
 

@@ -612,7 +612,9 @@ class Plasmid {
         const featureLabel = this.features[featureID].label;
         delete this.features[featureID];
 
-        if (Session.activePlasmidIndex == this.index) {
+        this.sortFeatures();
+
+        if (Session.activePlasmidIndex === this.index) {
             PlasmidViewer.deselectBases();
             PlasmidViewer.redraw();
             Sidebar.update();
