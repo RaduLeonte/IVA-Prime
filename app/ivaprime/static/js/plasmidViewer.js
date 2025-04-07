@@ -627,9 +627,17 @@ const PlasmidViewer = new class {
 
         this._assignFeaturesToSegments(features, segments, basesPerLine);
 
-        const svgWrapper = document.createElement("div");
-        svgWrapper.classList.add("svg-wrapper-grid");
-        this._addGridEventListeners(svgWrapper);
+        const gridView = document.createElement("div");
+        gridView.id = "grid-view";
+        gridView.classList.add("grid-view");
+
+        const gridViewSequenceWrapper = document.createElement("div");
+        gridViewSequenceWrapper.classList.add("svg-wrapper-grid");
+        this._addGridEventListeners(gridViewSequenceWrapper);
+        gridView.appendChild(gridViewSequenceWrapper);
+
+        const gridViewMinimap = this._createGridViewMinimap(gridView, sequence.length, features);
+        gridView.appendChild(gridViewMinimap);
 
 
         const templates = this._createBaseTemplates(singleStrandHeight, baseTextOffset, basesWidth);
@@ -639,7 +647,7 @@ const PlasmidViewer = new class {
         const nrSegments = segments.length;
         for (let i = 0; i < nrSegments; i++) {
             const segment = segments[i];
-            svgWrapper.appendChild(
+            gridViewSequenceWrapper.appendChild(
                 this._drawSegment(
                     segment, i,
                     gridViewSettings,
@@ -650,15 +658,178 @@ const PlasmidViewer = new class {
             );
         };
 
-        return svgWrapper;
+        return gridView;
     };
+
+
+    _createGridViewMinimap(gridView, sequenceLength, features) {
+        const minimap = document.createElement("div");
+        minimap.classList.add("grid-view-minimap");
+        
+        const minimapStyle = Utilities.findCSSRuleByClassName("grid-view-minimap").style;
+        const minimapWidth = parseInt(minimapStyle.minWidth.replace("px", ""));
+        const minimapPadding = parseInt(minimapStyle.padding.replace("px", ""));
+
+        const minimapHeight = document.getElementById("viewer").clientHeight;
+
+        const canvasWrapper = document.createElement("DIV");
+        minimap.appendChild(canvasWrapper);
+
+        const canvasWidth = minimapWidth - minimapPadding*2;
+        const canvasHeight = minimapHeight - minimapPadding*2;
+
+        const canvas = this._createShapeElement("svg");
+        canvas.setAttribute("id", "minimap-svg-canvas");
+        canvas.setAttribute("width", canvasWidth);
+        canvas.setAttribute("height", canvasHeight);
+        canvasWrapper.append(canvas);
+
+        const seqSpanToMinimapPx = (s) => (s / sequenceLength)*canvasHeight;
+
+
+        const featureRectsGroup = this._createShapeElement("g");
+        canvas.append(featureRectsGroup);
+
+        const featuresArray = Object.entries(features);
+        featuresArray.sort((a, b) => a[1].level - b[1].level);
+        const featuresSorted = Object.fromEntries(featuresArray);
+
+        for (const [featureID, feature] of Object.entries(featuresSorted)) {
+            //if (feature.level !== 0) continue;
+
+            featureRectsGroup.appendChild(
+                this._drawMinimapRect(
+                    feature.span.map((v) => seqSpanToMinimapPx(v)),
+                    canvasWidth*0.8,
+                    canvasWidth,
+                    feature.color,
+                    "minimap-rect",
+                )
+            );
+        };
+
+
+        const minimapBarGroup = this._createShapeElement("g");
+        canvas.append(minimapBarGroup);
+
+
+        const minimapBar = this._drawMinimapRect(
+            [0, 500],
+            canvasWidth,
+            canvasWidth,
+            null,
+            "minimap-bar",
+        );
+        minimapBar.setAttribute("id", "minimap-bar");
+        minimapBarGroup.appendChild(minimapBar);
+
+        gridView.addEventListener("scroll", PlasmidViewer.updateMinimapScrollBar);
+        this._addMinimapEventListeners(canvas, minimapBar);
+
+        return minimap;
+    };
+
+
+    _addMinimapEventListeners(minimapCanvas, minimapBar) {
+        function scrollGridViewContainer(event) {
+            console.log("PlasmidViewer._addMinimapEventListeners.scrollGridViewContainer")
+
+            const gridView = document.getElementById("grid-view");
+        
+            const scrollHeight = gridView.scrollHeight;
+            const clientHeight = gridView.clientHeight;
+
+            const minimapHeight = parseInt(minimapCanvas.getAttribute("height"));
+            const minimapBarHeight = (clientHeight / scrollHeight) * minimapHeight;
+            const maxY = minimapHeight - minimapBarHeight;
+
+            const rect = minimapCanvas.getBoundingClientRect();
+            const clickY = (event.clientY - rect.top) - minimapBarHeight/2;
+
+            gridView.scrollTop = (clickY / maxY) * (gridView.scrollHeight - gridView.clientHeight);
+        };
+
+
+        minimapCanvas.addEventListener("click", function(event) {
+            scrollGridViewContainer(event);
+        });
+
+        let isDragging = false;
+        minimapBar.addEventListener("mousedown", function (event) {
+            isDragging = true;
+
+            minimapBar.style.cursor = "grabbing";
+            document.addEventListener("mousemove", scrollGridViewContainer);
+        });
+
+        document.addEventListener("mouseup", function() {
+            if (!isDragging) return;
+
+            isDragging = false;
+            minimapBar.style.cursor = "grab";
+
+            document.removeEventListener("mousemove", scrollGridViewContainer)
+        });
+    };
+
+
+    updateMinimapScrollBar() {
+        console.log("PlasmidViewer.updateMinimapScrollBar -> ")
+        const gridView = document.getElementById("grid-view");
+        const minimapCanvas = document.getElementById("minimap-svg-canvas");
+        const minimapBar = document.getElementById("minimap-bar");
+        
+        const scrollHeight = gridView.scrollHeight; // Total scrollable height of the element
+        const clientHeight = gridView.clientHeight; // The visible height of the element
+
+        // Set minimap bar height
+        const minimapHeight = parseInt(minimapCanvas.getAttribute("height"));
+        const minimapBarHeight = (clientHeight / scrollHeight) * minimapHeight;
+        minimapBar.setAttribute("height", minimapBarHeight);
+
+        const maxY = minimapHeight - minimapBarHeight;
+
+        const scrollTop = gridView.scrollTop; // The distance the element has been scrolled
+
+        const newY = (scrollTop / (scrollHeight - clientHeight))*maxY;
+        PlasmidViewer._setMinimapBarY(PlasmidViewer._clampMinimapBarY(newY, [0, maxY]));
+        return;
+    };
+
+    _clampMinimapBarY(newY, clamp) {
+        return Math.min(Math.max(clamp[0], newY), clamp[1]);
+    }
+
+
+    _setMinimapBarY(newY) {
+        const minimapBar = document.getElementById("minimap-bar");
+        minimapBar.setAttribute("y", newY);
+    };
+
+
+    _drawMinimapRect(span, girth, canvasWidth, fill, className) {
+        const rect = this._createShapeElement("rect");
+        rect.setAttribute("class", className);
+
+        rect.setAttribute("x", (canvasWidth - girth)/2);
+        rect.setAttribute("y", span[0]);
+        rect.setAttribute("width", girth);
+        rect.setAttribute("height", span[1] - span[0]);
+        if (fill) rect.setAttribute("fill", fill);
+
+        return rect;
+    };
+
 
     _computeGridLayout(gridMargin) {
         const viewerContainer = document.getElementById("viewer");
         const svgWrapperPadding = 40;
         const scrollBarWidth = Utilities.getScrollbarWidth();
+
+        const minimapStyle = Utilities.findCSSRuleByClassName("grid-view-minimap").style;
+        const minimapWidth = parseInt(minimapStyle.minWidth.replace("px", ""));
         
-        const maxWidth = viewerContainer.clientWidth - svgWrapperPadding - scrollBarWidth - gridMargin * 2;
+        const maxWidth = viewerContainer.clientWidth - minimapWidth - svgWrapperPadding - scrollBarWidth - gridMargin * 2;
         const baseWidth = UserPreferences.get("baseWidth");
         const basesPerLine = Math.floor(maxWidth / baseWidth);
         const basesWidth = maxWidth / basesPerLine;
@@ -2041,6 +2212,7 @@ const PlasmidViewer = new class {
 
         this.highlightSubcloningTarget();
         this.addDeletionMarkings();
+        this.updateMinimapScrollBar();
     };
     
     // #endregion Render_functions
