@@ -23,7 +23,7 @@ const PlasmidViewer = new class {
         // Shortname
         this.svgNameSpace = "http://www.w3.org/2000/svg";
 
-        this.textElementTemplate = this.createShapeElement("text");
+        this.textElementTemplate = this._createShapeElement("text");
 
 
         /**
@@ -60,7 +60,7 @@ const PlasmidViewer = new class {
          * Init measurement svg for annotation text
          */
         document.addEventListener('DOMContentLoaded', function() {
-            PlasmidViewer.initMeasurementSVG();
+            PlasmidViewer._initMeasurementSVG();
         });
     };
 
@@ -94,31 +94,31 @@ const PlasmidViewer = new class {
         svgWrapper.classList.add("svg-wrapper");
         
         // Main SVG
-        const svgCanvas = this.createShapeElement("svg");
+        const svgCanvas = this._createShapeElement("svg");
         svgCanvas.setAttribute("version", "1.2");
         svgCanvas.setAttribute("width", maxSize);
         svgCanvas.setAttribute("height", maxSize);
         svgWrapper.appendChild(svgCanvas);
 
         // Main group container
-        const groupMain = this.createShapeElement("g");
+        const groupMain = this._createShapeElement("g");
         groupMain.setAttribute("transform", `translate(${maxSize/2} ${maxSize/2})`);
         svgCanvas.appendChild(groupMain);
 
         /**
          * Plasmid title and subtitle
          */
-        const groupTitle = this.createShapeElement("g");
+        const groupTitle = this._createShapeElement("g");
         groupTitle.setAttribute("id", "svg-title");
         groupMain.appendChild(groupTitle);
-        groupTitle.appendChild(this.text(
+        groupTitle.appendChild(this._text(
             [0, -10],
             plasmidName,
             null,
             "svg-plasmid-title",
             "middle"
         ));
-        groupTitle.appendChild(this.text(
+        groupTitle.appendChild(this._text(
             [0, 15],
             `${sequence.length} bp`,
             null,
@@ -130,19 +130,19 @@ const PlasmidViewer = new class {
         /**
          * Backbone
          */
-        const groupBackbone = this.createShapeElement("g");
+        const groupBackbone = this._createShapeElement("g");
         groupBackbone.setAttribute("id", "svg-backbone")
         groupMain.appendChild(groupBackbone);
 
         const backBoneCircleRadius = (maxSize/2)-20
         const backBoneCircleStrandsDistance = 4
-        const backboneCircle = this.createShapeElement("circle");
+        const backboneCircle = this._createShapeElement("circle");
         backboneCircle.setAttribute("cx", 0);
         backboneCircle.setAttribute("cy", 0);
         backboneCircle.setAttribute("r", backBoneCircleRadius+backBoneCircleStrandsDistance/2);
         backboneCircle.setAttribute("class", "svg-sequence-axis");
         groupBackbone.appendChild(backboneCircle);
-        const backboneCircle2 = this.createShapeElement("circle");
+        const backboneCircle2 = this._createShapeElement("circle");
         backboneCircle2.setAttribute("cx", 0);
         backboneCircle2.setAttribute("cy", 0);
         backboneCircle2.setAttribute("r", backBoneCircleRadius-backBoneCircleStrandsDistance/2);
@@ -152,7 +152,7 @@ const PlasmidViewer = new class {
         /** 
          * Ticks
          */
-        const groupBackboneTicks = this.createShapeElement("g");
+        const groupBackboneTicks = this._createShapeElement("g");
         groupBackboneTicks.setAttribute("id", "svg-axis-ticks")
         groupBackbone.appendChild(groupBackboneTicks);
         const ticksPos = this.generateTicks(sequence.length);
@@ -163,20 +163,20 @@ const PlasmidViewer = new class {
             const a = (s / sequence.length)*2*Math.PI - Math.PI/2;
             return [r*Math.cos(a), r*Math.sin(a)]
         };
-        groupBackboneTicks.appendChild(this.line(
+        groupBackboneTicks.appendChild(this._line(
             seqToPixel(0, backBoneCircleRadius-tickLength/2),
             seqToPixel(0, backBoneCircleRadius+tickLength/2),
             null,
             "svg-sequence-axis"
         ));
         for (let i in ticksPos) {
-            groupBackboneTicks.appendChild(this.line(
+            groupBackboneTicks.appendChild(this._line(
                 seqToPixel(ticksPos[i], backBoneCircleRadius-tickLength/2),
                 seqToPixel(ticksPos[i], backBoneCircleRadius+tickLength/2),
                 null,
                 "svg-sequence-axis"
             ));
-            const tickLabel = this.text(
+            const tickLabel = this._text(
                 [0, 0],
                 ticksPos[i],
                 null,
@@ -207,7 +207,7 @@ const PlasmidViewer = new class {
             featuresLevels.push(featuresLevelStart + i*featuresLevelOffset)
         };
 
-        const groupFeatures = this.createShapeElement("g");
+        const groupFeatures = this._createShapeElement("g");
         groupFeatures.setAttribute("id", "svg-features");
         groupMain.appendChild(groupFeatures);
 
@@ -217,7 +217,7 @@ const PlasmidViewer = new class {
             const featureSpanLengthInDegrees = (featureLength / sequence.length) * 360;
             const featureLabelLengthInDegrees = featureDict["label"].length * anglePerLetter;
             const drawFeatureLabel = (featureLabelLengthInDegrees <= featureSpanLengthInDegrees) ? true: false;
-            groupFeatures.appendChild(this.circularFeature(
+            groupFeatures.appendChild(this._circularFeature(
                 featureDict["span"],
                 featuresLevels[featureDict["level"]],
                 featureDict["directionality"],
@@ -248,12 +248,12 @@ const PlasmidViewer = new class {
      * @param {*} sequenceLength 
      * @returns 
      */
-    circularFeature(span, levelHeight, directionality, label, color, id, cssClass, seqToPixel, sequenceLength) {
-        const featureGroup = this.createShapeElement("g");
+    _circularFeature(span, levelHeight, directionality, label, color, id, cssClass, seqToPixel, sequenceLength) {
+        const featureGroup = this._createShapeElement("g");
         /**
          * Arrow
          */
-        const featureArrow = this.createShapeElement("path");
+        const featureArrow = this._createShapeElement("path");
 
         const featureArrowWidth = 20; //px
         const featureHeadMinWidth = 20; //px
@@ -327,7 +327,7 @@ const PlasmidViewer = new class {
         /**
          * Arrow
          */
-        const featureLabel = this.text(
+        const featureLabel = this._text(
             [0, 0],
             label,
             null,
@@ -377,29 +377,29 @@ const PlasmidViewer = new class {
         svgWrapper.classList.add("svg-wrapper");
 
         // Main SVG
-        const svgCanvas = this.createShapeElement("svg");
+        const svgCanvas = this._createShapeElement("svg");
         svgCanvas.setAttribute("version", "1.2");
         svgWrapper.appendChild(svgCanvas);
 
         // Main group container
-        const groupMain = this.createShapeElement("g");
+        const groupMain = this._createShapeElement("g");
         groupMain.setAttribute("transform", "translate(0 70)");
         svgCanvas.appendChild(groupMain);
 
         /**
          * Plasmid title and subtitle
          */
-        const groupTitle = this.createShapeElement("g");
+        const groupTitle = this._createShapeElement("g");
         groupTitle.setAttribute("id", "svg-title");
         groupMain.appendChild(groupTitle)
-        groupTitle.appendChild(this.text(
+        groupTitle.appendChild(this._text(
             [maxWidth/2, -50],
             plasmidName,
             null,
             "svg-plasmid-title",
             "middle"
         ));
-        groupTitle.appendChild(this.text(
+        groupTitle.appendChild(this._text(
             [maxWidth/2, -25],
             `${sequence.length} bp`,
             null,
@@ -410,7 +410,7 @@ const PlasmidViewer = new class {
         /**
          * Sequence axis
         */
-        const groupAxis = this.createShapeElement("g");
+        const groupAxis = this._createShapeElement("g");
         groupAxis.setAttribute("id", "svg-axis")
         groupMain.appendChild(groupAxis);
         const dotsOffset = 6;
@@ -420,13 +420,13 @@ const PlasmidViewer = new class {
         let seqToPixel = (s) => sequenceAxisMargin + (s / sequence.length)*(maxWidth - 2*sequenceAxisMargin);
         
         // Main axis
-        groupAxis.appendChild(this.line(
+        groupAxis.appendChild(this._line(
             [seqToPixel(0),-2],
             [seqToPixel(sequence.length), -2],
             null,
             "svg-sequence-axis"
         ));
-        groupAxis.appendChild(this.line(
+        groupAxis.appendChild(this._line(
             [seqToPixel(0), 2],
             [seqToPixel(sequence.length), 2],
             null,
@@ -436,13 +436,13 @@ const PlasmidViewer = new class {
         // Dots on each side of the axis for circular plasmids
         if (topology === "circular"){
             for (let i = 0; i < 3; i++){
-                groupAxis.appendChild(this.line(
+                groupAxis.appendChild(this._line(
                     [i*dotsOffset, 0],
                     [i*dotsOffset + dotsWidth, 0],
                     null,
                     "svg-sequence-axis"
                 ));
-                groupAxis.appendChild(this.line(
+                groupAxis.appendChild(this._line(
                     [maxWidth - i*dotsOffset, 0],
                     [maxWidth - i*dotsOffset - dotsWidth, 0],
                     null,
@@ -452,7 +452,7 @@ const PlasmidViewer = new class {
         };
 
         // Ticks
-        const groupAxisTicks = this.createShapeElement("g");
+        const groupAxisTicks = this._createShapeElement("g");
         groupAxisTicks.setAttribute("id", "svg-axis-ticks")
         groupAxis.appendChild(groupAxisTicks);
         const ticksPos = this.generateTicks(sequence.length);
@@ -460,13 +460,13 @@ const PlasmidViewer = new class {
         const tickLength = 15; //px
         const tickLabelPos = 30;
         for (let i in ticksSeqPos) {
-            groupAxisTicks.appendChild(this.line(
+            groupAxisTicks.appendChild(this._line(
                 [ticksSeqPos[i], -tickLength/2],
                 [ticksSeqPos[i], tickLength/2],
                 null,
                 "svg-sequence-axis"
             ));
-            groupAxisTicks.appendChild(this.text(
+            groupAxisTicks.appendChild(this._text(
                 [ticksSeqPos[i], tickLabelPos],
                 ticksPos[i],
                 null,
@@ -486,7 +486,7 @@ const PlasmidViewer = new class {
             featuresLevels.push(featuresLevelStart + i*featuresLevelOffset)
         };
 
-        const groupFeatures = this.createShapeElement("g");
+        const groupFeatures = this._createShapeElement("g");
         groupFeatures.setAttribute("id", "svg-features");
         groupMain.appendChild(groupFeatures);
 
@@ -496,7 +496,7 @@ const PlasmidViewer = new class {
             const featureSpanLengthInPercent = (featureLength / sequence.length) * 100;
             const featureLabelLengthInPercent = featureDict["label"].length * percentagePerLetter;
             const drawFeatureLabel = (featureLabelLengthInPercent <= featureSpanLengthInPercent) ? true: false;
-            groupFeatures.appendChild(this.linearFeature(
+            groupFeatures.appendChild(this._linearFeature(
                 [seqToPixel(featureDict["span"][0]), seqToPixel(featureDict["span"][1])],
                 featuresLevels[featureDict["level"]],
                 featureDict["directionality"],
@@ -520,13 +520,13 @@ const PlasmidViewer = new class {
      * @param {*} cssClass 
      * @returns 
      */
-    linearFeature(span, levelHeight, directionality, label, color, id, cssClass) {
-        const featureGroup = this.createShapeElement("g");
+    _linearFeature(span, levelHeight, directionality, label, color, id, cssClass) {
+        const featureGroup = this._createShapeElement("g");
         
         /**
          * Arrow
          */
-        const featureArrow = this.createShapeElement("polygon");
+        const featureArrow = this._createShapeElement("polygon");
 
         const featureArrowWidth = 20; //px
         const featureHeadMinWidth = 10; //px
@@ -574,7 +574,7 @@ const PlasmidViewer = new class {
         /**
          * Arrow
          */
-        featureGroup.appendChild(this.text(
+        featureGroup.appendChild(this._text(
             [span[0] + (span[1] - span[0])/2, featureHeight+featureArrowWidth*0.8],
             label,
             null,
@@ -618,29 +618,29 @@ const PlasmidViewer = new class {
         const { gridMargin, singleStrandHeight, baseTextOffset } = gridViewSettings;
         
 
-        const { maxWidth, basesPerLine, basesWidth, basesPositions } = this.computeGridLayout(gridMargin);
+        const { maxWidth, basesPerLine, basesWidth, basesPositions } = this._computeGridLayout(gridMargin);
         this.basesPerLine = basesPerLine;
 
 
-        const segments = this.prepareGridSegments(sequence, complementarySequence, basesPerLine, topology);
+        const segments = this._prepareGridSegments(sequence, complementarySequence, basesPerLine, topology);
 
 
-        this.assignFeaturesToSegments(features, segments, basesPerLine);
+        this._assignFeaturesToSegments(features, segments, basesPerLine);
 
         const svgWrapper = document.createElement("div");
         svgWrapper.classList.add("svg-wrapper-grid");
-        this.addGridEventListeners(svgWrapper);
+        this._addGridEventListeners(svgWrapper);
 
 
-        const templates = this.createBaseTemplates(singleStrandHeight, baseTextOffset, basesWidth);
-        templates.svgCanvasTemplate = this.createSVGTemplate(maxWidth, gridMargin);
+        const templates = this._createBaseTemplates(singleStrandHeight, baseTextOffset, basesWidth);
+        templates.svgCanvasTemplate = this._createSVGTemplate(maxWidth, gridMargin);
     
 
         const nrSegments = segments.length;
         for (let i = 0; i < nrSegments; i++) {
             const segment = segments[i];
             svgWrapper.appendChild(
-                this.drawSegment(
+                this._drawSegment(
                     segment, i,
                     gridViewSettings,
                     { maxWidth, basesPerLine, basesWidth, basesPositions },
@@ -653,7 +653,7 @@ const PlasmidViewer = new class {
         return svgWrapper;
     };
 
-    computeGridLayout(gridMargin) {
+    _computeGridLayout(gridMargin) {
         const viewerContainer = document.getElementById("viewer");
         const svgWrapperPadding = 40;
         const scrollBarWidth = Utilities.getScrollbarWidth();
@@ -669,7 +669,7 @@ const PlasmidViewer = new class {
     };
 
 
-    prepareGridSegments(sequence, complementarySequence, basesPerLine, topology) {
+    _prepareGridSegments(sequence, complementarySequence, basesPerLine, topology) {
         return Array.from({ length: Math.ceil(sequence.length / basesPerLine) }, (_, i) => {
             const sequenceStartIndex = i * basesPerLine;
             const sequenceEndIndex = sequenceStartIndex + basesPerLine;
@@ -689,7 +689,7 @@ const PlasmidViewer = new class {
     };
 
 
-    assignFeaturesToSegments(features, segments, basesPerLine) {
+    _assignFeaturesToSegments(features, segments, basesPerLine) {
         Object.entries(features).forEach(([featureID, featureDict]) => {
             const { span, directionality } = featureDict;
             const [featureSpanStart, featureSpanEnd] = span;
@@ -736,8 +736,8 @@ const PlasmidViewer = new class {
     };
 
     
-    createBaseTemplates(singleStrandHeight, baseTextOffset, basesWidth) {
-        const baseBoxTemplateFwd = this.createShapeElement("rect");
+    _createBaseTemplates(singleStrandHeight, baseTextOffset, basesWidth) {
+        const baseBoxTemplateFwd = this._createShapeElement("rect");
         baseBoxTemplateFwd.setAttribute("y", 0);
         baseBoxTemplateFwd.setAttribute("height", singleStrandHeight);
         baseBoxTemplateFwd.setAttribute("width", basesWidth);
@@ -746,7 +746,7 @@ const PlasmidViewer = new class {
         const baseBoxTemplateRev = baseBoxTemplateFwd.cloneNode();
         baseBoxTemplateRev.setAttribute("y", singleStrandHeight);
 
-        const baseTextTemplateFwd = this.createShapeElement("text");
+        const baseTextTemplateFwd = this._createShapeElement("text");
         baseTextTemplateFwd.setAttribute("dy", 0);      
         baseTextTemplateFwd.setAttribute("text-anchor", "middle");
         baseTextTemplateFwd.setAttribute("y", singleStrandHeight - baseTextOffset);
@@ -764,44 +764,44 @@ const PlasmidViewer = new class {
     };
 
 
-    createSVGTemplate(maxWidth, gridMargin) {
-        const svgCanvasTemplate = this.createShapeElement("svg");
+    _createSVGTemplate(maxWidth, gridMargin) {
+        const svgCanvasTemplate = this._createShapeElement("svg");
         svgCanvasTemplate.setAttribute("width", maxWidth + gridMargin * 2);
 
         // Group housing all strand elements
-        const strandGroup = this.createGroup("strand-group", svgCanvasTemplate);
+        const strandGroup = this._createGroup("strand-group", svgCanvasTemplate);
         strandGroup.setAttribute("transform", "translate(0, 5)");
 
             // strandGroup -> sequenceGroup: Bases and axis
-            const groupSequence = this.createGroup("sequence-group", strandGroup);
+            const groupSequence = this._createGroup("sequence-group", strandGroup);
 
                 // strandGroup -> sequence Group -> Forward Strand
-                const groupStrandFwd = this.createGroup("strand-fwd", groupSequence);
-                this.createGroup("strand-rects", groupStrandFwd);
-                this.createGroup("strand-text", groupStrandFwd);
+                const groupStrandFwd = this._createGroup("strand-fwd", groupSequence);
+                this._createGroup("strand-rects", groupStrandFwd);
+                this._createGroup("strand-text", groupStrandFwd);
 
                 // strandGroup -> sequence Group -> Reverse Strand
-                const groupStrandRev = this.createGroup("strand-rev", groupSequence);
-                this.createGroup("strand-rects", groupStrandRev);
-                this.createGroup("strand-text", groupStrandRev);
+                const groupStrandRev = this._createGroup("strand-rev", groupSequence);
+                this._createGroup("strand-rects", groupStrandRev);
+                this._createGroup("strand-text", groupStrandRev);
 
                 // strandGroup -> sequence Group -> Axis
-                const axisGroup = this.createGroup("axis-group", groupSequence);
-                this.createGroup("axis-ticks", axisGroup);
-                this.createGroup("strand-indices", axisGroup);
+                const axisGroup = this._createGroup("axis-group", groupSequence);
+                this._createGroup("axis-ticks", axisGroup);
+                this._createGroup("strand-indices", axisGroup);
 
             // Features group
-            this.createGroup("svg-features", strandGroup);
+            this._createGroup("svg-features", strandGroup);
 
         // Groups to house selection cursors
-        this.createGroup("selection-preview-cursor-group", svgCanvasTemplate);
-        this.createGroup("selection-cursor-group", svgCanvasTemplate);
+        this._createGroup("selection-preview-cursor-group", svgCanvasTemplate);
+        this._createGroup("selection-cursor-group", svgCanvasTemplate);
         
         return svgCanvasTemplate;
     };
 
 
-    addGridEventListeners(svgWrapper) {
+    _addGridEventListeners(svgWrapper) {
         /**
          * Mouse down
          */
@@ -812,7 +812,7 @@ const PlasmidViewer = new class {
                 const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
                 this.elementsAtMouseDown = elementsAtPoint;
 
-                const closestSelectionCursor = this.findClosesSelectionCursor(e);
+                const closestSelectionCursor = this.findClosestSelectionCursor(e);
                 if (closestSelectionCursor && Session.activePlasmid().getSelectionIndices()[1] !== null) {
                     //this.currentlyResizingSelection = true;
 
@@ -838,7 +838,7 @@ const PlasmidViewer = new class {
                     const adjustedBaseIndex = (e.clientX < midX) ? baseIndex : baseIndex + 1;
                     
                     if (e.shiftKey) {
-                        this.selectBases(this.combineSpans(adjustedBaseIndex));
+                        this.selectBases(this._combineSpans(adjustedBaseIndex));
                     } else {
                         this.selectBase(adjustedBaseIndex);
                     };
@@ -962,7 +962,7 @@ const PlasmidViewer = new class {
                 /**
                  * If we're hovering near a sequence cursor
                  */
-                const closestSelectionCursor = this.findClosesSelectionCursor(e);
+                const closestSelectionCursor = this.findClosestSelectionCursor(e);
                 if (closestSelectionCursor && Session.activePlasmid().getSelectionIndices()[1] !== null) {
                     this.hideSequenceTooltip();
                     document.body.style.cursor = "ew-resize";
@@ -1062,7 +1062,7 @@ const PlasmidViewer = new class {
                     const aaString = `${aa}${parseInt(aaIndex)+1}`;
 
                     const aaSpan = aaBlockGroup.getAttribute("aa-span").split(",").map(n => Number(n));
-                    this.selectBases(this.combineSpans(this.selectionStartSpan, aaSpan));
+                    this.selectBases(this._combineSpans(this.selectionStartSpan, aaSpan));
 
                     if (this.currentTooltipTarget !== aaString) {
                         this.setSequenceTooltip(aaString);
@@ -1081,7 +1081,7 @@ const PlasmidViewer = new class {
                     // before it
                     const selectionEndIndex = parseInt(nearestRect.getAttribute("base-index"));
     
-                    this.selectBases(this.combineSpans(this.selectionStartSpan, selectionEndIndex));
+                    this.selectBases(this._combineSpans(this.selectionStartSpan, selectionEndIndex));
 
                     this.setSequenceTooltip(selectionEndIndex);
                     this.positionSequenceTooltip(e.pageX, e.pageY);
@@ -1115,7 +1115,7 @@ const PlasmidViewer = new class {
     };
 
 
-    findClosesSelectionCursor(e) {
+    findClosestSelectionCursor(e) {
         const selectionCursors = this.cursors["sequence-cursor-selection"];
         if (!selectionCursors || selectionCursors.length === 0) return null;
 
@@ -1154,7 +1154,7 @@ const PlasmidViewer = new class {
     };
 
 
-    drawSegment(
+    _drawSegment(
         segment, segmentIndex,
         gridViewSettings,
         gridViewComputedParameters,
@@ -1194,7 +1194,7 @@ const PlasmidViewer = new class {
 
         // Draw bases
         for (let i = 0; i < 2; i++) {
-            this.drawBases(
+            this._drawBases(
                 [segment.sequenceFwd, segment.sequenceRev][i],
                 segmentIndex,
                 [baseBoxTemplateFwd, baseBoxTemplateRev][i],
@@ -1207,7 +1207,7 @@ const PlasmidViewer = new class {
             );
         };
 
-        this.drawGridAxis(
+        this._drawGridAxis(
             groupAxis,
             groupTicks,
             groupStrandIndices,
@@ -1223,7 +1223,7 @@ const PlasmidViewer = new class {
         );
 
 
-        let svgHeight = this.drawGridFeatures(
+        let svgHeight = this._drawGridFeatures(
             segment,
             segmentIndexStart,
             segmentIndexEnd,
@@ -1240,7 +1240,7 @@ const PlasmidViewer = new class {
     };
 
 
-    drawBases(
+    _drawBases(
         segmentSequence, segmentIndex, baseBoxTemplate, baseTextTemplate, groupStrandRects, groupStrandText,
         basesPerLine, basesPositions, isReverse = false
     ) {
@@ -1268,13 +1268,13 @@ const PlasmidViewer = new class {
     };
 
 
-    drawGridAxis(
+    _drawGridAxis(
         groupAxis, groupTicks, groupStrandIndices, groupSequence, segment, segmentIndexStart, segmentIndexEnd,
         basesPositions, singleStrandHeight, gridMargin, maxWidth, basesPerLine
     ) {
         // Main line
         const axisEndX = (segment.sequenceFwd.length / basesPerLine) * maxWidth + gridMargin;
-        groupAxis.appendChild(this.line(
+        groupAxis.appendChild(this._line(
             [gridMargin, singleStrandHeight],
             [axisEndX, singleStrandHeight], 
             null,
@@ -1296,7 +1296,7 @@ const PlasmidViewer = new class {
                 if (num - segmentIndexStart > segment.sequenceFwd.length) continue;
     
                 const tickX = basesPositions[num - segmentIndexStart - 1];
-                groupTicks.appendChild(this.line(
+                groupTicks.appendChild(this._line(
                     [tickX, singleStrandHeight - length / 2],
                     [tickX, singleStrandHeight + length / 2],
                     null,
@@ -1306,12 +1306,12 @@ const PlasmidViewer = new class {
         });
     
         const [leftBound, rightBound] = segment.segmentBounds;
-        this.drawSegmentBoundary(groupStrandIndices, leftBound, gridMargin, singleStrandHeight, segmentIndexStart + 1, "end");
-        this.drawSegmentBoundary(groupSequence, rightBound, axisEndX, singleStrandHeight, segmentIndexEnd, "start");
+        this._drawSegmentBoundary(groupStrandIndices, leftBound, gridMargin, singleStrandHeight, segmentIndexStart + 1, "end");
+        this._drawSegmentBoundary(groupSequence, rightBound, axisEndX, singleStrandHeight, segmentIndexEnd, "start");
     };
 
 
-    drawSegmentBoundary(parentGroup, boundaryType, x, y, label, textAnchor) {
+    _drawSegmentBoundary(parentGroup, boundaryType, x, y, label, textAnchor) {
         const dotsOffset = 8;
         const dotsWidth = 4;
         const startingOffset = 4;
@@ -1320,7 +1320,7 @@ const PlasmidViewer = new class {
             // Draw 3 dots for a continued segment
             for (let i = 0; i < 3; i++) {
                 const dotX = x + ((textAnchor === "start") ? (startingOffset + i * dotsOffset) : (-startingOffset - i * dotsOffset));
-                parentGroup.appendChild(this.line(
+                parentGroup.appendChild(this._line(
                     [dotX, y],
                     [dotX + ((textAnchor === "start") ? dotsWidth : -dotsWidth), y],
                     null,
@@ -1329,7 +1329,7 @@ const PlasmidViewer = new class {
             }
         } else {
             // Draw sequence index
-            parentGroup.appendChild(this.text(
+            parentGroup.appendChild(this._text(
                 [(textAnchor === "start") ? x + 8 : x - 8, y],
                 `${label}`,
                 null,
@@ -1342,7 +1342,7 @@ const PlasmidViewer = new class {
     
 
 
-    drawGridFeatures(segment, segmentIndexStart, segmentIndexEnd, seqToPixel, segmentFeaturesGroup, gridViewSettings, features, plasmid) {
+    _drawGridFeatures(segment, segmentIndexStart, segmentIndexEnd, seqToPixel, segmentFeaturesGroup, gridViewSettings, features, plasmid) {
         const {
             svgMinHeight, singleStrandHeight, strandFeatureSpacing, featureAnnotationHeight,
             featureAnnotationsSpacing, aaIndexHeight, featureGroupGap,
@@ -1370,7 +1370,7 @@ const PlasmidViewer = new class {
                 ? featureGroupTopY
                 : annotationY + featureAnnotationHeight / 2 + featureAnnotationsSpacing;
     
-            ({ annotationY, aaIndexY, aaBlockY } = this.calculateFeatureElementsPositions(
+            ({ annotationY, aaIndexY, aaBlockY } = this._calculateFeatureElementsPositions(
                 segment, featuresInLevel, featureGroupTopY, aaIndexHeight, featureGroupGap,
                 aaBlockHeight, featureAnnotationHeight
             ));
@@ -1384,9 +1384,9 @@ const PlasmidViewer = new class {
                 featureLengthPixels -= featureDict["shape-left"] !== null ? 10 : 0;
                 featureLengthPixels -= featureDict["shape-right"] !== null ? 10 : 0;
                 
-                const featureLabel = this.fitTextInRectangle(featureDict.label, featureLengthPixels, "svg-feature-label-black");
+                const featureLabel = this._fitTextInRectangle(featureDict.label, featureLengthPixels, "svg-feature-label-black");
 
-                const featureElement = this.gridFeature(
+                const featureElement = this._gridFeature(
                     currFeatureID,
                     [seqToPixel(featureDict.span[0] - 1), seqToPixel(featureDict.span[1])],
                     annotationY,
@@ -1404,7 +1404,7 @@ const PlasmidViewer = new class {
                 this.featureSegmentsMap[currFeatureID].push(featureElement);
     
                 if (featureDict.translation) {
-                    this.drawGridTranslation(
+                    this._drawGridTranslation(
                         segmentFeaturesGroup,
                         currFeatureID,
                         featureDict,
@@ -1426,7 +1426,7 @@ const PlasmidViewer = new class {
     };
 
 
-    calculateFeatureElementsPositions(
+    _calculateFeatureElementsPositions(
         segment, featuresInLevel, featureGroupTopY, aaIndexHeight, featureGroupGap,
         aaBlockHeight, featureAnnotationHeight
     ) {
@@ -1460,7 +1460,7 @@ const PlasmidViewer = new class {
      * @param {*} cssClass 
      * @returns 
      */
-    gridFeature(
+    _gridFeature(
         featureId, span, levelHeight, featureHeight,
         featureShapeLeft, featureShapeRight, label,
         color, elementId, cssClass
@@ -1473,14 +1473,14 @@ const PlasmidViewer = new class {
         const textHeight = 21; // px approx
         
         
-        const featureGroup = this.createShapeElement("g");
+        const featureGroup = this._createShapeElement("g");
         featureGroup.setAttribute("feature-id", featureId)
         
         /**
          * Arrow
          */
-        const featureArrowGroup = this.createShapeElement("g");
-        const featureArrow = this.createShapeElement("polygon");
+        const featureArrowGroup = this._createShapeElement("g");
+        const featureArrow = this._createShapeElement("polygon");
         featureArrowGroup.setAttribute("id", "arrow")
 
         const featureHeadWidth = Math.min(featureHeadMinWidth, (span[1] - span[0])*featureBodyHeadRatio)
@@ -1536,7 +1536,7 @@ const PlasmidViewer = new class {
         
         
         if (featureShapeLeft == "break") {
-            const breakDecorationLeft = this.createShapeElement("polygon");
+            const breakDecorationLeft = this._createShapeElement("polygon");
             breakDecorationLeft.setAttribute("points", [
                 [span[0], featureY + featureArrowWidth],
                 [span[0] + featureHeadWidth, featureY],
@@ -1549,7 +1549,7 @@ const PlasmidViewer = new class {
         }
 
         if (featureShapeRight == "break") {
-            const breakDecorationRight = this.createShapeElement("polygon");
+            const breakDecorationRight = this._createShapeElement("polygon");
             breakDecorationRight.setAttribute("points", [
                 [span[1] - featureHeadWidth, featureY],
                 [span[1], featureY],
@@ -1571,7 +1571,7 @@ const PlasmidViewer = new class {
          */
         const textBoxStart = (featureShapeLeft == null) ? span[0]: span[0] + featureHeadWidth;
         const textBoxEnd = (featureShapeRight == null) ? span[1]: span[1] - featureHeadWidth;
-        featureGroup.appendChild(this.text(
+        featureGroup.appendChild(this._text(
             [textBoxStart + (textBoxEnd - textBoxStart)/2, featureY+(featureArrowWidth/2)],
             label,
             null,
@@ -1584,14 +1584,14 @@ const PlasmidViewer = new class {
     };
 
 
-    drawGridTranslation(
+    _drawGridTranslation(
         segmentFeaturesGroup, currFeatureID, featureDict, segmentIndexStart, segmentIndexEnd,
         seqToPixel, aaIndexY, aaBlockY, aaIndexHeight, aaBlockHeight, features, plasmid
     ) {
         const baseWidth = UserPreferences.get("baseWidth");
         const {sequence, complementarySequence} = plasmid;
 
-        const translation = this.createShapeElement("g");
+        const translation = this._createShapeElement("g");
         translation.setAttribute("id", "svg-feature-translation");
         segmentFeaturesGroup.appendChild(translation);
     
@@ -1630,7 +1630,7 @@ const PlasmidViewer = new class {
                 ? seqToPixel(aaTextPos - segmentIndexStart) - baseWidth / 2
                 : null;
     
-            const aaBlock = this.aaBlock(
+            const aaBlock = this._aaBlock(
                 seqToPixel(Math.min(...aaShapeRange) - segmentIndexStart) - baseWidth,
                 aaBlockY,
                 (Math.abs(aaShapeRange[0] - aaShapeRange[1]) + 1) * baseWidth,
@@ -1653,10 +1653,10 @@ const PlasmidViewer = new class {
         };
     };
     
-    aaBlock(x, y, width, height, direction, textPosX, aa, aaIndexY, aaIndexHeight, aaIndex) {
+    _aaBlock(x, y, width, height, direction, textPosX, aa, aaIndexY, aaIndexHeight, aaIndex) {
         const headWidth = 3;
 
-        const aaBlockGroup = this.createShapeElement("g");
+        const aaBlockGroup = this._createShapeElement("g");
         aaBlockGroup.setAttribute("id", "aa-block-group");
 
         let fragment = document.createDocumentFragment();
@@ -1665,7 +1665,7 @@ const PlasmidViewer = new class {
          * Block index
          */
         if (aaIndex && textPosX) {
-            fragment.appendChild(this.text(
+            fragment.appendChild(this._text(
                 [textPosX, aaIndexY + aaIndexHeight/2],
                 aaIndex,
                 null,
@@ -1700,7 +1700,7 @@ const PlasmidViewer = new class {
             [x, y + height]
         ];
 
-        const aaBlock = this.createShapeElement("polygon");
+        const aaBlock = this._createShapeElement("polygon");
         aaBlock.setAttribute("id", "block")
         aaBlock.setAttribute("points", points.map(p => p.join(",")).join(" "));
         aaBlock.classList.add("aa-block");
@@ -1716,7 +1716,7 @@ const PlasmidViewer = new class {
         if (textPosX) {
             let color = this.resFillColors[aa === "*" ? "stop" : aa];
 
-            const aaText = this.text(
+            const aaText = this._text(
                 [textPosX, y + height/2],
                 aa,
                 null,
@@ -1855,12 +1855,12 @@ const PlasmidViewer = new class {
      * @param {*} shape 
      * @returns 
      */
-    createShapeElement(shape) {
+    _createShapeElement(shape) {
         return document.createElementNS(this.svgNameSpace, shape)
     };
 
-    createGroup(id, parent) {
-        const group = this.createShapeElement("g");
+    _createGroup(id, parent) {
+        const group = this._createShapeElement("g");
         group.setAttribute("id", id);
         parent.appendChild(group);
         return group;
@@ -1876,7 +1876,7 @@ const PlasmidViewer = new class {
      * @param {*} textAnchor 
      * @returns 
      */
-    text(pos, content, id=null, cssClass=null, textAnchor="start", dy=0) {
+    _text(pos, content, id=null, cssClass=null, textAnchor="start", dy=0) {
         const textElement = this.textElementTemplate.cloneNode();
         textElement.setAttribute("x", pos[0]);
         textElement.setAttribute("y", pos[1]);
@@ -1901,8 +1901,8 @@ const PlasmidViewer = new class {
      * @param {*} cssClass 
      * @returns 
      */
-    line(p1, p2, id=null, cssClass=null) {
-        const line = this.createShapeElement("line");
+    _line(p1, p2, id=null, cssClass=null) {
+        const line = this._createShapeElement("line");
 
         line.setAttribute("x1", p1[0]);
         line.setAttribute("y1", p1[1]);
@@ -1922,7 +1922,7 @@ const PlasmidViewer = new class {
     };
 
 
-    initMeasurementSVG() {
+    _initMeasurementSVG() {
         this.measurementSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         this.measurementSvg.style.position = "absolute";
         this.measurementSvg.style.visibility = "hidden";
@@ -1943,7 +1943,7 @@ const PlasmidViewer = new class {
      * @param {String} cssClass - CSS class to pull styling from
      * @returns  {String} - Original string or truncated string
      */
-    fitTextInRectangle(text, maxWidth, cssClass) {
+    _fitTextInRectangle(text, maxWidth, cssClass) {
         this.measurementText.setAttribute("class", cssClass);
         this.measurementText.textContent = text;
 
@@ -1989,28 +1989,9 @@ const PlasmidViewer = new class {
      * @returns 
      */
     switchView(targetView, sender=null) {
-        
         // Return immediately if the button is disabled
         if (sender && sender.hasAttribute("disabled")) {return};
         
-
-        //// Get parent group
-        //const button = document.getElementById(`${targetView}-view-button`);
-        //const buttonGroup = button.parentElement;
-        //// Check if any buttons are already selected and remove the selected class
-        //const selectedButtons = buttonGroup.querySelectorAll(".toolbar-button-selected")
-        //if (selectedButtons.length > 0) {
-        //    selectedButtons.forEach((e) =>
-        //        e.classList.remove("toolbar-button-selected")
-        //    );
-        //};
-        //// Select button that was just clicked
-        //button.classList.add("toolbar-button-selected");
-        //
-        //
-        //["circular", "linear", "grid"].forEach(view => {
-        //    document.getElementById(`${view}-view-container`).style.display = "none";
-        //});
 
         const targetViewContainer = document.getElementById(`${targetView}-view-container`);
         targetViewContainer.style.display = "flex";
@@ -2156,7 +2137,7 @@ const PlasmidViewer = new class {
                 cssClass.includes("preview") ? 'selection-preview-cursor-group': 'selection-cursor-group'
             );
     
-            const cursorElement = this.line(
+            const cursorElement = this._line(
                 [posX, 0],
                 [posX, cursorHeight],
                 null,
@@ -2290,7 +2271,7 @@ const PlasmidViewer = new class {
             const cellWidth = parseFloat(lastRect.getAttribute('width'));
             const cellHeight = parseFloat(firstRect.getAttribute('height'));
 
-            const subcloningRect = this.createShapeElement("rect");
+            const subcloningRect = this._createShapeElement("rect");
             subcloningRect.setAttribute("id", "subcloning-rect");
             subcloningRect.setAttribute("class", "subcloning-rect");
 
@@ -2473,14 +2454,14 @@ const PlasmidViewer = new class {
         
         let span = Session.activePlasmid().features[featureID]["span"];
         
-        this.selectBases((combineSelection) ? this.combineSpans(span): span, featureID);
+        this.selectBases((combineSelection) ? this._combineSpans(span): span, featureID);
 
     };
 
 
     selectAA(span, combineSelection=false) {
         
-        this.selectBases((combineSelection) ? this.combineSpans(span): span);
+        this.selectBases((combineSelection) ? this._combineSpans(span): span);
     };
 
 
@@ -2558,7 +2539,7 @@ const PlasmidViewer = new class {
     };
 
 
-    combineSpans(span1, span2 = null) {
+    _combineSpans(span1, span2 = null) {
         if (span2 === null) span2 = Session.activePlasmid().getSelectionIndices();
         
         span1 = Array.isArray(span1) ? span1: [span1];
