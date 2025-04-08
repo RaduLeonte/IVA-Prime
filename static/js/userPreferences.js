@@ -24,6 +24,7 @@ const UserPreferences = new class {
             "preferredOrganism": "Escherichia coli",
 
             "overwriteSnapGeneColors": true,
+            "neverWarnMeAboutTBRSpecificity": false,
         };
 
         const savedPreferences = this.loadPreferences();

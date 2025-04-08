@@ -827,7 +827,7 @@ class Plasmid {
      * @param {String | null} targetOrganism - Target organism for codon optimization
      * @param {Boolean} translateFeature - Flag for translation newly generated annotation
      */
-    IVAOperation(operationType, insertionSeqDNA="", insertionSeqAA="", targetOrganism=null, translateFeature=false, linFragName="Linear Fragment") {
+    IVAOperation(operationType, insertionSeqDNA="", insertionSeqAA="", targetOrganism=null, translateFeature=false, linFragName="Linear Fragment", forceTBRSpecificity=false) {
         if (!this.selectionExists()) {return};
         console.log(`Plasmid.IVAOperation ->`, operationType, insertionSeqDNA, insertionSeqAA, targetOrganism, translateFeature);
         console.log(`Plasmid.IVAOperation -> this.selectionIndices=${this.selectionIndices}`);
@@ -860,11 +860,11 @@ class Plasmid {
         
                     // Optimize AA sequences if available
                     const seq5Prime = (seq5PrimeAA && seq5PrimeAA !== null && seq5PrimeAA !== "" && targetOrganism !== null)
-                    ? Nucleotides.optimizeAA(seq5PrimeAA, targetOrganism)
-                    : seq5PrimeDNA;
+                        ? Nucleotides.optimizeAA(seq5PrimeAA, targetOrganism)
+                        : seq5PrimeDNA;
                     const seq3Prime = (seq3PrimeAA && seq3PrimeAA !== null && seq3PrimeAA !== "" && targetOrganism !== null)
-                    ? Nucleotides.optimizeAA(seq3PrimeAA, targetOrganism)
-                    : seq3PrimeDNA;
+                        ? Nucleotides.optimizeAA(seq3PrimeAA, targetOrganism)
+                        : seq3PrimeDNA;
         
                     // Get subcloning target from source plasmid
                     const subclonignOriginPlasmid = Session.getPlasmid(Session.subcloningOriginPlasmidIndex);
@@ -879,6 +879,7 @@ class Plasmid {
                         this.sequence,
                         seq5Prime,
                         seq3Prime,
+                        forceTBRSpecificity,
                     );
 
                     break;
@@ -898,6 +899,7 @@ class Plasmid {
                         seqToInsert,
                         linFragName,
                         translateFeature,
+                        forceTBRSpecificity,
                     );
                     break;
 
@@ -913,6 +915,7 @@ class Plasmid {
                         operationRange,
                         this.sequence,
                         seqToInsert,
+                        forceTBRSpecificity,
                     );
                     break;
             };
@@ -955,6 +958,76 @@ class Plasmid {
                 case (error instanceof AmbiguousBaseError):
                 case (error instanceof OutOfBasesError):
                     handleError(error);
+                    break;
+                
+                case (error instanceof TBRNotSpecificError):
+
+                    const alertBody = document.createElement("DIV");
+
+                    const alertBodyContainer = document.createElement("DIV");
+                    alertBodyContainer.style.display = "flex";
+                    alertBodyContainer.style.flexDirection = "column";
+                    alertBodyContainer.style.gap = "10px";
+                    alertBody.appendChild(alertBodyContainer);
+
+                    const alertBodyText = document.createElement("span");
+                    alertBodyText.style.lineHeight = 1.5;
+                    const indicesString = error.indices.map(indices => `[${indices.join(', ')}]`).join(', ')
+                    alertBodyText.innerText = `Multiple binding sites were found for the template binding region (TBR) of the generated primer (binding sites: ${indicesString}). This can lead to off-target binding and unwanted side products in the PCR. Click the button below to generate longer (higher Tm), but more specific TBRs.`;
+                    alertBodyContainer.appendChild(alertBodyText);
+
+                    const alertBodyCheckboxContainer = document.createElement("DIV");
+                    alertBodyCheckboxContainer.style.display = "flex";
+                    alertBodyContainer.appendChild(alertBodyCheckboxContainer);
+                    
+                    const alertBodyCheckboxInput = document.createElement("input");
+                    alertBodyCheckboxInput.id = "never-warn-me-TBR-specificity-checkbox";
+                    alertBodyCheckboxInput.type = "checkbox";
+                    alertBodyCheckboxInput.innerText = "Generate longer TBRs";
+                    alertBodyCheckboxContainer.appendChild(alertBodyCheckboxInput);
+
+
+                    const alertBodyCheckboxLabel = document.createElement("label");
+                    alertBodyCheckboxLabel.style.alignContent = "center";
+                    alertBodyCheckboxLabel.innerText = "Never warn me again (always generate specific, but longer TBRs)";
+                    alertBodyCheckboxContainer.appendChild(alertBodyCheckboxLabel);
+
+
+                    const alertBodyActionButton = document.createElement("span");
+                    alertBodyActionButton.classList.add("button-round", "button-red");
+                    alertBodyActionButton.innerText = "Generate longer primers";
+                    alertBodyContainer.appendChild(alertBodyActionButton);
+
+                    const action = new function () {
+                        // Set preference
+                        const neverWarnMeAgainCheck = document.getElementById("never-warn-me-TBR-specificity-checkbox").checked;
+                        UserPreferences.set("neverWarnMeAboutTBRSpecificity", neverWarnMeAgainCheck);
+
+                        // Close alert
+                        const alertElement = alertBodyActionButton.closest('.alert');
+                        if (alertElement) Alerts.removeAlert(alertElement);
+
+                        // Run IVAOperation again
+                        Session.activePlasmid().IVAOperation(
+                            operationType,
+                            insertionSeqDNA,
+                            insertionSeqAA,
+                            targetOrganism,
+                            translateFeature,
+                            linFragName,
+                            true, // Force TBR specificity
+                        );
+                    };
+                    alertBodyActionButton.onclick = action;
+
+
+                    Alerts.showAlert(
+                        error.name,
+                        alertBody.innerHTML,
+                        -1,
+                        "var(--btn-red)",
+                    );
+
                     break;
 
                 default: {
