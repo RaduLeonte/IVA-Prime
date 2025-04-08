@@ -56,7 +56,7 @@ const Primers = new class {
         let extensionLength = minimumLength - initialSequence.length;
         
         // Initial primer sequence, initial sequence + initial extension
-        let prevPrimerSequence =  (direction === "fwd")
+        let prevPrimerSequence = (direction === "fwd")
         ? initialSequence + Utilities.repeatingSlice(plasmidSequence, startingIndex, startingIndex + extensionLength - 1)
         : Utilities.repeatingSlice(plasmidSequence, startingIndex - extensionLength + 1, startingIndex) + initialSequence;
         
@@ -67,6 +67,8 @@ const Primers = new class {
         let primerSequence = prevPrimerSequence;
         let currTM = prevTM;
         const maxIter = 100;
+
+        const useGCClamp = UserPreferences.get("useGCClamp");
         for (let i = 0; i < maxIter; i++) {
             /** If the melting temperature of the current primer exceeds
               * the target temperature and the minimum length, break the loop
@@ -75,13 +77,20 @@ const Primers = new class {
              */ 
             Nucleotides.validatePrimerSequence(primerSequence);
 
-            if (
-                currTM >= targetTM &&
-                primerSequence.length >= minimumLength
-            ) {
+            const primerStableEnough = currTM >= targetTM && primerSequence.length >= minimumLength;
+
+            const newestBase = (direction === "fwd")
+                ? primerSequence.charAt(primerSequence.length - 1)
+                : primerSequence.charAt(0);
+
+            const isGCClampConditionMet = useGCClamp ? ['G', 'C'].includes(newestBase) : true;
+
+            const currentPrimerCloserToTargetTm = Math.abs(currTM - targetTM) <= Math.abs(prevTM - targetTM);
+            const prevPrimerTooShort = prevPrimerSequence.length < minimumLength;
+
+            if (primerStableEnough && isGCClampConditionMet) {
                 if (
-                    Math.abs(currTM - targetTM) <= Math.abs(prevTM - targetTM) &&
-                    prevPrimerSequence.length < minimumLength
+                    (currentPrimerCloserToTargetTm && prevPrimerTooShort) || useGCClamp
                 ) {
                     return primerSequence;
                 } else {
