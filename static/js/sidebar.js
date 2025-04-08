@@ -82,14 +82,19 @@ const Sidebar = new class {
         for (let i = 0; i < primerSets.length; i++) {
             const primerSet = primerSets[i];
 
-            primersTable.appendChild(this._createPrimerSetContainer(primerSet))
+            primersTable.appendChild(
+                this._createPrimerSetContainer(
+                    i,
+                    primerSet,
+                )
+            )
         };
 
         return primersTable;
     };
 
 
-    _createPrimerSetContainer(primerSet) {
+    _createPrimerSetContainer(primerSetIndex, primerSet) {
         const primerSetContainer = document.createElement("DIV");
         primerSetContainer.classList.add("primers-set");
 
@@ -137,15 +142,21 @@ const Sidebar = new class {
         primersContainer.classList.add("primers-container"); 
         primerSetBody.appendChild(primersContainer);
 
-        primerSet.primers.forEach(primer => {
-            primersContainer.appendChild(this._createPrimerContainer(primer));
+        primerSet.primers.forEach((primer, primerIndex) => {
+            primersContainer.appendChild(
+                this._createPrimerContainer(
+                    primerSetIndex,
+                    primerIndex,
+                    primer,
+                )
+            );
         });
 
         return primerSetContainer;
     };
 
 
-    _createPrimerContainer(primer) {
+    _createPrimerContainer(primerSetIndex, primerIndex, primer) {
         const primerContainer = document.createElement("DIV");
         primerContainer.classList.add("primer-container");
 
@@ -154,9 +165,56 @@ const Sidebar = new class {
         primerTitle.innerText = primer.label;
         primerContainer.appendChild(primerTitle);
 
+        /** Increment primer sequence buttons */
+        const incrementPrimerButtonsWrapper = document.createElement("DIV");
+        incrementPrimerButtonsWrapper.classList.add("primer-increment-buttons-wrapper");
+        primerContainer.appendChild(incrementPrimerButtonsWrapper); // Append
+
+        const incrementPrimerButtonsLabel = document.createElement("DIV");
+        incrementPrimerButtonsLabel.classList.add("primer-increment-buttons-label");
+        incrementPrimerButtonsLabel.innerText = "Adjust primer sequences: "
+        incrementPrimerButtonsWrapper.appendChild(incrementPrimerButtonsLabel); // Append
+
+        const incrementPrimerButtonsContainer = document.createElement("DIV");
+        incrementPrimerButtonsContainer.classList.add("primer-increment-buttons-container");
+        incrementPrimerButtonsWrapper.appendChild(incrementPrimerButtonsContainer); // Append
+
+        // Add 5' button set
+        incrementPrimerButtonsContainer.appendChild(
+            this._createIncrementPrimerButtonSet(
+                primerSetIndex,
+                primerIndex,
+                "5'",
+                [
+                    { increment: 1, title: "Increment primer in the 5' direction" },
+                    { increment: -1, title: "Increment primer in the 3' direction" }
+                ],
+            )
+        );
+
+        const divider = document.createElement("DIV");
+        divider.classList.add("primer-increment-buttons-divider")
+        incrementPrimerButtonsContainer.appendChild(divider);
+
+        // Add 3' button set
+        incrementPrimerButtonsContainer.appendChild(
+            this._createIncrementPrimerButtonSet(
+                primerSetIndex,
+                primerIndex,
+                "3'", 
+                [
+                    { increment: 1, title: "Increment primer in the 3' direction" },
+                    { increment: -1, title: "Increment primer in the 5' direction" }
+                ],
+            )
+        );
+
+        
+
         const primerSequence = document.createElement("DIV");
         primerSequence.classList.add("primer-sequence-regions");
         primerContainer.appendChild(primerSequence);
+
 
         /** Copy primer button */
         const copyPrimerButton = document.createElement("span");
@@ -212,6 +270,39 @@ const Sidebar = new class {
         primerContainer.appendChild(primerInfo);
 
         return primerContainer;
+    };
+
+
+    _createIncrementPrimerButtonSet(primerSetIndex, primerIndex, direction, buttons) {
+        const container = document.createElement("DIV");
+        container.classList.add("primer-increment-buttons-container");
+    
+        const labelDiv = document.createElement("DIV");
+        labelDiv.classList.add("primer-increment-label");
+        labelDiv.innerText = direction;
+        container.appendChild(labelDiv);
+
+        const buttonsToRender = direction === "5'" ? buttons: [...buttons].reverse();
+    
+        buttonsToRender.forEach(({ increment, title }) => {
+            const button = document.createElement("span");
+            button.classList.add("primer-increment-button", `primer-increment-${(increment === 1) ? "plus": "minus"}`, "toolbar-button");
+            button.title = title;
+            button.appendChild(document.createElement("span"));
+            
+            button.onclick = function () {
+                Session.activePlasmid().incrementPrimerSequence(
+                    primerSetIndex,
+                    primerIndex,
+                    direction,
+                    increment,
+                )
+            };
+            
+            container.appendChild(button);
+        });
+    
+        return container;
     };
 
 
