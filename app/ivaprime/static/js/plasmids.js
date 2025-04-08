@@ -981,46 +981,106 @@ class Plasmid {
     // #endregion IVA Operations
 
 
+    // #region Increment primer sequence
     incrementPrimerSequence(primerSetIndex, primerIndex, direction, increment) {
         console.log("Plasmid.incrementPrimerSequence ->", primerSetIndex, primerIndex, direction, increment);
 
+        // Select primer set that holds the target primer
         const targetPrimerSet = this.primers[primerSetIndex];
         console.log(JSON.stringify(targetPrimerSet, (key, value) => {
             return key === "primers" | key === "currentPlasmidSequence" ? undefined : value;
         }, 2));
 
+        // Get plasmid sequence to pull bases from
         const plasmidSequence = targetPrimerSet.currentPlasmidSequence;
 
+        // Select target primer 
         const targetPrimer = targetPrimerSet.primers[primerIndex];
         console.log(JSON.stringify(targetPrimer, null, 2));
 
+        // Select correct primer region
+        let targetPrimerRegion;
+        if (direction === "5'") {
+            // Increment at the 5' end -> INS or HR
 
-        const targetPrimerRegion = (direction === "5'")
-            ? targetPrimer.regions.find(r => r.sequence !== "")
-            : targetPrimer.regions[targetPrimer.regions.length - 1];
+            if (increment === 1) {
+                // We're adding bases
+                
+                // First select the INS region if there is one and its sequence is not empty
+                targetPrimerRegion = targetPrimer.regions.find(r => r.type.includes("INS"));
+    
+                // If the INS region is as long as it can possibly, select the HR region
+                if (!targetPrimerRegion || (targetPrimerRegion.maxLength <= targetPrimerRegion.sequence.length)) {
+                    targetPrimerRegion = targetPrimer.regions.find(r => r.type.includes("HR"));
+                };
+            } else {
+                // Deleting bases
+
+                // Find the first primer region that isnt already empty
+                targetPrimerRegion = targetPrimer.regions.find(r => !r.type.includes("TBR") && r.sequence !== "" && r.start !== null);
+            };
+        } else {
+            // Increment at the 3' end -> TBR region
+            targetPrimerRegion = targetPrimer.regions[targetPrimer.regions.length - 1];
+        };
+        if (!targetPrimerRegion) return;
         console.log(JSON.stringify(targetPrimerRegion, null, 2));
 
-        const regionSequence = targetPrimerRegion.sequence;
-        const targetStrand = (targetPrimerRegion.direction === "fwd") ? "top": "bottom";
+        if (increment === 1) {
+            // Add 1 base
 
-        
-        let startPos = targetPrimerRegion.start;
-        console.log(startPos);
+            // Get sequence of the primer region
+            const regionSequence = targetPrimerRegion.sequence;
+            // Find out if its top or bottom strand
+            const targetStrand = (targetPrimerRegion.direction === "fwd") ? "top": "bottom";
+            // Get the position of the first base of the primer
+            let startPos = targetPrimerRegion.start;
+            console.log(startPos);
+    
+            // Find the position of the next base in the primer sequence
+            const directionMap = {
+                "5'": { top: -1, bottom: 1 },
+                "3'": { top: 1, bottom: -1 },
+            };
+            const offset = directionMap[direction]?.[targetStrand] ?? 0;
+            startPos += offset * regionSequence.length;
+    
+            // Select the new base
+            let newBase = Utilities.repeatingSlice(plasmidSequence, startPos - 1, startPos);
+            // Get the complementary if the primer is from the bottom strand
+            if (targetStrand === "bottom") newBase = Nucleotides.complementary(newBase);
+            console.log(
+                startPos,
+                Utilities.repeatingSlice(plasmidSequence, startPos - 1, startPos + 4),
+                newBase
+            );
 
-        const directionMap = {
-            "5'": { top: -1, bottom: 1 },
-            "3'": { top: 1, bottom: -1 },
+            if (direction === "5'") {
+                // Append at the beginning
+                targetPrimerRegion.sequence = newBase + targetPrimerRegion.sequence;
+            } else {
+                // Append at the end
+                targetPrimerRegion.sequence = targetPrimerRegion.sequence + newBase;
+            };
+
+            this.saveState("Add 1 base to primer sequence");
+
+        } else {
+            if (targetPrimerRegion.sequence.length === 0) return;
+
+            // Delete 1 base
+            if (direction === "5'") {
+                // Delete first base in sequence
+                targetPrimerRegion.sequence = targetPrimerRegion.sequence.slice(1);
+            } else {
+                // Delete last base in sequence
+                targetPrimerRegion.sequence = targetPrimerRegion.sequence.slice(0, -1)
+            };
+
+            this.saveState("Delete 1 base from primer sequence");
         };
-        const offset = directionMap[direction]?.[targetStrand] ?? 0;
-        startPos += offset * regionSequence.length;
 
-
-        let newBase = Utilities.repeatingSlice(targetSequence, startPos - 1, startPos);
-        if (targetStrand === "bottom") newBase = Nucleotides.complementary(newBase);
-        console.log(
-            startPos,
-            Utilities.repeatingSlice(targetSequence, startPos - 1, startPos + 4),
-            newBase
-        );
+        Sidebar.updatePrimersTable();
     };
+    // #endregion Increment primer sequence
 };

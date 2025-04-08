@@ -166,9 +166,18 @@ const Sidebar = new class {
         primerContainer.appendChild(primerTitle);
 
         /** Increment primer sequence buttons */
+        const incrementPrimerButtonsWrapper = document.createElement("DIV");
+        incrementPrimerButtonsWrapper.classList.add("primer-increment-buttons-wrapper");
+        primerContainer.appendChild(incrementPrimerButtonsWrapper); // Append
+
+        const incrementPrimerButtonsLabel = document.createElement("DIV");
+        incrementPrimerButtonsLabel.classList.add("primer-increment-buttons-label");
+        incrementPrimerButtonsLabel.innerText = "Adjust primer sequences: "
+        incrementPrimerButtonsWrapper.appendChild(incrementPrimerButtonsLabel); // Append
+
         const incrementPrimerButtonsContainer = document.createElement("DIV");
-        incrementPrimerButtonsContainer.classList.add("primer-increment-buttons-wrapper");
-        primerContainer.appendChild(incrementPrimerButtonsContainer); // Append
+        incrementPrimerButtonsContainer.classList.add("primer-increment-buttons-container");
+        incrementPrimerButtonsWrapper.appendChild(incrementPrimerButtonsContainer); // Append
 
         // Add 5' button set
         incrementPrimerButtonsContainer.appendChild(

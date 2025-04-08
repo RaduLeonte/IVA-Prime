@@ -312,7 +312,7 @@ const Primers = new class {
                     label: "Forward primer",
                     regions: [
                         {sequence: homoFwd1, type: "HR", start: operationRange[0] - 1, direction: "fwd"},
-                        {sequence: seqToInsert, type: "INS", start: null, direction: "fwd"},
+                        {sequence: seqToInsert, type: "INS", start: null, maxLength: seqToInsert.length, direction: "fwd"},
                         {sequence: tempFwd, type: "TBR", start: operationRange[0] + seqToInsert.length, direction: "fwd"}
                     ],
                 },
@@ -321,7 +321,7 @@ const Primers = new class {
                     label: "Reverse primer",
                     regions: [
                         {sequence: homoRev1, type:"HR", start: operationRange[0] + seqToInsert.length, direction: "rev"},
-                        {sequence: seqToInsertRevComp, type: "INS", start: null, direction: "rev"},
+                        {sequence: seqToInsertRevComp, type: "INS", start: null, maxLength: seqToInsert.length, direction: "rev"},
                         {sequence: tempRev, type: "TBR", start: operationRange[0] - 1, direction: "rev"}
                     ],
                 },
@@ -381,7 +381,7 @@ const Primers = new class {
                     label: "Forward primer",
                     regions: [
                         {sequence: homoFwd, type: "HR", start: operationRange[0] - 1, direction: "fwd"},
-                        {sequence: seqToInsert, type: "INS", start: null, direction: "fwd"},
+                        {sequence: seqToInsert, type: "INS", start: null, maxLength: seqToInsert.length, direction: "fwd"},
                         {sequence: tempFwd, type: "TBR", start: operationRange[0] + seqToInsert.length, direction: "fwd"}
                     ],
                 },
@@ -389,8 +389,8 @@ const Primers = new class {
                     name: "Reverse primer",
                     label: "Reverse primer",
                     regions: [
-                        {sequence: "", type: "HR", start: operationRange[0], direction: "rev"},
-                        {sequence: "", type: "INS", start: null, direction: "rev"},
+                        {sequence: "", type: "HR", start: operationRange[0] - seqToInsert.length, direction: "rev"},
+                        {sequence: "", type: "INS", start: operationRange[0], maxLength: seqToInsert.length, direction: "rev"},
                         {sequence: tempRev, type: "TBR", start: operationRange[0] - 1, direction: "rev"},
                     ],
                 },
@@ -470,8 +470,8 @@ const Primers = new class {
                     name: "Forward primer",
                     label: "Forward primer",
                     regions: [
-                        {sequence: "", type: "HR", start: operationRange[0] + seqToInsert.length - 1, direction: "fwd"},
-                        {sequence: homoFwd, type: "INS", start: operationRange[0] + seqToInsert.length - 1, direction: "fwd"},
+                        {sequence: "", type: "HR", start: operationRange[0] - 1, direction: "fwd"},
+                        {sequence: homoFwd, type: "INS", start: operationRange[0] + seqToInsert.length - 1, maxLength: seqToInsert.length, direction: "fwd"},
                         {sequence: tempFwd, type: "TBR", start: operationRange[0] + seqToInsert.length, direction: "fwd"},
                     ],
                 },
@@ -479,8 +479,8 @@ const Primers = new class {
                     name: "Reverse primer",
                     label: "Reverse primer",
                     regions: [
-                        {sequence: "", type: "HR", start: operationRange[0], direction: "rev"},
-                        {sequence: homoRev, type: "INS", start: operationRange[0], direction: "rev"},
+                        {sequence: "", type: "HR", start: operationRange[0] + seqToInsert.length, direction: "rev"},
+                        {sequence: homoRev, type: "INS", start: operationRange[0], maxLength: seqToInsert.length, direction: "rev"},
                         {sequence: tempRev, type: "TBR", start: operationRange[0] - 1, direction: "rev"},
                     ],
                 },
@@ -553,8 +553,8 @@ const Primers = new class {
                     name: "Forward primer",
                     label: "Forward primer",
                     regions: [
-                        {sequence: "", type: "HR", start: operationRange[0] + seqToInsert.length - 1, direction: "fwd"},
-                        {sequence: homoFwd, type: "INS", start: operationRange[0] + seqToInsert.length - 1, direction: "fwd"},
+                        {sequence: "", type: "HR", start: operationRange[0] - 1, direction: "fwd"},
+                        {sequence: homoFwd, type: "INS", start: null, maxLength: seqToInsert.length, direction: "fwd"},
                         {sequence: tempFwd, type: "TBR", start: operationRange[0] + seqToInsert.length, direction: "fwd"},
                     ],
                 },
@@ -562,8 +562,8 @@ const Primers = new class {
                     name: "Reverse primer",
                     label: "Reverse primer",
                     regions: [
-                        {sequence: "", type: "HR", start: operationRange[0], direction: "rev"},
-                        {sequence: homoRev, type: "INS", start: operationRange[0], direction: "rev"},
+                        {sequence: "", type: "HR", start: operationRange[0] + seqToInsert.length, direction: "rev"},
+                        {sequence: homoRev, type: "INS", start: operationRange[0], maxLength: seqToInsert.length, direction: "rev"},
                         {sequence: tempRev, type: "TBR", start: operationRange[0] - 1, direction: "rev"},
                     ],
                 },
@@ -673,6 +673,7 @@ const Primers = new class {
                             sequence: sets[0].primers[0].regions[1].sequence,
                             type: "INS",
                             start: operationRange[0] - 1 + seq5Prime.length,
+                            maxLength: sets[0].primers[0].regions[1].maxLength,
                             direction: "fwd",
                         },
                         {
@@ -697,6 +698,7 @@ const Primers = new class {
                             sequence: sets[1].primers[0].regions[1].sequence,
                             type: "INS",
                             start: operationRange[0] + insertionSequenceFull.length - seq3Prime.length,
+                            maxLength: sets[1].primers[0].regions[1].maxLength,
                             direction: "rev",
                         },
                         {
@@ -721,6 +723,7 @@ const Primers = new class {
                             sequence: sets[1].primers[1].regions[1].sequence,
                             type: "INS",
                             start: operationRange[0] + insertionSequenceFull.length  - 1,
+                            maxLength: sets[1].primers[1].regions[1].maxLength,
                             direction: "fwd",
                         },
                         {
@@ -745,6 +748,7 @@ const Primers = new class {
                             sequence: sets[0].primers[1].regions[1].sequence,
                             type: "INS",
                             start: operationRange[0],
+                            maxLength: sets[0].primers[1].regions[1].maxLength,
                             direction: "rev",
                         },
                         {
@@ -842,6 +846,7 @@ const Primers = new class {
                             sequence: sets[1].primers[1].regions[1].sequence,
                             type: "INS",
                             start: operationRange[0] + insertionSequenceFull.length  - 1,
+                            maxLength: 0,
                             direction: "fwd",
                         },
                         {
@@ -866,6 +871,7 @@ const Primers = new class {
                             sequence: sets[0].primers[1].regions[1].sequence,
                             type: "INS",
                             start: operationRange[0],
+                            maxLength: 0,
                             direction: "rev",
                         },
                         {

@@ -670,11 +670,11 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
 
 .primer-increment-buttons-wrapper {
   display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
   align-content: stretch;
   justify-content: flex-start;
   gap: 5px;
-
-  height: 100%;
 }
 
 .primer-increment-buttons-container {
@@ -682,11 +682,19 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
   align-content: stretch;
   justify-content: flex-start;
   gap: 2px;
+
+  width: fit-content;
 }
 
 .primer-increment-buttons-divider {
   width: 2px;
   background-color: var(--border-color);
+}
+
+.primer-increment-buttons-label {
+  align-content: center;
+
+  width: fit-content;
 }
 
 .primer-increment-label {
