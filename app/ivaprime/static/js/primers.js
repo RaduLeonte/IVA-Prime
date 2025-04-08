@@ -103,7 +103,7 @@ const Primers = new class {
 
 
                 if (Session.activePlasmid().topology === "linear" && primerOutOfBounds) {
-                    throw new OutOfBasesError()
+                    throw new OutOfBasesError();
                 };
                 
                 primerSequence = (direction === "fwd")
@@ -133,6 +133,7 @@ const Primers = new class {
         operationRange,
         plasmidSequence,
         seqToInsert,
+        forceTBRSpecificity,
     ) {
         // Target Tm for homologous region
         const targetTMHR = (operationType !== "Subcloning")
@@ -164,6 +165,15 @@ const Primers = new class {
             UserPreferences.get("TmAlgorithm"),
             7
         );
+        const tempFwdBindingSites = this._findTBRBindingSites(plasmidSequence, tempFwd);
+        const isTempFwdUnspecific = tempFwdBindingSites.length > 1;
+        console.log("TBR Specificity", tempFwd, isTempFwdUnspecific, tempFwdBindingSites);
+
+        if (isTempFwdUnspecific && !forceTBRSpecificity && !UserPreferences.get("neverWarnMeAboutTBRSpecificity")) {
+            throw new TBRNotSpecificError(tempFwdBindingSites);
+        };
+
+
         // Reverse template binding region, extend forward on the complementary strand from the start position
         const tempRev = this.extendSequence(
             plasmidSequence,
@@ -203,6 +213,27 @@ const Primers = new class {
         // #endregion HR
 
         return primersSet;
+    };
+
+
+    _findTBRBindingSites(plasmidSequence, primerSequence) {
+        const linearizedSequence = plasmidSequence.repeat(2);
+        const plasmidSequenceLength = plasmidSequence.length;
+        
+        let indices = [];
+        let index = 0;
+        // Search for the short sequence in the linearized plasmid sequence
+        // but make sure we don't count matches that extend beyond the original sequence length
+        while ((index = linearizedSequence.indexOf(primerSequence, index)) !== -1) {
+            // Ensure the match is within the original plasmid length
+            if (index < plasmidSequenceLength) indices.push(index);
+
+            index += 1;
+        };
+
+        indices = indices.map((i) => [i + 1, i + primerSequence.length])
+
+        return indices;
     };
 
 
@@ -588,6 +619,7 @@ const Primers = new class {
         plasmidSequence,
         seq5Prime,
         seq3Prime,
+        forceTBRSpecificity,
     ) {
         // Adjust range if pure insertion
         if (operationRange[1] === null) {
@@ -621,7 +653,8 @@ const Primers = new class {
             "Insertion",
             [operationRange[0], null],
             pseudoPlasmidSequence5Prime,
-            seq5Prime
+            seq5Prime,
+            forceTBRSpecificity,
         );
         
         /**
@@ -638,7 +671,8 @@ const Primers = new class {
             "Insertion",
             [operationPos, null],
             pseudoPlasmidSequence3Prime,
-            Nucleotides.reverseComplementary(seq3Prime)
+            Nucleotides.reverseComplementary(seq3Prime),
+            forceTBRSpecificity,
         );
 
         // Shorthand
@@ -765,7 +799,7 @@ const Primers = new class {
 
 
     // #region Linear fragment
-    insertFromLinearFragment(operationRange, plasmidSequence, seqToInsert, linFragName, translateFeature) {
+    insertFromLinearFragment(operationRange, plasmidSequence, seqToInsert, linFragName, translateFeature, forceTBRSpecificity) {
         // "Subclone" from pseudo linear fragment
         // Adjust range if pure insertion
         if (operationRange[1] === null) {
@@ -794,7 +828,8 @@ const Primers = new class {
             "Insertion",
             [operationRange[0], null],
             pseudoPlasmidSequence5Prime,
-            ""
+            "",
+            forceTBRSpecificity,
         );
         
         /**
@@ -811,7 +846,8 @@ const Primers = new class {
             "Insertion",
             [operationPos, null],
             pseudoPlasmidSequence3Prime,
-            ""
+            "",
+            forceTBRSpecificity,
         );
 
         // Shorthand

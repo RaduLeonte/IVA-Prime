@@ -233,7 +233,7 @@ const Search = new class {
 
         PlasmidViewer.highlightBases(searchResult.span, "base-search-focus", searchResult.strand);
 
-        const container = document.getElementById("viewer");
+        const container = document.getElementById("grid-view");
         const containerRect = container.getBoundingClientRect();
         const basesInSearchResult = Array.from(container.querySelectorAll(".base-search-focus")).sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
 
@@ -264,7 +264,7 @@ const Search = new class {
                 : targetBottom - halfContainer - halfBases;
         };
 
-        document.getElementById("viewer").scrollTo({ top: targetHeight, behavior: "smooth" });
+        document.getElementById("grid-view").scrollTo({ top: targetHeight, behavior: "smooth" });
     };
 
 

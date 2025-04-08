@@ -732,8 +732,6 @@ const PlasmidViewer = new class {
 
     _addMinimapEventListeners(minimapCanvas, minimapBar) {
         function scrollGridViewContainer(event) {
-            console.log("PlasmidViewer._addMinimapEventListeners.scrollGridViewContainer")
-
             const gridView = document.getElementById("grid-view");
         
             const scrollHeight = gridView.scrollHeight;
@@ -774,8 +772,9 @@ const PlasmidViewer = new class {
 
 
     updateMinimapScrollBar() {
-        console.log("PlasmidViewer.updateMinimapScrollBar -> ")
         const gridView = document.getElementById("grid-view");
+        if (!gridView) return;
+
         const minimapCanvas = document.getElementById("minimap-svg-canvas");
         const minimapBar = document.getElementById("minimap-bar");
         
@@ -1027,7 +1026,7 @@ const PlasmidViewer = new class {
                 if (nearestAABlock) {
                     // Start selection
                     const aaSpan = nearestAABlock.parentElement.getAttribute("aa-span").split(",").map(n => Number(n));
-                    console.log(nearestAABlock.parentElement, aaSpan, Math.min(...aaSpan))
+                    //console.log(nearestAABlock.parentElement, aaSpan, Math.min(...aaSpan))
                     
                     this.selectAA(aaSpan, e.shiftKey);
                     
@@ -2470,6 +2469,8 @@ const PlasmidViewer = new class {
 
     addDeletionMarkings() {
         this.removeDeletionMarkings();
+
+        if (!Session.activePlasmid()) return;
 
         const deletionMarkings = Session.activePlasmid().deletionMarks;
         for (let i = 0; i < deletionMarkings.length; i++) {

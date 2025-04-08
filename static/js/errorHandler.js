@@ -35,6 +35,18 @@ class OutOfBasesError extends Error {
 
 
 /**
+ * Error for when TBR region is no specific
+ */
+class TBRNotSpecificError extends Error {
+    constructor(indices) {
+        super("Multiple binding sites were found for the TBR of the primer sequence.");
+        this.name = "Primer Design Failed: Template binding region is not specific";
+        this.indices = indices;
+    };
+};
+
+
+/**
  * Handle error by displaying it as an alert for the user
  * 
  * @param {Error} error - Caught error class to be handled

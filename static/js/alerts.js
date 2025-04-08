@@ -15,7 +15,7 @@ const Alerts = new class {
      * @param {number} lifetime - Alert lifetime in s
      * @param {String} color - CSS color for left border and svg icon
      */
-    warning(title, body, lifetime=5, color="orange", ) {
+    warning(title, body, lifetime=5, color="var(--btn-orange)", ) {
         this.showAlert(
             title,
             body,
@@ -33,7 +33,7 @@ const Alerts = new class {
      * @param {number} lifetime - Alert lifetime in s
      * @param {String} color - CSS color for left border and svg icon
      */
-    error(title, body, lifetime=-1, color="red") {
+    error(title, body, lifetime=-1, color="var(--btn-red)") {
         this.showAlert(
             title,
             body,
