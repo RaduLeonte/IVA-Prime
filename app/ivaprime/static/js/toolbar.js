@@ -349,7 +349,7 @@ const Toolbar = new class {
 
         const primer1Offset = primer2Truncated.length - overlap;
         for (let i = 0; i < primer1.length; i++) {
-            svg.appendChild(PlasmidViewer.text(
+            svg.appendChild(PlasmidViewer._text(
                 [(i + 0.5 + primer1Offset)*scaleFactor, 0*scaleFactor],
                 primer1.slice(i, i+1),
                 null,
@@ -359,7 +359,7 @@ const Toolbar = new class {
             ))
         };
         for (let i = 0; i < primer2Rev.length; i++) {
-            svg.appendChild(PlasmidViewer.text(
+            svg.appendChild(PlasmidViewer._text(
                 [(i + 0.5)*scaleFactor, 1*scaleFactor],
                 primer2Rev.slice(i, i+1),
                 null,
