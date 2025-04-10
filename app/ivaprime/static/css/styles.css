@@ -1034,7 +1034,6 @@ input, select, textarea {
   flex-grow: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
 
   -webkit-user-select: none; /* Safari */
@@ -1056,6 +1055,14 @@ input, select, textarea {
   border: none;
   color: var(--text-color);
   border-radius: 4px;
+}
+
+.toolbar-panel-section-hgroup-input input[type="checkbox"] {
+  height: 18px;
+  width: 18px;
+
+  align-self: flex-start;
+  flex-grow: unset;
 }
 
 .input-suffix {
