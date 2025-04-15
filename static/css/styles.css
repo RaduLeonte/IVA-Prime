@@ -589,6 +589,7 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
   justify-content: space-between;
 
   height: 30px;
+  margin-bottom: 5px;
 
   border-bottom: 2px solid var(--border-color);
 }
@@ -630,9 +631,19 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
   margin-left: 10px;
 }
 
+.primer-header {
+  display: flex;
+  align-content: stretch;
+  justify-content: space-between;
+}
+
 .primer-title {
   font-size: 14px;
   font-weight: bold;
+}
+
+.primer-header-buttons-container {
+  display: flex;
 }
 
 .primer-sequence-regions {
@@ -654,7 +665,7 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
 .primer-sequence-subhr { background-color: var(--subhr) }
 .primer-sequence-subtbr { background-color: var(--subtbr) }
 
-.primer-copy-button {
+.primer-header-button {
   display: inline-flex !important;
 
   height: 20px;
@@ -666,6 +677,14 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
 
 .primer-copy-button span {
   background-image: url('/static/assets/icons/copy.svg');
+}
+
+.primer-highlight-button[active] {
+  background-color: var(--footer-icon-hover);
+}
+
+.primer-highlight-button span {
+  background-image: url('/static/assets/icons/highlight.svg');
 }
 
 .primer-increment-buttons-wrapper {

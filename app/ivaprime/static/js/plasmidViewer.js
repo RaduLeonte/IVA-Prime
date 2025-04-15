@@ -732,7 +732,7 @@ const PlasmidViewer = new class {
 
     _addMinimapEventListeners(minimapCanvas, minimapBar) {
         function scrollGridViewContainer(event) {
-            console.log("PlasmidViewer._addMinimapEventListeners.scrollGridViewContainer")
+            //console.log("PlasmidViewer._addMinimapEventListeners.scrollGridViewContainer")
 
             const gridView = document.getElementById("grid-view");
         
@@ -774,7 +774,7 @@ const PlasmidViewer = new class {
 
 
     updateMinimapScrollBar() {
-        console.log("PlasmidViewer.updateMinimapScrollBar -> ")
+        //console.log("PlasmidViewer.updateMinimapScrollBar -> ")
         const gridView = document.getElementById("grid-view");
         const minimapCanvas = document.getElementById("minimap-svg-canvas");
         const minimapBar = document.getElementById("minimap-bar");
