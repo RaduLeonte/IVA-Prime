@@ -1994,8 +1994,8 @@ html[data-theme="dark"] .boolean-switch-slider:before {
 .base-ambigous { fill: var(--border-color) }
 .base-hover { fill: var(--base-hover) }
 .base-selected { fill: var(--base-selected) }
-.base-search { fill: var(--base-search) }
-.base-search-focus { fill: var(--base-search-highlight) }
+.base-search { fill: var(--base-search) !important}
+.base-search-focus { fill: var(--base-search-highlight) !important}
 
 .base-primer-hr,
 .base-primer-ins,

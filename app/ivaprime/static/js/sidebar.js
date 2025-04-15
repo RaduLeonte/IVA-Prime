@@ -192,15 +192,21 @@ const Sidebar = new class {
         const highlightPrimerButton = document.createElement("DIV");
         highlightPrimerButton.classList.add("primer-highlight-button","toolbar-button", "primer-header-button");
         highlightPrimerButton.title = "Highlight primer sequence";
+        const primerDict = Session.activePlasmid().primers[primerSetIndex].primers[primerIndex];
+        if ("isHighlighted" in primerDict && primerDict["isHighlighted"] === true) {
+            highlightPrimerButton.setAttribute("active", "")
+        };
         highlightPrimerButton.appendChild(document.createElement("span"));
         primerHeaderButtonsContainer.appendChild(highlightPrimerButton);
 
         highlightPrimerButton.onclick = function(event) {
             if (!highlightPrimerButton.hasAttribute("active")) {
                 highlightPrimerButton.setAttribute("active", "");
+                Session.activePlasmid().primers[primerSetIndex].primers[primerIndex]["isHighlighted"] = true;
                 Sidebar.highlightPrimerBindingSite(event.target);
             } else {
                 highlightPrimerButton.removeAttribute("active");
+                Session.activePlasmid().primers[primerSetIndex].primers[primerIndex]["isHighlighted"] = false;
                 Sidebar.unhighlightPrimerBindingSite(event.target);
                 //Sidebar.unhighlightPrimerBindingSites();
             };
@@ -316,13 +322,16 @@ const Sidebar = new class {
             button.title = title;
             button.appendChild(document.createElement("span"));
             
-            button.onclick = function () {
+            button.onclick = function (event) {
+                //const parentPrimerContainer = button.closest(".primer-container");
+                //const highlightButton = parentPrimerContainer.querySelector(".primer-highlight-button");
+                //Sidebar.unhighlightPrimerBindingSite(highlightButton);
                 Session.activePlasmid().incrementPrimerSequence(
                     primerSetIndex,
                     primerIndex,
                     direction,
                     increment,
-                )
+                );
             };
             
             container.appendChild(button);
@@ -349,19 +358,13 @@ const Sidebar = new class {
         };
         primersTableContainer.appendChild(primersTable);
 
+        this.unhighlightPrimerBindingSites();
+        this.highlightActivePrimerBindingSites();
+
         return;
     };
 
-
-    highlightPrimerBindingSite(sender) {
-        const primersContainer = sender.closest(".primer-container");
-
-        const primerSequence = primersContainer.querySelector(".primer-sequence-regions").innerText;
-        const primerRegions = primersContainer.querySelectorAll(".primer-sequence")
-        
-        const direction = primerRegions[0].getAttribute("direction")
-
-        // Find binding site starting index
+    findPrimerBindingSites(primerSequence, direction) {
         const activePlasmid = Session.activePlasmid();
         if (!activePlasmid) return;
         
@@ -388,6 +391,41 @@ const Sidebar = new class {
             };
         };
 
+        return indices;
+    };
+
+
+    highlightActivePrimerBindingSites() {
+        console.log("Sidebar.highlightActivePrimerBindingSites -> ")
+        const primersTable = document.getElementById("primers-table");
+        
+        const primerContainers = primersTable.querySelectorAll(".primer-container");
+        primerContainers.forEach((primerContainer) => {
+            const highlightButton = primerContainer.querySelector(".primer-highlight-button");
+            
+            if (!highlightButton.hasAttribute("active")) return;
+
+            Sidebar.highlightPrimerBindingSite(highlightButton);
+        });
+    };
+
+
+    highlightPrimerBindingSite(sender) {
+        const primersContainer = sender.closest(".primer-container");
+        
+        const primerSequence = primersContainer.querySelector(".primer-sequence-regions").innerText;
+        console.log("Sidebar.hightlightPrimerBindingSite ->", primerSequence)
+        const primerRegions = primersContainer.querySelectorAll(".primer-sequence")
+        
+        const direction = primerRegions[0].getAttribute("direction")
+
+        // Find binding site starting index
+        const activePlasmid = Session.activePlasmid();
+        if (!activePlasmid) return;
+        
+
+        let indices = this.findPrimerBindingSites(primerSequence, direction);
+
         let index = indices[0]
         primerRegions.forEach((primerRegion) => {
             const type = primerRegion.getAttribute("type");
@@ -401,21 +439,23 @@ const Sidebar = new class {
             );
             index += primerRegionSequence.length;
         });
-
-        sender.setAttribute("highlighted-strand", direction)
-        sender.setAttribute("highlighted-range", [indices[0] + 1, indices[0] + primerSequence.length]);
     };
 
 
     unhighlightPrimerBindingSite(sender) {
-        const highlightedStrand = sender.getAttribute("highlighted-strand");
+        const primersContainer = sender.closest(".primer-container");
+
+        const primerSequence = primersContainer.querySelector(".primer-sequence-regions").innerText;
+        const primerRegions = primersContainer.querySelectorAll(".primer-sequence")
         
-        let highlightedRange = sender.getAttribute("highlighted-range").split(",").map((v) => parseInt(v));
-        if (!highlightedRange || !highlightedRange[0]) return;
+        const direction = primerRegions[0].getAttribute("direction");
+
+        let indices = this.findPrimerBindingSites(primerSequence, direction);
+        if (indices.length === 0) return;
+
+        let highlightedRange = [indices[0] + 1, indices[0] + primerSequence.length]
+        
         const plasmidSequenceLength = Session.activePlasmid().sequence.length;
-        //highlightedRange = highlightedRange.map((v) => v + plasmidSequenceLength);
-        //highlightedRange = highlightedRange.map((v) => (v % plasmidSequenceLength) + plasmidSequenceLength) % plasmidSequenceLength);
-        
         
         const classes = Object.values(this.baseClasses);
         // Iterate over highlight classes
@@ -429,7 +469,7 @@ const Sidebar = new class {
                 const baseIndex = parseInt(base.getAttribute("base-index"));
                 
                 const parentStrandGroup = base.closest('#strand-fwd, #strand-rev');
-                if (!parentStrandGroup.id.includes(highlightedStrand)) {
+                if (!parentStrandGroup.id.includes(direction)) {
                     continue;
                 };
                 
