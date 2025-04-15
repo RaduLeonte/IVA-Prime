@@ -121,7 +121,7 @@ const Sidebar = new class {
         primerSetHeader.appendChild(primerSetHeaderRenameButton);
 
         primerSetHeaderRenameButton.onclick = function() {
-            Modals.createRenamePrimersModal(i);
+            Modals.createRenamePrimersModal(primerSetIndex);
         };
             
 
