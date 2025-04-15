@@ -160,10 +160,51 @@ const Sidebar = new class {
         const primerContainer = document.createElement("DIV");
         primerContainer.classList.add("primer-container");
 
+        /** Primer header */
+        const primerHeader = document.createElement("DIV");
+        primerHeader.classList.add("primer-header");
+        primerContainer.appendChild(primerHeader);
+
         const primerTitle = document.createElement("DIV");
         primerTitle.classList.add("primer-title");
         primerTitle.innerText = primer.label;
-        primerContainer.appendChild(primerTitle);
+        primerHeader.appendChild(primerTitle);
+
+        const primerHeaderButtonsContainer = document.createElement("DIV");
+        primerHeaderButtonsContainer.classList.add("primer-header-buttons-container");
+        primerHeader.appendChild(primerHeaderButtonsContainer);
+
+
+        /** Copy primer button */
+        const copyPrimerButton = document.createElement("span");
+        copyPrimerButton.classList.add("primer-copy-button", "toolbar-button", "primer-header-button"),
+        copyPrimerButton.title = "Copy sequence to clipboard";
+        copyPrimerButton.appendChild(document.createElement("span"));
+        primerHeaderButtonsContainer.appendChild(copyPrimerButton);
+
+        copyPrimerButton.onclick = function() {
+            const primerRegionSpans = primerSequence.querySelectorAll("span");
+            const combinedSequence = Array.from(primerRegionSpans).map(span => span.textContent).join("");
+            Utilities.copyToClipboard(combinedSequence);
+        };
+
+
+        const highlightPrimerButton = document.createElement("DIV");
+        highlightPrimerButton.classList.add("primer-highlight-button","toolbar-button", "primer-header-button");
+        highlightPrimerButton.title = "Highlight primer sequence";
+        highlightPrimerButton.appendChild(document.createElement("span"));
+        primerHeaderButtonsContainer.appendChild(highlightPrimerButton);
+
+        highlightPrimerButton.onclick = function(event) {
+            if (!highlightPrimerButton.hasAttribute("active")) {
+                highlightPrimerButton.setAttribute("active", "");
+                Sidebar.highlightPrimerBindingSite(event.target);
+            } else {
+                highlightPrimerButton.removeAttribute("active");
+                Sidebar.unhighlightPrimerBindingSite(event.target);
+                //Sidebar.unhighlightPrimerBindingSites();
+            };
+        };
 
         /** Increment primer sequence buttons */
         const incrementPrimerButtonsWrapper = document.createElement("DIV");
@@ -216,20 +257,6 @@ const Sidebar = new class {
         primerContainer.appendChild(primerSequence);
 
 
-        /** Copy primer button */
-        const copyPrimerButton = document.createElement("span");
-        copyPrimerButton.classList.add("primer-copy-button", "toolbar-button"),
-        copyPrimerButton.title = "Copy sequence to clipboard";
-        copyPrimerButton.appendChild(document.createElement("span"));
-        primerSequence.appendChild(copyPrimerButton);
-
-        copyPrimerButton.onclick = function() {
-            const primerRegionSpans = primerSequence.querySelectorAll("span");
-            const combinedSequence = Array.from(primerRegionSpans).map(span => span.textContent).join("");
-            Utilities.copyToClipboard(combinedSequence);
-        };
-
-
         /** Primer sequence */
         let totalPrimerLength = 0;
         primer.regions.forEach(region => {
@@ -244,13 +271,12 @@ const Sidebar = new class {
             regionSequence.innerText = region.sequence;
             primerSequence.appendChild(regionSequence);
 
-            regionSequence.addEventListener("mouseenter", (event) => {
-                this.highlightPrimerBindingSite(event.target);
-            });
-
-            regionSequence.addEventListener("mouseleave", () => {
-                this.unhighlightPrimerBindingSites();
-            });
+            //regionSequence.addEventListener("mouseenter", (event) => {
+            //    this.highlightPrimerBindingSite(event.target);
+            //});
+            //regionSequence.addEventListener("mouseleave", () => {
+            //    this.unhighlightPrimerBindingSites();
+            //});
 
             totalPrimerLength += region.sequence.length;
         });
@@ -328,46 +354,95 @@ const Sidebar = new class {
 
 
     highlightPrimerBindingSite(sender) {
-        const primersContainer = sender.closest(".primers-container");
+        const primersContainer = sender.closest(".primer-container");
 
-        const primerSequences = primersContainer.querySelectorAll(".primer-sequence");
-        primerSequences.forEach((primerRegionElement) => {
-            const type = primerRegionElement.getAttribute("type");
-            const baseClass = this.baseClasses[type];
-            const direction = primerRegionElement.getAttribute("direction");
-            const primerSequence = primerRegionElement.innerText;
-            
-            const activePlasmid = Session.activePlasmid();
-            if (!activePlasmid) return;
-            
-            let sequence = {"fwd": activePlasmid.sequence, "rev": activePlasmid.complementarySequence}[direction];
-            const query = {"fwd": primerSequence, "rev": primerSequence.split("").reverse().join("")}[direction];;
-            
-            let indices = [];
-            if (Session.activePlasmid().topology === "linear") {
-                let index = sequenceRepeating.indexOf(query);
-                while (index !== -1) {
-                    indices.push(index);
-                    index = sequence.indexOf(query, index + 1);
+        const primerSequence = primersContainer.querySelector(".primer-sequence-regions").innerText;
+        const primerRegions = primersContainer.querySelectorAll(".primer-sequence")
+        
+        const direction = primerRegions[0].getAttribute("direction")
+
+        // Find binding site starting index
+        const activePlasmid = Session.activePlasmid();
+        if (!activePlasmid) return;
+        
+        let sequence = {"fwd": activePlasmid.sequence, "rev": activePlasmid.complementarySequence}[direction];
+        const query = {"fwd": primerSequence, "rev": primerSequence.split("").reverse().join("")}[direction];;
+        
+        let indices = [];
+        if (Session.activePlasmid().topology === "linear") {
+            let index = sequenceRepeating.indexOf(query);
+            while (index !== -1) {
+                indices.push(index);
+                index = sequence.indexOf(query, index + 1);
+            };
+        } else {
+            const sequenceLength = sequence.length;
+            const sequenceRepeating = sequence.repeat(3);
+            let index = sequenceRepeating.indexOf(query);
+            while (index !== -1) {
+                const resultSpan = [index - sequenceLength, index + query.length - sequenceLength]
+                if (resultSpan[1] >= 0 && resultSpan[1] <= sequenceLength ) {
+                    indices.push(index - sequenceLength);
                 };
-            } else {
-                const sequenceLength = sequence.length;
-                const sequenceRepeating = sequence.repeat(3);
-                let index = sequenceRepeating.indexOf(query);
-                while (index !== -1) {
-                    const resultSpan = [index - sequenceLength, index + query.length - sequenceLength]
-                    if (resultSpan[1] >= 0 && resultSpan[1] <= sequenceLength ) {
-                        indices.push(index - sequenceLength);
-                    };
-                    index = sequenceRepeating.indexOf(query, index + 1);
+                index = sequenceRepeating.indexOf(query, index + 1);
+            };
+        };
+
+        let index = indices[0]
+        primerRegions.forEach((primerRegion) => {
+            const type = primerRegion.getAttribute("type");
+            const baseClass = this.baseClasses[type];
+
+            const primerRegionSequence = primerRegion.innerText;
+            PlasmidViewer.highlightBases(
+                [index + 1, index + primerRegionSequence.length],
+                baseClass,
+                direction,
+            );
+            index += primerRegionSequence.length;
+        });
+
+        sender.setAttribute("highlighted-strand", direction)
+        sender.setAttribute("highlighted-range", [indices[0] + 1, indices[0] + primerSequence.length]);
+    };
+
+
+    unhighlightPrimerBindingSite(sender) {
+        const highlightedStrand = sender.getAttribute("highlighted-strand");
+        
+        let highlightedRange = sender.getAttribute("highlighted-range").split(",").map((v) => parseInt(v));
+        if (!highlightedRange || !highlightedRange[0]) return;
+        const plasmidSequenceLength = Session.activePlasmid().sequence.length;
+        //highlightedRange = highlightedRange.map((v) => v + plasmidSequenceLength);
+        //highlightedRange = highlightedRange.map((v) => (v % plasmidSequenceLength) + plasmidSequenceLength) % plasmidSequenceLength);
+        
+        
+        const classes = Object.values(this.baseClasses);
+        // Iterate over highlight classes
+        for (let i = 0; i < classes.length; i++) {
+            const targetClass = classes[i];
+            const basesWithClass = PlasmidViewer.highlightedBases[targetClass];
+            if (!basesWithClass) continue;
+
+            for (let j = 0; j < basesWithClass.length; j++) {
+                const base = basesWithClass[j];
+                const baseIndex = parseInt(base.getAttribute("base-index"));
+                
+                const parentStrandGroup = base.closest('#strand-fwd, #strand-rev');
+                if (!parentStrandGroup.id.includes(highlightedStrand)) {
+                    continue;
+                };
+                
+                //console.log(baseIndex, highlightedRange, highlightedRange.map(v => v + plasmidSequenceLength))
+                if (
+                    (highlightedRange[0] <= baseIndex && baseIndex <= highlightedRange[1])
+                    || (highlightedRange[0] + plasmidSequenceLength <= baseIndex && baseIndex <= highlightedRange[1] + plasmidSequenceLength)
+                ) {
+                    base.classList.remove(targetClass);
                 };
             };
-    
-    
-            indices.forEach((index) => {
-                PlasmidViewer.highlightBases([index + 1, index + query.length], baseClass, direction)
-            });
-        });
+        };
+        //console.log(highlightedRange)
     };
 
 
