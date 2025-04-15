@@ -1650,7 +1650,10 @@ const FileIO = new class {
             [
                 "Set name",
                 "Primer name",
-                "Sequence",
+                "Sequence (5'->3')",
+                "Symmetry",
+                "HR length [nt]",
+                "HR Tm [C]",
                 "TBR length [nt]",
                 "TBR Tm [C]",
                 "Total length [nt]",
@@ -1659,6 +1662,17 @@ const FileIO = new class {
 
         for (let i = 0; i < primerSets.length; i++) {
             const set = primerSets[i];
+
+            let hrLengthMap;
+            let hrTmMap;
+            if (set.type === "Subcloning") {
+                hrLengthMap = [set.hrLength[0], set.hrLength[1], set.hrLength[1], set.hrLength[0]];
+                hrTmMap = [set.hrTm[0].toFixed(2), set.hrTm[1].toFixed(2), set.hrTm[1].toFixed(2), set.hrTm[0].toFixed(2)];
+            } else {
+                hrLengthMap = new Array(4).fill(set.hrLength);
+                hrTmMap = new Array(4).fill(set.hrTm.toFixed(2));
+            };
+
             for (let j = 0; j < set.primers.length; j++) {
                 const primer = set.primers[j];
                 let primerSequence = ""
@@ -1673,6 +1687,9 @@ const FileIO = new class {
                         set.title,
                         primer.label,
                         primerSequence,
+                        set.symmetry,
+                        hrLengthMap[j],
+                        hrTmMap[j],
                         tbr.sequence.length,
                         Nucleotides.getMeltingTemperature(tbr.sequence).toFixed(2),
                         primerSequence.length,
@@ -1730,7 +1747,7 @@ const FileIO = new class {
                         tbrLength = region.sequence.length;
                     };
                 };
-                lines.push(`${primer.label}`);
+                lines.push(`${primer.label} (5'->3')`);
                 lines.push(`\t${primerSequence}`);
                 lines.push(`\tTBR ${tbrLength} nt (${tbrTm.toFixed(2)} C)`);
                 lines.push(`\tTotal ${primerSequence.length} nt`);
@@ -1765,6 +1782,11 @@ const FileIO = new class {
             const primerSetContainer = primerSetContainers[i];
             const primerSetHeaderTitle = primerSetContainer.querySelector(".primers-set-header-title");
             primerSetHeaderTitle.innerText = headerTitle;
+
+            const primerTitles = primerSetContainers[i].querySelectorAll(".primer-title");
+            primerTitles.forEach((primerTitle) => {
+                primerTitle.innerText = primerTitle.innerText + " (5'->3')"
+            });
         };
 
         // Remove unnecessary buttons
