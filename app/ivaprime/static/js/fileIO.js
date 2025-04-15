@@ -1646,7 +1646,16 @@ const FileIO = new class {
 
     primersToTable(primerSets, includeColumnNames=false) {
         let table = [];
-        if (includeColumnNames) table.push(["Primer Name", "Primer Sequence"]);
+        if (includeColumnNames) table.push(
+            [
+                "Set name",
+                "Primer name",
+                "Sequence",
+                "TBR length [nt]",
+                "TBR Tm [C]",
+                "Total length [nt]",
+            ]
+        );
 
         for (let i = 0; i < primerSets.length; i++) {
             const set = primerSets[i];
@@ -1656,7 +1665,19 @@ const FileIO = new class {
                 for (let k = 0; k < primer.regions.length; k++) {
                     primerSequence += primer.regions[k].sequence;
                 };
-                table.push([primer.label, primerSequence]);
+
+                const tbr = primer.regions[primer.regions.length - 1];
+
+                table.push(
+                    [
+                        set.title,
+                        primer.label,
+                        primerSequence,
+                        tbr.sequence.length,
+                        Nucleotides.getMeltingTemperature(tbr.sequence).toFixed(2),
+                        primerSequence.length,
+                    ]
+                );
             };
         };
 
@@ -1690,9 +1711,9 @@ const FileIO = new class {
         for (let i = 0; i < primerSets.length; i++) {
             const set = primerSets[i];
             if (set.type === "Subcloning") {
-                lines.push(`${i+1}. ${set.title} (${set.symmetry}; HR1: ${set.hrLength[0]} nt, ${set.hrTm[0].toFixed(2)} C; HR2: ${set.hrLength[1]} nt, ${set.hrTm[1].toFixed(2)} C)`);
+                lines.push(`${set.title} (${set.symmetry}; HR1: ${set.hrLength[0]} nt, ${set.hrTm[0].toFixed(2)} C; HR2: ${set.hrLength[1]} nt, ${set.hrTm[1].toFixed(2)} C)`);
             } else {
-                lines.push(`${i+1}. ${set.title} (${set.symmetry}; HR: ${set.hrLength} nt, ${set.hrTm.toFixed(2)} C)`);
+                lines.push(`${set.title} (${set.symmetry}; HR: ${set.hrLength} nt, ${set.hrTm.toFixed(2)} C)`);
             };
             
             for (let j = 0; j < set.primers.length; j++) {
@@ -1709,7 +1730,10 @@ const FileIO = new class {
                         tbrLength = region.sequence.length;
                     };
                 };
-                lines.push(`\t${primer.label}: ${primerSequence} (Total: ${primerSequence.length} nt; TBR: ${tbrLength} nt, ${tbrTm.toFixed(2)} C)`);
+                lines.push(`${primer.label}`);
+                lines.push(`\t${primerSequence}`);
+                lines.push(`\tTBR ${tbrLength} nt (${tbrTm.toFixed(2)} C)`);
+                lines.push(`\tTotal ${primerSequence.length} nt`);
             };
 
             lines.push("");
@@ -1727,6 +1751,28 @@ const FileIO = new class {
         const tempContainer = document.createElement("div");
         tempContainer.appendChild(Sidebar.createPrimersTableContainer(primerSets));
         document.body.appendChild(tempContainer);
+
+        const primerSetContainers = tempContainer.querySelectorAll(".primers-set");
+        for (let i = 0; i < primerSets.length; i++) {
+            const set = primerSets[i];
+            let headerTitle;
+            if (set.type === "Subcloning") {
+                headerTitle = `${set.title} (${set.symmetry}; HR1: ${set.hrLength[0]} nt, ${set.hrTm[0].toFixed(2)} C; HR2: ${set.hrLength[1]} nt, ${set.hrTm[1].toFixed(2)} C)`;
+            } else {
+                headerTitle = `${set.title} (${set.symmetry}; HR: ${set.hrLength} nt, ${set.hrTm.toFixed(2)} C)`;
+            };
+
+            const primerSetContainer = primerSetContainers[i];
+            const primerSetHeaderTitle = primerSetContainer.querySelector(".primers-set-header-title");
+            primerSetHeaderTitle.innerText = headerTitle;
+        };
+
+        // Remove unnecessary buttons
+        const primerContainers = tempContainer.querySelectorAll(".primer-container");
+        primerContainers.forEach((primerContainer) => {
+            const primerIncrementButtonsWrapper = primerContainer.querySelector(".primer-increment-buttons-wrapper");
+            primerIncrementButtonsWrapper.parentElement.removeChild(primerIncrementButtonsWrapper);
+        });
     
         function applyComputedStyles(node) {
             if (node.nodeType === Node.ELEMENT_NODE) {
@@ -1809,7 +1855,7 @@ const FileIO = new class {
         const table = this.primersToTable(primerSets, false);
 
         // Create a list of rows to append to the microsynth form
-        const primerList = table.map(([primerId, primerSeq]) => [
+        const primerList = table.map(([, primerId, primerSeq]) => [
             primerId, // DNA Oligo Name
             primerSeq, // DNA Sequence (5' -> 3')
             null, // Length
