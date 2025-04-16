@@ -2469,6 +2469,8 @@ const PlasmidViewer = new class {
 
 
     addDeletionMarkings() {
+        if (!Session.activePlasmid()) return;
+        
         this.removeDeletionMarkings();
 
         const deletionMarkings = Session.activePlasmid().deletionMarks;
