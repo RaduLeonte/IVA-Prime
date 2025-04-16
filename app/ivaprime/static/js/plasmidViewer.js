@@ -776,6 +776,8 @@ const PlasmidViewer = new class {
     updateMinimapScrollBar() {
         //console.log("PlasmidViewer.updateMinimapScrollBar -> ")
         const gridView = document.getElementById("grid-view");
+        if (!gridView) return;
+
         const minimapCanvas = document.getElementById("minimap-svg-canvas");
         const minimapBar = document.getElementById("minimap-bar");
         
@@ -2470,7 +2472,7 @@ const PlasmidViewer = new class {
 
     addDeletionMarkings() {
         if (!Session.activePlasmid()) return;
-        
+
         this.removeDeletionMarkings();
 
         const deletionMarkings = Session.activePlasmid().deletionMarks;
