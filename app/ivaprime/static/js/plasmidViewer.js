@@ -663,6 +663,7 @@ const PlasmidViewer = new class {
 
 
     _createGridViewMinimap(gridView, sequenceLength, features) {
+        console.log(`PlasmidViewer._createGridViewMinimap ->`, features)
         const minimap = document.createElement("div");
         minimap.classList.add("grid-view-minimap");
         
@@ -695,6 +696,7 @@ const PlasmidViewer = new class {
         const featuresSorted = Object.fromEntries(featuresArray);
 
         for (const [featureID, feature] of Object.entries(featuresSorted)) {
+            if (!feature.span) continue;
             //if (feature.level !== 0) continue;
 
             featureRectsGroup.appendChild(
