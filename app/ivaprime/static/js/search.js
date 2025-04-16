@@ -48,7 +48,7 @@ const Search = new class {
      * Search for DNA or AA sequence in plasmid
      */
     search() {
-        const query = document.getElementById("search-bar").value.toUpperCase();
+        const query = document.getElementById("search-bar").value.toUpperCase().replace(" ", "");
         const searchAASeq = document.getElementById("search-aa").checked;
 
         this.clear(false);
