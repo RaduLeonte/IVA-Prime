@@ -136,8 +136,9 @@ const Search = new class {
                 // Translate reading frame
                 let aaFrame = "";
                 for (let k = 0; k+3 <= dnaFrame.length; k += 3) {
-                    aaFrame += Nucleotides.codonTable[dnaFrame.slice(k, k+3)]
+                    aaFrame += Nucleotides.codonTable[dnaFrame.slice(k, k+3)] ?? "X";
                 };
+                console.log(j, aaFrame)
 
 
                 // Search for query and save its index
