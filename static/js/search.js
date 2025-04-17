@@ -18,10 +18,10 @@ const Search = new class {
             );
 
             searchBar.addEventListener("keydown", function(event) {
-                if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+                if (event.key === "ArrowUp") {
                     event.preventDefault();
                     Search.navigateResults(-1);
-                } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+                } else if (event.key === "ArrowDown") {
                     event.preventDefault();
                     Search.navigateResults(1);
                 };
@@ -48,7 +48,7 @@ const Search = new class {
      * Search for DNA or AA sequence in plasmid
      */
     search() {
-        const query = document.getElementById("search-bar").value.toUpperCase();
+        const query = document.getElementById("search-bar").value.toUpperCase().replace(" ", "");
         const searchAASeq = document.getElementById("search-aa").checked;
 
         this.clear(false);
@@ -136,8 +136,9 @@ const Search = new class {
                 // Translate reading frame
                 let aaFrame = "";
                 for (let k = 0; k+3 <= dnaFrame.length; k += 3) {
-                    aaFrame += Nucleotides.codonTable[dnaFrame.slice(k, k+3)]
+                    aaFrame += Nucleotides.codonTable[dnaFrame.slice(k, k+3)] ?? "X";
                 };
+                console.log(j, aaFrame)
 
 
                 // Search for query and save its index
@@ -233,7 +234,7 @@ const Search = new class {
 
         PlasmidViewer.highlightBases(searchResult.span, "base-search-focus", searchResult.strand);
 
-        const container = document.getElementById("viewer");
+        const container = document.getElementById("grid-view");
         const containerRect = container.getBoundingClientRect();
         const basesInSearchResult = Array.from(container.querySelectorAll(".base-search-focus")).sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
 
@@ -264,7 +265,7 @@ const Search = new class {
                 : targetBottom - halfContainer - halfBases;
         };
 
-        document.getElementById("viewer").scrollTo({ top: targetHeight, behavior: "smooth" });
+        document.getElementById("grid-view").scrollTo({ top: targetHeight, behavior: "smooth" });
     };
 
 

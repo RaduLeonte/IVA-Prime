@@ -663,6 +663,7 @@ const PlasmidViewer = new class {
 
 
     _createGridViewMinimap(gridView, sequenceLength, features) {
+        console.log(`PlasmidViewer._createGridViewMinimap ->`, features)
         const minimap = document.createElement("div");
         minimap.classList.add("grid-view-minimap");
         
@@ -695,6 +696,7 @@ const PlasmidViewer = new class {
         const featuresSorted = Object.fromEntries(featuresArray);
 
         for (const [featureID, feature] of Object.entries(featuresSorted)) {
+            if (!feature.span) continue;
             //if (feature.level !== 0) continue;
 
             featureRectsGroup.appendChild(
@@ -758,6 +760,8 @@ const PlasmidViewer = new class {
         minimapBar.addEventListener("mousedown", function (event) {
             isDragging = true;
 
+            document.body.style.userSelect = "none"; // Stop text selection
+
             minimapBar.style.cursor = "grabbing";
             document.addEventListener("mousemove", scrollGridViewContainer);
         });
@@ -766,6 +770,9 @@ const PlasmidViewer = new class {
             if (!isDragging) return;
 
             isDragging = false;
+
+            document.body.style.userSelect = ""; // Reenable text selection
+
             minimapBar.style.cursor = "grab";
 
             document.removeEventListener("mousemove", scrollGridViewContainer)
@@ -776,6 +783,8 @@ const PlasmidViewer = new class {
     updateMinimapScrollBar() {
         //console.log("PlasmidViewer.updateMinimapScrollBar -> ")
         const gridView = document.getElementById("grid-view");
+        if (!gridView) return;
+
         const minimapCanvas = document.getElementById("minimap-svg-canvas");
         const minimapBar = document.getElementById("minimap-bar");
         
@@ -2202,7 +2211,9 @@ const PlasmidViewer = new class {
     /**
      * 
      */
-    redraw(views=null) {
+    redraw(views=null, keepSelfScrollTop=true) {
+        if (keepSelfScrollTop) this.saveGridViewScrollTop();
+
         //TO DO: Keep selection when redrawing
         const activePlasmid = Session.activePlasmid()
         if (activePlasmid) {
@@ -2210,9 +2221,34 @@ const PlasmidViewer = new class {
             PlasmidViewer.updateViewer();
         };
 
+        this.setGridViewScrollTop();
         this.highlightSubcloningTarget();
         this.addDeletionMarkings();
         this.updateMinimapScrollBar();
+    };
+
+
+    /**
+     * Save the current scroll position
+     */
+    saveGridViewScrollTop() {
+        if (!Session.activePlasmid() || !document.getElementById("grid-view")) return;
+
+        Session.activePlasmid().scrollTop = document.getElementById("grid-view").scrollTop;
+
+        console.log("PlasmidViewer.saveGridViewScrollTop -> Saved value:", Session.activePlasmid().scrollTop)
+    };
+
+
+    /**
+     * Scroll grid view container to specific position
+     */
+    setGridViewScrollTop() {
+        if (!Session.activePlasmid() || !document.getElementById("grid-view")) return;
+
+        document.getElementById("grid-view").scrollTop = Session.activePlasmid().scrollTop;
+
+        console.log("PlasmidViewer.setGridViewScrollTop -> Set value to:", document.getElementById("grid-view").scrollTop)
     };
     
     // #endregion Render_functions
@@ -2469,6 +2505,8 @@ const PlasmidViewer = new class {
 
 
     addDeletionMarkings() {
+        if (!Session.activePlasmid()) return;
+
         this.removeDeletionMarkings();
 
         const deletionMarkings = Session.activePlasmid().deletionMarks;
@@ -2550,7 +2588,7 @@ const PlasmidViewer = new class {
         title.classList.add("sequence-tooltip-title");
         tooltipBody.appendChild(title);
 
-        const featureLength = featureDict["span"][1] - featureDict["span"][0];
+        const featureLength = featureDict["span"][1] - featureDict["span"][0] + 1;
         const remainder = featureLength % 3;
         const remainderString = (remainder !== 0) ? "+" + remainder: "";
         const nrAA = (featureLength - remainder)/3;

@@ -70,6 +70,14 @@
 /* #endregion Themes */
 
 
+:root {
+  --header-height: 55px;
+  --footer-height: 45px;
+
+  --sidebar-width: 350px;
+  --toolbar-width: 45px;
+}
+
 /* 
  * MARK: Body
  */
@@ -252,8 +260,8 @@ input[type="checkbox"]:checked + .custom-checkbox::before {
   height: 100vh;
 
   display: grid;
-  grid-template-columns:[sidebar] 350px [viewer] minmax(0, auto) [toolbar] 45px;
-  grid-template-rows: [header] 55px [viewer] minmax(0, auto) [footer] 45px;
+  grid-template-columns:[sidebar] var(--sidebar-width) [viewer] minmax(0, auto) [toolbar] var(--toolbar-width);
+  grid-template-rows: [header] var(--header-height) [viewer] minmax(0, auto) [footer] var(--footer-height);
   
   grid-template-areas:
         "header header header"
@@ -267,7 +275,7 @@ input[type="checkbox"]:checked + .custom-checkbox::before {
   grid-area: sidebar;
 }
 .viewer {
-  max-width: calc(100vw - 350px - 45px);
+  max-width: calc(100vw - var(--sidebar-width) - var(--toolbar-width));
   grid-area: viewer;
   position: relative;
 }
@@ -800,7 +808,7 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
   padding: 0 10px;
 }
 .collapsible-content[visible] {
-  max-height: 300px;
+  max-height: 400px;
   padding: 10px 10px;
 }
 
@@ -810,7 +818,7 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
   justify-content: flex-start;
   gap: 10px;
 
-  height: 40px;
+  height: 100%;
 }
 
 .collapsible-content-hgroup {
@@ -876,7 +884,8 @@ input, select, textarea {
 
 .collapsible-content-hgroup-input textarea {
   min-height: 70px;
-  resize: none;
+  max-height: 200px;
+  resize: vertical;
 }
 
 .clr-field {
