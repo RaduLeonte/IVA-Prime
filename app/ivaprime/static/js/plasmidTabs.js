@@ -77,7 +77,8 @@ const PlasmidTabs = new class {
         Session.activePlasmidIndex = plasmidIndex;
         
 
-        PlasmidViewer.redraw();
+        const keepSelfScrollTop = false;
+        PlasmidViewer.redraw(null, keepSelfScrollTop);
 
         Sidebar.update();
     };
