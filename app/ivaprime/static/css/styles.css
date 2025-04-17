@@ -800,7 +800,7 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
   padding: 0 10px;
 }
 .collapsible-content[visible] {
-  max-height: 300px;
+  max-height: 400px;
   padding: 10px 10px;
 }
 
@@ -810,7 +810,7 @@ html[data-theme="dark"] .plasmid-tab-dropdown-menu-section-title {
   justify-content: flex-start;
   gap: 10px;
 
-  height: 40px;
+  height: 100%;
 }
 
 .collapsible-content-hgroup {
@@ -876,7 +876,8 @@ input, select, textarea {
 
 .collapsible-content-hgroup-input textarea {
   min-height: 70px;
-  resize: none;
+  max-height: 200px;
+  resize: vertical;
 }
 
 .clr-field {
