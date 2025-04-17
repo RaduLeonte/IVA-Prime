@@ -60,11 +60,7 @@ const PlasmidTabs = new class {
 
 
         // Save current scroll level
-        if (Session.activePlasmid()) {
-            const gridView = document.getElementById("grid-view");
-            console.log("PlasmidTabs.switch -> saving scrollTop", gridView.scrollTop)
-            Session.activePlasmid().scrollTop = gridView.scrollTop;
-        };
+        PlasmidViewer.saveGridViewScrollTop();
         
         // Deselect plasmid tab
         const previousPlasmidTab = document.getElementById("plasmid-tab-" + Session.activePlasmidIndex);
@@ -84,10 +80,6 @@ const PlasmidTabs = new class {
         PlasmidViewer.redraw();
 
         Sidebar.update();
-
-        // Set scroll of viewer to scroll level of new plasmid
-        const gridView = document.getElementById("grid-view");
-        gridView.scrollTop = Session.activePlasmid().scrollTop;
     };
 
 
