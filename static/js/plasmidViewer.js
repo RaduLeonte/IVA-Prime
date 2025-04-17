@@ -2214,9 +2214,34 @@ const PlasmidViewer = new class {
             PlasmidViewer.updateViewer();
         };
 
+        this.setGridViewScrollTop();
         this.highlightSubcloningTarget();
         this.addDeletionMarkings();
         this.updateMinimapScrollBar();
+    };
+
+
+    /**
+     * Save the current scroll position
+     */
+    saveGridViewScrollTop() {
+        if (!Session.activePlasmid() || !document.getElementById("grid-view")) return;
+
+        Session.activePlasmid().scrollTop = document.getElementById("grid-view").scrollTop;
+
+        console.log("PlasmidViewer.saveGridViewScrollTop -> Saved value:", Session.activePlasmid().scrollTop)
+    };
+
+
+    /**
+     * Scroll grid view container to specific position
+     */
+    setGridViewScrollTop() {
+        if (!Session.activePlasmid() || !document.getElementById("grid-view")) return;
+
+        document.getElementById("grid-view").scrollTop = Session.activePlasmid().scrollTop;
+
+        console.log("PlasmidViewer.setGridViewScrollTop -> Set value to:", document.getElementById("grid-view").scrollTop)
     };
     
     // #endregion Render_functions
