@@ -1632,6 +1632,23 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   height: 16px;
   cursor: pointer;
 }
+
+.common-insertions-dropdown {
+  flex-grow: 1;
+}
+
+.common-insertions-group {
+  font-style: normal;
+  font-weight: bold;
+  background-color: transparent;
+}
+
+.common-insertions-option {
+  display: flex;
+  align-items: stretch;
+  justify-items: flex-start;
+}
+
 /* #endregion Modal_windows  */
 
 

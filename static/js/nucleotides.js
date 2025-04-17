@@ -69,24 +69,11 @@ const Nucleotides = new class {
 
         /**
          * Common insertions (affinity tags and cleave tags)
-         * STREP, etc.
          */
-        this.commonInsertions = {
-            affinityTags: {
-                "MBP": {aa: "KIEEGKLVIWINGDKGYNGLAEVGKKFEKDTGIKVTVEHPDKLEEKFPQVAATGDGPDIIFWAHDRFGGYAQSGLLAEITPDKAFQDKLYPFTWDAVRYNGKLIAYPIAVEALSLIYNKDLLPNPPKTWEEIPALDKELKAKGKSALMFNLQEPYFTWPLIAADGGYAFKYENGKYDIKDVGVDNAGAKAGLTFLVDLIKNKHMNADTDYSIAEAAFNKGETAMTINGPWAWSNIDTSKVNYGVTVLPTFKGQPSKPFVGVLSAGINAASPNKELAKEFLENYLLTDEGLEAVNKDKPLGAVALKSYEEELAKDPRIAATMENAQKGEIMPNIPQMSAFWYAVRTAVINAASGRQTVDEALKDAQT"},
-                "6xHis": {aa: "HHHHHH"},
-                "FLAG": {aa: "DYKDDDDK"},
-                "2xFLAG": {aa: "DYKDDDDKDYKDDDDK"},
-                "3xFLAG": {aa: "DYKDDDDKDYKDDDDKDYKDDDDK"},
-                "Strep-tag II": {aa: "WSHPQFEK"},
-                "GST": {aa: "SPILGYWKIKGLVQPTRLLLEYLEEKYEEHLYERDEGDKWRNKKFELGLEFPNLPYYIDGDVKLTQSMAIIRYIADKHNMLGGCPKERAEISMLEGAVLDIRYGVSRIAYSKDFETLKVDFLSKLPEMLKMFEDRLCHKTYLNGDHVTHPDFMLYDALDVVLYMDPMCLDAFPKLVCFKKRIEAIPQIDKYLKSSKYIAWPLQGWQATFGGGDHPPK"},
-            },
-            cleaveTags: {
-                "TEV (ENLYFQ/S)": {aa: "ENLYFQS"},
-                "HRV 3C (LEVLFQ/GP)": {aa: "LEVLFQGP"},
-                "SUMO (...REQIGG/)": {aa: "SDSEVNQEAKPEVKPEVKPETHINLKVSDGSSEIFFKIKKTTPLRRLMEAFAKRQGKEMDSLRFLYDGIRIQADQTPEDLDMEDNDIIEAHREQIGG"},
-            },
-        };
+        this.commonInsertions = null;
+        document.addEventListener('DOMContentLoaded', function () {
+            Nucleotides.loadCommonInsertions();
+        });
     };
 
 
@@ -95,6 +82,15 @@ const Nucleotides = new class {
         .then(response => response.json())
         .then(json => {
             Nucleotides.codonWeights = json;
+        });
+    };
+
+
+    loadCommonInsertions() {
+        fetch('static/data/commonInsertions.json')
+        .then(response => response.json())
+        .then(json => {
+            Nucleotides.commonInsertions = json;
         });
     };
 

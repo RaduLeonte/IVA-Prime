@@ -153,17 +153,182 @@ const Modals = new class {
         return document.getElementById("modal").style.display === "block"
     };
 
-    getOrganismOptions() {
-        let options = "";
-        const preferredOrganism = UserPreferences.get("preferredOrganism");
-        for (const key in Nucleotides.codonWeights) {
-            if (key === preferredOrganism) {
-                options += `<option value="${key}" selected="selected">${key}</option>\n`;
-            } else {
-                options += `<option value="${key}">${key}</option>\n`;
-            };
+
+    _createCommonInsertionsDropdown(targetInput) {
+        const container = document.createElement("div");
+        container.classList.add("modal-hgroup");
+
+        const codonLabel = document.createElement("label");
+        codonLabel.innerText = "Commonly inserted sequences:";
+        container.appendChild(codonLabel);
+
+
+        const select = document.createElement("select");
+        select.classList.add("common-insertions-dropdown")
+
+        const defaultOption = document.createElement("option");
+        defaultOption.textContent = "<No sequence selected>";
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        defaultOption.classList.add("common-insertions-group");
+        select.appendChild(defaultOption);
+    
+        const spacePerLevel = 4; // number of non-breaking spaces per depth level
+    
+        const addEntriesToOptgroup = (entries, optgroup, depth = 1) => {
+            entries.forEach(entry => {
+                const indent = "\u00A0".repeat(depth * spacePerLevel);
+    
+                if (entry.type === "group") {
+                    // Render subgroup as a disabled option with indentation
+                    const subgroupOption = document.createElement("option");
+                    subgroupOption.textContent = indent + entry.name;
+                    subgroupOption.disabled = true;
+                    subgroupOption.classList.add("common-insertions-group");
+                    optgroup.appendChild(subgroupOption);
+    
+                    // Add entries inside this subgroup
+                    addEntriesToOptgroup(entry.entries, optgroup, depth + 1);
+                } else if (entry.type === "item") {
+                    const itemOption = document.createElement("option");
+                    itemOption.value = entry.aa;
+                    itemOption.setAttribute("feature-label", entry.label);
+                    itemOption.textContent = indent + entry.name;
+                    optgroup.appendChild(itemOption);
+                }
+            });
         };
-        return options;
+    
+        // Loop over top-level groups
+        Nucleotides.commonInsertions.forEach(topGroup => {
+            if (topGroup.type === "group") {
+                const optgroup = document.createElement("optgroup");
+                optgroup.label = topGroup.name;
+                optgroup.classList.add("common-insertions-group");
+    
+                addEntriesToOptgroup(topGroup.entries, optgroup, 1);
+                select.appendChild(optgroup);
+            }
+        });
+
+
+        select.addEventListener("change", (event) => {
+            targetInput.value = event.target.value;
+        });
+        
+        container.appendChild(select);
+
+        return container;
+    };
+
+
+    _createDNAInput(inputID, type="text", cssClasses=["modal-input"], disableSpellcheck=false) {
+        const dnaGroup = document.createElement("div");
+        dnaGroup.classList.add("modal-vgroup");
+
+        const dnaLabel = document.createElement("label");
+        dnaLabel.innerText = "DNA sequence:";
+
+        const dnaInput = document.createElement("input");
+        dnaInput.type = type;
+        dnaInput.id = inputID;
+        dnaInput.classList.add(...cssClasses);
+        if (disableSpellcheck) dnaInput.setAttribute("spellcheck", false);
+        dnaInput.setAttribute("validator", "dna");
+
+        dnaGroup.appendChild(dnaLabel);
+        dnaGroup.appendChild(dnaInput);
+
+        return dnaGroup;
+    };
+
+
+    _createAAInput(inputID, type="text", cssClasses=["modal-input"], disableSpellcheck=false) {
+        const aaGroup = document.createElement("div");
+        aaGroup.classList.add("modal-vgroup");
+
+        const aaLabel = document.createElement("label");
+        aaLabel.innerText = "Amino acid sequence:";
+
+        const aaInput = document.createElement("input");
+        aaInput.type = type;
+        aaInput.id = inputID;
+        aaInput.classList.add(...cssClasses);
+        if (disableSpellcheck) aaInput.setAttribute("spellcheck", false);
+        aaInput.setAttribute("validator", "aa");
+
+        const aaHint = document.createElement("div");
+        aaHint.classList.add("modal-hint");
+        aaHint.innerText = 'Accepted STOP letter codes: "*", "-", "X".';
+
+        aaGroup.appendChild(aaLabel);
+        aaGroup.appendChild(aaInput);
+        aaGroup.appendChild(aaHint);
+
+        return aaGroup;
+    };
+
+
+    _createCodonOptimizationDropdown() {
+        const codonGroup = document.createElement("div");
+        codonGroup.classList.add("modal-vgroup");
+
+        const codonHGroup = document.createElement("div");
+        codonHGroup.classList.add("modal-hgroup");
+
+        const codonLabel = document.createElement("label");
+        codonLabel.innerText = "Optimize codons for:";
+        codonHGroup.appendChild(codonLabel);
+
+
+        const select = document.createElement("select");
+        select.id = "insertion-select-organism";
+
+        const preferredOrganism = UserPreferences.get("preferredOrganism");
+
+        for (const key in Nucleotides.codonWeights) {
+            const option = document.createElement("option");
+            option.value = key;
+            option.textContent = key;
+            if (key === preferredOrganism) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        }
+        codonHGroup.appendChild(select);
+
+        const codonHint = document.createElement("div");
+        codonHint.classList.add("modal-hint");
+        codonHint.innerHTML = `
+            Codon frequency tables from 
+            <a href="https://hive.biochemistry.gwu.edu/review/codon2" target="_blank">CoCoPUTs</a> 
+            (<a href="https://doi.org/10.1016/j.jmb.2019.04.021" target="_blank">Alexaki et al. 2019</a>).
+        `;
+
+        codonGroup.appendChild(codonHGroup);
+        codonGroup.appendChild(codonHint);
+
+        return codonGroup;
+    };
+
+
+    _createTranslateFeatureCheckbox(checkboxID) {
+        const translateGroup = document.createElement("div");
+        translateGroup.classList.add("modal-hgroup");
+
+        const translateLabel = document.createElement("label");
+        translateLabel.innerText = "Translate new feature:";
+
+        const translateCheckbox = document.createElement("input");
+        translateCheckbox.type = "checkbox";
+        translateCheckbox.id = checkboxID;
+        translateCheckbox.name = checkboxID;
+        translateCheckbox.checked = false;
+
+        translateGroup.appendChild(translateLabel);
+        translateGroup.appendChild(translateCheckbox);
+
+        return translateGroup;
     };
 
 
@@ -387,55 +552,54 @@ const Modals = new class {
         body.classList.add("modal-insertion");
         const id = "modal-window-insertion";
 
-    
-        body.innerHTML = `
-        <div class="modal-title">${(type === "insertion") ? "Insert here": "Mutate selection"}</div>
 
-        <div class="modal-vgroup">
-            <label>DNA sequence:</label>
-            <input type="text" id="insertion-input-dna" class="modal-input" value="" validator="dna">
-        </div>
-
-        <div class="modal-vgroup">
-            <label>Amino acid sequence:</label>
-            <input type="text" id="insertion-input-aa" class="modal-input" value="" validator="aa">
-            <div class="modal-hint">
-                Accepted STOP letter codes: "*", "-", "X".
-            </div>
-        </div>
-        
-
-        <div class="modal-vgroup">
-            <div class="modal-hgroup">
-                <label>Optimize codons for:</label>
-                <select id="insertion-select-organism">${this.getOrganismOptions()}</select>
-            </div>
-            <div class="modal-hint">
-                Codon frequency tables from <a href="https://hive.biochemistry.gwu.edu/review/codon2" target="_blank">CoCoPUTs</a> (<a href="https://doi.org/10.1016/j.jmb.2019.04.021" target="_blank">Alexaki et al. 2019</a>).
-            </div>
-        </div>
+        // Title
+        const modalTitle = document.createElement("div");
+        modalTitle.classList.add("modal-title");
+        modalTitle.innerText = (type === "insertion") ? "Insert here": "Mutate selection";
+        body.appendChild(modalTitle);
 
 
-        <div class="modal-hgroup">
-            <label>Translate new feature:</label>
-            <input type="checkbox" id="insertion-checkbox-translate" name="insertion-checkbox-translate" checked="false">
-        </div>
+        const dnaSeqInput = this._createDNAInput("insertion-input-dna");
+        const aaSeqInput = this._createAAInput("insertion-input-aa");
+        const commonInsertionsDropdown = this._createCommonInsertionsDropdown(aaSeqInput.querySelector(".modal-input"));
+        body.appendChild(commonInsertionsDropdown);
+        body.appendChild(dnaSeqInput);
+        body.appendChild(aaSeqInput);
 
 
-        <div id="lin-frag-hint" class="modal-hgroup lin-frag-hint">
-            <span class="lin-frag-hint-span">
-                The sequence you are trying to insert is very long. We recommend generating and ordering a linear fragment of dsDNA with overhangs to use as the insert. In the context menu, select "Insert from linear fragment" instead. An explanation of how insertions from linear fragments work can be found in the <a href="/about#lin-frag" target="_blank" class="underlined-link">About</a> page.
-            </span>
-        </div>
+        // Codon optimization dropdown
+        body.appendChild(
+            this._createCodonOptimizationDropdown()
+        );
+
+
+        // Translate feature checkbox
+        body.appendChild(
+            this._createTranslateFeatureCheckbox("insertion-checkbox-translate")
+        );
+
+        // Linear fragment hint
+        const linFragHint = document.createElement("div");
+        linFragHint.classList.add("modal-hgroup", "lin-frag-hint");
+        linFragHint.id = "lin-frag-hint";
+
+        const linFragSpan = document.createElement("span");
+        linFragSpan.classList.add("lin-frag-hint-span");
+        linFragSpan.innerHTML = `
+            The sequence you are trying to insert is very long. We recommend generating and ordering a linear fragment of dsDNA with overhangs to use as the insert. 
+            In the context menu, select "Insert from linear fragment" instead. An explanation of how insertions from linear fragments work can be found in the 
+            <a href="/about#lin-frag" target="_blank" class="underlined-link">About</a> page.
         `;
+        linFragHint.appendChild(linFragSpan);
+        body.appendChild(linFragHint);
 
-        const dnaSeqInput = body.querySelector("#insertion-input-dna");
-        const aaSeqInput = body.querySelector("#insertion-input-aa");
+        
 
         [dnaSeqInput, aaSeqInput].forEach((input) => {
             input.addEventListener("input", function (e) {
                 const linFragHint = document.getElementById("lin-frag-hint");
-                if (input.value.length > 400) {
+                if (input.value && input.value.length > 400) {
                     linFragHint.setAttribute("visible", "");
                 } else {
                     linFragHint.removeAttribute("visible")
@@ -444,12 +608,17 @@ const Modals = new class {
         });
 
         const action = () => {
+            const selectElement = commonInsertionsDropdown.querySelector(".common-insertions-dropdown");
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            const newFeatureName = (selectedOption.hasAttribute("feature-label")) ? selectedOption.getAttribute("feature-label"): null;
+            console.log("newFeatureName -> ", newFeatureName)
             Session.activePlasmid().IVAOperation(
                 (type === "insertion") ? "Insertion": "Mutation",
                 document.getElementById("insertion-input-dna").value,
                 document.getElementById("insertion-input-aa").value,
                 document.getElementById("insertion-select-organism").value,
                 document.getElementById("insertion-checkbox-translate").checked,
+                newFeatureName,
             );
         };
 
@@ -466,59 +635,52 @@ const Modals = new class {
         const body = document.createElement("div");
         body.classList.add("modal-subcloning");
         const id = "modal-window-subcloning";
-    
-        body.innerHTML = `
-        <div class="modal-title">Subclone with insertions</div>
 
 
-        <div class="modal-subcloning-subtitle">5' end insertion:</div>
-
-        <div class="modal-vgroup">
-            <label>DNA sequence:</label>
-            <input type="text" id="insertion-input-5dna" class="modal-input" value="" validator="dna">
-        </div>
-
-        <div class="modal-vgroup">
-            <label>Amino acid sequence:</label>
-            <input type="text" id="insertion-input-5aa" class="modal-input" value="" validator="aa">
-            <div class="modal-hint">
-                Accepted STOP letter codes: "*", "-", "X".
-            </div>
-        </div>
+        // Modal title
+        const modalTitle = document.createElement("div");
+        modalTitle.classList.add("modal-title");
+        modalTitle.innerText = "Subclone with insertions";
+        body.appendChild(modalTitle);
 
 
-        <div class="modal-subcloning-subtitle">3' end insertion:</div>
-
-        <div class="modal-vgroup">
-            <label>DNA sequence:</label>
-            <input type="text" id="insertion-input-3dna" class="modal-input" value="" validator="dna">
-        </div>
-
-        <div class="modal-vgroup">
-            <label>Amino acid sequence:</label>
-            <input type="text" id="insertion-input-3aa" class="modal-input" value="" validator="aa">
-            <div class="modal-hint">
-                Accepted STOP letter codes: "*", "-", "X".
-            </div>
-        </div>
-        
-
-        <div class="modal-vgroup">
-            <div class="modal-hgroup">
-                <label>Optimize codons for:</label>
-                <select id="insertion-select-organism">${this.getOrganismOptions()}</select>
-            </div>
-            <div class="modal-hint">
-                Codon frequency tables from <a href="https://hive.biochemistry.gwu.edu/review/codon2" target="_blank">CoCoPUTs</a> (<a href="https://doi.org/10.1016/j.jmb.2019.04.021" target="_blank">Alexaki et al. 2019</a>).
-            </div>
-        </div>
+        // 5' end
+        const modalSubtitle5Prime = document.createElement("div");
+        modalSubtitle5Prime.classList.add("modal-subcloning-subtitle");
+        modalSubtitle5Prime.innerText = "5' end insertion:";
+        body.appendChild(modalSubtitle5Prime);
 
 
-        <div class="modal-hgroup">
-            <label>Translate new feature:</label>
-            <input type="checkbox" id="insertion-checkbox-translate" name="insertion-checkbox-translate" checked="false">
-        </div>
-        `;
+        const dnaSeqInput5Prime = this._createDNAInput("insertion-input-5dna");
+        const aaSeqInput5Prime = this._createAAInput("insertion-input-5aa");
+        const commonInsertionsDropdown5Prime = this._createCommonInsertionsDropdown(aaSeqInput5Prime.querySelector(".modal-input"));
+        body.appendChild(commonInsertionsDropdown5Prime);
+        body.appendChild(dnaSeqInput5Prime);
+        body.appendChild(aaSeqInput5Prime);
+
+
+        // 3' end
+        const modalSubtitle3Prime = document.createElement("div");
+        modalSubtitle3Prime.classList.add("modal-subcloning-subtitle");
+        modalSubtitle3Prime.innerText = "3' end insertion:";
+        body.appendChild(modalSubtitle3Prime);
+
+        const dnaSeqInput3Prime = this._createDNAInput("insertion-input-3dna");
+        const aaSeqInput3Prime = this._createAAInput("insertion-input-3aa");
+        const commonInsertionsDropdown3Prime = this._createCommonInsertionsDropdown(aaSeqInput3Prime.querySelector(".modal-input"));
+        body.appendChild(commonInsertionsDropdown3Prime);
+        body.appendChild(dnaSeqInput3Prime);
+        body.appendChild(aaSeqInput3Prime);
+
+        // Codon optimization dropdown
+        body.appendChild(
+            this._createCodonOptimizationDropdown()
+        );
+
+        // Translate feature checkbox
+        body.appendChild(
+            this._createTranslateFeatureCheckbox("insertion-checkbox-translate")
+        );
 
         const action = () => {
             Session.activePlasmid().IVAOperation(
@@ -549,49 +711,55 @@ const Modals = new class {
         body.classList.add("modal-insertion");
         const id = "modal-window-insertion";
 
-        body.innerHTML = `
-        <div class="modal-title">Insert from linear fragment</div>
-
-        <div class="modal-vgroup">
-            <label>New plasmid name:</label>
-            <div class="modal-input-wrapper">
-                <input type="text" id="lin-frag-input-name" class="modal-input modal-input-with-suffix" value="Linear fragment">
-                <div class="modal-input-suffix">.fasta</div>
-            </div>
-        </div>
+        const modalTitle = document.createElement("div");
+        modalTitle.classList.add("modal-title");
+        modalTitle.innerText = "Insert from linear fragment";
+        body.appendChild(modalTitle);
 
 
-        <div class="modal-vgroup lin-frag-sequence-input">
-            <label>DNA Sequence:</label>
-            <textarea id="insertion-input-dna" class="modal-input modal-textarea" spellcheck="false" validator="dna"></textarea>
-        </div>
+        const newPlasmidNameVGroup = document.createElement("div");
+        newPlasmidNameVGroup.classList.add("modal-vgroup");
+        body.appendChild(newPlasmidNameVGroup);
 
-        <div class="modal-vgroup">
-            <div class="modal-vgroup lin-frag-sequence-input">
-                <label>Amino acid sequence:</label>
-                <textarea id="insertion-input-aa" class="modal-input modal-textarea" spellcheck="false" validator="aa"></textarea>
-            </div>
-            <div class="modal-hint">
-                Accepted STOP letter codes: "*", "-", "X".
-            </div>
-        </div>
+        const newPlasmidNameLabel = document.createElement("label");
+        newPlasmidNameLabel.innerText = "New plasmid name:";
+        newPlasmidNameVGroup.appendChild(newPlasmidNameLabel);
+
+        const newPlasmidNameInputWrapper = document.createElement("div");
+        newPlasmidNameInputWrapper.classList.add("modal-input-wrapper");
+        newPlasmidNameVGroup.appendChild(newPlasmidNameInputWrapper)
+
+        const newPlasmidNameInput = document.createElement("input");
+        newPlasmidNameInput.setAttribute("type", "text")
+        newPlasmidNameInput.id = "lin-frag-input-name";
+        newPlasmidNameInput.classList.add("modal-input", "modal-input-with-suffix");
+        newPlasmidNameInput.setAttribute("value", "Linear fragment");
+        newPlasmidNameInputWrapper.appendChild(newPlasmidNameInput);
+
+        const newPlasmidNameInputSuffix = document.createElement("div");
+        newPlasmidNameInputSuffix.classList.add("modal-input-suffix");
+        newPlasmidNameInputSuffix.innerText = ".fasta";
+        newPlasmidNameInputWrapper.appendChild(newPlasmidNameInputSuffix);
+
+
+        body.appendChild(
+            this._createDNAInput("insertion-input-dna", "textarea", ["modal-input", "modal-textarea"], true)
+        );
+
+        body.appendChild(
+            this._createAAInput("insertion-input-aa", "textarea", ["modal-input", "modal-textarea"], true)
+        );
+
+        // Codon optimization dropdown
+        body.appendChild(
+            this._createCodonOptimizationDropdown()
+        );
         
-        <div class="modal-vgroup">
-            <div class="modal-hgroup">
-                <label>Optimize codons for:</label>
-                <select id="insertion-select-organism">${this.getOrganismOptions()}</select>
-            </div>
-            <div class="modal-hint">
-                Codon frequency tables from <a href="https://hive.biochemistry.gwu.edu/review/codon2" target="_blank">CoCoPUTs</a> (<a href="https://doi.org/10.1016/j.jmb.2019.04.021" target="_blank">Alexaki et al. 2019</a>).
-            </div>
-        </div>
 
-
-        <div class="modal-hgroup">
-            <label>Translate new feature:</label>
-            <input type="checkbox" id="insertion-checkbox-translate" name="insertion-checkbox-translate" checked="false">
-        </div>
-        `;
+        // Translate feature checkbox
+        body.appendChild(
+            this._createTranslateFeatureCheckbox("insertion-checkbox-translate")
+        );
 
         const action = () => {
             Session.activePlasmid().IVAOperation(
@@ -600,6 +768,7 @@ const Modals = new class {
                 document.getElementById("insertion-input-aa").value,
                 document.getElementById("insertion-select-organism").value,
                 document.getElementById("insertion-checkbox-translate").checked,
+                null,
                 document.getElementById("lin-frag-input-name").value,
             );
         };
