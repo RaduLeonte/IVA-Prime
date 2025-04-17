@@ -2206,7 +2206,9 @@ const PlasmidViewer = new class {
     /**
      * 
      */
-    redraw(views=null) {
+    redraw(views=null, keepSelfScrollTop=true) {
+        if (keepSelfScrollTop) this.saveGridViewScrollTop();
+
         //TO DO: Keep selection when redrawing
         const activePlasmid = Session.activePlasmid()
         if (activePlasmid) {
@@ -2581,7 +2583,7 @@ const PlasmidViewer = new class {
         title.classList.add("sequence-tooltip-title");
         tooltipBody.appendChild(title);
 
-        const featureLength = featureDict["span"][1] - featureDict["span"][0];
+        const featureLength = featureDict["span"][1] - featureDict["span"][0] + 1;
         const remainder = featureLength % 3;
         const remainderString = (remainder !== 0) ? "+" + remainder: "";
         const nrAA = (featureLength - remainder)/3;
