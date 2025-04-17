@@ -827,7 +827,7 @@ class Plasmid {
      * @param {String | null} targetOrganism - Target organism for codon optimization
      * @param {Boolean} translateFeature - Flag for translation newly generated annotation
      */
-    IVAOperation(operationType, insertionSeqDNA="", insertionSeqAA="", targetOrganism=null, translateFeature=false, linFragName="Linear Fragment") {
+    IVAOperation(operationType, insertionSeqDNA="", insertionSeqAA="", targetOrganism=null, translateFeature=false, newFeatureName=null, linFragName="Linear Fragment") {
         if (!this.selectionExists()) {return};
         console.log(`Plasmid.IVAOperation ->`, operationType, insertionSeqDNA, insertionSeqAA, targetOrganism, translateFeature);
         console.log(`Plasmid.IVAOperation -> this.selectionIndices=${this.selectionIndices}`);
@@ -931,7 +931,7 @@ class Plasmid {
                 this.newFeature(
                     [operationRange[0], operationRange[0]+seqToInsert.length-1],
                     "fwd",
-                    operationType,
+                    (newFeatureName === null) ? operationType: newFeatureName,
                     null,
                     "#c83478",
                     translateFeature,

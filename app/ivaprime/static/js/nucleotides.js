@@ -65,6 +65,15 @@ const Nucleotides = new class {
         document.addEventListener('DOMContentLoaded', function () {
             Nucleotides.loadCodonWeights();
         });
+
+
+        /**
+         * Common insertions (affinity tags and cleave tags)
+         */
+        this.commonInsertions = null;
+        document.addEventListener('DOMContentLoaded', function () {
+            Nucleotides.loadCommonInsertions();
+        });
     };
 
 
@@ -73,6 +82,15 @@ const Nucleotides = new class {
         .then(response => response.json())
         .then(json => {
             Nucleotides.codonWeights = json;
+        });
+    };
+
+
+    loadCommonInsertions() {
+        fetch('static/data/commonInsertions.json')
+        .then(response => response.json())
+        .then(json => {
+            Nucleotides.commonInsertions = json;
         });
     };
 
