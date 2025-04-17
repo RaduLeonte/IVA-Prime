@@ -42,7 +42,7 @@ const Sidebar = new class {
         if (newWidth < minWidth) newWidth = minWidth;
         if (newWidth > maxWidth) newWidth = maxWidth;
         
-        document.getElementById("content-wrapper").style.gridTemplateColumns = `${newWidth}px auto 45px`;
+        document.documentElement.style.setProperty('--sidebar-width', `${newWidth}px`);
     };
 
     stopResizeSidebar() {

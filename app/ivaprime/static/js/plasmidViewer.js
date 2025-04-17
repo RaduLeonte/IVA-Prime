@@ -760,6 +760,8 @@ const PlasmidViewer = new class {
         minimapBar.addEventListener("mousedown", function (event) {
             isDragging = true;
 
+            document.body.style.userSelect = "none"; // Stop text selection
+
             minimapBar.style.cursor = "grabbing";
             document.addEventListener("mousemove", scrollGridViewContainer);
         });
@@ -768,6 +770,9 @@ const PlasmidViewer = new class {
             if (!isDragging) return;
 
             isDragging = false;
+
+            document.body.style.userSelect = ""; // Reenable text selection
+
             minimapBar.style.cursor = "grab";
 
             document.removeEventListener("mousemove", scrollGridViewContainer)
@@ -2206,7 +2211,9 @@ const PlasmidViewer = new class {
     /**
      * 
      */
-    redraw(views=null) {
+    redraw(views=null, keepSelfScrollTop=true) {
+        if (keepSelfScrollTop) this.saveGridViewScrollTop();
+
         //TO DO: Keep selection when redrawing
         const activePlasmid = Session.activePlasmid()
         if (activePlasmid) {
@@ -2214,9 +2221,34 @@ const PlasmidViewer = new class {
             PlasmidViewer.updateViewer();
         };
 
+        this.setGridViewScrollTop();
         this.highlightSubcloningTarget();
         this.addDeletionMarkings();
         this.updateMinimapScrollBar();
+    };
+
+
+    /**
+     * Save the current scroll position
+     */
+    saveGridViewScrollTop() {
+        if (!Session.activePlasmid() || !document.getElementById("grid-view")) return;
+
+        Session.activePlasmid().scrollTop = document.getElementById("grid-view").scrollTop;
+
+        console.log("PlasmidViewer.saveGridViewScrollTop -> Saved value:", Session.activePlasmid().scrollTop)
+    };
+
+
+    /**
+     * Scroll grid view container to specific position
+     */
+    setGridViewScrollTop() {
+        if (!Session.activePlasmid() || !document.getElementById("grid-view")) return;
+
+        document.getElementById("grid-view").scrollTop = Session.activePlasmid().scrollTop;
+
+        console.log("PlasmidViewer.setGridViewScrollTop -> Set value to:", document.getElementById("grid-view").scrollTop)
     };
     
     // #endregion Render_functions
@@ -2556,7 +2588,7 @@ const PlasmidViewer = new class {
         title.classList.add("sequence-tooltip-title");
         tooltipBody.appendChild(title);
 
-        const featureLength = featureDict["span"][1] - featureDict["span"][0];
+        const featureLength = featureDict["span"][1] - featureDict["span"][0] + 1;
         const remainder = featureLength % 3;
         const remainderString = (remainder !== 0) ? "+" + remainder: "";
         const nrAA = (featureLength - remainder)/3;
