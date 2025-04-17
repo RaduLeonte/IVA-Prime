@@ -760,6 +760,8 @@ const PlasmidViewer = new class {
         minimapBar.addEventListener("mousedown", function (event) {
             isDragging = true;
 
+            document.body.style.userSelect = "none"; // Stop text selection
+
             minimapBar.style.cursor = "grabbing";
             document.addEventListener("mousemove", scrollGridViewContainer);
         });
@@ -768,6 +770,9 @@ const PlasmidViewer = new class {
             if (!isDragging) return;
 
             isDragging = false;
+
+            document.body.style.userSelect = ""; // Reenable text selection
+
             minimapBar.style.cursor = "grab";
 
             document.removeEventListener("mousemove", scrollGridViewContainer)
