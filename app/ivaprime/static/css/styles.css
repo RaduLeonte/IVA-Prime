@@ -2223,7 +2223,7 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   border-radius: 5px;
   box-shadow: 0px 2px 10px var(--shadow-color);
   border-left: 5px solid var(--btn-orange);
-  transition: height 0.5s ease-out, opacity 0.5s ease-out, padding 0.5s ease-out;
+  transition: height 0.5s ease-in-out, opacity 0.5s ease-in-out, padding 0.5s ease-in-out;
   box-sizing: border-box;
   visibility: visible;
 }
@@ -2243,7 +2243,7 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   padding: 15px;
   box-sizing: border-box;
 }
-.alert-icon svg {
+.alert-icon-svg-wrapper svg {
   display: block;
 
   width: 100%;
