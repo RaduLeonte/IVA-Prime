@@ -1,12 +1,6 @@
 const ContextMenu = new class {
     constructor() {
-        /**
-         * Context menu structure
-         */
-        // TO DO: Show keyboard shortcuts for the actions
-        // TO DO: Add menu item to add common features to plasmid or specific selected range
         this.structure = [
-
             { section: "IVA Cloning Operations", items: [
                 {
                     item: "Insert here",
@@ -24,9 +18,7 @@ const ContextMenu = new class {
                     action: () => Modals.createInsertionModal("mutation")
                 },
 
-
                 { separator: "" },
-
 
                 {
                     item: "Insert from linear fragment",
@@ -34,9 +26,7 @@ const ContextMenu = new class {
                     action: () => Modals.createInsertFromLinearFragmentModal()
                 },
 
-
                 { separator: "" },
-
 
                 {
                     item: "Mark selection for subcloning",
@@ -60,9 +50,7 @@ const ContextMenu = new class {
                 },
             ]},
 
-
             { separator: "" },
-
 
             {
                 item: "Annotate selection",
@@ -75,16 +63,13 @@ const ContextMenu = new class {
                 action: () => Session.activePlasmid().removeFeature(Session.activePlasmid().getSelectedFeatureID())
             },
 
-
             { separator: "" },
-
 
             {
                 item: "Copy selection",
                 conditions: {any: ["range", "feature"]},
                 action: () => Utilities.copySequence()
             },
-
             { submenu: "Copy special", items: [
                 {
                     item: "<p>Copy reverse</p><p>(top strand, 3'->5')</p>",
@@ -103,9 +88,7 @@ const ContextMenu = new class {
                 },
             ] },
 
-
             { separator: "" },
-
 
             { submenu: "Translate", items: [
                 {
@@ -144,9 +127,7 @@ const ContextMenu = new class {
                 },
             ] },
 
-
             { separator: "" },
-
 
             { submenu: "Edit plasmid", items: [
                 {
@@ -162,48 +143,133 @@ const ContextMenu = new class {
             ] },
         ];
 
-        // Initialize context menu
         document.addEventListener("DOMContentLoaded", function () {
-            // Store reference
-            ContextMenu.contextMenu = document.getElementById("context-menu");
-            
-            // Init
-            ContextMenu._initialize();
-            
-            // Store references to menu items
-            ContextMenu.items = ContextMenu.contextMenu.querySelectorAll(".context-menu-item");
+            ContextMenu.initialize();
         });
     };
 
 
-    _initialize() {
-        // Go through menu structure recursively and populate the menu with items
-        this._createMenuItems(this.structure, this.contextMenu);
+    initialize() {
+        function createMenuItems(menuStructure, parent) {
+            menuStructure.forEach(entry => {
+                if (entry.section) {
+                    // Create section container
+                    const sectionContainer = document.createElement("div");
+                    sectionContainer.classList.add("context-menu-section");
+        
+                    // Create section title
+                    const sectionTitle = document.createElement("div");
+                    sectionTitle.classList.add("context-menu-section-title");
+                    sectionTitle.textContent = entry.section;
+                    sectionContainer.appendChild(sectionTitle);
+        
+                    // Create section items container
+                    const sectionItemsContainer = document.createElement("div");
+                    sectionItemsContainer.classList.add("context-menu-section-items");
+        
+                    // Recursively create menu items inside the section items container
+                    createMenuItems(entry.items, sectionItemsContainer);
+                    
+                    sectionContainer.appendChild(sectionItemsContainer);
+                    parent.appendChild(sectionContainer);
+
+                } else if (entry.separator !== undefined) {
+                    // Create separator (only if explicitly defined)
+                    const separator = document.createElement("div");
+                    separator.classList.add("context-menu-separator");
+                    parent.appendChild(separator);
+
+                } else if (entry.item) {
+                    // Create menu item
+                    const menuItem = document.createElement("div");
+                    menuItem.classList.add("context-menu-item");
+                    menuItem.innerHTML = entry.item;
+
+                    menuItem.setAttribute("conditions", JSON.stringify(entry.conditions))
+
+                    // Attach click event for regular menu items
+                    menuItem.addEventListener("click", () => {
+                        ContextMenu.hide();
+                        entry.action();
+                    });
+
+                    parent.appendChild(menuItem);
+
+                } else if (entry.submenu) {
+                    // Create parent item for submenu
+                    const menuItem = document.createElement("div");
+                    menuItem.classList.add("context-menu-item", "context-menu-has-submenu");
+                    menuItem.textContent = entry.submenu;
+
+                    // Create submenu container
+                    const submenu = document.createElement("div");
+                    submenu.classList.add("context-menu");
+                    submenu.classList.add("context-submenu");
+
+                    // Recursively create submenu items
+                    createMenuItems(entry.items, submenu);
+
+                    // Append submenu to the menu item
+                    menuItem.appendChild(submenu);
+                    parent.appendChild(menuItem);
+
+                    // Handle dynamic submenu positioning
+                    menuItem.addEventListener("mouseenter", function () {
+                        positionSubmenu(menuItem, submenu);
+                        submenu.setAttribute("visible", "");
+                    });
+                    menuItem.addEventListener("mouseleave", function () {
+                        submenu.removeAttribute("visible");
+                    });
+                }
+            });
+        };
 
 
-        // Add context menu event listener
+        function positionSubmenu(menuItem, submenu) {
+            // Get dimensions
+            const menuRect = menuItem.getBoundingClientRect();
+            const submenuWidth = submenu.offsetWidth;
+            const submenuHeight = submenu.offsetHeight;
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+        
+            let leftPos = menuRect.width;
+            let topPos = 0;
+            
+            if (menuRect.right + submenuWidth > viewportWidth) {
+                leftPos = -submenuWidth;
+            };
+            if (menuRect.bottom + submenuHeight > viewportHeight) {
+                topPos = -submenuHeight + menuRect.height + 2;
+            };
+        
+            // Set final position
+            submenu.style.left = `${leftPos}px`;
+            submenu.style.top = `${topPos}px`;
+        };
+        
+
+        const contextMenu = document.getElementById("context-menu");
+        createMenuItems(ContextMenu.structure, contextMenu);
+
         const gridViewContainer = document.getElementById("grid-view-container");
-        gridViewContainer.addEventListener("contextmenu", function (event) {
-            event.preventDefault();
-            event.stopPropagation();
-            ContextMenu.show(event);
+        gridViewContainer.addEventListener("contextmenu", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            ContextMenu.show(e);
         });
     
-        // Hide menu when clicking outside of it
-        document.addEventListener("click", function (event) {
-            // If click is inside menu, return
-            if (ContextMenu.contextMenu.contains(event.target)) return;
+        document.addEventListener("click", function (e) {
+            if (contextMenu.contains(e.target)) {
+                return;
+            };
 
             ContextMenu.hide();
         });
 
-
-        // Hide menu if open a context menu somewhere else
-        document.addEventListener("contextmenu", function (event) {
-            if (
-                gridViewContainer.contains(event.target) // If opening menu inside grid view
-                || ContextMenu.contextMenu.contains(event.target) // If attempting to open menu inside menu
-            ) {
+        document.addEventListener("contextmenu", function (e) {
+            if (gridViewContainer.contains(e.target) || contextMenu.contains(e.target)) {
                 return;
             };
             
@@ -212,199 +278,55 @@ const ContextMenu = new class {
     };
 
 
-    /**
-     * Recursively populate parent menu element with items following the specified menu structure.
-     * 
-     * @param {Object} menuStructure - Menu structure detailing how to populate parent element
-     * @param {HTMLElement} parent - Parent element to populate with items
-     */
-    _createMenuItems(menuStructure, parent) {
-        menuStructure.forEach(entry => {
-            // Section
-            if (entry.section) {
-                // Create section container
-                const sectionContainer = document.createElement("div");
-                sectionContainer.classList.add("context-menu-section");
-    
-                // Create section title
-                const sectionTitle = document.createElement("div");
-                sectionTitle.classList.add("context-menu-section-title");
-                sectionTitle.textContent = entry.section;
-                sectionContainer.appendChild(sectionTitle);
-    
-                // Create section items container
-                const sectionItemsContainer = document.createElement("div");
-                sectionItemsContainer.classList.add("context-menu-section-items");
-    
-                // Recursively create menu items inside the section items container
-                this._createMenuItems(entry.items, sectionItemsContainer);
-                
-                sectionContainer.appendChild(sectionItemsContainer);
-                parent.appendChild(sectionContainer);
-
-            // Separator
-            } else if (entry.separator !== undefined) {
-                // Create separator (only if explicitly defined)
-                const separator = document.createElement("div");
-                separator.classList.add("context-menu-separator");
-                parent.appendChild(separator);
-
-            // Menu item
-            } else if (entry.item) {
-                // Create menu item
-                const menuItem = document.createElement("div");
-                menuItem.classList.add("context-menu-item");
-                menuItem.innerHTML = entry.item;
-
-                menuItem.setAttribute("conditions", JSON.stringify(entry.conditions))
-
-                // Attach click event for regular menu items
-                menuItem.addEventListener("click", () => {
-                    ContextMenu.hide();
-                    entry.action();
-                });
-
-                parent.appendChild(menuItem);
-
-            // Submenu
-            } else if (entry.submenu) {
-                // Create parent item for submenu
-                const menuItem = document.createElement("div");
-                menuItem.classList.add("context-menu-item", "context-menu-has-submenu");
-                menuItem.textContent = entry.submenu;
-
-                // Create submenu container
-                const submenu = document.createElement("div");
-                submenu.classList.add("context-menu");
-                submenu.classList.add("context-submenu");
-
-                // Recursively create submenu items
-                this._createMenuItems(entry.items, submenu);
-
-                // Append submenu to the menu item
-                menuItem.appendChild(submenu);
-                parent.appendChild(menuItem);
-
-                // Handle dynamic submenu positioning
-                menuItem.addEventListener("mouseenter", function () {
-                    ContextMenu._positionSubmenu(menuItem, submenu);
-                    submenu.setAttribute("visible", "");
-                });
-                menuItem.addEventListener("mouseleave", function () {
-                    submenu.removeAttribute("visible");
-                });
-            };
-        });
-    };
-
-
-    /**
-     * Position submenu relative to the menuItem that spawns it.
-     * 
-     * @param {HTMLElement} menuItem - Reference to menu html element that spawns the submenu
-     * @param {HTMLElement} submenu - Reference to the submenu element that is to be positioned
-     */
-    _positionSubmenu(menuItem, submenu) {
-        // Get dimensions
-        const menuRect = menuItem.getBoundingClientRect();
-        const submenuWidth = submenu.offsetWidth;
-        const submenuHeight = submenu.offsetHeight;
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-    
-        // Initial coordinates
-        let leftPos = menuRect.width;
-        let topPos = 0;
+    show(e) {
+        const contextMenu = document.getElementById("context-menu");
         
-        // If the submenu would be outside of viewport, position it on the other side
-        if (menuRect.right + submenuWidth > viewportWidth) {
-            leftPos = -submenuWidth;
-        };
-        if (menuRect.bottom + submenuHeight > viewportHeight) {
-            topPos = -submenuHeight + menuRect.height + 2;
-        };
-    
-        // Set positions
-        submenu.style.left = `${leftPos}px`;
-        submenu.style.top = `${topPos}px`;
-    };
+        // Enable/disable menu options based on selection state
+        const selectionIndices = Session.activePlasmid().getSelectionIndices();
+        const selectedFeatureID = Session.activePlasmid().getSelectedFeatureID();
+        
 
-
-    /**
-     * Show the context menu.
-     * 
-     * @param {MouseEvent} event - Event triggering context menu
-     */
-    show(event) {
-        this._checkMenuItemsConditions();
-        this._position(event.clientX, event.clientY);
-    };
-
-
-    /**
-     * Enable/disable menu items based on current selection.
-     */
-    _checkMenuItemsConditions() {
-        // Find out what type of selection was made
-        const activePlasmid = Session.activePlasmid();
         const selectionState = {
-            "single": activePlasmid.selectionIsSingle(),
-            "range": activePlasmid.selectionIsRange(),
-            "feature": activePlasmid.getSelectedFeatureID() !== null,
-            "subcloningTarget": Session.isSubcloningRegionMarked(),
+            "single": (selectionIndices !== null && selectionIndices.filter(i => i !== null).length === 1 && selectedFeatureID === null) ? true: false,
+            "range": (selectionIndices !== null && selectionIndices.filter(i => i !== null).length > 1 && selectedFeatureID === null) ? true: false,
+            "feature": (selectedFeatureID !== null) ? true: false,
+            "subcloningTarget": (Session.subcloningOriginPlasmidIndex !== null && Session.subcloningOriginSpan !== null) ? true: false,
         };
 
         
-        // Iterate over menu items and check if the conditions for the
-        // item to be active are met
-        this.items.forEach(item => {
-            // Assert that item has defined conditions
-            if (!item.hasAttribute("conditions")) return;
+        const menuItems = contextMenu.querySelectorAll(".context-menu-item");
+        menuItems.forEach(menuItem => {
+            if (!menuItem.hasAttribute("conditions")) {return};
 
-            // Parse conditions
-            const conditions = [JSON.parse(item.getAttribute("conditions"))];
+            const conditions = [JSON.parse(menuItem.getAttribute("conditions"))];
             
-            // Iterate over conditions
             const conditionsMet = conditions.every(condition => {
                 // If "any" exists, at least one of the conditions must be true
                 const anyValid = condition.any ? condition.any.some(key => selectionState[key]) : true;
-                
                 // If "all" exists, all of them must be true
                 const allValid = condition.all ? condition.all.every(key => selectionState[key]) : true;
-                
                 // The condition is valid if both rules are satisfied
                 return anyValid && allValid;
             });
 
-
-            // Enable/disable menu item
             if (conditionsMet) {
-                item.removeAttribute("disabled");
+                menuItem.removeAttribute("disabled");
             } else {
-                item.setAttribute("disabled", "")
+                menuItem.setAttribute("disabled", "")
             };
         });
-    };
 
 
-    /**
-     * Position the context menu at the specified coordinates.
-     * 
-     * @param {Number} posX - X position of mouse
-     * @param {Number} posY - Y position of mouse
-     */
-    _position(posX, posY) {
         // Position context menu
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
 
-        // Get menu size
-        const menuWidth = this.contextMenu.offsetWidth;
-        const menuHeight = this.contextMenu.offsetHeight;
+        const menuWidth = contextMenu.offsetWidth;
+        const menuHeight = contextMenu.offsetHeight;
 
-
-        // If the menu would be off the screen, position it on
-        // the other side
+        let posX = e.clientX;
+        let posY = e.clientY
+        ;
         if (posX + menuWidth > viewportWidth) {
             posX -= menuWidth;
         };
@@ -412,20 +334,16 @@ const ContextMenu = new class {
             posY -= menuHeight;
         };
 
-        // Clamp
         posX = Math.max(0, posX);
         posY = Math.max(0, posY);
 
-        // Set position and make it visible
-        this.contextMenu.style.top = `${posY}px`;
-        this.contextMenu.style.left = `${posX}px`;
-        this.contextMenu.setAttribute("visible", "");
+        contextMenu.style.top = `${posY}px`;
+        contextMenu.style.left = `${posX}px`;
+        contextMenu.setAttribute("visible", "");
     };
 
 
-    /**
-     * Hide the context menu
-     */
-    hide() { this.contextMenu.removeAttribute("visible") };
-
-};
+    hide() {
+        document.getElementById("context-menu").removeAttribute("visible");
+    };
+}
