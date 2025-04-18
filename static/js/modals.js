@@ -1,31 +1,44 @@
-
 const Modals = new class {
-    _create(id, body, action) {
+    /**
+     * Create modal window.
+     * 
+     * @param {String} id - Modal id
+     * @param {HTMLElement} body - Body HTML
+     */
+    _create(id, body) {
+        // Create window element
         const modalWindow = document.createElement("div");
         modalWindow.id = id;
         modalWindow.classList.add("modal-window");
     
+        // Add body
         body.classList.add("modal-body");
         modalWindow.appendChild(body);
     
+        // Add modal window to modal container
         const modal = document.querySelector("div.modal");
         modal.style.display = "block";
         modal.appendChild(modalWindow);
 
-        
+        // Add validators to text inputs
         const inputElements = modalWindow.querySelectorAll("input[validator], textarea[validator]");
         inputElements.forEach((input) => {
+            // Add validator
             const validatorType = input.getAttribute("validator");
             Utilities.addInputValidator(input, validatorType);
 
-
+            // Add event listener to re-check validator after every input
             input.addEventListener("input", function () {
+                // Select action button of modal window
                 const actionButton = document.getElementById(`${id}-action-button`);
-    
+                
+                // Check to see if there is any input that has failed its validator
                 const inputFailedValidator = modalWindow.querySelector("[incorrect]") !== null;
                 if (inputFailedValidator) {
+                    // If any input fails its validator, disable action buttom
                     actionButton.setAttribute("disabled", "");
                 } else {
+                    // Otherwise enable it
                     actionButton.removeAttribute("disabled");
                 };
             });
@@ -33,22 +46,59 @@ const Modals = new class {
     };
 
 
-    _createModalBody(title) {
-        const modalBody = document.createElement("div");
-
-        const modalTitle = document.createElement("DIV");
-        modalTitle.classList.add("modal-title");
-        modalTitle.innerText = title;
-        modalBody.appendChild(modalTitle)
-
-        return modalBody;
+    /**
+     * Remove modal window and hide modal overlay
+     * 
+     * @param {String} modalWindowId - ID of modal window to remove
+     */
+    remove(modalWindowId) {
+        const modalWindow = document.getElementById(modalWindowId);
+        const modal = modalWindow.parentNode;
+        modal.style.display = "none"
+        modal.removeChild(modalWindow);
     };
 
 
+    /**
+     * Check if the modal overlay is active
+     * 
+     * @returns {Boolean}
+     */
+    isActive() {
+        return document.getElementById("modal").style.display === "block"
+    };
+
+
+    /**
+     * Create modal title element
+     * 
+     * @param {String} title - Title text
+     * @returns 
+     */
+    _createModalTitle(title) {
+        const modalTitle = document.createElement("DIV");
+        modalTitle.classList.add("modal-title");
+        modalTitle.innerText = title;
+
+        return modalTitle;
+    };
+
+
+    /**
+     * Create action and cancel buttons
+     * 
+     * @param {String} actionLabel - Text on the action button
+     * @param {String} id - Id of modal window
+     * @param {Function} action - Action to be perforemd when clicking action button
+     * @returns {HTMLElement}
+     */
     _createButtons(actionLabel, id, action) {
+        // Container
         const buttonsContainer = document.createElement("div");
         buttonsContainer.classList.add("modal-hgroup");
 
+
+        // Action button
         const actionButton = document.createElement("span");
         actionButton.classList.add("button-round", "button-green");
         actionButton.id = `${id}-action-button`;
@@ -61,6 +111,8 @@ const Modals = new class {
             Modals.remove(id);
         });
 
+
+        // Cancel button
         const cancelButton = document.createElement("span");
         cancelButton.classList.add("button-round", "button-red");
         cancelButton.innerText = "Cancel";
@@ -72,6 +124,11 @@ const Modals = new class {
         });
     
 
+        /**
+         * Press action button on enter key
+         * 
+         * @param {KeyboardEvent} event 
+         */
         function modalOnEnterKey(event) {
             if (event.key === "Enter") {
                 event.preventDefault();
@@ -82,9 +139,13 @@ const Modals = new class {
         document.addEventListener("keydown", modalOnEnterKey);
     
     
+        /**
+         * Close modal window on escape key
+         * 
+         * @param {KeyboardEvent} event 
+         */
         function modalOnEscapeKey(event) {
             if (event.key === "Escape") {
-                console.log("escape")
                 event.preventDefault();
                 Modals.remove(buttonsContainer.closest(".modal-window").id);
                 document.removeEventListener("keydown", modalOnEscapeKey);
@@ -96,18 +157,32 @@ const Modals = new class {
     };
     
 
-
+    /**
+     * Create a text input
+     * 
+     * @param {String} label - Label of text input
+     * @param {String} id - Id of text input
+     * @param {String} defaultText - Default text in the text input
+     * @param {String} validator - Validator type 
+     * @param {String} suffix - Text suffix
+     * @returns 
+     */
     _createInput(label, id, defaultText="", validator=null, suffix=null) {
+        // Create container
         const inputContainer = document.createElement("DIV");
         inputContainer.classList.add("modal-vgroup");
 
+        // If label given, create label element
         if (label) {
             const inputLabel = document.createElement("label");
             inputLabel.innerText = label;
             inputContainer.appendChild(inputLabel);
         };
 
+
         if (!suffix) {
+            // Input with no suffix
+
             const input = document.createElement("input");
             input.setAttribute("type", "text");
             input.setAttribute("id", id);
@@ -117,7 +192,10 @@ const Modals = new class {
             inputContainer.appendChild(input);
 
             return inputContainer;
+
         } else {
+            // Input with suffix
+
             const inputWrapper = document.createElement("DIV");
             inputWrapper.classList.add("modal-input-wrapper");
             inputContainer.appendChild(inputWrapper);
@@ -139,33 +217,31 @@ const Modals = new class {
         };
     };
 
-    
-    remove(modalWindowId) {
-        console.log("Modals.remove ->", modalWindowId)
-        const modalWindow = document.getElementById(modalWindowId);
-        const modal = modalWindow.parentNode;
-        modal.style.display = "none"
-        modal.removeChild(modalWindow);
-    };
 
-
-    isActive() {
-        return document.getElementById("modal").style.display === "block"
-    };
-
-
+    /**
+     * Create the dropdown element for common insertions
+     * 
+     * @param {HTMLElement} targetInput - Text input to populate with text when clicking on option
+     * @returns {HTMLElement}
+     */
     _createCommonInsertionsDropdown(targetInput) {
+        // Main container
         const container = document.createElement("div");
         container.classList.add("modal-hgroup");
 
-        const codonLabel = document.createElement("label");
-        codonLabel.innerText = "Commonly inserted sequences:";
-        container.appendChild(codonLabel);
+
+        // Label
+        const label = document.createElement("label");
+        label.innerText = "Commonly inserted sequences:";
+        container.appendChild(label);
 
 
+        // Select element
         const select = document.createElement("select");
-        select.classList.add("common-insertions-dropdown")
+        select.classList.add("common-insertions-dropdown");
+        container.appendChild(select);
 
+        // Default option
         const defaultOption = document.createElement("option");
         defaultOption.textContent = "<No sequence selected>";
         defaultOption.disabled = true;
@@ -173,10 +249,20 @@ const Modals = new class {
         defaultOption.classList.add("common-insertions-group");
         select.appendChild(defaultOption);
     
-        const spacePerLevel = 4; // number of non-breaking spaces per depth level
-    
+        // Nr of spaces per indent level in options tree
+        const spacePerLevel = 4;
+
+        /**
+         * Recursively populate the dropdown with options
+         * 
+         * @param {Object[]} entries - List of entries to populate with
+         * @param {HTMLElement} optgroup - Parent optgroup
+         * @param {Number} depth - Depth level tracker for indentation
+         */
         const addEntriesToOptgroup = (entries, optgroup, depth = 1) => {
+            // Iterate over entries and append them to the parent optgroup
             entries.forEach(entry => {
+                // Current indent
                 const indent = "\u00A0".repeat(depth * spacePerLevel);
     
                 if (entry.type === "group") {
@@ -190,6 +276,7 @@ const Modals = new class {
                     // Add entries inside this subgroup
                     addEntriesToOptgroup(entry.entries, optgroup, depth + 1);
                 } else if (entry.type === "item") {
+                    // Actual item
                     const itemOption = document.createElement("option");
                     itemOption.value = entry.aa;
                     itemOption.setAttribute("feature-label", entry.label);
@@ -199,7 +286,7 @@ const Modals = new class {
             });
         };
     
-        // Loop over top-level groups
+        // Iterate over common insertions tree and populate dropdown with top-level optgroups
         Nucleotides.commonInsertions.forEach(topGroup => {
             if (topGroup.type === "group") {
                 const optgroup = document.createElement("optgroup");
@@ -208,95 +295,133 @@ const Modals = new class {
     
                 addEntriesToOptgroup(topGroup.entries, optgroup, 1);
                 select.appendChild(optgroup);
-            }
+            };
         });
 
 
+        // When selection an option, set the text of the targetInput to the option's value
         select.addEventListener("change", (event) => {
             targetInput.value = event.target.value;
         });
-        
-        container.appendChild(select);
 
         return container;
     };
 
 
+    /**
+     * Create text input for DNA sequences
+     * 
+     * @param {String} inputID - ID of input
+     * @param {String} type - Type of input (text or textarea)
+     * @param {String[]} cssClasses - List of CSS classes to add
+     * @param {Boolean} disableSpellcheck - Flag to explicitly disable spellcheck
+     * @returns {HTMLElement}
+     */
     _createDNAInput(inputID, type="text", cssClasses=["modal-input"], disableSpellcheck=false) {
+        // Main container
         const dnaGroup = document.createElement("div");
         dnaGroup.classList.add("modal-vgroup");
 
+        // Label
         const dnaLabel = document.createElement("label");
         dnaLabel.innerText = "DNA sequence:";
+        dnaGroup.appendChild(dnaLabel);
 
+        // Input
         const dnaInput = document.createElement("input");
         dnaInput.type = type;
         dnaInput.id = inputID;
         dnaInput.classList.add(...cssClasses);
         if (disableSpellcheck) dnaInput.setAttribute("spellcheck", false);
         dnaInput.setAttribute("validator", "dna");
-
-        dnaGroup.appendChild(dnaLabel);
         dnaGroup.appendChild(dnaInput);
 
         return dnaGroup;
     };
 
 
+    /**
+     * Create text input for AA sequences
+     * 
+     * @param {String} inputID - ID of input
+     * @param {String} type - Type of input (text or textarea)
+     * @param {String[]} cssClasses - List of CSS classes to add
+     * @param {Boolean} disableSpellcheck - Flag to explicitly disable spellcheck
+     * @returns {HTMLElement}
+     */
     _createAAInput(inputID, type="text", cssClasses=["modal-input"], disableSpellcheck=false) {
+        // Main container
         const aaGroup = document.createElement("div");
         aaGroup.classList.add("modal-vgroup");
 
+
+        // Label
         const aaLabel = document.createElement("label");
         aaLabel.innerText = "Amino acid sequence:";
+        aaGroup.appendChild(aaLabel);
 
+
+        // Input
         const aaInput = document.createElement("input");
         aaInput.type = type;
         aaInput.id = inputID;
         aaInput.classList.add(...cssClasses);
         if (disableSpellcheck) aaInput.setAttribute("spellcheck", false);
         aaInput.setAttribute("validator", "aa");
+        aaGroup.appendChild(aaInput);
 
+
+        // Hint
         const aaHint = document.createElement("div");
         aaHint.classList.add("modal-hint");
         aaHint.innerText = 'Accepted STOP letter codes: "*", "-", "X".';
-
-        aaGroup.appendChild(aaLabel);
-        aaGroup.appendChild(aaInput);
         aaGroup.appendChild(aaHint);
 
         return aaGroup;
     };
 
 
+    /**
+     * Create the organism dropdown selector for codon optimization
+     * 
+     * @returns {HTMLElement}
+     */
     _createCodonOptimizationDropdown() {
+        // Main container
         const codonGroup = document.createElement("div");
         codonGroup.classList.add("modal-vgroup");
 
+        // Hgroup for label and select
         const codonHGroup = document.createElement("div");
         codonHGroup.classList.add("modal-hgroup");
+        codonGroup.appendChild(codonHGroup);
 
+
+        // Label
         const codonLabel = document.createElement("label");
         codonLabel.innerText = "Optimize codons for:";
         codonHGroup.appendChild(codonLabel);
 
 
+        // Select
         const select = document.createElement("select");
         select.id = "insertion-select-organism";
 
-        const preferredOrganism = UserPreferences.get("preferredOrganism");
 
+        // Get current user preference 
+        const preferredOrganism = UserPreferences.get("preferredOrganism");
+        // Iterate over organisms and add them as options
         for (const key in Nucleotides.codonWeights) {
             const option = document.createElement("option");
             option.value = key;
             option.textContent = key;
-            if (key === preferredOrganism) {
-                option.selected = true;
-            }
+            if (key === preferredOrganism) option.selected = true;
             select.appendChild(option);
-        }
+        };
         codonHGroup.appendChild(select);
 
+
+        // Codon hint
         const codonHint = document.createElement("div");
         codonHint.classList.add("modal-hint");
         codonHint.innerHTML = `
@@ -304,103 +429,204 @@ const Modals = new class {
             <a href="https://hive.biochemistry.gwu.edu/review/codon2" target="_blank">CoCoPUTs</a> 
             (<a href="https://doi.org/10.1016/j.jmb.2019.04.021" target="_blank">Alexaki et al. 2019</a>).
         `;
-
-        codonGroup.appendChild(codonHGroup);
         codonGroup.appendChild(codonHint);
+
 
         return codonGroup;
     };
 
 
+    /**
+     * Create the "translate new feature" checkbox
+     * 
+     * @param {String} checkboxID - ID of checkbox
+     * @returns {HTMLElement}
+     */
     _createTranslateFeatureCheckbox(checkboxID) {
+        // Container
         const translateGroup = document.createElement("div");
         translateGroup.classList.add("modal-hgroup");
 
+
+        // Label
         const translateLabel = document.createElement("label");
         translateLabel.innerText = "Translate new feature:";
+        translateGroup.appendChild(translateLabel);
 
+
+        // Checkbox
         const translateCheckbox = document.createElement("input");
         translateCheckbox.type = "checkbox";
         translateCheckbox.id = checkboxID;
         translateCheckbox.name = checkboxID;
         translateCheckbox.checked = false;
-
-        translateGroup.appendChild(translateLabel);
         translateGroup.appendChild(translateCheckbox);
+
 
         return translateGroup;
     };
 
 
     //#region New file
+    /**
+     * New file from sequence modal window
+     */
     createNewFileModal() {
+        const id = "modal-window-new-file";
+        
         const body = document.createElement("div");
         body.classList.add("modal-new-file");
-        const id = "modal-window-new-file";
+
+        // Title
+        body.appendChild(
+            this._createModalTitle("Create new file")
+        );
     
-        body.innerHTML = `
-        <div class="modal-title">Create new file</div>
-
-        <div class="modal-vgroup">
-            <label>New plasmid name:</label>
-            <div class="modal-input-wrapper">
-                <input type="text" id="new-file-name-input" class="modal-input modal-input-with-suffix" value="untitled">
-                <div class="modal-input-suffix">.gb</div>
-            </div>
-        </div>
+        // New plasmid name input group
+        const nameGroup = document.createElement("div");
+        nameGroup.classList.add("modal-vgroup");
+        body.appendChild(nameGroup);
         
-        <div class="modal-vgroup modal-new-file-sequence-input">
-            <label>DNA Sequence:</label>
-            <textarea id="new-file-sequence-input" class="modal-input modal-textarea" spellcheck="false" validator="iupacBases"></textarea>
-        </div>
+        const nameLabel = document.createElement("label");
+        nameLabel.textContent = "New plasmid name:";
+        nameGroup.appendChild(nameLabel);
+        
+        const nameInputWrapper = document.createElement("div");
+        nameInputWrapper.classList.add("modal-input-wrapper");
+        nameGroup.appendChild(nameInputWrapper);
 
-        <div class="modal-hgroup">
-            <label>Annotate common features:</label>
-            <input type="checkbox" id="new-file-annotate-features-checkbox" name="new-file-annotate-features-checkbox" checked="true">
-        </div>
+        const nameInput = document.createElement("input");
+        nameInput.type = "text";
+        nameInput.id = "new-file-name-input";
+        nameInput.classList.add("modal-input", "modal-input-with-suffix");
+        nameInput.value = "untitled";
+        nameInputWrapper.appendChild(nameInput);
 
-        <div class="modal-hgroup">
-            <label>Sequence topology:</label>
-            <select id="new-file-topology-select">
-                <option value="linear" selected="selected">Linear</option>
-                <option value="circular">Circular</option>
-            </select>
-        </div>
-        `;
+        const nameSuffix = document.createElement("div");
+        nameSuffix.classList.add("modal-input-suffix");
+        nameSuffix.textContent = ".gb";
+        nameInputWrapper.appendChild(nameSuffix);
 
+
+        // DNA sequence input group
+        const sequenceGroup = document.createElement("div");
+        sequenceGroup.classList.add("modal-vgroup", "modal-new-file-sequence-input");
+        body.appendChild(sequenceGroup);
+
+        const sequenceLabel = document.createElement("label");
+        sequenceLabel.textContent = "DNA Sequence:";
+        sequenceGroup.appendChild(sequenceLabel);
+
+        const sequenceTextarea = document.createElement("textarea");
+        sequenceTextarea.id = "new-file-sequence-input";
+        sequenceTextarea.classList.add("modal-input", "modal-textarea");
+        sequenceTextarea.spellcheck = false;
+        sequenceTextarea.setAttribute("validator", "iupacBases");
+        sequenceGroup.appendChild(sequenceTextarea);
+
+
+        // Annotate features checkbox
+        const annotateGroup = document.createElement("div");
+        annotateGroup.classList.add("modal-hgroup");
+        body.appendChild(annotateGroup);
+
+        const annotateLabel = document.createElement("label");
+        annotateLabel.textContent = "Annotate common features:";
+        annotateGroup.appendChild(annotateLabel);
+
+        const annotateCheckbox = document.createElement("input");
+        annotateCheckbox.type = "checkbox";
+        annotateCheckbox.id = "new-file-annotate-features-checkbox";
+        annotateCheckbox.name = "new-file-annotate-features-checkbox";
+        annotateCheckbox.checked = true;
+        annotateGroup.appendChild(annotateCheckbox);
+
+
+        // Sequence topology dropdown
+        const topologyGroup = document.createElement("div");
+        topologyGroup.classList.add("modal-hgroup");
+        body.appendChild(topologyGroup);
+        
+        const topologyLabel = document.createElement("label");
+        topologyLabel.textContent = "Sequence topology:";
+        topologyGroup.appendChild(topologyLabel);
+        
+        const topologySelect = document.createElement("select");
+        topologySelect.id = "new-file-topology-select";
+        topologyGroup.appendChild(topologySelect);
+
+        const linearOption = document.createElement("option");
+        linearOption.value = "linear";
+        linearOption.textContent = "Linear";
+        linearOption.selected = true;
+        topologySelect.appendChild(linearOption);
+
+        const circularOption = document.createElement("option");
+        circularOption.value = "circular";
+        circularOption.textContent = "Circular";
+        topologySelect.appendChild(circularOption);
+
+
+        // Action button
         const action = FileIO.newFileFromSequence.bind(FileIO);
-
         body.appendChild(
             this._createButtons("Create file", id, action)
         );
-    
+
+        // Create the modal
         this._create(id, body, action);
     };
 
 
     //#region Rename plasmid
+    /**
+     * Create the rename plasmid modal window
+     * 
+     * @param {Plasmid} targetPlasmid - Target plasmid object
+     */
     createRenamePlasmidModal(targetPlasmid) {
-        const body = document.createElement("div");
         const id = "modal-window-rename-plasmid";
+
+        const body = document.createElement("div");
+
+        // Title
+        body.appendChild(
+            this._createModalTitle("Rename plasmid")
+        );
     
-        body.innerHTML = `
-        <div class="modal-title">Rename plasmid</div>
-    
-        <div class="modal-vgroup">
-            <label>New plasmid name:</label>
-            <div class="modal-input-wrapper">
-                <input type="text" id="${id}-input" class="modal-input modal-input-with-suffix" value="${targetPlasmid.name}">
-                ${targetPlasmid.extension ? `<div class="modal-input-suffix">${targetPlasmid.extension}</div>` : ""}
-            </div>
-        </div>
-        `;
+        const vgroup = document.createElement("div");
+        vgroup.classList.add("modal-vgroup");
+        body.appendChild(vgroup);
+
+        const nameLabel = document.createElement("label");
+        nameLabel.textContent = "New plasmid name:";
+        vgroup.appendChild(nameLabel);
+
+        const inputWrapper = document.createElement("div");
+        inputWrapper.classList.add("modal-input-wrapper");
+        vgroup.appendChild(inputWrapper);
+
+        const nameInput = document.createElement("input");
+        nameInput.type = "text";
+        nameInput.id = `${id}-input`;
+        nameInput.classList.add("modal-input", "modal-input-with-suffix");
+        nameInput.value = targetPlasmid.name;
+        inputWrapper.appendChild(nameInput);
+
+
+        if (targetPlasmid.extension) {
+            const suffixDiv = document.createElement("div");
+            suffixDiv.classList.add("modal-input-suffix");
+            suffixDiv.textContent = targetPlasmid.extension;
+            inputWrapper.appendChild(suffixDiv);
+        };
+
 
         const action = () => {
             const newName = document.getElementById(`${id}-input`).value;
             targetPlasmid.rename(newName);
         };
 
-        console.log(id)
         body.appendChild(
             this._createButtons("Rename", id, action)
         );
@@ -410,54 +636,79 @@ const Modals = new class {
 
 
     //#region Rename primers
+    /**
+     * Creat the reanme primers modal window
+     * 
+     * @param {Number} primerSetIndex 
+     */
     createRenamePrimersModal(primerSetIndex) {
         const id = "rename-primers";
 
-        const modalBody = this._createModalBody("Rename primers");
+        // Modal window body
+        const modalBody = document.createElement("div");
         modalBody.classList.add("modal-wide");
 
+        // Title
+        modalBody.appendChild(
+            this._createModalTitle("Rename primers")
+        );
+
+        // Select primer set to rename
         const primerSet = Session.activePlasmid().primers[primerSetIndex];
 
-        // Rename primer set
+        // Rename primer set input
         const renamePrimerSet = this._createInput("Set name", `${id}-input`, primerSet.title, null, null);
         modalBody.appendChild(renamePrimerSet);
 
+        // Container for primer name inputs
         const individualPrimersContainer = document.createElement("div");
         //individualPrimersContainer.style.marginLeft = "20px";
         modalBody.appendChild(individualPrimersContainer);
 
 
+        /**
+         * Update synced primer name inputs based on primer set name input
+         */
         const syncStates = {};
         const updateSyncedPrimers = () => {
+            // Get name of primer set
             const baseName = document.getElementById(`${id}-input`).value;
 
+            // Iterate over primer name inputs
             const nrOfInputs = document.getElementById(id).querySelectorAll("input").length;
             for (let i = 0; i < nrOfInputs - 1; i++) {
+                // Select primer name input
                 const primerNameInput = document.getElementById(`${id}-input${i}`);
+                
+                // Select the sync button
                 const primerNameInputSync = document.getElementById(`${id}-input${i}-sync`);
                 
+                // If the sync button is active, sync the primer name
                 if (primerNameInputSync.hasAttribute("active")) {
                     const suffix = primerNameInput.getAttribute("suffix");
                     primerNameInput.value = baseName + suffix;
                 };
             };
         };
+        // Update synced primer names whenever the user changes the primer set name
         renamePrimerSet.addEventListener("input", updateSyncedPrimers);
 
+        // Iterate over primers in the primer set and create their text inputs
         for (let i = 0; i < primerSet.primers.length; i++) {
+            // Select primer
             const primer = primerSet.primers[i];
 
+            // Container
             const vGroup = document.createElement("div");
             vGroup.classList.add("modal-vgroup");
             individualPrimersContainer.appendChild(vGroup);
 
-            /**
-             * Label
-             */
+            // Label 
             const label = document.createElement("label");
             label.innerText = `${primer.name}:`;
             vGroup.appendChild(label);
 
+            // Hgroup for sync button and text input
             const hGroup = document.createElement("div");
             hGroup.classList.add("modal-hgroup");
             hGroup.style.height = "40px";
@@ -468,7 +719,6 @@ const Modals = new class {
              * Sync button
              */
             syncStates[i] = true;
-
             const syncToggle = document.createElement("div");
             syncToggle.id = `${id}-input${i}-sync`;
             syncToggle.classList.add(
@@ -489,7 +739,6 @@ const Modals = new class {
 
                 if (syncStates[i]) {
                     syncToggle.setAttribute("active", "")
-
                     updateSyncedPrimers();
                 } else {
                     syncToggle.removeAttribute("active");
@@ -518,22 +767,28 @@ const Modals = new class {
         };
 
 
+        /**
+         * On action, get the new names from the text inputs and pass them to the plasmid
+         */
         const action = () => {
+            // Prime set name
             const newPrimerSetName = document.getElementById(`${id}-input`).value;
 
+            // Iterate over the primer text inputs and get their values
             const nrOfInputs = document.getElementById(id).querySelectorAll("input").length;
             const newPrimerNames = [];
-
             for (let i = 0; i < nrOfInputs - 1; i++) {
                 newPrimerNames.push(
                     document.getElementById(`${id}-input${i}`).value
                 );
             };
 
+            // Rename primer set
             Session.activePlasmid().renamePrimerSet(primerSetIndex, newPrimerSetName, newPrimerNames);
         };
 
 
+        // Action and cancel buttons
         modalBody.appendChild(
             this._createButtons(
                 "Rename",
@@ -547,19 +802,26 @@ const Modals = new class {
 
 
     //#region Insertion
+    /**
+     * Create the modal window for insertions and mutations
+     * 
+     * @param {String} type - Type of insertion modal window ("insertion" or "mutation") 
+     */
     createInsertionModal(type="insertion") {
-        const body = document.createElement("div");
-        body.classList.add("modal-insertion");
         const id = "modal-window-insertion";
 
 
+        const body = document.createElement("div");
+        body.classList.add("modal-insertion");
+
+
         // Title
-        const modalTitle = document.createElement("div");
-        modalTitle.classList.add("modal-title");
-        modalTitle.innerText = (type === "insertion") ? "Insert here": "Mutate selection";
-        body.appendChild(modalTitle);
+        body.appendChild(
+            this._createModalTitle((type === "insertion") ? "Insert here": "Mutate selection")
+        );
 
 
+        // Create text inputs
         const dnaSeqInput = this._createDNAInput("insertion-input-dna");
         const aaSeqInput = this._createAAInput("insertion-input-aa");
         const commonInsertionsDropdown = this._createCommonInsertionsDropdown(aaSeqInput.querySelector(".modal-input"));
@@ -595,7 +857,8 @@ const Modals = new class {
         body.appendChild(linFragHint);
 
         
-
+        // Add event listeners to constantly check if the sequences are too long
+        // If they are too long, show the hint about using linear fragments
         [dnaSeqInput, aaSeqInput].forEach((input) => {
             input.addEventListener("input", function (e) {
                 const linFragHint = document.getElementById("lin-frag-hint");
@@ -607,11 +870,17 @@ const Modals = new class {
             });
         });
 
+        
+        /**
+         * Action
+         */
         const action = () => {
+            // Get new feature name if the user selection a common insertion
             const selectElement = commonInsertionsDropdown.querySelector(".common-insertions-dropdown");
             const selectedOption = selectElement.options[selectElement.selectedIndex];
             const newFeatureName = (selectedOption.hasAttribute("feature-label")) ? selectedOption.getAttribute("feature-label"): null;
-            console.log("newFeatureName -> ", newFeatureName)
+            
+            // Perform IVA operation
             Session.activePlasmid().IVAOperation(
                 (type === "insertion") ? "Insertion": "Mutation",
                 document.getElementById("insertion-input-dna").value,
@@ -622,6 +891,8 @@ const Modals = new class {
             );
         };
 
+
+        // Action and cancel buttons
         body.appendChild(
             this._createButtons("Create primers", id, action)
         );
@@ -630,18 +901,22 @@ const Modals = new class {
     };
 
 
-    //#region Subcloning 
+    //#region Subcloning
+    /**
+     * Creat the subcloning with insertions modal window
+     */
     createSubcloningModal() {
-        const body = document.createElement("div");
-        body.classList.add("modal-subcloning");
         const id = "modal-window-subcloning";
 
 
+        const body = document.createElement("div");
+        body.classList.add("modal-subcloning");
+
+
         // Modal title
-        const modalTitle = document.createElement("div");
-        modalTitle.classList.add("modal-title");
-        modalTitle.innerText = "Subclone with insertions";
-        body.appendChild(modalTitle);
+        body.appendChild(
+            this._createModalTitle("Subclone with insertions")
+        );
 
 
         // 5' end
@@ -672,15 +947,18 @@ const Modals = new class {
         body.appendChild(dnaSeqInput3Prime);
         body.appendChild(aaSeqInput3Prime);
 
+
         // Codon optimization dropdown
         body.appendChild(
             this._createCodonOptimizationDropdown()
         );
 
+
         // Translate feature checkbox
         body.appendChild(
             this._createTranslateFeatureCheckbox("insertion-checkbox-translate")
         );
+
 
         const action = () => {
             Session.activePlasmid().IVAOperation(
@@ -698,25 +976,35 @@ const Modals = new class {
             );
         };
 
+
         body.appendChild(
             this._createButtons("Create primers", id, action)
-        );    
+        );
+
+
         this._create(id, body, action);
     };
 
 
     //#region Insert from linear fragment
+    /**
+     * Create insert from linear fragment modal window
+     */
     createInsertFromLinearFragmentModal() {
-        const body = document.createElement("div");
-        body.classList.add("modal-insertion");
         const id = "modal-window-insertion";
 
-        const modalTitle = document.createElement("div");
-        modalTitle.classList.add("modal-title");
-        modalTitle.innerText = "Insert from linear fragment";
-        body.appendChild(modalTitle);
+
+        const body = document.createElement("div");
+        body.classList.add("modal-insertion");
 
 
+        // Modal title
+        body.appendChild(
+            this._createModalTitle("Insert from linear fragment")
+        );
+
+
+        // New plasmid name
         const newPlasmidNameVGroup = document.createElement("div");
         newPlasmidNameVGroup.classList.add("modal-vgroup");
         body.appendChild(newPlasmidNameVGroup);
@@ -746,9 +1034,11 @@ const Modals = new class {
             this._createDNAInput("insertion-input-dna", "textarea", ["modal-input", "modal-textarea"], true)
         );
 
+
         body.appendChild(
             this._createAAInput("insertion-input-aa", "textarea", ["modal-input", "modal-textarea"], true)
         );
+
 
         // Codon optimization dropdown
         body.appendChild(
@@ -760,6 +1050,7 @@ const Modals = new class {
         body.appendChild(
             this._createTranslateFeatureCheckbox("insertion-checkbox-translate")
         );
+
 
         const action = () => {
             Session.activePlasmid().IVAOperation(
@@ -773,68 +1064,120 @@ const Modals = new class {
             );
         };
 
+
         body.appendChild(
             this._createButtons("Create primers and linear fragment", id, action)
         );
+
 
         this._create(id, body, action);
     };
 
 
     //#region Set origin
+    /**
+     * Create the set plasmid origin modal window
+     * 
+     * @param {Plasmid} targetPlasmid - Target plasmid object
+     */
     createSetOriginModal(targetPlasmid) {
-        const body = document.createElement("div");
         const id = "modal-window-set-origin";
 
-        const seqLength = targetPlasmid.sequence.length;
-    
-        body.innerHTML = `
-        <div class="modal-title">Set new plasmid origin</div>
-    
-        <div class="modal-vgroup">
-            <label>New origin:</label>
-            <input type="number" id="${id}-input" class="modal-input" min="1" max="${seqLength} step="1" value="1">
-        </div>
-        `;
+        const body = document.createElement("div");
+
+        body.appendChild(
+            this._createModalTitle("Set new plasmid origin")
+        )
+
+        //Input
+        const vGroup = document.createElement("div");
+        vGroup.classList.add("modal-vgroup");
+        body.appendChild(vGroup);
+
+        const label = document.createElement("label");
+        label.innerText = "New origin:";
+        vGroup.appendChild(label);
+
+        const input = document.createElement("input");
+        input.setAttribute("type", "number");
+        input.id = `${id}-input`;
+        input.classList.add("modal-input");
+        input.setAttribute("min", "1");
+        input.setAttribute("max", targetPlasmid.sequence.length);
+        input.setAttribute("step", "1");
+        input.setAttribute("value", "1");
+        vGroup.appendChild("input")
+
 
         const action = () => {
-            const newOrigin = document.getElementById(`${id}-input`).value;
-            targetPlasmid.setOrigin(newOrigin);
+            targetPlasmid.setOrigin(document.getElementById(`${id}-input`).value);
         };
+
 
         body.appendChild(
             this._createButtons("Set origin", id, action)
         );    
+
+
         this._create(id, body, action);
     };
 
 
     //#region Set file topology
+    /**
+     * Create the set file topology modal window
+     * 
+     * @param {Plasmid} targetPlasmid - Target plasmid 
+     */
     createSetFileTopologyModal(targetPlasmid) {
         const body = document.createElement("div");
         const id = "modal-window-set-file-topology";
 
         const currTopology = targetPlasmid.topology;
-        console.log()
     
-        body.innerHTML = `
-        <div class="modal-title">Set file topology</div>
+        // Modal title
+        body.appendChild(
+            this._createModalTitle("Set file topology")
+        );
 
-        <div class="toolbar-panel-section-hgroup-input" style="padding: 10px 0px;height: 25px;">
-            <span>
-                Linear
-            </span>
-            <div class="boolean-switch-wrapper">
-                <label class="boolean-switch">
-                    <input id="${id}-input" type="checkbox" class="boolean-switch-input" ${currTopology === 'circular' ? 'checked="true"': '' }">
-                    <span class="boolean-switch-slider"></span>
-                </label>
-            </div>
-            <span>
-                Circular.
-            </span>
-        </div>
-        `;
+        // HGroup container
+        const hgroup = document.createElement("div");
+        hgroup.classList.add("toolbar-panel-section-hgroup-input");
+        hgroup.style.padding = "10px 0px";
+        hgroup.style.height = "25px";
+        body.appendChild(hgroup);
+
+        // "Linear" label
+        const linearLabel = document.createElement("span");
+        linearLabel.textContent = "Linear";
+        hgroup.appendChild(linearLabel);
+
+        // Switch wrapper
+        const switchWrapper = document.createElement("div");
+        switchWrapper.classList.add("boolean-switch-wrapper");
+        hgroup.appendChild(switchWrapper);
+
+        const switchLabel = document.createElement("label");
+        switchLabel.classList.add("boolean-switch");
+        switchWrapper.appendChild(switchLabel);
+
+        const switchInput = document.createElement("input");
+        switchInput.id = `${id}-input`;
+        switchInput.type = "checkbox";
+        switchInput.classList.add("boolean-switch-input");
+        if (currTopology === "circular") switchInput.checked = true;
+        switchLabel.appendChild(switchInput);
+
+        const switchSlider = document.createElement("span");
+        switchSlider.classList.add("boolean-switch-slider");
+        switchLabel.appendChild(switchSlider);
+
+
+        // "Circular." label
+        const circularLabel = document.createElement("span");
+        circularLabel.textContent = "Circular.";
+        hgroup.appendChild(circularLabel);
+
 
         const action = () => {
             const newToplogy = (document.getElementById(`${id}-input`).checked)
@@ -843,9 +1186,12 @@ const Modals = new class {
             targetPlasmid.setTopology(newToplogy);
         };
 
+
         body.appendChild(
             this._createButtons("Set topology", id, action)
         );    
+
+
         this._create(id, body, action);
     };
 };
