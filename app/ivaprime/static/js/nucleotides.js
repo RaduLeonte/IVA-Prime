@@ -1,13 +1,5 @@
 const Nucleotides = new class {
     constructor() {
-        this.commonFeatures = null;
-        fetch('static/data/commonFeatures.json')
-            .then(response => response.json())
-            .then(json => {
-                this.commonFeatures = json;
-            });
-        
-
         /**
          * MAP of complementary single letter codes.
          */
@@ -59,38 +51,34 @@ const Nucleotides = new class {
             'TAA': '*', 'TAG': '*', 'TGA': '*'
         };
     
-        
-        this.codonWeights = null;
-        // Load codon weights once document is loaded
-        document.addEventListener('DOMContentLoaded', function () {
-            Nucleotides.loadCodonWeights();
-        });
-
 
         /**
-         * Common insertions (affinity tags and cleave tags)
+         * Load data once page is loaded.
+         * Its nicer for the user to immediately see something and then load
+         * these in the background.
          */
+        this.commonFeatures = null;
+        this.codonWeights = null;
         this.commonInsertions = null;
         document.addEventListener('DOMContentLoaded', function () {
-            Nucleotides.loadCommonInsertions();
-        });
-    };
+            fetch('static/data/commonFeatures.json')
+                .then(response => response.json())
+                .then(json => {
+                    Nucleotides.commonFeatures = json;
+                });
+            
+            fetch('static/data/codonWeights.json')
+                .then(response => response.json())
+                .then(json => {
+                    Nucleotides.codonWeights = json;
+                });
+            
 
-
-    loadCodonWeights() {
-        fetch('static/data/codonWeights.json')
-        .then(response => response.json())
-        .then(json => {
-            Nucleotides.codonWeights = json;
-        });
-    };
-
-
-    loadCommonInsertions() {
-        fetch('static/data/commonInsertions.json')
-        .then(response => response.json())
-        .then(json => {
-            Nucleotides.commonInsertions = json;
+            fetch('static/data/commonInsertions.json')
+                .then(response => response.json())
+                .then(json => {
+                    Nucleotides.commonInsertions = json;
+                });
         });
     };
 
@@ -98,8 +86,8 @@ const Nucleotides = new class {
     /**
      * Check if a given sequence is a purely nucleotide sequence
      * 
-     * @param {string} inputSequence - Input sequence to be checked
-     * @returns {bool} - True for nucleotide sequences, false for anything else
+     * @param {String} inputSequence - Input sequence to be checked
+     * @returns {Boolean} - True for nucleotide sequences, false for anything else
      */
     isNucleotideSequence(inputSequence) {
         return [...inputSequence].every(char => char in this.complements);
@@ -110,8 +98,8 @@ const Nucleotides = new class {
      * Sanitize DNA/RNA sequence leaving only allowed IUPAC nucleotide
      * one letter codes.
      * 
-     * @param {string} inputSequence - String to be sanitized 
-     * @returns - Sanitized string
+     * @param {String} inputSequence - String to be sanitized 
+     * @returns {String} - Sanitized string
      */
     sanitizeSequence(inputSequence) {
         return inputSequence.toUpperCase()
@@ -125,7 +113,7 @@ const Nucleotides = new class {
      * Create the complementary sequence to a given DNA/RNA sequence.
      * 
      * @param {String} inputSequence - Template sequence.
-     * @returns - Complementary sequence.
+     * @returns {String} - Complementary sequence.
      */
     complementary(inputSequence) {
         const seq = Nucleotides.sanitizeSequence(inputSequence);
@@ -143,7 +131,7 @@ const Nucleotides = new class {
      * Create the reverse complementary sequence to a given DNA/RNA sequence.
      * 
      * @param {String} inputSequence - Template sequence
-     * @returns - Reverse complementary sequence
+     * @returns {String} - Reverse complementary sequence
      */
     reverseComplementary(inputSequence) {
         return this.complementary(inputSequence).split("").reverse().join("")
@@ -173,28 +161,28 @@ const Nucleotides = new class {
      * Optimise amino acid sequence using codon frequency tables
      * for the specified organism
      * 
-     * @param {string} inputAA - Amino acid sequence to optimise
-     * @param {string} targetOrganism - Organism for which the codons should be optimised
-     * @returns {string} - Optimised DNA sequence
+     * @param {String} inputAA - Amino acid sequence to optimise
+     * @param {String} targetOrganism - Organism for which the codons should be optimised
+     * @returns {String} - Optimised DNA sequence
      */
     optimizeAA(inputAA, targetOrganism) {
         return inputAA
-        .split("")
-        .map(aa => {
-            const possibilities = Object.entries(this.codonWeights[targetOrganism][aa]).map(([value, weight]) => ({
-                weight: parseFloat(weight),
-                value
-            }));
+            .split("")
+            .map(aa => {
+                const possibilities = Object.entries(this.codonWeights[targetOrganism][aa]).map(([value, weight]) => ({
+                    weight: parseFloat(weight),
+                    value
+                }));
 
-            const totalWeight = possibilities.reduce((sum, p) => sum + p.weight, 0);
+                const totalWeight = possibilities.reduce((sum, p) => sum + p.weight, 0);
 
-            let rand = Math.random() * totalWeight;
-            for (const p of possibilities) {
-                rand -= p.weight;
-                if (rand <= 0) return p.value;
-            };
-        })
-        .join("");
+                let rand = Math.random() * totalWeight;
+                for (const p of possibilities) {
+                    rand -= p.weight;
+                    if (rand <= 0) return p.value;
+                };
+            })
+            .join("");
     };
 
 
@@ -202,7 +190,7 @@ const Nucleotides = new class {
      * Calculate fraction of GC content of a given sequence.
      * 
      * @param {String} inputSequence 
-     * @returns {Number} GC fraction
+     * @returns {Number} - GC fraction
      */
     fractionGC(inputSequence) {
         const gcCount = (inputSequence.match(/[GC]/g) || []).length;
@@ -215,7 +203,7 @@ const Nucleotides = new class {
      * 
      * @param {String} seq - Sequence
      * @param {String} method - Melting temperature algorithm (oligoCalc, nnSantaLucia)
-     * @returns {number} - Melting temperature
+     * @returns {Number} - Melting temperature
      */
     getMeltingTemperature(seq, method=null) {
         method = (method) ? method: UserPreferences.get("TmAlgorithm");
@@ -331,6 +319,7 @@ const Nucleotides = new class {
             return (deltaH0 / (deltaS0 + R * Math.log(C / symmFraction))) - 273.15;
         },
 
+
         /**
          * Algorithm from the Oligo Calc online calculator (http://biotools.nubic.northwestern.edu/oligocalc.html)
          * 
@@ -359,7 +348,7 @@ const Nucleotides = new class {
          * @param {Number} T1 - Initial melting temperature
          * @param {Number} seq - Primer sequence
          * @param {Number} C - Salt concentration
-         * @returns {Number} Corrected melting tempeature
+         * @returns {Number} - Corrected melting tempeature
          */
         SchildkrautLifson : (T1, seq, C) => {
             return T1 + 16.6 * Math.log(C);
@@ -371,7 +360,7 @@ const Nucleotides = new class {
          * @param {Number} T1 - Initial melting temperature
          * @param {Number} seq - Primer sequence
          * @param {Number} C - Salt concentration
-         * @returns {Number} Corrected melting tempeature
+         * @returns {Number} - Corrected melting tempeature
          */
         Owczarzy : (T1, seq, C) => {
             const fGC = fractionGC(seq);
@@ -381,6 +370,12 @@ const Nucleotides = new class {
     };
 
 
+    /**
+     * Check if sequence cotains only ACTG bases
+     * 
+     * @param {String} seq - Sequence to validate
+     * @throws {AmbiguousBaseError}
+     */
     validatePrimerSequence(seq) {
         const validBases = new Set(["A", "C", "T", "G"]);
 
@@ -393,6 +388,14 @@ const Nucleotides = new class {
     };
 
 
+    /**
+     * Detect common features in the specified plasmid sequence and return
+     * a dictionary of all detected features.
+     * 
+     * @param {String} plasmidSequence 
+     * @returns {Object}
+     */
+    // TO DO: Detect common features in a specific range
     detectCommonFeatures(plasmidSequence) {
         const plasmidSequenceComp = this.complementary(plasmidSequence);
         let detectedFeatures = {}
