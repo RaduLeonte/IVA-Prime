@@ -289,9 +289,9 @@ const PlasmidTabs = new class {
         </ul>
         <div class="plasmid-tab-dropdown-menu-section-title">Export plasmid file</div>
         <ul>
-            <li><span onclick="FileIO._exportFileAsGB(${plasmidIndex})">GenBank file (.gb)</span></li>
-            <li><span onclick="FileIO._exportFileAsDNA(${plasmidIndex})">SnapGene file (.dna)</span></li>
-            <li><span onclick="FileIO._exportFileAsFASTA(${plasmidIndex})">Fasta file (.fasta)</span></li>
+            <li><span onclick="FileIO.exporters['gb'](${plasmidIndex})">GenBank file (.gb)</span></li>
+            <li><span onclick="FileIO.exporters['dna'](${plasmidIndex})">SnapGene file (.dna)</span></li>
+            <li><span onclick="FileIO.exporters['fasta'](${plasmidIndex})">Fasta file (.fasta)</span></li>
         </ul>
         <div class="plasmid-tab-dropdown-menu-section-title">Edit plasmid</div>
         <ul>
