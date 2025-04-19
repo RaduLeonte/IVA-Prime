@@ -86,9 +86,9 @@ const KeyboardShortcuts = new class {
 
 
     /**
+     * Selects all bases in the plasmid viewer.
      * 
-     * @param {*} event 
-     * @returns 
+     * @param {KeyboardEvent} event 
      */
     selectAll(event) {
         // Only select everything if there is already a selection
@@ -104,13 +104,12 @@ const KeyboardShortcuts = new class {
 
 
     /**
+     * Performs deletion IVA operation on selected range
      * 
-     * @param {*} event 
-     * @returns 
+     * @param {KeyboardEvent} event 
      */
     deleteSelection(event) {
         // Check that there is a selected range
-        const selectionIndices = Session.activePlasmid().getSelectionIndices();
         if (!Session.activePlasmid().selectionIsRange()) return;
                 
         // Check that there is no modal active
@@ -122,9 +121,9 @@ const KeyboardShortcuts = new class {
 
 
     /**
+     * Marks selection for subcloning.
      * 
-     * @param {*} event 
-     * @returns 
+     * @param {KeyboardEvent} event 
      */
     markSelectionForSubcloning(event) {
         // Check that there is a selected range
@@ -139,13 +138,13 @@ const KeyboardShortcuts = new class {
 
 
     /**
+     * Performs subcloning into the currently selected range
      * 
-     * @param {*} event 
-     * @returns 
+     * @param {KeyboardEvent} event 
      */
     subcloneIntoSelection(event) {
         // Check that there is a selected range
-        if (Session.activePlasmid().getSelectionIndices() == null) return;
+        if (!Session.activePlasmid().selectionExists()) return;
 
         // Check that there is a marked region
         if (!Session.isSubcloningRegionMarked()) return;
@@ -159,8 +158,9 @@ const KeyboardShortcuts = new class {
 
 
     /**
+     * Navigate sequence in grid view using arrow keys
      * 
-     * @param {*} event 
+     * @param {KeyboardEvent} event 
      */
     handleArrowNavigation(event) {
         // Check that there is no focused element (inputs mainly)
@@ -170,8 +170,9 @@ const KeyboardShortcuts = new class {
             document.activeElement !== document.documentElement
         ) return;
 
+        // Check that there is no modal active
         if (Modals.isActive()) return;
-            
+        // Asert that there is an active plasmid
         if (!Session.activePlasmid()) return;
         
         const selectionIndices = Session.activePlasmid().getSelectionIndices();
@@ -291,9 +292,9 @@ const KeyboardShortcuts = new class {
 
 
     /**
+     * Focus search bar on CTRL + F
      * 
-     * @param {*} event 
-     * @returns 
+     * @param {KeyboardEvent} event 
      */
     focusSearchBar(event) {
         // Check that there is no modal active
@@ -305,8 +306,9 @@ const KeyboardShortcuts = new class {
 
 
     /**
+     * Open rename plasmid modal for the currently active plasmid
      * 
-     * @param {*} event 
+     * @param {KeyboardEvent} event 
      */
     renamePlasmid(event) {
         // Check that there is no modal active
