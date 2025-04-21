@@ -28,9 +28,10 @@ jobs:
         gcloud config set project iva-prime
         gcloud app deploy --format json app.yaml --project iva-prime --promote --no-cache
 
-    - name: Delete old App Engine versions
+    - name: Delete old and unsued App Engine versions (0% traffic only)
       run: |
-        echo "Old and unused App Engine versions:"
+        echo "Deleting App Engine versions."
         gcloud app versions list \
-          --format="table(version.id, service, last_deployed_time)" \
-          --filter="traffic_split=0.0"
+          --format="value(version.id)" \
+          --filter="traffic_split=0.0" | \
+        xargs -r gcloud app versions delete -q
