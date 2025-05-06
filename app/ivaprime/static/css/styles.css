@@ -143,6 +143,16 @@ a:visited {
   width: 100%;
   height: 3px; /* Thickness of underline */
   background-color: var(--btn-green);
+
+  transition: filter 0.1s ease-in
+}
+
+.underlined-link:hover::before {
+  filter: brightness(1.5);
+}
+
+.underlined-link-orange::before {
+  background-color: var(--btn-orange);
 }
 
 .underlined-link::after {
@@ -1673,6 +1683,10 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   align-items: center;
 
   width: 500px;
+}
+
+.welcome-disclaimer-wrapper p {
+  margin: 20px 0px 0px 0px;
 }
 
 .welcome-disclaimer-wrapper-title {
