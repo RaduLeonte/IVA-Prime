@@ -1,0 +1,51 @@
+{% load static %}
+<!-- Made by:
+    Radu Cristian Leonte
+    (raducristian.leonte@gmail.com)
+    (raducristian.leonte@unibas.ch) -->
+<!DOCTYPE html>
+    <html>
+        <head>
+            <title>IVA Prime - About</title>
+            <!-- Styling -->
+            <link rel="shortcut icon" href="{% static 'assets/favicon.ico' %}">
+            <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
+            <link rel="stylesheet" type="text/css" href="{% static 'css/mobile.css' %}">
+
+            <script src="{% static 'js/userPreferences.js' %}"></script>
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    document.querySelector("html").setAttribute("data-theme", UserPreferences.get("theme"));
+                });
+            </script>
+            <script>
+                function bypassRedirect() {
+                    document.cookie = "bypass_mobile=1; path=/; max-age=86400";  // lasts 1 day
+                    window.location.href = "/";
+                }
+            </script>
+        </head>
+        <body>
+            
+            <div class="mobile-disclaimer-wrapper">
+                <div class="mobile-disclaimer">
+                    <div class="mobile-disclaimer-title">
+                        Welcome to IVA Prime!
+                    </div>
+                    <p>
+                        You've been redirected to this page because <b>IVA Prime</b> is not fully optimized for mobile devices. Some features and visual elements may not display or function correctly on smaller screens.
+                        For the best experience, we recommend accessing <b>IVA Prime</b> from a desktop or laptop computer. You're also welcome to bookmark this page and return to it later from a larger device.
+                    </p>
+                    <p>
+                        You can find a detailed description of <b>IVA Prime</b> in <a href="https://doi.org/10.1093/nar/gkaf386" target="_blank" class="underlined-link underlined-link-orange">our paper</a>, in case you'd like to learn more or reference it in your work.
+                    </p>
+                    <p>
+                        If you'd still like to explore the site now, you can continue at your own risk — just keep in mind that functionality may be limited.
+                    </p>
+
+                    <span class="button-about button-round button-green" onclick="bypassRedirect()">Go to IVA Prime</span>
+                </div>
+            </div>
+
+        </body>
+    </html>
