@@ -414,19 +414,22 @@ const Sidebar = new class {
         const primersContainer = sender.closest(".primer-container");
         
         const primerSequence = primersContainer.querySelector(".primer-sequence-regions").innerText;
-        console.log("Sidebar.hightlightPrimerBindingSite ->", primerSequence)
-        const primerRegions = primersContainer.querySelectorAll(".primer-sequence")
+        let primerRegions = primersContainer.querySelectorAll(".primer-sequence")
         
         const direction = primerRegions[0].getAttribute("direction")
-
+        
         // Find binding site starting index
         const activePlasmid = Session.activePlasmid();
         if (!activePlasmid) return;
         
-
+        
         let indices = this.findPrimerBindingSites(primerSequence, direction);
+        console.log("Sidebar.hightlightPrimerBindingSite ->", primerSequence, direction, indices)
 
         let index = indices[0]
+
+        if (direction == "rev") primerRegions = Array.from(primerRegions).reverse();
+
         primerRegions.forEach((primerRegion) => {
             const type = primerRegion.getAttribute("type");
             const baseClass = this.baseClasses[type];
