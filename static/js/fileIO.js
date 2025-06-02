@@ -1123,7 +1123,7 @@ const FileIO = new class {
             const primers = Object.fromEntries(Object.entries(targetPlasmid.features).filter(([_, v]) => v.type === "primer_bind"));
             const features = Object.fromEntries(Object.entries(targetPlasmid.features).filter(([_, v]) => v.type !== "primer_bind"));
 
-            const additionalInfo = targetPlasmid.additionalInfo;
+            const additionalInfo = targetPlasmid?.additionalInfo ?? {};
             const blocks = additionalInfo.blocks;
 
             let outputBytes = [];
@@ -1413,6 +1413,8 @@ const FileIO = new class {
 
             // #region Header
             function writeHeader(additionalInfo) {
+                if (!additionalInfo || additionalInfo == null) additionalInfo = {};
+
                 const leftColumnWidth = 12;
                 const rightColumnWidth = 50;
                 let header = "";
@@ -1516,6 +1518,8 @@ const FileIO = new class {
 
 
                 for (const [key, feature] of Object.entries(features)) {
+                    if (key == "LOCUS") continue;
+
                     const location = feature["directionality"] === "fwd"
                         ? `${feature["span"][0]}..${feature["span"][1]}`
                         : `complement(${feature["span"][0]+1}..${feature["span"][1]+1})`;
