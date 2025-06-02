@@ -1123,7 +1123,7 @@ const FileIO = new class {
             const primers = Object.fromEntries(Object.entries(targetPlasmid.features).filter(([_, v]) => v.type === "primer_bind"));
             const features = Object.fromEntries(Object.entries(targetPlasmid.features).filter(([_, v]) => v.type !== "primer_bind"));
 
-            const additionalInfo = targetPlasmid.additionalInfo;
+            const additionalInfo = targetPlasmid?.additionalInfo ?? {};
             const blocks = additionalInfo.blocks;
 
             let outputBytes = [];
