@@ -663,7 +663,6 @@ const PlasmidViewer = new class {
 
 
     _createGridViewMinimap(gridView, sequenceLength, features) {
-        console.log(`PlasmidViewer._createGridViewMinimap ->`, features)
         const minimap = document.createElement("div");
         minimap.classList.add("grid-view-minimap");
         
