@@ -1,9 +1,11 @@
 const Alerts = new class {
     constructor () {
-        // Show cookie info alert if the user has not previously dismissed it
-        document.addEventListener("DOMContentLoaded", () => {
-            if (!UserPreferences.get("cookieConsentGiven")) Alerts.showCookieConsentDisclaimer();
-        });
+        // Show cookie info alert if the user has not previously dismissed it and app is running in browser
+        if (!Utilities.isTauriApp()) {
+            document.addEventListener("DOMContentLoaded", () => {
+                if (!UserPreferences.get("cookieConsentGiven")) Alerts.showCookieConsentDisclaimer();
+            });
+        };
     };
 
 
