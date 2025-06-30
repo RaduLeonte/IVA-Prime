@@ -12,6 +12,8 @@ const FileIO = new class {
     importFile(file, plasmidIndex=null) {
         return new Promise((resolve, reject) => {
             // Get filename+extension from path
+            console.log("FileIO.importFile -> ", file.name)
+
             const fileNameExtension = file.name.match(/[^\\/]*$/)[0];
             // Fish out file extension of the file
             let fileExtension =  "." + fileNameExtension.split(".").pop();
@@ -169,6 +171,8 @@ const FileIO = new class {
      * @param {Array} filesList - List of files to import.
      */
     importQueue(filesList) {
+        console.log("FileIO.importQueue -> ", filesList)
+
         // Change cursor to loading
         this.addLoadingCursor();
 
@@ -190,6 +194,22 @@ const FileIO = new class {
             this.removeLoadingCursor()
             console.log("FileIO.importQueue -> Done.")
         });
+    };
+
+
+    async importBase64Files(fileDataList) {
+        console.log("FileIO.importBase64Files -> ", fileDataList)
+        const files = await Promise.all(
+        fileDataList.map(async ({ name, content_base64 }) => {
+            const binary = atob(content_base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+            }
+            return new File([bytes], name);
+        })
+        );
+        FileIO.importQueue(files);
     };
 
 
