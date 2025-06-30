@@ -70,7 +70,7 @@ const FileIO = new class {
      * Imports the demo pET-28a(+).dna file.
      */
     async importDemoFile() {
-        const filePath = "static\\files\\pET-28a(+).dna"
+        const filePath = "static/files/pET-28a(+).dna"
         const response = await fetch(filePath);
         const blob = await response.blob();
         const file = new File([blob], filePath.split('\\').pop());

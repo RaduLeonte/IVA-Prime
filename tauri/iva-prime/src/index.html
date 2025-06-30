@@ -8,45 +8,47 @@
             <title>IVA Prime</title>
             
             <!-- Styling -->
-            <link rel="shortcut icon" href="assets/favicon.ico">
+            <link rel="shortcut icon" href="static/assets/favicon.ico">
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mdbassit/Coloris@latest/dist/coloris.min.css"/>
-            <link rel="stylesheet" type="text/css" href="css/styles.css">
+            <link rel="stylesheet" type="text/css" href="static/css/styles.css">
             
             <!-- Libraries -->
-            <script src="js/libraries/html-docx.js"></script>
-            <script src="js/libraries/xlsx-populate.min.js"></script>
-            <script src="js/libraries/coloris.js"></script>
-            <script src="js/libraries/FileSaver.js"></script>
-            <script src="js/libraries/fxp.min.js"></script>
+            <script src="static/js/libraries/html-docx.js"></script>
+            <script src="static/js/libraries/xlsx-populate.min.js"></script>
+            <script src="static/js/libraries/coloris.js"></script>
+            <script src="static/js/libraries/FileSaver.js"></script>
+            <script src="static/js/libraries/fxp.min.js"></script>
             
             <!-- Scripts -->
-            <script src="js/userPreferences.js"></script>
-            <script src="js/plasmidTabs.js"></script>
-            <script src="js/modals.js"></script>
-            <script src="js/fileIO.js"></script>
-            <script src="js/nucleotides.js"></script>
-            <script src="js/plasmids.js"></script>
-            <script src="js/sidebar.js"></script>
-            <script src="js/plasmidViewer.js"></script>
-            <script src="js/alerts.js"></script>
-            <script src="js/utilities.js"></script>
-            <script src="js/primers.js"></script>
-            <script src="js/search.js"></script>
-            <script src="js/toolbar.js"></script>
-            <script src="js/errorHandler.js"></script>
-            <script src="js/contextMenu.js"></script>
-            <script src="js/session.js"></script>
-            <script src="js/keyboardShortcuts.js"></script>
+            <script src="static/js/userPreferences.js"></script>
+            <script src="static/js/plasmidTabs.js"></script>
+            <script src="static/js/modals.js"></script>
+            <script src="static/js/fileIO.js"></script>
+            <script src="static/js/nucleotides.js"></script>
+            <script src="static/js/plasmids.js"></script>
+            <script src="static/js/sidebar.js"></script>
+            <script src="static/js/plasmidViewer.js"></script>
+            <script src="static/js/alerts.js"></script>
+            <script src="static/js/utilities.js"></script>
+            <script src="static/js/primers.js"></script>
+            <script src="static/js/search.js"></script>
+            <script src="static/js/toolbar.js"></script>
+            <script src="static/js/errorHandler.js"></script>
+            <script src="static/js/contextMenu.js"></script>
+            <script src="static/js/session.js"></script>
+            <script src="static/js/keyboardShortcuts.js"></script>
 
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <meta charset="UTF-8">
+
 
         </head>
         
         <body
             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-            ondragover="FileIO.importDragOver(event)"
+            ondragenter="FileIO.importDragEnter(event)"
             ondragleave="FileIO.importDragLeave(event)"
+            ondragover="FileIO.importDragOver(event)"
             ondrop="FileIO.importDrop(event)"
         >
             <!-- Prevents flashing bug in Firefox -->
