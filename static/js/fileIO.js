@@ -99,6 +99,7 @@ const FileIO = new class {
     };
 
 
+    dragCounter = 0;
     /** 
      * Drag and drop import
      */
@@ -106,34 +107,59 @@ const FileIO = new class {
     // TO DO: Check if payload contains correct plasmid files and warn user if
     /**
      * Show import overlay when user dangles a payload over the page
-     * 
-     * @param {Event} e - Drag over event
+     * @param {Event} e - Drag enter event
      */
-    importDragOver(e) {
+    importDragEnter(e) {
+        console.log("FileIO.importDragEnter -> Entered document");
         e.preventDefault();
+
+         // Only show overlay for file drags
+        if (e.dataTransfer.types && !e.dataTransfer.types.includes('Files')) return;
+
+        FileIO.dragCounter++;
         document.body.classList.add('drag-import-overlay');
     };
     
     /**
-     * Remove overlay when there is no more payload
-     * 
+     * Remove overlay when drag fully leaves the page
      * @param {Event} e - Drag leave event
      */
     importDragLeave(e) {
+        console.log("FileIO.importDragLeave -> Left document");
         e.preventDefault();
-        document.body.classList.remove('drag-import-overlay');
+
+        FileIO.dragCounter--;
+
+        if (FileIO.dragCounter <= 0 || !e.relatedTarget) {
+            document.body.classList.remove('drag-import-overlay');
+            FileIO.dragCounter = 0;
+        };
+    };
+
+
+    /**
+     * Keep default behavior prevented
+     * @param {Event} e - Drag over event
+     */
+    importDragOver(e) {
+        console.log("FileIO.importDragOver ->");
+        e.preventDefault();
     };
     
+
     /**
      * Send dropped files to the import queue
      * 
      * @param {Event} e - Drop event
      */
     async importDrop(e) {
+        console.log("FileIO.importDrop -> Files dropped");
         e.preventDefault();
+        
+        FileIO.dragCounter = 0;
         document.body.classList.remove('drag-import-overlay');
     
-        this.importQueue(e.dataTransfer.files);
+        FileIO.importQueue(e.dataTransfer.files);
     };
 
 
@@ -1123,7 +1149,7 @@ const FileIO = new class {
             const primers = Object.fromEntries(Object.entries(targetPlasmid.features).filter(([_, v]) => v.type === "primer_bind"));
             const features = Object.fromEntries(Object.entries(targetPlasmid.features).filter(([_, v]) => v.type !== "primer_bind"));
 
-            const additionalInfo = targetPlasmid.additionalInfo;
+            const additionalInfo = targetPlasmid?.additionalInfo ?? {};
             const blocks = additionalInfo.blocks;
 
             let outputBytes = [];
@@ -1413,6 +1439,8 @@ const FileIO = new class {
 
             // #region Header
             function writeHeader(additionalInfo) {
+                if (!additionalInfo || additionalInfo == null) additionalInfo = {};
+
                 const leftColumnWidth = 12;
                 const rightColumnWidth = 50;
                 let header = "";
@@ -1516,6 +1544,8 @@ const FileIO = new class {
 
 
                 for (const [key, feature] of Object.entries(features)) {
+                    if (key == "LOCUS") continue;
+
                     const location = feature["directionality"] === "fwd"
                         ? `${feature["span"][0]}..${feature["span"][1]}`
                         : `complement(${feature["span"][0]+1}..${feature["span"][1]+1})`;

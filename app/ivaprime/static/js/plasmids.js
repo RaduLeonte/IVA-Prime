@@ -829,6 +829,20 @@ class Plasmid {
      */
     IVAOperation(operationType, insertionSeqDNA="", insertionSeqAA="", targetOrganism=null, translateFeature=false, newFeatureName=null, linFragName="Linear Fragment") {
         if (!this.selectionExists()) {return};
+
+        // Sanitize strings
+        if (typeof insertionSeqDNA === 'string') {
+            insertionSeqDNA = Nucleotides.sanitizeDNASequence(insertionSeqDNA);
+        } else {
+            insertionSeqDNA = insertionSeqDNA.map(seq => Nucleotides.sanitizeDNASequence(seq))
+        };
+        if (typeof insertionSeqAA === 'string') {
+            insertionSeqAA = Nucleotides.sanitizeAASequence(insertionSeqAA);
+        } else {
+            insertionSeqAA = insertionSeqAA.map(seq => Nucleotides.sanitizeAASequence(seq))
+        };
+        
+
         console.log(`Plasmid.IVAOperation ->`, operationType, insertionSeqDNA, insertionSeqAA, targetOrganism, translateFeature);
         console.log(`Plasmid.IVAOperation -> this.selectionIndices=${this.selectionIndices}`);
 

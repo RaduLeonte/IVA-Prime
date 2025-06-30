@@ -110,6 +110,35 @@ const Nucleotides = new class {
 
 
     /**
+     * Sanitize DNA sequence leaving only allowed DNA nucleotide
+     * one letter codes.
+     * 
+     * @param {String} inputSequence - String to be sanitized 
+     * @returns {String} - Sanitized string
+     */
+    sanitizeDNASequence(inputSequence) {
+        return inputSequence.toUpperCase()
+        .trim()
+        .replace(/[\r\n\t\s]+/g, "")
+        .replace(/[^ACTG\.\-]/g, "");
+    }
+
+    /**
+     * Sanitize AA sequence leaving only allowed AA
+     * one letter codes (including X, *, and -).
+     * 
+     * @param {String} inputSequence - String to be sanitized 
+     * @returns {String} - Sanitized string
+     */
+    sanitizeAASequence(inputSequence) {
+        return inputSequence.toUpperCase()
+        .trim()
+        .replace(/[\r\n\t\s]+/g, "")
+        .replace(/[^ACDEFGHIKLMNPQRSTVWYX\*\-\.]/g, "")
+    }
+
+
+    /**
      * Create the complementary sequence to a given DNA/RNA sequence.
      * 
      * @param {String} inputSequence - Template sequence.

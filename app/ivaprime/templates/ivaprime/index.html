@@ -49,8 +49,9 @@
         
         <body
             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-            ondragover="FileIO.importDragOver(event)"
+            ondragenter="FileIO.importDragEnter(event)"
             ondragleave="FileIO.importDragLeave(event)"
+            ondragover="FileIO.importDragOver(event)"
             ondrop="FileIO.importDrop(event)"
         >
             <!-- Prevents flashing bug in Firefox -->
