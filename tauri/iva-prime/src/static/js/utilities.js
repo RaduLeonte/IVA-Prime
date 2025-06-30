@@ -364,6 +364,16 @@ const Utilities = new class {
         
         return null;
     };
+
+
+    /**
+     * Checks if the app is currently running in Tauri app
+     * 
+     * @returns 
+     */
+    isTauriApp() {
+        return !!window.__TAURI__;
+    };
 };
 
 

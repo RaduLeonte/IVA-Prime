@@ -365,14 +365,14 @@ const Utilities = new class {
         return null;
     };
 
-    
+
     /**
      * Checks if the app is currently running in Tauri app
      * 
      * @returns 
      */
     isTauriApp() {
-        return !!(window.__TAURI__ && window.__TAURI__.invoke);
+        return !!window.__TAURI__;
     };
 };
 
