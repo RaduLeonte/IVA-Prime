@@ -429,9 +429,16 @@
                             <div class="welcome-disclaimer-wrapper-title">
                                 Welcome to IVA Prime!
                             </div>
+                            <!-- about-link:django:start -->
                             <p>
                                 IVA Prime is freely available to all users without any login requirement. Check out the <a href="/about" target="_blank" class="underlined-link">About</a> page for more info.
                             </p>
+                            <!-- about-link:django:end -->
+                            <!-- about-link:tauri
+                            <p>
+                                IVA Prime is freely available to all users without any login requirement. Check out the <a href="" class="underlined-link" onclick="window.__TAURI__.core.invoke('open_about_window'); return false;">About</a> page for more info.
+                            </p>
+                            -->
                             <p>
                                 You can find a detailed description of IVA Prime in <a href="https://doi.org/10.1093/nar/gkaf386" target="_blank" class="underlined-link underlined-link-orange">our paper</a>, in case you'd like to learn more or reference it in your work.
                             </p>
@@ -541,6 +548,7 @@
                             ></span>
                         </div>
 
+                        <!-- about-toolbar-button:django:start -->
                         <div
                             class="toolbar-button"
                             title="Help"
@@ -550,6 +558,18 @@
                                 class="toolbar-help-button"
                             ></span>
                         </div>
+                        <!-- about-toolbar-button:django:end -->
+                        <!-- about-toolbar-button:tauri
+                        <div
+                            class="toolbar-button"
+                            title="Help"
+                            onclick="window.__TAURI__.core.invoke('open_about_window')"
+                        >
+                            <span
+                                class="toolbar-help-button"
+                            ></span>
+                        </div>
+                        -->
                     </div>
                 </div>
                 <!-- End Toolbar -->

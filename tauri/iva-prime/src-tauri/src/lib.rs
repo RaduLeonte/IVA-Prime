@@ -31,10 +31,23 @@ fn prepare_js_files(paths: Vec<String>) -> Vec<JsFile> {
         .collect()
 }
 
+#[tauri::command]
+async fn open_about_window(app: tauri::AppHandle) {
+  let _about_window = tauri::WebviewWindowBuilder::new(
+    &app,
+    "about",
+    tauri::WebviewUrl::App("about.html".into())
+  )
+  .title("IVA Prime - About")
+  .inner_size(800.0, 600.0)
+  .build();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .invoke_handler(tauri::generate_handler![open_about_window])
         .setup(|app| {
             let args: Vec<String> = std::env::args().collect();
             println!("Startup arguments: {:?}", args);

@@ -22,6 +22,9 @@ if os.path.exists(tauri_js_path):
 # Copy and clean HTML files
 remove_line_pattern = re.compile(r'^\s*{%\s*[^%]+?\s*%}\s*$', re.IGNORECASE)
 static_path_pattern = re.compile(r"""{%\s*static\s+['"]([^'"]+)['"]\s*%}""")
+block_start_pattern = re.compile(r'\s*<!--\s*([a-zA-Z0-9_-]+):django:start\s*-->')
+block_end_pattern = lambda key: re.compile(rf'\s*<!--\s*{re.escape(key)}:django:end\s*-->')
+tauri_block_pattern = lambda key: re.compile(rf'\s*<!--\s*{re.escape(key)}:tauri\b')
 for filename in os.listdir(django_path_html):
     if filename.endswith(".html"):
         html_path = os.path.join(django_path_html, filename)
@@ -29,33 +32,63 @@ for filename in os.listdir(django_path_html):
             lines = f.readlines()
 
         cleaned_lines = []
-        for line in lines:
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+
             # Remove lines with pure django logic
-            if remove_line_pattern.match(line): continue
-            
+            if remove_line_pattern.match(line):
+                i += 1
+                continue
+
             # Replace {% static '...' %} with just the path
             cleaned_line = static_path_pattern.sub(r"static/\1", line)
+
+            # Look for ANY block-key:django:start
+            block_start = block_start_pattern.match(cleaned_line)
+            if block_start:
+                block_key = block_start.group(1)
+                # Collect Django block content (skip markers)
+                block_content = []
+                i += 1
+                while i < len(lines):
+                    l = lines[i]
+                    if block_end_pattern(block_key).match(l):
+                        break
+                    block_content.append(static_path_pattern.sub(r"static/\1", l))
+                    i += 1
+                i += 1  # Move past the end marker
+
+                # Now look for the tauri replacement block right after this block
+                tauri_replacement = None
+                j = i
+                while j < len(lines):
+                    tauri_start = tauri_block_pattern(block_key).match(lines[j])
+                    if tauri_start:
+                        # Grab all lines inside this comment until -->
+                        replacement_lines = []
+                        k = j + 1
+                        while k < len(lines) and "-->" not in lines[k]:
+                            replacement_lines.append(static_path_pattern.sub(r"static/\1", lines[k]))
+                            k += 1
+                        tauri_replacement = replacement_lines
+                        i = k + 1  # skip past the end of comment for the main iterator
+                        break
+                    # Stop searching after a few lines (or if a new block starts)
+                    if block_start_pattern.match(lines[j]) or j > i + 10:
+                        break
+                    j += 1
+
+                # If found, insert tauri block; otherwise, keep the original
+                if tauri_replacement:
+                    cleaned_lines.extend(tauri_replacement)
+                else:
+                    cleaned_lines.extend(block_content)
+                continue
+
+            # If not in a block, just append the cleaned line
             cleaned_lines.append(cleaned_line)
-        
-        # Inject tauri JS to index.html
-        """ if filename == "index.html" and os.path.exists(tauri_js_path):
-            # Find </head> line and extract its indentation
-            insert_index = None
-            indent = ""
-            for i, line in enumerate(cleaned_lines):
-                if "</head>" in line:
-                    insert_index = i
-                    indent = re.match(r"^(\s*)", line).group(1)
-                    break
-
-            # Create script tags with matched indentation
-            if insert_index is not None:
-                js_script_lines = []
-                for js_file in os.listdir(tauri_js_path):
-                    if js_file.endswith(".js"):
-                        js_script_lines.append(f'{indent}\t<script type="module" src="tauri_js/{js_file}"></script>\n')
-                cleaned_lines[insert_index:insert_index] = js_script_lines """
-
+            i += 1
 
         # Write cleaned content
         target_path = os.path.join(tauri_path_html, filename)
