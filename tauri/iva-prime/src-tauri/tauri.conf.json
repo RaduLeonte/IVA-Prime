@@ -2,12 +2,11 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "IVA Prime",
   "version": "0.1.0",
-  "identifier": "com.iva-prime.app",
-  "build": {
-    "frontendDist": "../src"
-  },
+  "identifier": "com.iva-prime.desktop",
   "app": {
-    "withGlobalTauri": true,
+    "security": {
+      "csp": null
+    },
     "windows": [
       {
         "label": "main",
@@ -21,13 +20,38 @@
         "devtools": true
       }
     ],
-    "security": {
-      "csp": null
-    }
+    "withGlobalTauri": true
+  },
+  "build": {
+    "frontendDist": "../src"
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "category": "Utility",
+    "fileAssociations": [
+      {
+        "description": "GenBank Record",
+        "ext": ["gb", "gbk"],
+        "mimeType": "text/plain",
+        "rank": "Default",
+        "role": "Editor"
+      },
+      {
+        "description": "SnapGene Map",
+        "ext": ["dna"],
+        "mimeType": "application/octet-stream",
+        "rank": "Alternate",
+        "role": "Editor"
+      },
+      {
+        "description": "FASTA Sequence",
+        "ext": ["fasta"],
+        "mimeType": "text/plain",
+        "rank": "Default",
+        "role": "Editor"
+      }
+    ],
+    "homepage": "https://www.ivaprime.com",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -35,10 +59,18 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "fileAssociations": [
-      {
-        "ext": ["gb", "gbk", "dna", "fasta"]
+    "targets": ["nsis", "dmg", "appimage"],
+    "windows": {
+      "allowDowngrades": true,
+      "nsis": {
+        "installMode": "currentUser",
+        "headerImage": "icons/header_image.bmp",
+        "installerIcon": "icons/installer_icon.ico"
+      },
+      "webviewInstallMode": {
+        "silent": true,
+        "type": "offlineInstaller"
       }
-    ]
+    }
   }
 }

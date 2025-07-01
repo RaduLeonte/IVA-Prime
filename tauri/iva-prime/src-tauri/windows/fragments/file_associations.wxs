@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <DirectoryRef Id="TARGETDIR">
+
+      <!-- FASTA -->
+      <Component Id="FastaFileAssociation" Guid="*">
+        <RegistryKey Root="HKCU" Key="Software\Classes\.fasta">
+          <RegistryValue Type="string" Value="IVAPrime.fasta" KeyPath="yes" />
+        </RegistryKey>
+        <RegistryKey Root="HKCU" Key="Software\Classes\IVAPrime.fasta">
+          <RegistryValue Type="string" Value="FASTA Sequence File" />
+        </RegistryKey>
+        <RegistryKey Root="HKCU" Key="Software\Classes\IVAPrime.fasta\shell\open\command">
+          <RegistryValue Type="string" Value="&quot;[INSTALLDIR]iva-prime.exe&quot; &quot;%1&quot;" />
+        </RegistryKey>
+      </Component>
+
+      <!-- GenBank .gb -->
+      <Component Id="GbFileAssociation" Guid="*">
+        <RegistryKey Root="HKCU" Key="Software\Classes\.gb">
+          <RegistryValue Type="string" Value="IVAPrime.gb" KeyPath="yes" />
+        </RegistryKey>
+        <RegistryKey Root="HKCU" Key="Software\Classes\IVAPrime.gb">
+          <RegistryValue Type="string" Value="GenBank File" />
+        </RegistryKey>
+        <RegistryKey Root="HKCU" Key="Software\Classes\IVAPrime.gb\shell\open\command">
+          <RegistryValue Type="string" Value="&quot;[INSTALLDIR]iva-prime.exe&quot; &quot;%1&quot;" />
+        </RegistryKey>
+      </Component>
+
+      <!-- GenBank .gbk -->
+      <Component Id="GbkFileAssociation" Guid="*">
+        <RegistryKey Root="HKCU" Key="Software\Classes\.gbk">
+          <RegistryValue Type="string" Value="IVAPrime.gbk" KeyPath="yes" />
+        </RegistryKey>
+        <RegistryKey Root="HKCU" Key="Software\Classes\IVAPrime.gbk">
+          <RegistryValue Type="string" Value="GenBank File" />
+        </RegistryKey>
+        <RegistryKey Root="HKCU" Key="Software\Classes\IVAPrime.gbk\shell\open\command">
+          <RegistryValue Type="string" Value="&quot;[INSTALLDIR]iva-prime.exe&quot; &quot;%1&quot;" />
+        </RegistryKey>
+      </Component>
+
+      <!-- DNA (.dna) -->
+      <Component Id="DnaFileAssociation" Guid="*">
+        <RegistryKey Root="HKCU" Key="Software\Classes\.dna">
+          <RegistryValue Type="string" Value="IVAPrime.dna" KeyPath="yes" />
+        </RegistryKey>
+        <RegistryKey Root="HKCU" Key="Software\Classes\IVAPrime.dna">
+          <RegistryValue Type="string" Value="DNA File" />
+        </RegistryKey>
+        <RegistryKey Root="HKCU" Key="Software\Classes\IVAPrime.dna\shell\open\command">
+          <RegistryValue Type="string" Value="&quot;[INSTALLDIR]iva-prime.exe&quot; &quot;%1&quot;" />
+        </RegistryKey>
+      </Component>
+
+    </DirectoryRef>
+  </Fragment>
+</Wix>
