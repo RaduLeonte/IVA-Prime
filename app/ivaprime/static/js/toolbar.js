@@ -2,12 +2,12 @@ const Toolbar = new class {
     constructor() {
         this.equationImages = {
             "TmAlgorithm": {
-                "oligoCalc": "/static/assets/equations/oligoCalc%20equation.png",
-                "nnSantaLucia": "/static/assets/equations/nnSantaLucia%20equation.png"
+                "oligoCalc": "/static/assets/equations/oligoCalc_equation.png",
+                "nnSantaLucia": "/static/assets/equations/nnSantaLucia_equation.png"
             },
             "saltCorr": {
-                "SchildkrautLifson": "/static/assets/equations/SchildkrautLifson%20equation.png",
-                "Owczarzy": "/static/assets/equations/Owczarzy%20equation.png"
+                "SchildkrautLifson": "/static/assets/equations/SchildkrautLifson_equation.png",
+                "Owczarzy": "/static/assets/equations/Owczarzy_equation.png"
             },
         };
 
