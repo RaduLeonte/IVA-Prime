@@ -5,15 +5,32 @@ on:
 
 jobs:
     build:
-        name: Build tauri app for ${{ matrix.os }}
-        runs-on: ${{ matrix.os }}
+        name: Build tauri app for ${{ matrix.platform }}
+        permissions:
+            contents: write
         strategy:
+            fail-fast: false
             matrix:
-                os: [windows-latest, macos-latest, ubuntu-latest]
-
+                include:
+                    - platform: 'windows-latest' # Windows
+                      args: ''
+                    - platform: 'macos-latest' # Arm (M1 and above)
+                      args: '--target aarch64-apple-darwin'
+                    - platform: 'macos-latest' # Intel macs
+                      args: '--target x86_64-apple-darwin'
+                    - platform: 'ubuntu-22.04' # Linux
+                      args: ''
+                        
+        runs-on: ${{ matrix.platform }}
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
+
+            - name: Install linux dependencies
+              if: matrix.platform == 'ubuntu-22.04'
+              run:
+                sudo apt-get update
+                sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
             - name: Set up Python
               uses: actions/setup-python@v5
@@ -26,27 +43,30 @@ jobs:
             - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
-                node-version: "20"
+                node-version: lts/*
+                cache: 'npm'
 
             - name: Setup Rust
               uses: dtolnay/rust-toolchain@stable
+              with:
+                targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
-            - name: Install dependencies
+            - name: Rust cache
+              uses: swatinem/rust-cache@v2
+              with:
+                workspaces: 'tauri/iva-prime/src-tauri -> target'
+
+            - name: Install frontend dependencies
               working-directory: tauri/iva-prime
               run: npm install
-
-            - name: Build frontend
-              working-directory: tauri/iva-prime
-              run: npm run build
 
             - name: Build Tauri app
               uses: tauri-apps/tauri-action@v0
               with:
                 projectPath: tauri/iva-prime
-                args: --target ${{ matrix.os == 'ubuntu-latest' && 'x86_64-unknown-linux-gnu' || matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc' || '' }}
 
             - name: Upload artifacts
               uses: actions/upload-artifact@v4
               with:
-                name: iva-prime-${{ matrix.os }}
+                name: iva-prime-${{ matrix.platform }}
                 path: tauri/iva-prime/src-tauri/target/release/bundle/**
