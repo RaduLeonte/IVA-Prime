@@ -95,6 +95,13 @@ for filename in os.listdir(django_path_html):
         with open(target_path, 'w', encoding='utf-8') as f:
             f.writelines(cleaned_lines)
 
+# Remove everything in tauri_path_resources
+for item in os.listdir(tauri_path_resources):
+    item_path = os.path.join(tauri_path_resources, item)
+    if os.path.isdir(item_path):
+        shutil.rmtree(item_path)
+    else:
+        os.remove(item_path)
 
 # Copy resource folders
 for item in os.listdir(django_path_resources):

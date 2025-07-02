@@ -20,7 +20,10 @@ const Utilities = new class {
             float: (value) => /^-?\d*\.?\d*$/.test(value),
             dna: (value) => /^[ATCG]*$/i.test(value),
             iupacBases: (value) => /^[ACGTURYSWKMBDHVN.-]*$/i.test(value),
-            aa: (value) => /^[ACDEFGHIKLMNPQRSTVWY*X-]*$/i.test(value)
+            aa: (value) => /^[ACDEFGHIKLMNPQRSTVWY*X-]*$/i.test(value),
+            aaOrSpecific: (value) => 
+                /^[ACDEFGHIKLMNPQRSTVWY*X-]*$/i.test(value) ||
+                /^[ACDEFGHIKLMNPQRSTVWY][0-9]+$/i.test(value)
         };
         document.addEventListener("DOMContentLoaded", function (event) {
             const inputElements = document.querySelectorAll("input[validator]");
@@ -275,7 +278,11 @@ const Utilities = new class {
     copySequence(mode="") {
         const activePlasmid = Session.activePlasmid()
         const selectionIndices = activePlasmid.getSelectionIndices()
-        if (!selectionIndices || selectionIndices === null || selectionIndices.filter(i => i !== null).length !== 2) {return};
+        if (
+            !selectionIndices ||
+            selectionIndices === null ||
+            selectionIndices.filter(i => i !== null).length !== 2
+        ) return;
         
         let selection = activePlasmid.sequence.slice(selectionIndices[0] - 1, selectionIndices[1]);
 
@@ -299,6 +306,37 @@ const Utilities = new class {
             "green",
         )
         this.copyToClipboard(selection);
+    };
+
+
+    /**
+     * 
+     * @param {*} mode 
+     * @returns 
+     */
+    copyAASequence(mode="") {
+        const activePlasmid = Session.activePlasmid()
+        const selectionIndices = activePlasmid.getSelectionIndices()
+        if (
+            !selectionIndices ||
+            selectionIndices === null ||
+            selectionIndices.filter(i => i !== null).length !== 2
+        ) return;
+        
+        let dnaSeq = activePlasmid.sequence.slice(selectionIndices[0] - 1, selectionIndices[1]);
+        
+        if (mode === "reverse") dnaSeq = Nucleotides.reverseComplementary(dnaSeq);
+
+        const aaSeq = Nucleotides.translate(dnaSeq)
+
+        console.log("Utilities.copyAASequence ->", aaSeq, mode);
+        Alerts.showAlert(
+            "Copied AA sequence to clipboard",
+            `Sequence: "${aaSeq.length > 12 ? aaSeq.slice(0, 6) + "..." + aaSeq.slice(-6) : aaSeq}" (${aaSeq.length} AA).`,
+            3,
+            "green",
+        )
+        this.copyToClipboard(aaSeq);
     };
 
 
