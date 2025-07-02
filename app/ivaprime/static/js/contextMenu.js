@@ -66,27 +66,44 @@ const ContextMenu = new class {
             { separator: "" },
 
             {
-                item: "Copy selection",
+                item: "Copy nucleotides",
                 conditions: {any: ["range", "feature"]},
                 action: () => Utilities.copySequence()
             },
-            { submenu: "Copy special", items: [
-                {
-                    item: "<p>Copy reverse</p><p>(top strand, 3'->5')</p>",
-                    conditions: {any: ["range", "feature"]},
-                    action: () => Utilities.copySequence("reverse")
-                },
-                {
-                    item: "<p>Copy reverse complement</p><p>(bottom strand, 5'->3')</p>",
-                    conditions: {any: ["range", "feature"]},
-                    action: () => Utilities.copySequence("reverse complement")
-                },
-                {
-                    item: "<p>Copy complement</p><p>(bottom strand, 3'->5')</p>",
-                    conditions: {any: ["range", "feature"]},
-                    action: () => Utilities.copySequence("complement")
-                },
-            ] },
+            { 
+                submenu: "Copy nucleotides special",
+                items: [
+                    {
+                        item: "<p>Copy reverse</p><p>(top strand, 3'->5')</p>",
+                        conditions: {any: ["range", "feature"]},
+                        action: () => Utilities.copySequence("reverse")
+                    },
+                    {
+                        item: "<p>Copy reverse complement</p><p>(bottom strand, 5'->3')</p>",
+                        conditions: {any: ["range", "feature"]},
+                        action: () => Utilities.copySequence("reverse complement")
+                    },
+                    {
+                        item: "<p>Copy complement</p><p>(bottom strand, 3'->5')</p>",
+                        conditions: {any: ["range", "feature"]},
+                        action: () => Utilities.copySequence("complement")
+                    },
+                ]
+            },
+
+            { separator: "" },
+
+            {
+                item: "Copy amino acids",
+                conditions: {any: ["range", "feature"]},
+                action: () => Utilities.copyAASequence()
+            },
+
+            {
+                item: "Copy amino acids (reverse)",
+                conditions: {any: ["range", "feature"]},
+                action: () => Utilities.copyAASequence("reverse")
+            },
 
             { separator: "" },
 
