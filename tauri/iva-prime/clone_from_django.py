@@ -5,8 +5,8 @@ import shutil
 
 base_path = os.getcwd()
 
-django_path_html = os.path.join(base_path, "app/ivaprime/templates/ivaprime/")
-django_path_resources = os.path.join(base_path, "app/ivaprime/static/")
+django_path_html = os.path.join(base_path, "docker/app/ivaprime/templates/ivaprime/")
+django_path_resources = os.path.join(base_path, "docker/app/ivaprime/static/")
 
 tauri_path_html = os.path.join(base_path, "tauri/iva-prime/src/")
 tauri_path_resources = os.path.join(base_path, "tauri/iva-prime/src/static/")
