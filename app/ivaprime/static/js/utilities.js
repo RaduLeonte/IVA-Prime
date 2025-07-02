@@ -20,7 +20,10 @@ const Utilities = new class {
             float: (value) => /^-?\d*\.?\d*$/.test(value),
             dna: (value) => /^[ATCG]*$/i.test(value),
             iupacBases: (value) => /^[ACGTURYSWKMBDHVN.-]*$/i.test(value),
-            aa: (value) => /^[ACDEFGHIKLMNPQRSTVWY*X-]*$/i.test(value)
+            aa: (value) => /^[ACDEFGHIKLMNPQRSTVWY*X-]*$/i.test(value),
+            aaOrSpecific: (value) => 
+                /^[ACDEFGHIKLMNPQRSTVWY*X-]*$/i.test(value) ||
+                /^[ACDEFGHIKLMNPQRSTVWY][0-9]+$/i.test(value)
         };
         document.addEventListener("DOMContentLoaded", function (event) {
             const inputElements = document.querySelectorAll("input[validator]");

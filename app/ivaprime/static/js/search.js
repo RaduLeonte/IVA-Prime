@@ -48,18 +48,27 @@ const Search = new class {
      * Search for DNA or AA sequence in plasmid
      */
     search() {
-        const query = document.getElementById("search-bar").value.toUpperCase().replace(" ", "");
-        const searchAASeq = document.getElementById("search-aa").checked;
+        const searchBar = document.getElementById("search-bar");
+        const searchAASeq = document.getElementById("search-aa")?.checked;
+        const query = searchBar?.value?.toUpperCase().replace(/\s+/g, "");
 
         this.clear(false);
 
-        if (!query || query === null || query.length === 0) {return};
+        if (!query) return;
 
         if (searchAASeq) {
+            if (/^[a-zA-Z][0-9]+$/.test(query)) {
+                this.searchSpecificAA(query);
+                return;
+            };
+
             this.searchAA(query);
-        } else {
-            this.searchDNA(query);
+            return;
         };
+
+
+        this.searchDNA(query);
+        return;
     };
 
 
@@ -180,6 +189,38 @@ const Search = new class {
     };
 
 
+    searchSpecificAA(query) {
+        const activePlasmid = Session.activePlasmid();
+        if (!activePlasmid) return; // No plasmid loaded
+
+        const aaCode = query[0].toUpperCase();
+        const aaIndex = parseInt(query.slice(1));
+
+        const matchingAABlocks = document.querySelectorAll(`g[aa-index="${aaIndex - 1}"][aa="${aaCode}"]`);
+        
+        for (let i = 0; i < matchingAABlocks.length; i++) {
+            const currAABlock = matchingAABlocks[i];
+            let aaSpan = currAABlock.getAttribute("aa-span").split(",").map(s => parseInt(s));
+
+
+            let strand = (aaSpan[0] < aaSpan[1]) ? "fwd": "rev";
+            aaSpan.sort()
+
+            PlasmidViewer.highlightBases(
+                aaSpan,
+                "base-search",
+                strand,
+            );
+    
+            this.searchResults.push({strand: strand, span: aaSpan});
+        };
+
+        this.findNearestResult();
+        this.focusResult();
+        this.updateBarInfo();
+    };
+
+
     findNearestResult() {
         const gridViewContainer = document.getElementById("grid-view-container");
 
@@ -285,7 +326,7 @@ const Search = new class {
 
         Utilities.addInputValidator(
             document.getElementById("search-bar"),
-            (isChecked) ? "aa": "dna",
+            (isChecked) ? "aaOrSpecific": "dna",
         );
 
         let inputEvent = new Event('input', { bubbles: true, });
