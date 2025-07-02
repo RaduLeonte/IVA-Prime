@@ -602,7 +602,7 @@ const FileIO = new class {
     
                     primerInfo["directionality"] = {"0": "fwd", "1": "rev"}[bindingSiteNode['@_boundStrand']] || null;
     
-                    primerInfo["span"] = bindingSiteNode['@_location'].split("-").map((s) => parseInt(s));
+                    primerInfo["span"] = bindingSiteNode['@_location'].split("-").map((s) => parseInt(s) + 1);
                     if (!primerInfo["span"]) continue;
     
                     primersDict[Utilities.newUUID()] = primerInfo;
