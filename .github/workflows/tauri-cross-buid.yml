@@ -14,12 +14,16 @@ jobs:
                 include:
                     - platform: 'windows-latest' # Windows
                       args: ''
+                      name: 'windows'
                     - platform: 'macos-latest' # Arm (M1 and above)
                       args: '--target aarch64-apple-darwin'
+                      name: 'macos-arm64'
                     - platform: 'macos-latest' # Intel macs
                       args: '--target x86_64-apple-darwin'
+                      name: 'macos-x64'
                     - platform: 'ubuntu-22.04' # Linux
                       args: ''
+                      name: 'linux'
                         
         runs-on: ${{ matrix.platform }}
         steps:
@@ -67,5 +71,5 @@ jobs:
             - name: Upload artifacts
               uses: actions/upload-artifact@v4
               with:
-                name: iva-prime-${{ matrix.platform }}
+                name: iva-prime-${{ matrix.name }}
                 path: tauri/iva-prime/src-tauri/target/release/bundle/**
