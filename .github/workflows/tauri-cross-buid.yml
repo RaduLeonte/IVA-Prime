@@ -74,7 +74,8 @@ jobs:
               uses: actions/upload-artifact@v4
               with:
                 name: iva-prime-${{ matrix.name }}
-                path: |
-                    tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe
-                    tauri/iva-prime/src-tauri/target/release/bundle/dmg/*.dmg
-                    tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage
+                path: tauri/iva-prime/src-tauri/target/release/bundle/**
+                #path: |
+                #    tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe
+                #    tauri/iva-prime/src-tauri/target/release/bundle/dmg/*.dmg
+                #    tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage
