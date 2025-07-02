@@ -1,0 +1,52 @@
+name: Build Tauri App
+
+on:
+  workflow_dispatch:
+
+jobs:
+    build:
+        name: Build tauri app for ${{ matrix.os }}
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                os: [windows-latest, macos-latest, ubuntu-latest]
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                python-version: '3.11'
+
+            - name: Run clone_from_django.py
+              run: python tauri/iva-prime/clone_from_django.py
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: "20"
+
+            - name: Setup Rust
+              uses: dtolnay/rust-toolchain@stable
+
+            - name: Install dependencies
+              working-directory: tauri/iva-prime
+              run: npm install
+
+            - name: Build frontend
+              working-directory: tauri/iva-prime
+              run: npm run build
+
+            - name: Build Tauri app
+              uses: tauri-apps/tauri-action@v0
+              with:
+                projectPath: tauri/iva-prime
+                args: --target ${{ matrix.os == 'ubuntu-latest' && 'x86_64-unknown-linux-gnu' || matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc' || '' }}
+
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                name: iva-prime-${{ matrix.os }}
+                path: tauri/iva-prime/src-tauri/target/release/bundle/**
