@@ -100,6 +100,31 @@ pub fn run() {
                     }
                 });
             }
+            
+            #[cfg(target_os = "macos")]
+            {
+                let app_handle = app.app_handle();
+                app.listen_global("tauri://open-file", move |event| {
+                    if let Some(payload) = event.payload() {
+                        let path: String = payload.into(); // Should be the file path as a string
+                        println!("Received open-file event: {:?}", path);
+                        
+                        if let Some(main_window) = app_handle.get_webview_window("main") {
+                            let js_files = prepare_js_files(vec![path]);
+                            let js_call = match serde_json::to_string(&js_files) {
+                                Ok(json) => format!(r#"FileIO.importBase64Files({})"#, json),
+                                Err(e) => {
+                                    eprintln!("Failed to serialize JS file list: {}", e);
+                                    return;
+                                }
+                            };
+                            if let Err(err) = main_window.eval(&js_call) {
+                                eprintln!("Failed to execute JavaScript: {}", err);
+                            }
+                        }
+                    }
+                });
+            }
 
             Ok(())
         })
