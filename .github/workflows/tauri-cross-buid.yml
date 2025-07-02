@@ -5,7 +5,7 @@ on:
 
 jobs:
     build:
-        name: Build tauri app for ${{ matrix.platform }}
+        name: Build tauri app for ${{ matrix.name }}
         permissions:
             contents: write
         strategy:
@@ -25,7 +25,7 @@ jobs:
                       args: ''
                       name: 'linux'
                         
-        runs-on: ${{ matrix.name }}
+        runs-on: ${{ matrix.platform }}
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
