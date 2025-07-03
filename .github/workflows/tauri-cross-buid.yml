@@ -34,6 +34,15 @@ jobs:
               uses: actions/setup-node@v4
               with:
                 node-version: lts/*
+
+            # Cache Node.js dependencies
+            - name: Cache Node.js dependencies
+              uses: actions/cache@v3
+              with:
+                path: ~/.npm
+                key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+                restore-keys: |
+                  ${{ runner.os }}-node-  
               
             - name: Install linux dependencies
               if: matrix.platform == 'ubuntu-22.04'
@@ -54,6 +63,16 @@ jobs:
               uses: dtolnay/rust-toolchain@stable
               with:
                 targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+            - name: Cache Rust dependencies
+              uses: actions/cache@v3
+              with:
+                path: |
+                  ~/.cargo
+                  tauri/iva-prime/src-tauri/target
+                key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.toml') }}
+                restore-keys: |
+                  ${{ runner.os }}-rust-
 
             - name: Rust cache
               uses: swatinem/rust-cache@v2
