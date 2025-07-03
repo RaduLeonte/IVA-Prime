@@ -104,9 +104,9 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             {
                 let app_handle = app.app_handle();
-                app.listen_global("tauri://open-file", move |event| {
+                app.listen("tauri://open-file", move |event| {
                     if let Some(payload) = event.payload() {
-                        let path: String = payload.into(); // Should be the file path as a string
+                        let path: String = payload.into();
                         println!("Received open-file event: {:?}", path);
                         
                         if let Some(main_window) = app_handle.get_webview_window("main") {

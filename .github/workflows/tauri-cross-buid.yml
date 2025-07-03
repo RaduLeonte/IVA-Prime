@@ -70,40 +70,12 @@ jobs:
                 projectPath: tauri/iva-prime
                 args: ${{ matrix.args }}
 
-            - name: Create ZIP for Windows
-              if: matrix.name == 'windows'
-              run: |
-                cd tauri/iva-prime/src-tauri/target/release/bundle/nsis
-                zip -r ../windows.zip *.exe
-                mv ../windows.zip ../../../..
-
-            - name: Create ZIP for MacOS (arm64)
-              if: matrix.name == 'macos-arm64'
-              run: |
-                cd tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg
-                zip -r ../macos-arm64.zip *.dmg
-                mv ../macos-arm64.zip ../../../..
-
-            - name: Create ZIP for MacOS (x64)
-              if: matrix.name == 'macos-x64'
-              run: |
-                cd tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg
-                zip -r ../macos-x64.zip *.dmg
-                mv ../macos-x64.zip ../../../..
-
-            - name: Create ZIP for Linux
-              if: matrix.name == 'linux'
-              run: |
-                cd tauri/iva-prime/src-tauri/target/release/bundle/appimage
-                zip -r ../linux.zip *.AppImage
-                mv ../linux.zip ../../../..
-
             - name: Upload artifacts
               uses: actions/upload-artifact@v4
               with:
                 name: iva-prime-${{ matrix.name }}
                 path: |
-                    tauri/iva-prime/windows.zip
-                    tauri/iva-prime/macos-arm64.zip
-                    tauri/iva-prime/macos-x64.zip
-                    tauri/iva-prime/linux.zip
+                    tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe
+                    tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+                    tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+                    tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage
