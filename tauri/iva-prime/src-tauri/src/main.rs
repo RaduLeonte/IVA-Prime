@@ -3,5 +3,6 @@
 
 
 fn main() {
+    let _ = fix_path_env::fix(); // fix PATH on macos aarch64
     iva_prime_lib::run()
 }
