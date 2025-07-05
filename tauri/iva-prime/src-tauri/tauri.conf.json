@@ -65,7 +65,8 @@
       "allowDowngrades": true,
       "nsis": {
         "installMode": "currentUser",
-        "installerIcon": "icons/installer_icon.ico"
+        "installerIcon": "icons/nsis/installer_icon.ico",
+        "headerImage": "icons/nsis/header_image.bmp"
       },
       "webviewInstallMode": {
         "silent": true,
