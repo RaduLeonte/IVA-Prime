@@ -1,0 +1,230 @@
+[
+    {
+        "type": "group",
+        "name": "Affinity tags",
+        "entries": [
+            {
+                "type": "group",
+                "name": "FLAG tags",
+                "entries": [
+                    {
+                        "type": "item",
+                        "name": "FLAG (DYKDDDDK)",
+                        "label": "FLAG",
+                        "aa": "DYKDDDDK"
+                    },
+                    {
+                        "type": "item",
+                        "name": "2xFLAG",
+                        "label": "2xFLAG",
+                        "aa": "DYKDDDDKDYKDDDDK"
+                    },
+                    {
+                        "type": "item",
+                        "name": "3xFLAG",
+                        "label": "3xFLAG",
+                        "aa": "DYKDDDDKDYKDDDDKDYKDDDDK"
+                    }
+                ]
+            },
+            {
+                "type": "item",
+                "name": "GST",
+                "label": "GST",
+                "aa": "SPILGYWKIKGLVQPTRLLLEYLEEKYEEHLYERDEGDKWRNKKFELGLEFPNLPYYIDGDVKLTQSMAIIRYIADKHNMLGGCPKERAEISMLEGAVLDIRYGVSRIAYSKDFETLKVDFLSKLPEMLKMFEDRLCHKTYLNGDHVTHPDFMLYDALDVVLYMDPMCLDAFPKLVCFKKRIEAIPQIDKYLKSSKYIAWPLQGWQATFGGGDHPPK"
+            },
+            {
+                "type": "item",
+                "name": "HA",
+                "label": "HA",
+                "aa": "YPYDVPDYA"
+            },
+            {
+                "type": "group",
+                "name": "His tags",
+                "entries": [
+                    {
+                        "type": "item",
+                        "name": "6xHis",
+                        "label": "6xHis",
+                        "aa": "HHHHHH"
+                    },
+                    {
+                        "type": "item",
+                        "name": "7xHis",
+                        "label": "7xHis",
+                        "aa": "HHHHHHH"
+                    },
+                    {
+                        "type": "item",
+                        "name": "8xHis",
+                        "label": "8xHis",
+                        "aa": "HHHHHHHH"
+                    },
+                    {
+                        "type": "item",
+                        "name": "9xHis",
+                        "label": "9xHis",
+                        "aa": "HHHHHHHHH"
+                    },
+                    {
+                        "type": "item",
+                        "name": "10xHis",
+                        "label": "10xHis",
+                        "aa": "HHHHHHHHHH"
+                    }
+                ]
+            },
+            {
+                "type": "item",
+                "name": "MBP (KIEEGK...KDAQT)",
+                "label": "MBP",
+                "aa": "KIEEGKLVIWINGDKGYNGLAEVGKKFEKDTGIKVTVEHPDKLEEKFPQVAATGDGPDIIFWAHDRFGGYAQSGLLAEITPDKAFQDKLYPFTWDAVRYNGKLIAYPIAVEALSLIYNKDLLPNPPKTWEEIPALDKELKAKGKSALMFNLQEPYFTWPLIAADGGYAFKYENGKYDIKDVGVDNAGAKAGLTFLVDLIKNKHMNADTDYSIAEAAFNKGETAMTINGPWAWSNIDTSKVNYGVTVLPTFKGQPSKPFVGVLSAGINAASPNKELAKEFLENYLLTDEGLEAVNKDKPLGAVALKSYEEELAKDPRIAATMENAQKGEIMPNIPQMSAFWYAVRTAVINAASGRQTVDEALKDAQT"
+            },
+            {
+                "type": "item",
+                "name": "Myc tag (EQKLISEEDL)",
+                "label": "Myc",
+                "aa": "EQKLISEEDL"
+            },
+            {
+                "type": "item",
+                "name": "Strep-tag II (WSHPQFEK)",
+                "label": "Strep-tag",
+                "aa": "WSHPQFEK"
+            },
+            {
+                "type": "item",
+                "name": "V5 tag (GKPIPNPLLGLDST)",
+                "label": "V5",
+                "aa": "GKPIPNPLLGLDST"
+            }
+        ]
+    },
+    {
+        "type": "group",
+        "name": "Cleave sites",
+        "entries": [
+            {
+                "type": "item",
+                "name": "Factor Xa (IEGR/)",
+                "label": "Factor Xa",
+                "aa": "IEGR"
+            },
+            {
+                "type": "item",
+                "name": "HRV 3C (LEVLFQ/GP)",
+                "label": "HRV 3C",
+                "aa": "LEVLFQGP"
+            },
+            {
+                "type": "item",
+                "name": "SUMO Smt3 (Ulp1, ...REQIGG/)",
+                "label": "SUMO",
+                "aa": "SDSEVNQEAKPEVKPEVKPETHINLKVSDGSSEIFFKIKKTTPLRRLMEAFAKRQGKEMDSLRFLYDGIRIQADQTPEDLDMEDNDIIEAHREQIGG"
+            },
+            {
+                "type": "group",
+                "name": "TEV",
+                "entries": [
+                    {
+                        "type": "item",
+                        "name": "ENLYFQ/S",
+                        "label": "TEV",
+                        "aa": "ENLYFQS"
+                    },
+                    {
+                        "type": "item",
+                        "name": "ENLYFQ/G",
+                        "label": "TEV",
+                        "aa": "ENLYFQG"
+                    },
+                    {
+                        "type": "item",
+                        "name": "ENLYFQ/A",
+                        "label": "TEV",
+                        "aa": "ENLYFQA"
+                    },
+                    {
+                        "type": "item",
+                        "name": "ENLYFQ/M",
+                        "label": "TEV",
+                        "aa": "ENLYFQM"
+                    },
+                    {
+                        "type": "item",
+                        "name": "ENLYFQ/C",
+                        "label": "TEV",
+                        "aa": "ENLYFQC"
+                    },
+                    {
+                        "type": "item",
+                        "name": "ENLYFQ/H",
+                        "label": "TEV",
+                        "aa": "ENLYFQH"
+                    }
+                ]
+            },
+            {
+                "type": "item",
+                "name": "Thrombin (LVPR/GS)",
+                "label": "Thrombin",
+                "aa": "LVPRGS"
+            }
+        ]
+    },
+    {
+        "type": "group",
+        "name": "Linkers",
+        "entries": [
+            {
+                "type": "group",
+                "name": "Flexible",
+                "entries": [
+                    {
+                        "type": "item",
+                        "name": "GGGGS",
+                        "label": "Linker",
+                        "aa": "GGGGS"
+                    },
+                    {
+                        "type": "item",
+                        "name": "2xGGGGS",
+                        "label": "Linker",
+                        "aa": "GGGGSGGGGS"
+                    },
+                    {
+                        "type": "item",
+                        "name": "3xGGGGS",
+                        "label": "Linker",
+                        "aa": "GGGGSGGGGSGGGGS"
+                    },
+                    {
+                        "type": "item",
+                        "name": "6xG",
+                        "label": "Linker",
+                        "aa": "GGGGGG"
+                    },
+                    {
+                        "type": "item",
+                        "name": "8xG",
+                        "label": "Linker",
+                        "aa": "GGGGGGGG"
+                    }
+                ]
+            },
+            {
+                "type": "group",
+                "name": "Rigid",
+                "entries": [
+                    {
+                        "type": "item",
+                        "name": "3xEAAAK",
+                        "label": "Linker",
+                        "aa": "EAAAKEAAAKEAAAK"
+                    }
+                ]
+            }
+        ]
+    }
+]
