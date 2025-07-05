@@ -1443,7 +1443,7 @@ const FileIO = new class {
 
             this.downloadFile(
                 targetPlasmid.name + ".dna",
-                outputBytes
+                new Uint8Array(outputBytes)
             );
         },
 
@@ -1814,7 +1814,7 @@ const FileIO = new class {
         );
     };
 
-    exportPrimersAsDoc(outputFileName, primerSets) {
+    async exportPrimersAsDoc(outputFileName, primerSets) {
         const tempContainer = document.createElement("div");
         tempContainer.appendChild(Sidebar.createPrimersTableContainer(primerSets));
         document.body.appendChild(tempContainer);
@@ -1880,8 +1880,20 @@ const FileIO = new class {
             </html>`;
     
         const blob = window.htmlDocx.asBlob(fullHTML);
+        const data = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                resolve(new Uint8Array(reader.result));
+            };
+            reader.onerror = reject;
+            reader.readAsArrayBuffer(blob);
+        });
+
+
         document.body.removeChild(tempContainer);
-        saveAs(blob, `${outputFileName}.docx`);
+
+
+        FileIO.downloadFile(outputFileName + ".docx", data);
     };
 
     exportPrimersAsCsv(outputFileName, primerSets) {
@@ -1914,11 +1926,9 @@ const FileIO = new class {
                     };
                 };
                 // Return blob
-                return workbook.outputAsync();
+                return workbook.outputAsync({type: "uint8array"});
             })
-            .then((blob) => {
-                saveAs(blob, outputFileName + ".xlsx");
-            })
+            .then(data => FileIO.downloadFile(outputFileName + ".xlsx", data));
     };
 
     exportPrimersAsMicrosynth(outputFileName, primerSets) {
@@ -1960,9 +1970,9 @@ const FileIO = new class {
                     };
                 };
                 // Return blob
-                return workbook.outputAsync();
+                return workbook.outputAsync({type: "uint8array"});
             })
-            .then(blob => saveAs(blob, outputFileName));
+            .then(data => FileIO.downloadFile(outputFileName + ".xlsx", data));
     };
 
 
@@ -1972,14 +1982,50 @@ const FileIO = new class {
      * @param {string} fileName - Name of the output file + extension
      * @param {string} fileContent - Content of output file, either string or array of bytes
      */
-    downloadFile(fileName, fileContent) {
+    async downloadFile(fileName, fileContent) {
         const fileExtension = fileName.split('.').pop();
+        
+        console.log("FileIO.downloadFile -> ", fileName, fileExtension, typeof fileContent, "Tauri?: ", Utilities.isTauriApp())
+        if (Utilities.isTauriApp()) {
+            const { writeFile, writeTextFile } = window.__TAURI__.fs;
+            const { save } = window.__TAURI__.dialog;
 
-        let blob = (fileExtension === "dna") 
-            ? new Blob([new Uint8Array(fileContent)]) 
-            : new Blob([fileContent], { type: "text/plain" });
+            const extensionFilters = {
+                "gb": [{ extensions: ['gb', 'gbk'], name: 'GenBank record' }],
+                "dna": [{ extensions: ['dna'], name: 'SnapGene map' }],
+                "fasta": [{ extensions: ['fasta'], name: 'FASTA record' }],
+                "txt": [{ extensions: ['txt'], name: 'Text File' }],
+                "docx": [{ extensions: ['docx'], name: 'Microsoft Word Document' }],
+                "csv": [{ extensions: ['csv'], name: 'Comma Separated Values' }],
+                "xlsx": [{ extensions: ['xlsx'], name: 'Microsoft Excel Spreadsheet' }],
+            };
+            const filters = extensionFilters[fileExtension] ?? null;
+            console.log(fileName, filters)
 
-        saveAs(blob, fileName);
+            const path = await save({
+                filters: filters,
+                defaultPath: fileName,
+            });
+            if (!path) return;
+
+            try {
+                if (typeof fileContent === "string") {
+                    await writeTextFile(path, fileContent);
+                } else {
+                    await writeFile(path, fileContent);
+                };
+                console.log("File saved to", path);
+            } catch (err) {
+                console.error("Failed to save file:", err);
+            }
+            return;
+        } else {
+            // Browser save
+            let blob = (typeof fileContent === "string") 
+                ? new Blob([fileContent], { type: "text/plain" })
+                : new Blob([fileContent]);
+            saveAs(blob, fileName);
+        };
     };
 
 

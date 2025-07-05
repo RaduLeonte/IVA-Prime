@@ -79,6 +79,8 @@ async fn open_about_window(app: tauri::AppHandle) {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             // Collect arguments for second instance
             let file_args: Vec<String> = args.into_iter().skip(1).collect();
