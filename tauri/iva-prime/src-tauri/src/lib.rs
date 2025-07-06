@@ -14,6 +14,28 @@ use serde::Serialize;
 use url::Url;
 
 
+fn parse_files_from_args(args: Vec<String>) -> Vec<PathBuf> {
+    args.into_iter()
+        .skip(1) // Skip binary path
+        .filter_map(|maybe_file| {
+            if maybe_file.starts_with('-') {
+                return None; // Skip CLI flags
+            }
+
+            // Handle URL-style file paths (e.g. file://C:/...)
+            if let Ok(url) = Url::parse(&maybe_file) {
+                if let Ok(path) = url.to_file_path() {
+                    return Some(path);
+                }
+            }
+
+            // Fallback to raw path
+            Some(PathBuf::from(maybe_file))
+        })
+        .collect()
+
+}
+
 
 #[derive(Serialize)]
 struct JsFile {
@@ -21,24 +43,40 @@ struct JsFile {
     content_base64: String,
 }
 
+
+/// Converts a list of file paths into a vector of `JsFile` objects,
+/// where each file is read and base64-encoded for JavaScript consumption.
 fn prepare_js_files(paths: Vec<PathBuf>) -> Vec<JsFile> {
     paths
         .into_iter()
         .filter_map(|path| {
+            // Get file name from path
             let name = path.file_name()?.to_string_lossy().to_string();
+
+            // Read file
             let bytes = fs::read(&path).ok()?;
+
+            // Encode to base64
             let encoded = general_purpose::STANDARD.encode(&bytes);
+
+            // Construct a JsFile with the filename and base64 string
             Some(JsFile {
                 name,
                 content_base64: encoded,
             })
         })
+        // Collect all successful conversions into a Vec<JsFile>
         .collect()
 }
 
 
+/// Sends file data (base64-encoded) to the front-end's `FileIO.importBase64Files`
+/// JavaScript function after the main window is ready.
 fn handle_file_associations(app: tauri::AppHandle, files: Vec<PathBuf>) {
+    // Convert the list of file paths into JsFile structs with base64-encoded content
     let js_files = prepare_js_files(files);
+
+    // Attempt to serialize the JsFile list into a JSON string
     let js_call = match serde_json::to_string(&js_files) {
         Ok(json) => format!(
             r#"
@@ -50,7 +88,7 @@ fn handle_file_associations(app: tauri::AppHandle, files: Vec<PathBuf>) {
                 FileIO.importBase64Files({});
             }}
             "#,
-            json,
+            json, // used twice in the template
             json
         ),
         Err(e) => {
@@ -59,7 +97,9 @@ fn handle_file_associations(app: tauri::AppHandle, files: Vec<PathBuf>) {
         }
     };
 
+    // Try to get the main application window
     if let Some(main_window) = app.get_webview_window("main") {
+        // Inject and execute the JS string in the main window's context
         if let Err(err) = main_window.eval(&js_call) {
             eprintln!("Failed to execute JavaScript: {}", err);
         }
@@ -124,16 +164,19 @@ fn force_high_res_taskbar_icon(window: &tauri::WebviewWindow, icon_path_str: &st
 
 
 #[tauri::command]
+/// Opens the "About" window in the Tauri application.
 async fn open_about_window(app: tauri::AppHandle) {
+    // Create the window
     let about_window = tauri::WebviewWindowBuilder::new(
         &app,
-        "about",
+        "about", // Unique label
         tauri::WebviewUrl::App("about.html".into())
     )
     .title("IVA Prime - About")
     .inner_size(800.0, 600.0)
     .build();
 
+    // Force the window to use a high-res icon
     #[cfg(target_os = "windows")]
     if let Ok(ref window) = about_window {
         force_high_res_taskbar_icon(window, "icons/icon.ico");
@@ -144,66 +187,42 @@ async fn open_about_window(app: tauri::AppHandle) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        // Plugins
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
+        // Ensure only one instance of the app is allowed.
+        // If a second instance is opened (e.g. by double-clicking a file),
+        // its arguments are captured here.
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
-            // Collect arguments for second instance
-            let file_args: Vec<String> = args.into_iter().skip(1).collect();
-            let files = file_args
-                .into_iter()
-                .filter_map(|maybe_file| {
-                    if maybe_file.starts_with('-') {
-                        return None; // Skip flags
-                    }
+            // Convert incoming args into filesystem paths (excluding flags)
+            let files: Vec<PathBuf> = parse_files_from_args(args);
 
-                    if let Ok(url) = Url::parse(&maybe_file) {
-                        if let Ok(path) = url.to_file_path() {
-                            return Some(path);
-                        }
-                    }
-
-                    Some(PathBuf::from(maybe_file))
-                })
-                .collect::<Vec<_>>();
-
+            // Pass the list of paths to the frontend
             handle_file_associations(app.clone(), files);
         }))
+
+        // Register custom commands for frontend
         .invoke_handler(tauri::generate_handler![open_about_window])
+
+        // App setup
         .setup(|app| {
-            // Force high-res window icon
+            // On Windows, force high-res window icon
             #[cfg(target_os = "windows")]
             if let Some(window) = app.get_webview_window("main") {
                 force_high_res_taskbar_icon(&window, "icons/icon.ico");
             }
 
-
+            // On Windows or Linux, process file args passed at startup
             #[cfg(any(windows, target_os = "linux"))]
             {
                 let args: Vec<String> = std::env::args().collect();
                 println!("Startup arguments: {:?}", args);
     
-                let file_args: Vec<String> = args.into_iter().skip(1).collect();
-                let files = file_args
-                    .into_iter()
-                    .filter_map(|maybe_file| {
-                        if maybe_file.starts_with('-') {
-                            return None; // Skip flags
-                        }
-    
-                        if let Ok(url) = Url::parse(&maybe_file) {
-                            if let Ok(path) = url.to_file_path() {
-                                return Some(path);
-                            }
-                        }
-    
-                        Some(PathBuf::from(maybe_file))
-                    })
-                    .collect::<Vec<_>>();
-    
-                // Wait for the front-end to be loaded
+                let files: Vec<PathBuf> = parse_files_from_args(args);
+
+                // If the main window is already available, send files right away
                 if let Some(_main_window) = app.get_webview_window("main") {
-                    // Listen for the 'tauri://window-loaded' event
                     let app_handle = app.app_handle();
                     handle_file_associations(app_handle.clone(), files.clone());
                 }
@@ -211,11 +230,16 @@ pub fn run() {
 
             Ok(())
         })
+
+        // Final app build step
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
+
+        // Event loop for runtime events
         .run(
             #[allow(unused_variables)]
             |app, event| {
+            // On macOS, handle files opened via Finder (e.g. drag-drop on Dock icon)
             #[cfg(any(target_os = "macos"))]
             if let tauri::RunEvent::Opened { urls } = event {
                 let files = urls
