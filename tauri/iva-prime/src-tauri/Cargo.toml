@@ -29,4 +29,8 @@ url = "2.2"
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" } # Fix PATH environment on macos aarch64
 tauri-plugin-dialog = "2.3.0"
 tauri-plugin-fs = "2.4.0"
+windows = { version = "0.56", features = [
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_UI_Shell",
+] }
 
