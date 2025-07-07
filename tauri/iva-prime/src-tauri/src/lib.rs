@@ -213,8 +213,8 @@ pub fn run() {
                 force_high_res_taskbar_icon(&window, "icons/icon.ico");
             }
 
-            // On Windows or Linux, process file args passed at startup
-            #[cfg(any(windows, target_os = "linux"))]
+            // Process file args passed at startup
+            #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
             {
                 let args: Vec<String> = std::env::args().collect();
                 println!("Startup arguments: {:?}", args);
@@ -239,7 +239,7 @@ pub fn run() {
         .run(
             #[allow(unused_variables)]
             |app, event| {
-            // On macOS, handle files opened via Finder (e.g. drag-drop on Dock icon)
+            // On macOS, handle files opened via finder after startup
             #[cfg(any(target_os = "macos"))]
             if let tauri::RunEvent::Opened { urls } = event {
                 let files = urls
