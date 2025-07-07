@@ -1,0 +1,32 @@
+name: Build and Push Docker Image to Staging Environment
+
+on:
+  workflow_dispatch:
+    
+jobs:
+  deploy-staging:
+    name: Build and Push to Staging Environment
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: iva-prime
+      PROJECT_ID: iva-prime
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.SERVICE_ACCOUNT_KEY }}
+          project_id: ${{ env.PROJECT_ID }}
+          service_account: 'github-actions@iva-prime.iam.gserviceaccount.com'
+
+      - name: Change to docker directory
+        working-directory: ./docker
+        run: echo "Changed to docker directory"
+
+      - name: Deploy to Staging App Engine Service
+        working-directory: ./docker
+        run: |
+          gcloud config set project iva-prime
+          gcloud app deploy --format json app.staging.yaml --project iva-prime --no-cache --quiet
