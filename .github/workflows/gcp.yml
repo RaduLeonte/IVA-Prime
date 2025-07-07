@@ -1,8 +1,8 @@
 ---
 name: Build and Push Docker Image to Google Cloud Platform
 on:
-  push:
-    branches: [ master ]
+  release:
+    types: [published]
 
 jobs:
   build-push-gcr:
@@ -23,7 +23,12 @@ jobs:
         project_id: ${{ env.PROJECT_ID }}
         service_account: 'github-actions@iva-prime.iam.gserviceaccount.com'
 
+    - name: Change to docker directory
+      working-directory: ./docker
+      run: echo "Changed to docker directory"
+
     - id: "deploy"
+      working-directory: ./docker
       run: |
         gcloud config set project iva-prime
         gcloud app deploy --format json app.yaml --project iva-prime --promote --no-cache

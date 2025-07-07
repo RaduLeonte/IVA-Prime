@@ -2,10 +2,15 @@ name: Build Tauri App
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+  release:
+    types: [published]
 
 jobs:
     build:
-        name: Build tauri app for ${{ matrix.platform }}
+        name: Build tauri app for ${{ matrix.name }}
         permissions:
             contents: write
         strategy:
@@ -14,21 +19,39 @@ jobs:
                 include:
                     - platform: 'windows-latest' # Windows
                       args: ''
+                      name: 'windows'
                     - platform: 'macos-latest' # Arm (M1 and above)
                       args: '--target aarch64-apple-darwin'
+                      name: 'macos-arm64'
                     - platform: 'macos-latest' # Intel macs
                       args: '--target x86_64-apple-darwin'
+                      name: 'macos-x64'
                     - platform: 'ubuntu-22.04' # Linux
                       args: ''
+                      name: 'linux'
                         
         runs-on: ${{ matrix.platform }}
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
+            
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: lts/*
 
+            # Cache Node.js dependencies
+            - name: Cache Node.js dependencies
+              uses: actions/cache@v3
+              with:
+                path: ~/.npm
+                key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+                restore-keys: |
+                  ${{ runner.os }}-node-  
+              
             - name: Install linux dependencies
               if: matrix.platform == 'ubuntu-22.04'
-              run:
+              run: |
                 sudo apt-get update
                 sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
@@ -40,16 +63,21 @@ jobs:
             - name: Run clone_from_django.py
               run: python tauri/iva-prime/clone_from_django.py
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                node-version: lts/*
-                cache: 'npm'
 
-            - name: Setup Rust
+            - name: Install Rust
               uses: dtolnay/rust-toolchain@stable
               with:
                 targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+            - name: Cache Rust dependencies
+              uses: actions/cache@v3
+              with:
+                path: |
+                  ~/.cargo
+                  tauri/iva-prime/src-tauri/target
+                key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.toml') }}
+                restore-keys: |
+                  ${{ runner.os }}-rust-
 
             - name: Rust cache
               uses: swatinem/rust-cache@v2
@@ -64,9 +92,27 @@ jobs:
               uses: tauri-apps/tauri-action@v0
               with:
                 projectPath: tauri/iva-prime
+                args: ${{ matrix.args }}
 
             - name: Upload artifacts
+              if: github.event_name != 'release'
               uses: actions/upload-artifact@v4
               with:
-                name: iva-prime-${{ matrix.os }}
-                path: tauri/iva-prime/src-tauri/target/release/bundle/**
+                name: iva-prime-${{ matrix.name }}
+                path: |
+                  ${{ matrix.name == 'windows' && 'tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe' || '' }}
+                  ${{ matrix.name == 'macos-arm64' && 'tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg' || '' }}
+                  ${{ matrix.name == 'macos-x64' && 'tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg' || '' }}
+                  ${{ matrix.name == 'linux' && 'tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage' || '' }}
+
+            - name: Upload release assets
+              if: github.event_name == 'release'
+              uses: softprops/action-gh-release@v2
+              with:
+                files: |
+                  tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe
+                  tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+                  tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+                  tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

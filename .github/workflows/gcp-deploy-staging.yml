@@ -1,8 +1,9 @@
-name: Build and Push Docker Image to Staging Environment
+name: Stage GCP Deployment
 
 on:
   workflow_dispatch:
-    
+
+  
 jobs:
   deploy-staging:
     name: Build and Push to Staging Environment
