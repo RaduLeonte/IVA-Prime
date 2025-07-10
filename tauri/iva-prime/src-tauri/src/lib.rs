@@ -6,12 +6,16 @@ use windows::{
     },
 };
 
-use tauri::Manager;
-use std::fs;
-use std::path::PathBuf;
+use tauri::{
+    Manager,
+    Emitter,
+    webview::{PageLoadEvent}
+};
+use std::{fs, path::PathBuf};
 use base64::{engine::general_purpose, Engine};
 use serde::Serialize;
 use url::Url;
+use uuid::Uuid;
 
 
 fn parse_files_from_args(args: Vec<String>) -> Vec<PathBuf> {
@@ -164,6 +168,48 @@ fn force_high_res_taskbar_icon(window: &tauri::WebviewWindow, icon_path_str: &st
 
 
 #[tauri::command]
+async fn open_plasmid_window(app: tauri::AppHandle, plasmids: Box<[String]>) -> Result<(), String> {
+    use serde_json::Value;
+    let label = format!("plasmid-{}", Uuid::new_v4());
+
+    let json_values: Vec<Value> = plasmids
+        .iter()
+        .filter_map(|s| serde_json::from_str(s).ok())
+        .collect();
+
+    let json_values_clone = json_values.clone(); // For move into closure
+
+    let window = tauri::WebviewWindowBuilder::new(
+        &app,
+        &label,
+        tauri::WebviewUrl::App("index.html".into()),
+    )
+    .title("IVA Prime")
+    .inner_size(1200.0, 800.0)
+    .disable_drag_drop_handler()
+    .on_page_load(move |window, payload| {
+        match payload.event() {
+            PageLoadEvent::Started => {
+            }
+            PageLoadEvent::Finished => {
+                let _ = window.emit_to(
+                    &label,
+                    "import-plasmids",
+                    &json_values_clone
+                );
+            }
+        }
+    })
+    .build()
+    .map_err(|e| e.to_string())?;
+
+    force_high_res_taskbar_icon(&window, "icons/icon.ico");
+
+    Ok(())
+}
+
+
+#[tauri::command]
 /// Opens the "About" window in the Tauri application.
 async fn open_about_window(app: tauri::AppHandle) {
     // Create the window
@@ -203,7 +249,7 @@ pub fn run() {
         }))
 
         // Register custom commands for frontend
-        .invoke_handler(tauri::generate_handler![open_about_window])
+        .invoke_handler(tauri::generate_handler![open_about_window, open_plasmid_window])
 
         // App setup
         .setup(|app| {
