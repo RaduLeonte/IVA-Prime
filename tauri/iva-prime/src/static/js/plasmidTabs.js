@@ -1,4 +1,51 @@
 const PlasmidTabs = new class {
+    constructor() {
+        this.menuStructure = [
+            {
+                section: "Export primers",
+                items: [
+                    { item: "Plain text (.txt)", action: (i) => FileIO.exportPrimersSingle(i, "txt") },
+                    { item: "MS Word file (.doc)", action: (i) => FileIO.exportPrimersSingle(i, "doc") },
+                    { item: "CSV file (.csv)", action: (i) => FileIO.exportPrimersSingle(i, "csv") },
+                    { item: "Excel file (.xlsx)", action: (i) => FileIO.exportPrimersSingle(i, "xlsx") },
+                    { item: "Microsynth order form (.xlsx)", action: (i) => FileIO.exportPrimersSingle(i, "microsynth") },
+                ]
+            },
+            {
+                section: "Export plasmid file",
+                items: [
+                    { item: "GenBank file (.gb)", action: (i) => FileIO.exporters['gb'](i) },
+                    { item: "SnapGene file (.dna)", action: (i) => FileIO.exporters['dna'](i) },
+                    { item: "Fasta file (.fasta)", action: (i) => FileIO.exporters['fasta'](i) },
+                ]
+            },
+            {
+                section: "Edit plasmid",
+                items: [
+                    { item: "Rename plasmid", action: (i) => PlasmidTabs.renamePlasmid(i) },
+                    { item: "Flip plasmid", action: (i) => PlasmidTabs.flipPlasmid(i) },
+                    { item: "Set plasmid origin", action: (i) => PlasmidTabs.setPlasmidOrigin(i) },
+                    { item: "Set file topology", action: (i) => PlasmidTabs.setFileTopology(i) },
+                ]
+            },
+            {
+                section: "Plasmid tab",
+                items: [
+                    ...(
+                    Utilities.isTauriApp()
+                        ? [{ item: "Open plasmid in new window", action: (i) => FileIO.openInNewWindow(i) }]
+                        : []
+                    ),
+                    { item: "Close plasmid", action: (i) => PlasmidTabs.close(i) },
+                    { item: "Close all OTHER plasmids", action: (i) => PlasmidTabs.closeOthers(i) },
+                    { item: "Close plasmids to the RIGHT", action: (i) => PlasmidTabs.closeToTheRight(i) },
+                    { item: "Close plasmids to the LEFT", action: (i) => PlasmidTabs.closeToTheLeft(i) },
+                ]
+            }
+        ];
+    }
+
+
     /**
      * Create new plasmid tab
      */
@@ -244,15 +291,17 @@ const PlasmidTabs = new class {
         e.preventDefault();
 
         if (document.querySelectorAll(`ul[plasmid-index="${plasmidIndex}"]`)[0]) {
-            //console.log(`PlasmidTabs.togglePlasmidTabDropdownMenu -> Already open`);
+            console.log(`PlasmidTabs.togglePlasmidTabDropdownMenu -> Already open`);
             this.removeAllPlasmidTabDropdownMenus();
             return;
         };
+        this.removeAllPlasmidTabDropdownMenus();
 
         // Select closest tab, 
         const parentTab = e.target.closest('.plasmid-tab');
     
         const dropdownMenu = this.createPlasmidTabDropdownMenu(plasmidIndex);
+        console.log("PlasmidTabs.togglePlasmidTabDropdownMenu -> ", dropdownMenu)
         document.body.appendChild(dropdownMenu);
         this.positionPlasmidTabDropdownMenu(parentTab, dropdownMenu);
     
@@ -276,40 +325,50 @@ const PlasmidTabs = new class {
         const dropdownMenu = document.createElement('ul');
         dropdownMenu.className = 'plasmid-tab-dropdown-menu';
         dropdownMenu.setAttribute("plasmid-index", plasmidIndex);
-        dropdownMenu.style.display = 'block'; // Display the menu initially
+        dropdownMenu.style.display = 'block'; // Initially shown
 
-        dropdownMenu.innerHTML = `
-        <div class="plasmid-tab-dropdown-menu-section-title">Export primers</div>
-        <ul>
-            <li><span fileType="txt" onclick="FileIO.exportPrimersSingle(${plasmidIndex}, 'txt')">Plaint text (.txt)</span></li>
-            <li><span fileType="doc" onclick="FileIO.exportPrimersSingle(${plasmidIndex}, 'doc')">MS Word file (.doc)</span></li>
-            <li><span fileType="csv" onclick="FileIO.exportPrimersSingle(${plasmidIndex}, 'csv')">CSV file (.csv)</span></li>
-            <li><span fileType="xlsx" onclick="FileIO.exportPrimersSingle(${plasmidIndex}, 'xlsx')">Excel file (.xlsx)</span></li>
-            <li><span fileType="microsynth" onclick="FileIO.exportPrimersSingle(${plasmidIndex}, 'microsynth')">Microsynth order form (.xlsx)</span></li>
-        </ul>
-        <div class="plasmid-tab-dropdown-menu-section-title">Export plasmid file</div>
-        <ul>
-            <li><span onclick="FileIO.exporters['gb'](${plasmidIndex})">GenBank file (.gb)</span></li>
-            <li><span onclick="FileIO.exporters['dna'](${plasmidIndex})">SnapGene file (.dna)</span></li>
-            <li><span onclick="FileIO.exporters['fasta'](${plasmidIndex})">Fasta file (.fasta)</span></li>
-        </ul>
-        <div class="plasmid-tab-dropdown-menu-section-title">Edit plasmid</div>
-        <ul>
-            <li><span onclick="PlasmidTabs.renamePlasmid(${plasmidIndex})">Rename plasmid</span></li>
-            <li><span onclick="PlasmidTabs.flipPlasmid(${plasmidIndex})">Flip plasmid</span></li>
-            <li><span onclick="PlasmidTabs.setPlasmidOrigin(${plasmidIndex})">Set plasmid origin</span></li>
-            <li><span onclick="PlasmidTabs.setFileTopology(${plasmidIndex})">Set file topology</span></li>
-        </ul>
-        <div class="plasmid-tab-dropdown-menu-section-title">Close plasmids</div>
-        <ul>
-            <li><span onclick="PlasmidTabs.close(${plasmidIndex})">Close plasmid</span></li>
-            <li><span onclick="PlasmidTabs.closeOthers(${plasmidIndex})">Close all OTHER plasmids</span></li>
-            <li><span onclick="PlasmidTabs.closeToTheRight(${plasmidIndex})">Close plasmids to the RIGHT</span></li>
-            <li><span onclick="PlasmidTabs.closeToTheLeft(${plasmidIndex})">Close plasmids to the LEFT</span></li>
-        </ul>
-        `;
+        this.createMenuItems(this.menuStructure, dropdownMenu, plasmidIndex);
 
         return dropdownMenu;
+    };
+
+
+    createMenuItems(menuStructure, parent, plasmidIndex) {
+        menuStructure.forEach(section => {
+            // Section Title
+            if (section.section) {
+                const sectionTitle = document.createElement('div');
+                sectionTitle.className = 'plasmid-tab-dropdown-menu-section-title';
+                sectionTitle.textContent = section.section;
+                parent.appendChild(sectionTitle);
+            };
+
+            // Section Items
+            if (section.items) {
+                const ul = document.createElement('ul');
+                section.items.forEach(entry => {
+                    if (entry.separator !== undefined) {
+                        const li = document.createElement('li');
+                        li.className = 'plasmid-tab-dropdown-menu-separator';
+                        ul.appendChild(li);
+                    } else if (entry.item) {
+                        const li = document.createElement('li');
+                        const span = document.createElement('span');
+                        span.innerHTML = entry.item;
+                        li.appendChild(span);
+                        // Click handler, pass index if needed
+                        if (entry.action) {
+                            span.addEventListener('click', e => {
+                                e.stopPropagation();
+                                entry.action(plasmidIndex);
+                            });
+                        };
+                        ul.appendChild(li);
+                    };
+                });
+                parent.appendChild(ul);
+            };
+        });
     };
 
 
@@ -333,8 +392,9 @@ const PlasmidTabs = new class {
      */
     removeAllPlasmidTabDropdownMenus() {
         const existingDropdownMenus = document.querySelectorAll('.plasmid-tab-dropdown-menu');
+        console.log("PlasmidTabs.removeAllPlasmidTabDropdownMenus -> ", existingDropdownMenus)
         existingDropdownMenus.forEach(element => {
-            element.parentNode.removeChild(element);
+            element.remove();
         });
     };
 

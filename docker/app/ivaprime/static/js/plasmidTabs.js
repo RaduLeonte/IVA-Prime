@@ -29,8 +29,13 @@ const PlasmidTabs = new class {
                 ]
             },
             {
-                section: "Close plasmids",
+                section: "Plasmid tab",
                 items: [
+                    ...(
+                    Utilities.isTauriApp()
+                        ? [{ item: "Open plasmid in new window", action: (i) => FileIO.openInNewWindow(i) }]
+                        : []
+                    ),
                     { item: "Close plasmid", action: (i) => PlasmidTabs.close(i) },
                     { item: "Close all OTHER plasmids", action: (i) => PlasmidTabs.closeOthers(i) },
                     { item: "Close plasmids to the RIGHT", action: (i) => PlasmidTabs.closeToTheRight(i) },
