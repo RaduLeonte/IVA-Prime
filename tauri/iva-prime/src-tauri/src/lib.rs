@@ -203,6 +203,7 @@ async fn open_plasmid_window(app: tauri::AppHandle, plasmids: Box<[String]>) -> 
     .build()
     .map_err(|e| e.to_string())?;
 
+    #[cfg(target_os = "windows")]
     force_high_res_taskbar_icon(&window, "icons/icon.ico");
 
     Ok(())
