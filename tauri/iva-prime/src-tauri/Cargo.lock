@@ -1805,6 +1805,7 @@ dependencies = [
  "tauri-plugin-single-instance",
  "tokio",
  "url",
+ "uuid",
  "windows 0.56.0",
 ]
 

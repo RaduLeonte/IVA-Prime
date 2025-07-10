@@ -213,6 +213,30 @@ const FileIO = new class {
     };
 
 
+    async openInNewWindow(plasmidIndex) {
+        console.log("FileIO.openInNewWindow ->");
+
+        const plasmidJSON = JSON.stringify(Session.getPlasmid(plasmidIndex));
+
+        await window.__TAURI__.core.invoke("open_plasmid_window", {
+            plasmids: [plasmidJSON]
+        });
+
+        PlasmidTabs.removeAllPlasmidTabDropdownMenus();
+        PlasmidTabs.close(plasmidIndex);
+    };
+
+
+    importFromPlasmidJSON(plasmidJSONList) {
+        console.log("FileIO.importFromPlasmidJSON -> ", plasmidJSONList.length)
+        plasmidJSONList.forEach(plasmidJSON => {
+            Session.addPlasmid(
+                Plasmid.fromJSON(plasmidJSON)
+            );
+        });
+    }  
+
+
     /**
      * Dictionary of parsers.
      */
@@ -2153,3 +2177,8 @@ const FileIO = new class {
         };
     };
 };
+
+const appWebview = window.__TAURI__.webviewWindow.getCurrentWebviewWindow()
+appWebview.listen('import-plasmids', (event) => {
+    FileIO.importFromPlasmidJSON(event.payload); // payload is an array of objects
+});

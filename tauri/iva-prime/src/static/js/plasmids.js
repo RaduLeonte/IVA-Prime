@@ -55,6 +55,25 @@ class Plasmid {
     };
 
 
+    static fromJSON(obj) {
+        // Construct with all required args
+        const plasmid = new Plasmid(
+            obj.index,
+            obj.name,
+            obj.extension,
+            obj.sequence,
+            obj.features,
+            obj.topology,
+            obj.additionalInfo
+        );
+
+        // Assign all properties from the object to the new instance
+        Object.assign(plasmid, obj);
+
+        return plasmid;
+    };
+
+
     /**
      * Creates the different views and saves them
      */
