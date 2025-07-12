@@ -6,12 +6,25 @@ use windows::{
     },
 };
 
+use log::{info, error, debug};
+use tauri_plugin_log::{Target, TargetKind};
+
 use tauri::Manager;
+use tauri::WebviewWindow;
 use std::fs;
 use std::path::PathBuf;
 use base64::{engine::general_purpose, Engine};
 use serde::Serialize;
 use url::Url;
+use tauri_plugin_deep_link::DeepLinkExt;
+
+
+pub fn print_to_js_console(window: WebviewWindow, s: String) {
+    let js_call = format!("console.log('{}');", s);
+    if let Err(err) = window.eval(&js_call) {
+        eprintln!("Failed to execute JavaScript: {}", err);
+    }
+}
 
 
 fn parse_files_from_args(args: Vec<String>) -> Vec<PathBuf> {
@@ -115,7 +128,7 @@ fn handle_file_associations(app: tauri::AppHandle, files: Vec<PathBuf>) {
 /// * `window` - A reference to the [`tauri::WebviewWindow`] that should receive the high-res icon.
 /// * `icon_path_str` - A relative or absolute path to the `.ico` file to use. The icon file
 ///   should contain a 256x256 image (preferably 32-bit RGBA) for best results.
-fn force_high_res_taskbar_icon(window: &tauri::WebviewWindow, icon_path_str: &str) {
+fn force_high_res_taskbar_icon(window: &WebviewWindow, icon_path_str: &str) {
     use std::ffi::OsStr;
     use std::os::windows::ffi::OsStrExt;
     use windows::{
@@ -166,6 +179,7 @@ fn force_high_res_taskbar_icon(window: &tauri::WebviewWindow, icon_path_str: &st
 #[tauri::command]
 /// Opens the "About" window in the Tauri application.
 async fn open_about_window(app: tauri::AppHandle) {
+    #[allow(unused_variables)]
     // Create the window
     let about_window = tauri::WebviewWindowBuilder::new(
         &app,
@@ -189,8 +203,29 @@ pub fn run() {
     tauri::Builder::default()
         // Plugins
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .level(log::LevelFilter::Info)
+                .targets(
+                    [
+                        Target::new(TargetKind::Stdout),
+                        Target::new(
+                            TargetKind::Folder {
+                                path: std::path::PathBuf::from("/Users/cristianleonte/Documents/GitHub/IVA-Prime/tauri/iva-prime/src-tauri/target/debug/bundle/macos"),
+                                file_name: None,
+                          }
+                        ),
+                        Target::new(TargetKind::Webview),
+                    ]
+                )
+                .max_file_size(50_000_000)
+                .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
+                .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
+                .build(),
+        )
         // Ensure only one instance of the app is allowed.
         // If a second instance is opened (e.g. by double-clicking a file),
         // its arguments are captured here.
@@ -207,6 +242,11 @@ pub fn run() {
 
         // App setup
         .setup(|app| {
+
+            info!("App is starting...!");
+
+            app.deep_link().register_all()?;
+
             // On Windows, force high-res window icon
             #[cfg(target_os = "windows")]
             if let Some(window) = app.get_webview_window("main") {
@@ -218,6 +258,10 @@ pub fn run() {
             {
                 let args: Vec<String> = std::env::args().collect();
                 println!("Startup arguments: {:?}", args);
+                print_to_js_console(
+                    app.get_webview_window("main").expect("REASON"),
+                    format!("Rust -> Startup arguments: {:?}", args)
+                );
     
                 let files: Vec<PathBuf> = parse_files_from_args(args);
 
@@ -246,6 +290,22 @@ pub fn run() {
                     .into_iter()
                     .filter_map(|url| url.to_file_path().ok())
                     .collect::<Vec<_>>();
+
+                info!("MacOS Event Files: {:?}", files);
+
+                println!("Opening files: {:?}", files);
+                let main_window = match app.clone().get_webview_window("main") {
+                    Some(window) => {
+                        print_to_js_console(
+                            window,
+                            format!("Rust -> Opening files: {:?}", files)
+                        );
+                    },
+                    None => {
+                        println!("Main window not found!");
+                        return;
+                    }
+                };
 
                 handle_file_associations(app.app_handle().clone(), files.clone())
             }
