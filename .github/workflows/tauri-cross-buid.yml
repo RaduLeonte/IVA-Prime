@@ -128,7 +128,7 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         with:
           projectPath: tauri/iva-prime
-          args: '--target x86_64-apple-darwin'
+          args: '--target aarch64-apple-darwin'
 
       - name: Rename macOS ARM artifact
         shell: bash
@@ -153,7 +153,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-          
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
