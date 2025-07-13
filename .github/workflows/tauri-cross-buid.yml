@@ -219,7 +219,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: "nightly"
-          name: "Desktop App Nightly Release ${{ needs.get-info.outputs.version }}-${{ github.run_id }}"
+          name: "Pre-release IVA Prime ${{ needs.get-info.outputs.version }}-${{ github.run_id }}"
           prerelease: true
           body: |
             Nightly build of the IVA Prime desktop app.
