@@ -6,12 +6,28 @@ use windows::{
     },
 };
 
-use tauri::Manager;
+use tauri_plugin_log::{Target, TargetKind};
+
+use tauri::{Manager, WebviewWindow, Listener};
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Mutex;
+use once_cell::sync::Lazy;
 use base64::{engine::general_purpose, Engine};
 use serde::Serialize;
 use url::Url;
+use tauri_plugin_deep_link::DeepLinkExt;
+
+
+pub fn print_to_js_console(window: WebviewWindow, s: String) {
+    let js_call = format!("console.log('{}');", s);
+    if let Err(err) = window.eval(&js_call) {
+        eprintln!("Failed to execute JavaScript: {}", err);
+    }
+}
+
+static MAIN_WINDOW_READY_FLAG: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
+static PENDING_FILES: Lazy<Mutex<Vec<PathBuf>>> = Lazy::new(|| Mutex::new(vec![]));
 
 
 fn parse_files_from_args(args: Vec<String>) -> Vec<PathBuf> {
@@ -70,41 +86,53 @@ fn prepare_js_files(paths: Vec<PathBuf>) -> Vec<JsFile> {
 }
 
 
-/// Sends file data (base64-encoded) to the front-end's `FileIO.importBase64Files`
-/// JavaScript function after the main window is ready.
-fn handle_file_associations(app: tauri::AppHandle, files: Vec<PathBuf>) {
-    // Convert the list of file paths into JsFile structs with base64-encoded content
-    let js_files = prepare_js_files(files);
-
-    // Attempt to serialize the JsFile list into a JSON string
+fn send_js_files(window: &tauri::WebviewWindow, files: Vec<PathBuf>) {
+    let js_files = prepare_js_files(files.clone());
     let js_call = match serde_json::to_string(&js_files) {
         Ok(json) => format!(
             r#"
-            if (document.readyState !== 'complete') {{
-                window.addEventListener('DOMContentLoaded', function() {{
-                    FileIO.importBase64Files({});
-                }});
-            }} else {{
-                FileIO.importBase64Files({});
-            }}
+            FileIO.importBase64Files({});
             "#,
-            json, // used twice in the template
             json
         ),
         Err(e) => {
-            eprintln!("Failed to serialize JS file list: {}", e);
+            log::error!("Failed to serialize JS file list: {}", e);
             return;
         }
     };
 
+    if let Err(err) = window.eval(&js_call) {
+        log::error!("Failed to execute JavaScript: {}", err);
+    } else{
+        log::debug!("Successfully sent file paths to frontend -> files={:?}", files);
+    }
+}
+
+
+fn queue_js_files(files: Vec<PathBuf>) {
+    let mut pending = PENDING_FILES.lock().unwrap();
+    pending.extend(files);
+    log::debug!("Main window is not ready, queueing files -> pending={:?}", pending);
+}
+
+
+/// Sends file data (base64-encoded) to the front-end's `FileIO.importBase64Files`
+/// JavaScript function after the main window is ready.
+fn handle_file_associations(app: tauri::AppHandle, files: Vec<PathBuf>) {
     // Try to get the main application window
     if let Some(main_window) = app.get_webview_window("main") {
-        // Inject and execute the JS string in the main window's context
-        if let Err(err) = main_window.eval(&js_call) {
-            eprintln!("Failed to execute JavaScript: {}", err);
+        let main_window_ready_flag = MAIN_WINDOW_READY_FLAG.lock().unwrap();
+
+        if *main_window_ready_flag {
+            // If the result is Ok, it means the window is ready
+            send_js_files(&main_window, files);
+        } else {
+            // If the window is not ready, queue the files
+            queue_js_files(files);
         }
     } else {
-        eprintln!("Main window not found.");
+        // Queue files for later
+        queue_js_files(files);
     }
 }
 
@@ -115,7 +143,7 @@ fn handle_file_associations(app: tauri::AppHandle, files: Vec<PathBuf>) {
 /// * `window` - A reference to the [`tauri::WebviewWindow`] that should receive the high-res icon.
 /// * `icon_path_str` - A relative or absolute path to the `.ico` file to use. The icon file
 ///   should contain a 256x256 image (preferably 32-bit RGBA) for best results.
-fn force_high_res_taskbar_icon(window: &tauri::WebviewWindow, icon_path_str: &str) {
+fn force_high_res_taskbar_icon(window: &WebviewWindow, icon_path_str: &str) {
     use std::ffi::OsStr;
     use std::os::windows::ffi::OsStrExt;
     use windows::{
@@ -164,6 +192,7 @@ fn force_high_res_taskbar_icon(window: &tauri::WebviewWindow, icon_path_str: &st
 
 
 #[tauri::command]
+#[allow(unused_variables)]
 /// Opens the "About" window in the Tauri application.
 async fn open_about_window(app: tauri::AppHandle) {
     // Create the window
@@ -186,11 +215,37 @@ async fn open_about_window(app: tauri::AppHandle) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let exe_dir: PathBuf = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+        .unwrap_or_else(|| PathBuf::from("."));
+
     tauri::Builder::default()
         // Plugins
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .level(log::LevelFilter::Debug) // Lowest log level
+                .targets(
+                    [
+                        Target::new(TargetKind::Stdout),
+                        Target::new(
+                            TargetKind::Folder {
+                                path: exe_dir,
+                                file_name: None,
+                          }
+                        ),
+                        Target::new(TargetKind::Webview),
+                    ]
+                )
+                .max_file_size(50_000_000)
+                .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
+                .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
+                .build(),
+        )
         // Ensure only one instance of the app is allowed.
         // If a second instance is opened (e.g. by double-clicking a file),
         // its arguments are captured here.
@@ -198,8 +253,12 @@ pub fn run() {
             // Convert incoming args into filesystem paths (excluding flags)
             let files: Vec<PathBuf> = parse_files_from_args(args);
 
-            // Pass the list of paths to the frontend
-            handle_file_associations(app.clone(), files);
+            if !files.is_empty() {
+                log::debug!("Single instance plugin -> files={:?}", files);
+    
+                // Pass the list of paths to the frontend
+                handle_file_associations(app.clone(), files);
+            }
         }))
 
         // Register custom commands for frontend
@@ -207,22 +266,56 @@ pub fn run() {
 
         // App setup
         .setup(|app| {
+            log::info!("Logs path -> {:?}", std::env::current_exe().unwrap().parent().unwrap());
+            log::info!("App is starting...!");
+            
+            let app_handle = app.app_handle().clone();
+            app.listen("window-ready", move |_event| {
+                log::info!("Window is ready!");
+
+                let mut flag = MAIN_WINDOW_READY_FLAG.lock().unwrap();
+                *flag = true;
+                
+                if let Some(main_window) = app_handle.get_webview_window("main") {
+                    print_to_js_console(
+                        main_window.clone(),
+                        format!("Logs path -> {:?}", std::env::current_exe().unwrap().parent().unwrap())
+                    );
+
+                    let files = {
+                        let mut pending = PENDING_FILES.lock().unwrap();
+                        std::mem::take(&mut *pending)
+                    };
+                    if !files.is_empty() {
+                        log::debug!("Sending queued files to window -> files={:?}", files);
+                        send_js_files(&main_window, files);
+                    }
+                }
+            });
+
             // On Windows, force high-res window icon
             #[cfg(target_os = "windows")]
-            if let Some(window) = app.get_webview_window("main") {
-                force_high_res_taskbar_icon(&window, "icons/icon.ico");
+            {
+                let app_handle = app.app_handle().clone();
+                app.listen("window-ready", move |_event| {
+                    if let Some(main_window) = app_handle.get_webview_window("main") {
+                        force_high_res_taskbar_icon(&main_window, "icons/icon.ico");
+                    }
+                });
             }
 
+            app.deep_link().register_all()?;
+
+
             // Process file args passed at startup
-            #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+            #[cfg(any(target_os = "windows", target_os = "linux"))]
             {
                 let args: Vec<String> = std::env::args().collect();
-                println!("Startup arguments: {:?}", args);
-    
+                
                 let files: Vec<PathBuf> = parse_files_from_args(args);
-
-                // If the main window is already available, send files right away
-                if let Some(_main_window) = app.get_webview_window("main") {
+                
+                if !files.is_empty() {
+                    log::debug!("Setup -> files={:?}", files);
                     let app_handle = app.app_handle();
                     handle_file_associations(app_handle.clone(), files.clone());
                 }
@@ -247,7 +340,10 @@ pub fn run() {
                     .filter_map(|url| url.to_file_path().ok())
                     .collect::<Vec<_>>();
 
-                handle_file_associations(app.app_handle().clone(), files.clone())
+                if !files.is_empty() {
+                    log::debug!("MacOS RunEvent::Opened -> files={:?}", files);
+                    handle_file_associations(app.app_handle().clone(), files.clone())
+                }
             }
         });
 }
