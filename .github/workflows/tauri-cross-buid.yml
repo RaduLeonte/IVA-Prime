@@ -180,11 +180,11 @@ jobs:
         run: |
           VERSION="${{ needs.get-info.outputs.version }}"
           # Rename AppImage
-          mv tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage tauri/iva-prime/src-tauri/target/release/bundle/appimage/IVA-Prime-${VERSION}-linux.AppImage
+          mv tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage tauri/iva-prime/src-tauri/target/release/bundle/appimage/IVA-Prime-${VERSION}-linux.AppImage || true
           # Rename DEB
-          mv tauri/iva-prime/src-tauri/target/release/bundle/deb/*.deb tauri/iva-prime/src-tauri/target/release/bundle/deb/IVA-Prime-${VERSION}-linux.deb
+          mv tauri/iva-prime/src-tauri/target/release/bundle/deb/*.deb tauri/iva-prime/src-tauri/target/release/bundle/deb/IVA-Prime-${VERSION}-linux.deb || true
           # Rename RPM
-          mv tauri/iva-prime/src-tauri/target/release/bundle/rpm/*.rpm tauri/iva-prime/src-tauri/target/release/bundle/rpm/IVA-Prime-${VERSION}-linux.rpm
+          mv tauri/iva-prime/src-tauri/target/release/bundle/rpm/*.rpm tauri/iva-prime/src-tauri/target/release/bundle/rpm/IVA-Prime-${VERSION}-linux.rpm || true
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
