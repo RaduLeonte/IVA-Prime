@@ -236,11 +236,11 @@ jobs:
 
       - name: Generate SHA256 checksums
         run: |
-          sha256sum *.AppImage > SHA256SUMS.txt
-          sha256sum *.deb >> SHA256SUMS.txt
-          sha256sum *.rpm >> SHA256SUMS.txt
-          sha256sum *.exe >> SHA256SUMS.txt
-          sha256sum *.dmg >> SHA256SUMS.txt
+          sha256sum *.AppImage > SHA256SUMS.txt || true
+          sha256sum *.deb >> SHA256SUMS.txt || true
+          sha256sum *.rpm >> SHA256SUMS.txt || true
+          sha256sum *.exe >> SHA256SUMS.txt || true
+          sha256sum *.dmg >> SHA256SUMS.txt || true
           cat SHA256SUMS.txt
 
       - name: List files
