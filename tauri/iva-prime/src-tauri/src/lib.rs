@@ -26,6 +26,7 @@ pub fn print_to_js_console(window: WebviewWindow, s: String) {
     }
 }
 
+static MAIN_WINDOW_READY_FLAG: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
 static PENDING_FILES: Lazy<Mutex<Vec<PathBuf>>> = Lazy::new(|| Mutex::new(vec![]));
 
 
@@ -86,7 +87,7 @@ fn prepare_js_files(paths: Vec<PathBuf>) -> Vec<JsFile> {
 
 
 fn send_js_files(window: &tauri::WebviewWindow, files: Vec<PathBuf>) {
-    let js_files = prepare_js_files(files);
+    let js_files = prepare_js_files(files.clone());
     let js_call = match serde_json::to_string(&js_files) {
         Ok(json) => format!(
             r#"
@@ -102,7 +103,16 @@ fn send_js_files(window: &tauri::WebviewWindow, files: Vec<PathBuf>) {
 
     if let Err(err) = window.eval(&js_call) {
         log::error!("Failed to execute JavaScript: {}", err);
+    } else{
+        log::debug!("Successfully sent file paths to frontend -> files={:?}", files);
     }
+}
+
+
+fn queue_js_files(files: Vec<PathBuf>) {
+    let mut pending = PENDING_FILES.lock().unwrap();
+    pending.extend(files);
+    log::debug!("Main window is not ready, queueing files -> pending={:?}", pending);
 }
 
 
@@ -111,13 +121,18 @@ fn send_js_files(window: &tauri::WebviewWindow, files: Vec<PathBuf>) {
 fn handle_file_associations(app: tauri::AppHandle, files: Vec<PathBuf>) {
     // Try to get the main application window
     if let Some(main_window) = app.get_webview_window("main") {
-        // Inject and execute the JS string in the main window's context
-        send_js_files(&main_window, files);
+        let main_window_ready_flag = MAIN_WINDOW_READY_FLAG.lock().unwrap();
+
+        if *main_window_ready_flag {
+            // If the result is Ok, it means the window is ready
+            send_js_files(&main_window, files);
+        } else {
+            // If the window is not ready, queue the files
+            queue_js_files(files);
+        }
     } else {
         // Queue files for later
-        let mut pending = PENDING_FILES.lock().unwrap();
-        pending.extend(files);
-        log::debug!("Main window is not ready, queueing files -> pending={:?}", pending);
+        queue_js_files(files);
     }
 }
 
@@ -177,9 +192,9 @@ fn force_high_res_taskbar_icon(window: &WebviewWindow, icon_path_str: &str) {
 
 
 #[tauri::command]
+#[allow(unused_variables)]
 /// Opens the "About" window in the Tauri application.
 async fn open_about_window(app: tauri::AppHandle) {
-    #[allow(unused_variables)]
     // Create the window
     let about_window = tauri::WebviewWindowBuilder::new(
         &app,
@@ -256,7 +271,10 @@ pub fn run() {
             
             let app_handle = app.app_handle().clone();
             app.listen("window-ready", move |_event| {
-                log::info!("Window is ready");
+                log::info!("Window is ready!");
+
+                let mut flag = MAIN_WINDOW_READY_FLAG.lock().unwrap();
+                *flag = true;
                 
                 if let Some(main_window) = app_handle.get_webview_window("main") {
                     print_to_js_console(
@@ -274,17 +292,21 @@ pub fn run() {
                     }
                 }
             });
+            
+            // On Windows, force high-res window icon
+            #[cfg(target_os = "windows")]
+            let app_handle = app.app_handle().clone();
+            app.listen("window-ready", move |_event| {
+                if let Some(main_window) = app_handle.get_webview_window("main") {
+                    force_high_res_taskbar_icon(&main_window, "icons/icon.ico");
+                }
+            });
 
             app.deep_link().register_all()?;
 
-            // On Windows, force high-res window icon
-            #[cfg(target_os = "windows")]
-            if let Some(window) = app.get_webview_window("main") {
-                force_high_res_taskbar_icon(&window, "icons/icon.ico");
-            }
 
             // Process file args passed at startup
-            #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+            #[cfg(any(target_os = "windows", target_os = "linux"))]
             {
                 let args: Vec<String> = std::env::args().collect();
                 
@@ -292,11 +314,8 @@ pub fn run() {
                 
                 if !files.is_empty() {
                     log::debug!("Setup -> files={:?}", files);
-                    // If the main window is already available, send files right away
-                    if let Some(_main_window) = app.get_webview_window("main") {
-                        let app_handle = app.app_handle();
-                        handle_file_associations(app_handle.clone(), files.clone());
-                    }
+                    let app_handle = app.app_handle();
+                    handle_file_associations(app_handle.clone(), files.clone());
                 }
             }
 

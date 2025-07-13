@@ -2157,6 +2157,7 @@ const FileIO = new class {
 
 if (Utilities.isTauriApp()) {
     document.addEventListener("DOMContentLoaded", (event) => {
+        window.isReady = true;
         window.__TAURI__.event.emit('window-ready')
     });
 };
