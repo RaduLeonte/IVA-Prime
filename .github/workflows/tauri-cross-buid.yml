@@ -2,6 +2,8 @@ name: Build Tauri App
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
   pull_request:
     branches:
       - master
@@ -9,133 +11,207 @@ on:
     types: [published]
 
 jobs:
-    build:
-        name: Build tauri app for ${{ matrix.name }}
-        permissions:
-            contents: write
-        strategy:
-            fail-fast: false
-            matrix:
-                include:
-                    - platform: 'windows-latest' # Windows
-                      args: ''
-                      name: 'windows'
-                    - platform: 'macos-latest' # Arm (M1 and above)
-                      args: '--target aarch64-apple-darwin'
-                      name: 'macos-arm64'
-                    - platform: 'macos-latest' # Intel macs
-                      args: '--target x86_64-apple-darwin'
-                      name: 'macos-x64'
-                    - platform: 'ubuntu-22.04' # Linux
-                      args: ''
-                      name: 'linux'
-                        
-        runs-on: ${{ matrix.platform }}
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+  get-info:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Get version from Cargo.toml
-              working-directory: tauri/iva-prime/src-tauri
-              shell: bash
-              run: |
-                VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml)
-                echo "VERSION=$VERSION" >> $GITHUB_ENV
-                echo "VERSION=$VERSION"
-            
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                node-version: lts/*
+      - name: Get version from Cargo.toml
+        working-directory: tauri/iva-prime/src-tauri
+        shell: bash
+        run: |
+          VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "VERSION=$VERSION"
 
-            # Cache Node.js dependencies
-            - name: Cache Node.js dependencies
-              uses: actions/cache@v3
-              with:
-                path: ~/.npm
-                key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-                restore-keys: |
-                  ${{ runner.os }}-node-  
-              
-            - name: Install linux dependencies
-              if: matrix.platform == 'ubuntu-22.04'
-              run: |
-                sudo apt-get update
-                sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+  build-windows:
+    runs-on: windows-latest
+    needs: get-info
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Set up Python
-              uses: actions/setup-python@v5
-              with:
-                python-version: '3.11'
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
 
-            - name: Run clone_from_django.py
-              run: python tauri/iva-prime/clone_from_django.py
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
 
+      - name: Install frontend dependencies
+        working-directory: tauri/iva-prime
+        run: npm install
 
-            - name: Install Rust
-              uses: dtolnay/rust-toolchain@stable
-              with:
-                targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        with:
+          projectPath: tauri/iva-prime
+          args: ''
 
-            - name: Cache Rust dependencies
-              uses: actions/cache@v3
-              with:
-                path: |
-                  ~/.cargo
-                  tauri/iva-prime/src-tauri/target
-                key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.toml') }}
-                restore-keys: |
-                  ${{ runner.os }}-rust-
+      - name: Rename Windows artifact
+        shell: bash
+        run: |
+          VERSION="${{ env.VERSION }}"
+          mv tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe tauri/iva-prime/src-tauri/target/release/bundle/nsis/IVA-Prime-${VERSION}-win64-setup.exe
 
-            - name: Rust cache
-              uses: swatinem/rust-cache@v2
-              with:
-                workspaces: 'tauri/iva-prime/src-tauri -> target'
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iva-prime-windows
+          path: tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe
 
-            - name: Install frontend dependencies
-              working-directory: tauri/iva-prime
-              run: npm install
+  build-macos-intel:
+    runs-on: macos-latest
+    needs: get-info
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Build Tauri app
-              uses: tauri-apps/tauri-action@v0
-              with:
-                projectPath: tauri/iva-prime
-                args: ${{ matrix.args }}
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
 
-            # Rename artifacts based on the matrix
-            - name: Rename artifacts
-              shell: bash
-              run: |
-                VERSION="${{ env.VERSION }}"
-                if [ "${{ matrix.name }}" == "windows" ]; then
-                  mv tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe tauri/iva-prime/src-tauri/target/release/bundle/nsis/IVA_Prime_${VERSION}_win64_setup.exe
-                elif [ "${{ matrix.name }}" == "macos-arm64" ]; then
-                  mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/IVA_Prime_${VERSION}_macos_arm.dmg
-                elif [ "${{ matrix.name }}" == "macos-x64" ]; then
-                  mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/IVA_Prime_${VERSION}_macos_intel.dmg
-                elif [ "${{ matrix.name }}" == "linux" ]; then
-                  mv tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage tauri/iva-prime/src-tauri/target/release/bundle/appimage/IVA_Prime_${VERSION}_linux.AppImage
-                fi
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
 
-            - name: Upload artifacts
-              if: github.event_name != 'release'
-              uses: actions/upload-artifact@v4
-              with:
-                name: iva-prime-${{ matrix.name }}
-                path: |
-                  ${{ matrix.name == 'windows' && 'tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe' || '' }}
-                  ${{ matrix.name == 'macos-arm64' && 'tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg' || '' }}
-                  ${{ matrix.name == 'macos-x64' && 'tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg' || '' }}
-                  ${{ matrix.name == 'linux' && 'tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage' || '' }}
+      - name: Install frontend dependencies
+        working-directory: tauri/iva-prime
+        run: npm install
 
-            - name: Upload release assets
-              if: github.event_name == 'release'
-              uses: softprops/action-gh-release@v2
-              with:
-                files: |
-                  tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe
-                  tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
-                  tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
-                  tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        with:
+          projectPath: tauri/iva-prime
+          args: '--target x86_64-apple-darwin'
+
+      - name: Rename macOS Intel artifact
+        shell: bash
+        run: |
+          VERSION="${{ env.VERSION }}"
+          mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/IVA-Prime-${VERSION}-macos-intel.dmg
+
+      - name: Upload macOS Intel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iva-prime-macos-intel
+          path: tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+
+  build-macos-arm:
+    runs-on: macos-latest
+    needs: get-info
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install frontend dependencies
+        working-directory: tauri/iva-prime
+        run: npm install
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        with:
+          projectPath: tauri/iva-prime
+          args: '--target aarch64-apple-darwin'
+
+      - name: Rename macOS ARM artifact
+        shell: bash
+        run: |
+          VERSION="${{ env.VERSION }}"
+          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/IVA-Prime-${VERSION}-macos-arm.dmg
+
+      - name: Upload macOS ARM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iva-prime-macos-arm
+          path: tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+
+  build-linux:
+    runs-on: ubuntu-22.04
+    needs: get-info
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install frontend dependencies
+        working-directory: tauri/iva-prime
+        run: npm install
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        with:
+          projectPath: tauri/iva-prime
+          args: ''
+
+      - name: Rename Linux artifact
+        shell: bash
+        run: |
+          VERSION="${{ env.VERSION }}"
+          mv tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage tauri/iva-prime/src-tauri/target/release/bundle/appimage/IVA-Prime-${VERSION}-linux.AppImage
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: iva-prime-linux
+          path: |
+            tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage
+
+  pre-release:
+    runs-on: ubuntu-latest
+    needs: [build-windows, build-macos-intel, build-macos-arm, build-linux]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get version from Cargo.toml
+        working-directory: tauri/iva-prime/src-tauri
+        shell: bash
+        run: |
+          VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "VERSION=$VERSION"
+
+      - name: Create Pre-Release
+        id: create-release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: "Pre-release-${{ env.VERSION }}-${{ github.run_id }}"
+          tag: "pre-release-${{ env.VERSION }}-${{ github.run_id }}"
+          draft: true
+          prerelease: true
+          body: "Pre-release for version ${{ env.VERSION }}"
+
+      - name: Upload Pre-release artifacts
+        run: |
+          # Upload artifacts to the release
+          RELEASE_ID=$(jq -r .id < ${{ steps.create-release.outputs.release-id }})
+          for artifact in $(find ./ -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm"); do
+            curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary @"$artifact" \
+              "https://uploads.github.com/repos/${{ github.repository }}/releases/${RELEASE_ID}/assets?name=$(basename $artifact)"
+          done

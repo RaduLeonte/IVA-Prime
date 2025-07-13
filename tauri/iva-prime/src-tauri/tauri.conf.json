@@ -60,7 +60,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "targets": ["nsis", "dmg", "appimage"],
+    "targets": ["nsis", "deb", "rpm", "appimage"],
     "windows": {
       "allowDowngrades": true,
       "nsis": {
