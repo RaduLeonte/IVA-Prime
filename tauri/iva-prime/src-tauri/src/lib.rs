@@ -292,15 +292,17 @@ pub fn run() {
                     }
                 }
             });
-            
+
             // On Windows, force high-res window icon
             #[cfg(target_os = "windows")]
-            let app_handle = app.app_handle().clone();
-            app.listen("window-ready", move |_event| {
-                if let Some(main_window) = app_handle.get_webview_window("main") {
-                    force_high_res_taskbar_icon(&main_window, "icons/icon.ico");
-                }
-            });
+            {
+                let app_handle = app.app_handle().clone();
+                app.listen("window-ready", move |_event| {
+                    if let Some(main_window) = app_handle.get_webview_window("main") {
+                        force_high_res_taskbar_icon(&main_window, "icons/icon.ico");
+                    }
+                });
+            }
 
             app.deep_link().register_all()?;
 
