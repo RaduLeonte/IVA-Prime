@@ -59,13 +59,13 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ needs.get-info.outputs.version }}"
-          mv tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe tauri/iva-prime/src-tauri/target/release/bundle/nsis/IVA-Prime-${VERSION}-win64-setup.exe
+          mv tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe IVA-Prime-${VERSION}-win64-setup.exe
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: iva-prime-windows
-          path: tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe
+          path: IVA-Prime-${{ needs.get-info.outputs.version }}-win64-setup.exe
 
 
   build-macos-intel:
@@ -101,13 +101,13 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ needs.get-info.outputs.version }}"
-          mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/IVA-Prime-${VERSION}-macos-intel.dmg
+          mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg IVA-Prime-${VERSION}-macos-intel.dmg
 
       - name: Upload macOS Intel artifact
         uses: actions/upload-artifact@v4
         with:
           name: iva-prime-macos-intel
-          path: tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+          path: IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.dmg
 
 
   build-macos-arm:
@@ -143,13 +143,13 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ needs.get-info.outputs.version }}"
-          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/IVA-Prime-${VERSION}-macos-arm.dmg
+          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg IVA-Prime-${VERSION}-macos-arm.dmg
 
       - name: Upload macOS ARM artifact
         uses: actions/upload-artifact@v4
         with:
           name: iva-prime-macos-arm
-          path: tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+          path: IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.dmg
 
 
   build-linux:
@@ -189,20 +189,20 @@ jobs:
         run: |
           VERSION="${{ needs.get-info.outputs.version }}"
           # Rename AppImage
-          mv tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage tauri/iva-prime/src-tauri/target/release/bundle/appimage/IVA-Prime-${VERSION}-linux.AppImage || true
+          mv tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage IVA-Prime-${VERSION}-linux.AppImage || true
           # Rename DEB
-          mv tauri/iva-prime/src-tauri/target/release/bundle/deb/*.deb tauri/iva-prime/src-tauri/target/release/bundle/deb/IVA-Prime-${VERSION}-linux.deb || true
+          mv tauri/iva-prime/src-tauri/target/release/bundle/deb/*.deb IVA-Prime-${VERSION}-linux.deb || true
           # Rename RPM
-          mv tauri/iva-prime/src-tauri/target/release/bundle/rpm/*.rpm tauri/iva-prime/src-tauri/target/release/bundle/rpm/IVA-Prime-${VERSION}-linux.rpm || true
+          mv tauri/iva-prime/src-tauri/target/release/bundle/rpm/*.rpm IVA-Prime-${VERSION}-linux.rpm || true
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
           name: iva-prime-linux
           path: |
-            tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage
-            tauri/iva-prime/src-tauri/target/release/bundle/deb/*.deb
-            tauri/iva-prime/src-tauri/target/release/bundle/rpm/*.rpm
+            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.AppImage
+            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.deb
+            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm
 
 
   pre-release:
@@ -210,24 +210,58 @@ jobs:
     needs: [get-info, build-windows, build-macos-intel, build-macos-arm, build-linux]
     if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref == 'refs/heads/nightly-build' }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: iva-prime-windows
+          path: ./
+
+      - name: Download macOS Intel artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: iva-prime-macos-intel
+          path: ./
+
+      - name: Download macOS ARM artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: iva-prime-macos-arm
+          path: ./
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: iva-prime-linux
+          path: ./
+
+      - name: Generate SHA256 checksums
+        run: |
+          sha256sum *.AppImage > SHA256SUMS.txt
+          sha256sum *.deb >> SHA256SUMS.txt
+          sha256sum *.rpm >> SHA256SUMS.txt
+          sha256sum *.exe >> SHA256SUMS.txt
+          sha256sum *.dmg >> SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: List files
+        run: ls -rl
+
 
       - name: Update Nightly Release
         uses: andelf/nightly-release@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "nightly"
+          tag_name: nightly
           name: "Pre-release IVA Prime ${{ needs.get-info.outputs.version }}-${{ github.run_id }}"
           prerelease: true
           body: |
             Nightly build of the IVA Prime desktop app.
             This version might contain bugs and can be unstable compared to the full release!
           files: |
-            tauri/iva-prime/src-tauri/target/release/bundle/appimage/IVA-Prime-${{ needs.get-info.outputs.version }}-linux.AppImage
-            tauri/iva-prime/src-tauri/target/release/bundle/deb/IVA-Prime-${{ needs.get-info.outputs.version }}-linux.deb
-            tauri/iva-prime/src-tauri/target/release/bundle/rpm/IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm
-            tauri/iva-prime/src-tauri/target/release/bundle/nsis/IVA-Prime-${{ needs.get-info.outputs.version }}-win64-setup.exe
-            tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.dmg
-            tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.dmg
+            ./SHA256SUMS.txt
+            ./*.AppImage
+            ./*.deb
+            ./*.rpm
+            ./*.exe
+            ./*.dmg
