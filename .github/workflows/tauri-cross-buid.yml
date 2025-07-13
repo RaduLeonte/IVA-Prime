@@ -34,6 +34,12 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
+
+            - name: Get version from Cargo.toml
+              working-directory: tauri/iva-prime/src-tauri
+              run: |
+                VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml)
+                echo "VERSION=$VERSION" >> $GITHUB_ENV
             
             - name: Setup Node.js
               uses: actions/setup-node@v4
@@ -93,11 +99,6 @@ jobs:
               with:
                 projectPath: tauri/iva-prime
                 args: ${{ matrix.args }}
-
-            - name: Get version from Cargo.toml
-              run: |
-                VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml)
-                echo "VERSION=$VERSION" >> $GITHUB_ENV
 
             # Rename artifacts based on the matrix
             - name: Rename artifacts
