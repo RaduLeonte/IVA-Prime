@@ -32,13 +32,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
@@ -69,13 +69,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin
+
 
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
@@ -106,13 +109,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
 
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
@@ -122,7 +128,7 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         with:
           projectPath: tauri/iva-prime
-          args: '--target aarch64-apple-darwin'
+          args: '--target x86_64-apple-darwin'
 
       - name: Rename macOS ARM artifact
         shell: bash
@@ -142,23 +148,24 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
+        
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
 
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
         run: npm install
 
-      - name: Install Linux dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
