@@ -34,6 +34,14 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
+
+            - name: Get version from Cargo.toml
+              working-directory: tauri/iva-prime/src-tauri
+              shell: bash
+              run: |
+                VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml)
+                echo "VERSION=$VERSION" >> $GITHUB_ENV
+                echo "VERSION=$VERSION"
             
             - name: Setup Node.js
               uses: actions/setup-node@v4
@@ -93,6 +101,21 @@ jobs:
               with:
                 projectPath: tauri/iva-prime
                 args: ${{ matrix.args }}
+
+            # Rename artifacts based on the matrix
+            - name: Rename artifacts
+              shell: bash
+              run: |
+                VERSION="${{ env.VERSION }}"
+                if [ "${{ matrix.name }}" == "windows" ]; then
+                  mv tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe tauri/iva-prime/src-tauri/target/release/bundle/nsis/IVA_Prime_${VERSION}_win64_setup.exe
+                elif [ "${{ matrix.name }}" == "macos-arm64" ]; then
+                  mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/IVA_Prime_${VERSION}_macos_arm.dmg
+                elif [ "${{ matrix.name }}" == "macos-x64" ]; then
+                  mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/IVA_Prime_${VERSION}_macos_intel.dmg
+                elif [ "${{ matrix.name }}" == "linux" ]; then
+                  mv tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage tauri/iva-prime/src-tauri/target/release/bundle/appimage/IVA_Prime_${VERSION}_linux.AppImage
+                fi
 
             - name: Upload artifacts
               if: github.event_name != 'release'
