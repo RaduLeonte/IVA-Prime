@@ -96,7 +96,7 @@ jobs:
 
             - name: Get version from Cargo.toml
               run: |
-                VERSION=$(grep -oP '^version = "\K[0-9]+\.[0-9]+\.[0-9]+' Cargo.toml)
+                VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml)
                 echo "VERSION=$VERSION" >> $GITHUB_ENV
 
             # Rename artifacts based on the matrix
