@@ -37,6 +37,7 @@ jobs:
 
             - name: Get version from Cargo.toml
               working-directory: tauri/iva-prime/src-tauri
+              shell: bash
               run: |
                 VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml)
                 echo "VERSION=$VERSION" >> $GITHUB_ENV
