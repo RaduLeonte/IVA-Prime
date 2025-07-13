@@ -2,6 +2,11 @@ name: Build Tauri App
 
 on:
   workflow_dispatch:
+    inputs:
+      skip_build:
+        description: 'Skip the build jobs'
+        required: false
+        default: 'false'
   schedule:
     - cron: '0 0 * * *'
   pull_request:
@@ -30,6 +35,7 @@ jobs:
   build-windows:
     runs-on: windows-latest
     needs: get-info
+    if: ${{ github.event.inputs.skip_build != 'true' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -67,6 +73,7 @@ jobs:
   build-macos-intel:
     runs-on: macos-latest
     needs: get-info
+    if: ${{ github.event.inputs.skip_build != 'true' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -107,6 +114,7 @@ jobs:
   build-macos-arm:
     runs-on: macos-latest
     needs: get-info
+    if: ${{ github.event.inputs.skip_build != 'true' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -147,6 +155,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-22.04
     needs: get-info
+    if: ${{ github.event.inputs.skip_build != 'true' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -198,17 +207,10 @@ jobs:
   pre-release:
     runs-on: ubuntu-latest
     needs: [build-windows, build-macos-intel, build-macos-arm, build-linux]
+    if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Get version from Cargo.toml
-        working-directory: tauri/iva-prime/src-tauri
-        shell: bash
-        run: |
-          VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "VERSION=$VERSION"
 
       - name: Create Pre-Release
         id: create-release
