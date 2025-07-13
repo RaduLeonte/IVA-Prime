@@ -221,11 +221,13 @@ jobs:
           tag_name: "nightly"
           name: "Desktop App Nightly Release ${{ needs.get-info.outputs.version }}-${{ github.run_id }}"
           prerelease: true
-          body: "Nightly release for version ${{ needs.get-info.outputs.version }}"
+          body: |
+            Nightly build of the IVA Prime desktop app.
+            This version might contain bugs and can be unstable compared to the full release!
           files: |
             ./SHA256SUMS.txt
-            ./tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage
-            ./tauri/iva-prime/src-tauri/target/release/bundle/deb/*.deb
-            ./tauri/iva-prime/src-tauri/target/release/bundle/rpm/*.rpm
-            ./tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe
-            ./tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+            ./*.AppImage
+            ./*.deb
+            ./*.rpm
+            ./*.exe
+            ./*.dmg
