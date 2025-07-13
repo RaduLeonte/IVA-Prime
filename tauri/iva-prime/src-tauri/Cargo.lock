@@ -1967,6 +1967,7 @@ dependencies = [
  "base64 0.21.7",
  "fix-path-env",
  "log",
+ "once_cell",
  "serde",
  "serde_json",
  "tauri",
