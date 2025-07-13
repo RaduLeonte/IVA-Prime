@@ -225,9 +225,9 @@ jobs:
             Nightly build of the IVA Prime desktop app.
             This version might contain bugs and can be unstable compared to the full release!
           files: |
-            ./SHA256SUMS.txt
-            ./*.AppImage
-            ./*.deb
-            ./*.rpm
-            ./*.exe
-            ./*.dmg
+            tauri/iva-prime/src-tauri/target/release/bundle/appimage/IVA-Prime-${{ needs.get-info.outputs.version }}-linux.AppImage
+            tauri/iva-prime/src-tauri/target/release/bundle/deb/IVA-Prime-${{ needs.get-info.outputs.version }}-linux.deb
+            tauri/iva-prime/src-tauri/target/release/bundle/rpm/IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm
+            tauri/iva-prime/src-tauri/target/release/bundle/nsis/IVA-Prime-${{ needs.get-info.outputs.version }}-win64-setup.exe
+            tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.dmg
+            tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.dmg
