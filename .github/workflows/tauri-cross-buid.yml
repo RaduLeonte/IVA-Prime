@@ -104,6 +104,7 @@ jobs:
 
             # Rename artifacts based on the matrix
             - name: Rename artifacts
+              shell: bash
               run: |
                 VERSION="${{ env.VERSION }}"
                 if [ "${{ matrix.name }}" == "windows" ]; then
