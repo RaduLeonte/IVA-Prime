@@ -40,6 +40,7 @@ jobs:
               run: |
                 VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml)
                 echo "VERSION=$VERSION" >> $GITHUB_ENV
+                echo "VERSION=$VERSION"
             
             - name: Setup Node.js
               uses: actions/setup-node@v4
