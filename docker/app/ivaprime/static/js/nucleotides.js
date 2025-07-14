@@ -180,7 +180,7 @@ const Nucleotides = new class {
         // 1 letter codes to a string.
         let outputSequence = "";
         for (let i = 0; i < inputSequence.length - (inputSequence.length % 3); i += 3) {
-            outputSequence += Nucleotides.codonTable[inputSequence.slice(i, i+3)] ?? "X";
+            outputSequence += Nucleotides.codonTable[inputSequence.slice(i, i+3)] ?? "?";
         };
         return outputSequence;
     };
