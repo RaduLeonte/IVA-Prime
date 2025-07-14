@@ -1106,7 +1106,7 @@ const Modals = new class {
         input.setAttribute("max", targetPlasmid.sequence.length);
         input.setAttribute("step", "1");
         input.setAttribute("value", "1");
-        vGroup.appendChild("input")
+        vGroup.appendChild(input);
 
 
         const action = () => {
