@@ -347,6 +347,8 @@ class Plasmid {
         // Convert sequence index to array index
         newOrigin = parseInt(newOrigin) - 1;
 
+        const seqLen = this.sequence.length;
+
         // Shift sequences
         this.sequence = this.sequence.slice(newOrigin) + this.sequence.slice(0, newOrigin);
         this.complementarySequence = Nucleotides.complementary(this.sequence);
@@ -356,8 +358,8 @@ class Plasmid {
             const currentSpan = featureDict["span"];
 
             const newSpan = [
-                currentSpan[0] - newOrigin,
-                currentSpan[1] - newOrigin
+                (currentSpan[0] - newOrigin + seqLen) % seqLen,
+                (currentSpan[1] - newOrigin + seqLen) % seqLen
             ];
 
             this.features[featureId]["span"] = newSpan;
