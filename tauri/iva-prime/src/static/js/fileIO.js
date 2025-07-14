@@ -512,9 +512,11 @@ const FileIO = new class {
                         featureInfo["span"] = segment['@_range'].split("-").map((s) => parseInt(s));
                                 
                         // Extract color
-                        featureInfo["color"] = (UserPreferences.get("overwriteSnapGeneColors"))
-                        ? Utilities.getRandomDefaultColor()
-                        : segment['@_color'];
+                        featureInfo["color"] = (featureInfo["iva-color"])
+                            ? featureInfo["iva-color"]
+                            : (UserPreferences.get("overwriteSnapGeneColors"))
+                                ? Utilities.getRandomDefaultColor()
+                                : segment['@_color'];
 
                         featureInfo["translated"] = {"1": true}[segment['@_translated']] || false;
 
@@ -1228,7 +1230,7 @@ const FileIO = new class {
 
                 const directionalityMap = { "fwd": 1, "rev": 2, "both": 0 };
                 const keysToCheck = [
-                    "locus_tag", "note", "bound_moiety", "gene", "rpt_type", "translation",
+                    "locus_tag","note", "bound_moiety", "gene", "rpt_type", "translation",
                     "old_locus_tag", "product", "citation", "regulatory_class", "allele", "label",
                     "ncRNA_class", "db_xref", "direction", "mobile_element_type", "gene_synonym",
                     "codon_start", "standard_name", "protein_id", "map", "experiment", "function",
@@ -1240,15 +1242,22 @@ const FileIO = new class {
                     V: { [`@_${VType}`]: VValue },
                 });
 
-                for (const [i, feature] of Object.entries(features)) {
-                    const { label, directionality, type, span, color, translated, translationOffset = 0 } = feature;
+                let i = 0;
+                for (const [featureUUID, feature] of Object.entries(features)) {
+                    const { label, directionality, type, span, color, translated, translation, translationOffset = 0 } = feature;
 
                     const node = {
                         "@_recentID": i,
                         "@_name": label,
+                        ...(directionality && { "@_directionality": directionalityMap[directionality] }),
+                        ...((translated == true && translation) && { "@_translationMW": Number(Nucleotides.estimateProteinMW(translation)).toFixed(2) }),
                         "@_type": type,
-                        ...(directionality && { "@_directionality": directionalityMap[directionality] })
+                        "@_swappedSegmentNumbering": "1",
+                        "@_allowSegmentOverlaps": "0",
+                        ...((translated == true && directionality == "rev") && { "@_readingFrame": "-1" }),
+                        "@_consecutiveTranslationNumbering": "1",
                     };
+                    i++;
             
 
                     node.Segment = {
@@ -1256,12 +1265,17 @@ const FileIO = new class {
                         "@_color": color,
                         "@_type": "standard",
                         ...(translated && { "@_translated": 1 }),
-                        "@_translationNumberingStartsFrom": translationOffset
+                        ...(translationOffset != 0 && { "@_translationNumberingStartsFrom": translationOffset }),
                     };
 
                     const QNodes = keysToCheck
                         .filter(key => key in feature)
                         .map(key => makeQNode(key, Number.isInteger(feature[key]) ? "int" : "text", feature[key]));
+
+                        
+                    const ivaColorQNode = makeQNode("iva-color", "text", feature["color"]);
+                    QNodes.push(ivaColorQNode);
+                    QNodes.sort((a, b) => a['@_name'].localeCompare(b['@_name']));
 
                     // Only add QNodes if they exist
                     QNodes.length && (node.Q = QNodes);
@@ -1492,11 +1506,11 @@ const FileIO = new class {
                 const dateCreated = getValue("CREATED", new Date());
 
                 header += `LOCUS       ${targetPlasmid.name.padEnd(24, " ")} ${targetPlasmid.sequence.length} bp ds-DNA`.padEnd(30);
-                header += `${targetPlasmid.topology === "circular" ? "circular" : "linear"}`.padEnd(10);
+                header += ` ${targetPlasmid.topology === "circular" ? "circular" : "linear"}`.padEnd(10);
                 
                 const typeMapping = { "Synthetic": "SYN", "Natural": "UNA" };
                 header += typeMapping[getValue("TYPE", "").trim()] || "     ";
-                header += FileIO.formatToGBDate(dateCreated) + "\n";
+                header += " " + FileIO.formatToGBDate(dateCreated) + "\n";
 
                 ["DEFINITION", "ACCESSION", "VERSION", "KEYWORDS"].forEach(key => {
                     formatEntry(key, getValue(key));
@@ -1535,11 +1549,11 @@ const FileIO = new class {
                         : additionalInfo["REFERENCES"].value;
 
                     refsList.forEach((ref, index) => {
-                        header += `REFERENCE   ${index + 1} `.padEnd(leftColumnWidth, " ");
+                        header += `REFERENCE   ${String(index + 1).padEnd(2, ' ')} `.padEnd(leftColumnWidth, " ");
                         header += `(bases ${ref.span ? `${ref.span[0]} to ${ref.span[1]}` : `1 to ${targetPlasmid.sequence.length}`})\n`;
             
                         ["AUTHORS", "TITLE", "JOURNAL", "PUBMED"].forEach(key => {
-                            if (key in ref) formatEntry(`  ${key}`, ref[key]);
+                            if (key in ref) formatEntry(`  ${key}`, ref[key].replace(/<[^>]*>/g, ''));
                         });
                     });
                 }
@@ -1548,7 +1562,7 @@ const FileIO = new class {
                 // IVA Prime reference
                 if (!header.includes("IVA Prime")) {
                     const refIndex = ("REFERENCES" in additionalInfo) ? additionalInfo["REFERENCES"].length + 1 : 1;
-                    header += `REFERENCE   ${refIndex} (bases 1 to ${targetPlasmid.sequence.length})\n`;
+                    header += `REFERENCE   ${String(refIndex).padEnd(2, ' ')} (bases 1 to ${targetPlasmid.sequence.length})\n`;
                     header += `AUTHORS     .\n`;
                     header += `TITLE       .\n`;
                     header += `JOURNAL     Exported with IVA Prime :)\n`;
@@ -1575,6 +1589,8 @@ const FileIO = new class {
 
 
                 featuresText += `     source          1..${targetPlasmid.sequence.length}\n`;
+                featuresText += `                     /mol_type="other DNA"\n`;
+                featuresText += `                     /organism="synthetic DNA construct"\n`;
 
 
                 for (const [key, feature] of Object.entries(features)) {
@@ -1584,21 +1600,39 @@ const FileIO = new class {
 
                     const location = feature["directionality"] === "fwd"
                         ? `${feature["span"][0]}..${feature["span"][1]}`
-                        : `complement(${feature["span"][0]+1}..${feature["span"][1]+1})`;
+                        : `complement(${feature["span"][0]}..${feature["span"][1]})`;
     
                         featuresText += "     " + feature["type"].padEnd(leftColumnWidth - 5) + location + "\n";
 
                     Object.entries(feature).forEach(([propKey, propValue]) => {
-                        if (["directionality", "level", "span", "type"].includes(propKey)) return;
-            
-                        let propertyString = `/${propKey}=`;
-                        propertyString += (propKey !== "label" && !Number.isInteger(propValue)) ? `"${propValue}"` : propValue;
-            
-                        // Format and wrap property text
-                        const propertyLines = FileIO.breakStringIntoLines(propertyString, rightColumnWidth);
+                        if (["directionality", "level", "span", "type", "color", "transl_table"].includes(propKey)) return;
+
+                        if (propKey == "translated" && propValue == false) return;
+                        if (propKey == "translated" && propValue == true && feature["translation"]) return;
+                        if (propKey == "translationOffset" && propValue == 0) return;
+
+                        if (propKey == "translation") propValue = propValue.replace("*", "");
+
                         
-                        featuresText += " ".repeat(leftColumnWidth) + propertyLines.join("\n" + " ".repeat(leftColumnWidth)) + "\n";
                         if (String(propValue).length > 0) {
+                            propValue = (!["label", "direction"].includes(propKey) && !Number.isInteger(propValue)) ? `"${propValue}"` : propValue;
+
+                            let propertyString = `/${propKey}=`;
+                            propertyString += propValue;
+                
+                            // Format and wrap property text
+                            const propertyLines = FileIO.breakStringIntoLines(propertyString, rightColumnWidth - 1);
+                            
+                            featuresText += " ".repeat(leftColumnWidth) + propertyLines.join("\n" + " ".repeat(leftColumnWidth)) + "\n";
+                        };
+
+                        if (propKey == "note") {
+                            // Write color property
+                            const color = feature["color"];
+                            const customeNoteString = `/note="color: ${color}; iva-color: ${color}"`
+                            const customNoteLines = FileIO.breakStringIntoLines(customeNoteString, rightColumnWidth - 1);
+                            featuresText += " ".repeat(leftColumnWidth) + customNoteLines.join("\n" + " ".repeat(leftColumnWidth)) + "\n";
+                        };
                     });
 
                 };
@@ -1633,9 +1667,9 @@ const FileIO = new class {
                     });
 
             
-                    sequenceText += `${indexSegment} ${segments.join(" ")}\n`;
-                }
-                sequenceText += "//"
+                    sequenceText += `${indexSegment} ${segments.filter(str => str.trim() !== "").join(" ")}\n`;
+                };
+                sequenceText += "//\n"
 
                 return sequenceText;
             };
