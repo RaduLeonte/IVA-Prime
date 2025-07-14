@@ -234,6 +234,9 @@ class Plasmid {
         PlasmidViewer.redraw();
         // Update sidebar
         Sidebar.update();
+        // Update plasmid tab
+        const plasmidTab = document.querySelector(`div#plasmid-tab-${this.index}`);
+        plasmidTab.firstElementChild.innerText = this.name + this.extension;
 
         // Update state tracker
         this.stateIndex = stateIndex;
@@ -279,7 +282,7 @@ class Plasmid {
 
         // Update plasmid tab
         const plasmidTab = document.querySelector(`div#plasmid-tab-${this.index}`);
-        plasmidTab.firstElementChild.innerText = this.name + this.extension
+        plasmidTab.firstElementChild.innerText = this.name + this.extension;
         
         // If we're renaming the currently active plasmid, redraw the circular and linear
         // views since they display the plasmid name
