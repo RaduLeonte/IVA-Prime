@@ -1559,12 +1559,15 @@ const PlasmidViewer = new class {
             featuresInLevel.forEach(currFeatureID => {
                 const featureDict = segment.features[currFeatureID];
 
+                if (featureDict.span[0] - 1 == featureDict.span[1]) return;
+
+                
                 let featureLengthPixels = seqToPixel(featureDict.span[1]) - seqToPixel(featureDict.span[0] - 1);
                 featureLengthPixels -= featureDict["shape-left"] !== null ? 10 : 0;
                 featureLengthPixels -= featureDict["shape-right"] !== null ? 10 : 0;
                 
                 const featureLabel = this._fitTextInRectangle(featureDict.label, featureLengthPixels, "svg-feature-label-black");
-
+                
                 const featureElement = this._gridFeature(
                     currFeatureID,
                     [seqToPixel(featureDict.span[0] - 1), seqToPixel(featureDict.span[1])],
@@ -1647,7 +1650,7 @@ const PlasmidViewer = new class {
         
         const featureArrowWidth = featureHeight; //px
         const featureHeadMinWidth = 10; //px
-        const featureBodyHeadRatio = 0.9;
+        const featureBodyHeadRatio = 0.5;
 
         const textHeight = 21; // px approx
         

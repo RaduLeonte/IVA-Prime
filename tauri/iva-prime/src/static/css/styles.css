@@ -61,7 +61,7 @@
   --base-search-highlight: #ff4081;
   --base-sub: #de4d96;
   --base-sub-border: #ffc6e8;
-  --selection-cursor: #adaa0d;
+  --selection-cursor: #fffc4e;
 
   /* ------ Misc ------ */
   --shadow-color: #00000066;
@@ -2352,6 +2352,9 @@ html[data-theme="dark"] .boolean-switch-slider:before {
 }
 .context-menu-item[disabled] {
   opacity: 15%;
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
 }
 .context-menu-item:not([disabled]):hover {
   background-color: var(--bg-hover);

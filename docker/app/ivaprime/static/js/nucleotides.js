@@ -180,7 +180,7 @@ const Nucleotides = new class {
         // 1 letter codes to a string.
         let outputSequence = "";
         for (let i = 0; i < inputSequence.length - (inputSequence.length % 3); i += 3) {
-            outputSequence += Nucleotides.codonTable[inputSequence.slice(i, i+3)]
+            outputSequence += Nucleotides.codonTable[inputSequence.slice(i, i+3)] ?? "?";
         };
         return outputSequence;
     };
@@ -545,5 +545,31 @@ const Nucleotides = new class {
 
 
         return detectedFeatures;
+    };
+
+
+    estimateProteinMW(sequence) {
+        const aaMass = {
+            A: 71.08, R: 156.19, N: 114.11, D: 115.09, C: 103.15,
+            Q: 128.14, E: 129.12, G: 57.05, H: 137.14, I: 113.16,
+            L: 113.16, K: 128.17, M: 131.19, F: 147.18, P: 97.12,
+            S: 87.08, T: 101.11, W: 186.21, Y: 163.18, V: 99.13
+        };
+        const WATER_MASS = 18.015; // Average isotopic mass of water (H2O), in Da
+
+        sequence = this.sanitizeAASequence(sequence);
+
+        let mass = 0;
+        for (let i = 0; i < sequence.length; i++) {
+            const aa = sequence[i];
+            if (aaMass[aa]) mass += aaMass[aa];
+        };
+
+        // Add the average isotopic mass of one water molecule
+        if (sequence.length > 0) {
+            mass += WATER_MASS;
+        };
+
+        return mass; // in Daltons (Da)
     };
 };

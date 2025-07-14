@@ -206,6 +206,12 @@ const ContextMenu = new class {
 
                     // Attach click event for regular menu items
                     menuItem.addEventListener("click", () => {
+                        if (menuItem.hasAttribute("disabled")) {
+                            // Prevent action and optionally stop event propagation
+                            e.stopPropagation();
+                            e.preventDefault();
+                            return;
+                        };
                         ContextMenu.hide();
                         entry.action();
                     });
