@@ -23,9 +23,10 @@ jobs:
       - name: Get time of last successful scheduled run
         id: last_run
         run: |
-          LAST_RUN=$(gh run list --workflow="Build Tauri App" --branch=master --event=schedule --json startedAt,status,conclusion --limit 10 \
+          LAST_RUN=$(gh run list --repo "${{ github.repository }}" --workflow="Build Tauri App" --branch=master --event=schedule --json startedAt,status,conclusion --limit 10 \
             | jq -r '[.[] | select(.status=="completed" and .conclusion=="success")][0].startedAt')
           echo "last_run=$LAST_RUN" >> $GITHUB_OUTPUT
+          echo "last_run=$LAST_RUN"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -33,8 +34,8 @@ jobs:
         id: check_commits
         run: |
           if [ -z "${{ steps.last_run.outputs.last_run }}" ]; then
-            # No previous run, always build!
             echo "should_build=true" >> $GITHUB_OUTPUT
+            echo "No previous run -> build"
             exit 0
           fi
           COMMITS=$(gh api repos/${{ github.repository }}/commits \
@@ -44,8 +45,10 @@ jobs:
           echo "Number of new commits: $COMMITS"
           if [ "$COMMITS" -gt "0" ]; then
             echo "should_build=true" >> $GITHUB_OUTPUT
+            echo "New commits -> build"
           else
             echo "should_build=false" >> $GITHUB_OUTPUT
+            echo "No new commits -> do not build"
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
