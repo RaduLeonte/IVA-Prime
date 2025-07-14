@@ -1850,11 +1850,26 @@ const FileIO = new class {
             if (node.nodeType === Node.ELEMENT_NODE) {
                 const computedStyles = window.getComputedStyle(node);
                 let inlineStyles = "";
+
+                let stylesToApply = [
+                    "background-color",
+                    "font-weight",
+                    "font-family",
+                    "font-size",
+                    "text-align",
+                    "border",
+                    "padding",
+                    "margin"
+                ];
+
+                // Only apply color if the node is the primer sequence (requires white text)
+                if (node.tagName === "SPAN" && node.classList.contains("primer-sequence")) {
+                    stylesToApply.unshift("color");
+                };
     
-                ["color", "background-color", "font-weight", "font-family", "font-size", "text-align", "border", "padding", "margin"]
-                    .forEach(style => {
-                        inlineStyles += `${style}: ${computedStyles.getPropertyValue(style)}; `;
-                    });
+                stylesToApply.forEach(style => {
+                    inlineStyles += `${style}: ${computedStyles.getPropertyValue(style)}; `;
+                });
     
                 node.setAttribute("style", inlineStyles);
     
