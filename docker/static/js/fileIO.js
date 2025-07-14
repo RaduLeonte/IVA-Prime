@@ -954,8 +954,22 @@ const FileIO = new class {
                         if (!isNaN(value) && Number.isInteger(Number(value))) {
                             value = parseInt(value, 10);
                         };
-            
-                        featureDict[key] = value;
+
+                        // If there is a second /note entry, then it contains
+                        // some special properties (like color)
+                        if (key == "note") {
+                            let ivaColorMatch = value.match(/iva-color:\s*(#([A-Fa-f0-9]{6}))/);
+                            let colorMatch = value.match(/color:\s*(#([A-Fa-f0-9]{6}))/);
+                            if (ivaColorMatch) {
+                                featureDict["color"] = ivaColorMatch[1];
+                            } else if (colorMatch) {
+                                featureDict["color"] = colorMatch[1];
+                            } else {
+                                featureDict[key] = value;
+                            };
+                        } else {
+                            featureDict[key] = value;
+                        };
                     };
 
                     
@@ -1566,6 +1580,8 @@ const FileIO = new class {
                 for (const [key, feature] of Object.entries(features)) {
                     if (key == "LOCUS") continue;
 
+                    feature["note"] ??= "";
+
                     const location = feature["directionality"] === "fwd"
                         ? `${feature["span"][0]}..${feature["span"][1]}`
                         : `complement(${feature["span"][0]+1}..${feature["span"][1]+1})`;
@@ -1581,8 +1597,27 @@ const FileIO = new class {
                         // Format and wrap property text
                         const propertyLines = FileIO.breakStringIntoLines(propertyString, rightColumnWidth);
                         
-                        featuresText += " ".repeat(leftColumnWidth) + propertyLines.join("\n" + " ".repeat(leftColumnWidth)) + "\n";
+                        if (String(propValue).length > 0) {
+                            propValue = (!["label", "direction"].includes(propKey) && !Number.isInteger(propValue)) ? `"${propValue}"` : propValue;
+
+                            let propertyString = `/${propKey}=`;
+                            propertyString += propValue;
+                
+                            // Format and wrap property text
+                            const propertyLines = FileIO.breakStringIntoLines(propertyString, rightColumnWidth - 1);
+                            
+                            featuresText += " ".repeat(leftColumnWidth) + propertyLines.join("\n" + " ".repeat(leftColumnWidth)) + "\n";
+                        };
+
+                        if (propKey == "note") {
+                            // Write color property
+                            const color = feature["color"];
+                            const customeNoteString = `/note="color: ${color}; iva-color: ${color}"`
+                            const customNoteLines = FileIO.breakStringIntoLines(customeNoteString, rightColumnWidth - 1);
+                            featuresText += " ".repeat(leftColumnWidth) + customNoteLines.join("\n" + " ".repeat(leftColumnWidth)) + "\n";
+                        };
                     });
+
                 };
 
                 return featuresText;
@@ -1613,6 +1648,7 @@ const FileIO = new class {
                         const start = i * basesPerLine + j * basesPerSegment;
                         return sequence.slice(start, start + basesPerSegment);
                     });
+
             
                     sequenceText += `${indexSegment} ${segments.join(" ")}\n`;
                 }
