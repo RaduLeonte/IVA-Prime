@@ -1647,7 +1647,7 @@ const PlasmidViewer = new class {
         
         const featureArrowWidth = featureHeight; //px
         const featureHeadMinWidth = 10; //px
-        const featureBodyHeadRatio = 0.9;
+        const featureBodyHeadRatio = 0.5;
 
         const textHeight = 21; // px approx
         
