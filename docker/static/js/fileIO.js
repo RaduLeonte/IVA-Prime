@@ -922,7 +922,7 @@ const FileIO = new class {
                     featureDict["directionality"] = featureInfoLines[0].includes("complement") ? "rev" : "fwd";
                     featureDict["span"] = (featureDict["directionality"] === "fwd")
                         ? [parseInt(featureSpanMatch[1], 10), parseInt(featureSpanMatch[2], 10)]
-                        : [parseInt(featureSpanMatch[1], 10) - 1, parseInt(featureSpanMatch[2], 10) - 1];
+                        : [parseInt(featureSpanMatch[1], 10), parseInt(featureSpanMatch[2], 10)];
 
                     const featureInfo = [];
                     let currentInfoString = "";
@@ -2152,4 +2152,12 @@ const FileIO = new class {
             loadingWrapper.parentNode.removeChild(loadingWrapper);
         };
     };
+};
+
+
+if (Utilities.isTauriApp()) {
+    document.addEventListener("DOMContentLoaded", (event) => {
+        window.isReady = true;
+        window.__TAURI__.event.emit('window-ready')
+    });
 };
