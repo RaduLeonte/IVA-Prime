@@ -10,7 +10,7 @@ use tauri_plugin_log::{Target, TargetKind};
 
 use tauri::{Manager, WebviewWindow, Listener};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
 use base64::{engine::general_purpose, Engine};
