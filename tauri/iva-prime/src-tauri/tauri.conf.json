@@ -17,7 +17,8 @@
         "minWidth": 1000,
         "minHeight": 600,
         "resizable": true,
-        "devtools": true
+        "devtools": true,
+        "acceptFirstMouse": true
       }
     ],
     "withGlobalTauri": true
@@ -32,21 +33,21 @@
       {
         "description": "GenBank Record",
         "ext": ["gb", "gbk"],
-        "mimeType": "text/plain",
+        "mimeType": "application/x-genbank",
         "rank": "Default",
         "role": "Editor"
       },
       {
         "description": "SnapGene Map",
         "ext": ["dna"],
-        "mimeType": "application/octet-stream",
+        "mimeType": "application/x-dna",
         "rank": "Alternate",
         "role": "Editor"
       },
       {
         "description": "FASTA Sequence",
         "ext": ["fasta"],
-        "mimeType": "text/plain",
+        "mimeType": "application/x-fasta",
         "rank": "Default",
         "role": "Editor"
       }
@@ -91,6 +92,24 @@
       "hardenedRuntime": true,
       "minimumSystemVersion": "10.13",
       "signingIdentity": "-"
+    },
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": false,
+        "files": {}
+      },
+      "deb": {
+        "files": {
+          "usr/share/mime/packages/iva-prime-mime.xml": "iva-prime-mime.xml"
+        },
+        "postInstallScript": "scripts/postinst",
+        "preRemoveScript": "scripts/prerm"
+      },
+      "rpm": {
+        "epoch": 0,
+        "files": {},
+        "release": "1"
+      }
     }
   }
 }

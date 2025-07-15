@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-genbank">
+    <comment>GenBank Record</comment>
+    <glob pattern="*.gb"/>
+    <glob pattern="*.gbk"/>
+    <magic priority="50">
+        <match type="string" value="LOCUS" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-dna">
+    <comment>SnapGene Map</comment>
+    <glob pattern="*.dna"/>
+  </mime-type>
+  <mime-type type="application/x-fasta">
+    <comment>FASTA Sequence</comment>
+    <glob pattern="*.fasta"/>
+  </mime-type>
+</mime-info>
