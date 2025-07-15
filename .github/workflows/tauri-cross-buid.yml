@@ -81,6 +81,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -119,6 +124,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -162,6 +172,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -203,6 +218,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
         
       - name: Install Linux dependencies
         run: |
