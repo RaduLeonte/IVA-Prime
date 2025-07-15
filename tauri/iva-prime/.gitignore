@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Assets folder (assets are migrated from Django project when building)
+src/
