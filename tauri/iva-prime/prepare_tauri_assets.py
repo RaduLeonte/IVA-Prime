@@ -1,13 +1,12 @@
-import os 
 import re
-import shutil
 from pathlib import Path
+import shutil
 
 
 print(f"Preparing tauri assets...")
 
 # Working dir is always inside tauri project folder
-working_dir = Path(os.getcwd())
+working_dir = Path.cwd()
 project_path = working_dir.parent.parent
 
 # Paths
@@ -16,6 +15,8 @@ DJANGO_STATICS = project_path / "docker/app/ivaprime/static/"
 TAURI_SRC = project_path / "tauri/iva-prime/src/"
 TAURI_STATICS = TAURI_SRC / "static"
 
+# Ensure src/ exists before cleaning or copying
+TAURI_SRC.mkdir(parents=True, exist_ok=True)
 
 # Delete everything in TAURI_SRC
 for item in TAURI_SRC.iterdir():
