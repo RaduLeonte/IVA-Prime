@@ -215,10 +215,29 @@ async fn open_about_window(app: tauri::AppHandle) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let exe_dir: PathBuf = std::env::current_exe()
-        .ok()
-        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
-        .unwrap_or_else(|| PathBuf::from("."));
+    #[cfg(target_os = "linux")]
+    pub fn get_log_dir() -> PathBuf {
+        // Get the XDG_CONFIG_HOME or fall back to ~/.config if not set
+        let config_dir = std::env::var("XDG_CONFIG_HOME")
+            .map(PathBuf::from) // Convert the String to PathBuf
+            .unwrap_or_else(|_| dirs::home_dir().unwrap_or_else(|| PathBuf::from("~")).join(".config"));
+
+        config_dir.join("iva-prime").join("logs")
+    }
+
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    pub fn get_log_dir() -> PathBuf {
+        // Get the current executable's directory
+        let exe_dir = std::env::current_exe()
+            .map(|p| p.parent().unwrap_or_else(|| Path::new(".")).to_path_buf())
+            .unwrap_or_else(|_| PathBuf::from("."));
+
+        // Return the log directory (inside the executable's directory)
+        exe_dir.join("logs")
+    }
+
+    // Determine the log directory based on the OS
+    let log_dir = get_log_dir();
 
     tauri::Builder::default()
         // Plugins
@@ -234,7 +253,7 @@ pub fn run() {
                         Target::new(TargetKind::Stdout),
                         Target::new(
                             TargetKind::Folder {
-                                path: exe_dir,
+                                path: log_dir.clone(),
                                 file_name: None,
                           }
                         ),
@@ -265,8 +284,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![open_about_window])
 
         // App setup
-        .setup(|app| {
-            log::info!("Logs path -> {:?}", std::env::current_exe().unwrap().parent().unwrap());
+        .setup(move |app| {
+            log::info!("Logs path -> {:?}", log_dir);
             log::info!("App is starting...!");
             
             let app_handle = app.app_handle().clone();
