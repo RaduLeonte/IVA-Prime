@@ -24,8 +24,8 @@
     "withGlobalTauri": true
   },
   "build": {
-    "beforeBuildCommand": "python prepare_tauri_assets.py",
-    "beforeDevCommand": "python prepare_tauri_assets.py",
+    "beforeBuildCommand": "python prepare_tauri_assets.py || python3 prepare_tauri_assets.py",
+    "beforeDevCommand": "python prepare_tauri_assets.py || python3 prepare_tauri_assets.py",
     "frontendDist": "../src"
   },
   "bundle": {
