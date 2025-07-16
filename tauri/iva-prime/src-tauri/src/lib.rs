@@ -301,6 +301,13 @@ pub fn run() {
                         format!("Logs path -> {:?}", std::env::current_exe().unwrap().parent().unwrap())
                     );
 
+                    let _ = main_window.set_title(
+                        &format!(
+                            "IVA Prime v{}",
+                            app_handle.package_info().version.to_string()
+                        )
+                    );
+
                     let files = {
                         let mut pending = PENDING_FILES.lock().unwrap();
                         std::mem::take(&mut *pending)
