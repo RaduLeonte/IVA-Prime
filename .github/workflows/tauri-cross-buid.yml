@@ -1,82 +1,77 @@
 name: Build Tauri App
 
 on:
-  workflow_dispatch:
-  schedule:
+  workflow_dispatch: # Manual trigger: on PR -> no pre-release or on master -> pre-release
+  schedule: # Nightly build
     - cron: '0 0 * * *'
-  pull_request:
+  pull_request: # PR
     branches:
       - master
-  release:
+  release: # Full release
     types: [published]
 
 
 jobs:
-  check-new-commits:
-    runs-on: ubuntu-latest
-    outputs:
-      should_build: ${{ steps.check_commits.outputs.should_build }}
-    steps:
-      - name: Install GitHub CLI
-        run: sudo apt-get update && sudo apt-get install -y gh jq
-
-      - name: Get time of last successful scheduled run
-        id: last_run
-        run: |
-          LAST_RUN=$(gh run list --repo "${{ github.repository }}" --workflow="Build Tauri App" --branch=master --event=schedule --json startedAt,status,conclusion --limit 10 \
-            | jq -r '[.[] | select(.status=="completed" and .conclusion=="success")][0].startedAt')
-          echo "last_run=$LAST_RUN" >> $GITHUB_OUTPUT
-          echo "last_run=$LAST_RUN"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check for new commits since last nightly
-        id: check_commits
-        run: |
-          if [ -z "${{ steps.last_run.outputs.last_run }}" ]; then
-            echo "should_build=true" >> $GITHUB_OUTPUT
-            echo "No previous run -> build"
-            exit 0
-          fi
-          COMMITS=$(gh api repos/${{ github.repository }}/commits \
-            -F sha=master \
-            -F since="${{ steps.last_run.outputs.last_run }}" \
-            | jq 'length')
-          echo "Number of new commits: $COMMITS"
-          if [ "$COMMITS" -gt "0" ]; then
-            echo "should_build=true" >> $GITHUB_OUTPUT
-            echo "New commits -> build"
-          else
-            echo "should_build=false" >> $GITHUB_OUTPUT
-            echo "No new commits -> do not build"
-          fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
   get-info:
     runs-on: ubuntu-latest
-    needs: check-new-commits
-    if: github.event_name != 'schedule' || needs.check-new-commits.outputs.should_build == 'true'
     outputs:
       version: ${{ steps.get_version.outputs.version }}
+      should_build: ${{ steps.decide_should_build.outputs.should_build }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Get version from Cargo.toml
+
+      - name: Get version from Cargo.toml and context
         id: get_version
         working-directory: tauri/iva-prime/src-tauri
         shell: bash
         run: |
           VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          if [ "${{ github.event_name }}" = "release" ]; then
+            FINAL_VERSION="$VERSION"
+          else
+            FINAL_VERSION="$VERSION-pre-release-${{ github.run_id }}"
+          fi
+          echo "version=$FINAL_VERSION" >> $GITHUB_OUTPUT
+          echo "version=$FINAL_VERSION"
+
+  
+      - name: Decide whether to build
+        id: decide_should_build
+        run: |
+          echo "GitHub event: ${{ github.event_name }}"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            sudo apt-get update && sudo apt-get install -y gh jq
+            LAST_RUN=$(gh run list --repo "${{ github.repository }}" --workflow="Build Tauri App" --branch=master --event=schedule --json startedAt,status,conclusion --limit 10 | jq -r '[.[] | select(.status=="completed" and .conclusion=="success")][0].startedAt')
+            echo "Last successful scheduled run: $LAST_RUN"
+            if [ -z "$LAST_RUN" ] || [ "$LAST_RUN" == "null" ]; then
+              echo "should_build=true" >> $GITHUB_OUTPUT
+              echo "No previous run -> build"
+              exit 0
+            fi
+            COMMITS=$(gh api repos/${{ github.repository }}/commits -F sha=master -F since="$LAST_RUN" | jq 'length')
+            echo "Number of new commits: $COMMITS"
+            if [ "$COMMITS" -gt "0" ]; then
+              echo "should_build=true" >> $GITHUB_OUTPUT
+              echo "New commits -> build"
+            else
+              echo "should_build=false" >> $GITHUB_OUTPUT
+              echo "No new commits since last scheduled run -> skipping build"
+              exit 0
+            fi
+          else
+            echo "Non-scheduled run (PR, dispatch, release, etc) -> always build"
+            echo "should_build=true" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
   build-windows:
     runs-on: windows-latest
-    needs: [get-info, check-new-commits]
-    if: github.event_name != 'schedule' || needs.check-new-commits.outputs.should_build == 'true'
+    needs: [get-info]
+    if: needs.get-info.outputs.should_build == 'true'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -98,11 +93,17 @@ jobs:
         working-directory: tauri/iva-prime
         run: npm install
 
+      - name: Set npm version
+        working-directory: tauri/iva-prime
+        shell: bash
+        run: npm version "${{ needs.get-info.outputs.version }}"
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         with:
           projectPath: tauri/iva-prime
-          args: '--bundles nsis'
+          args: >-
+            --bundles nsis -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
       - name: Rename Windows artifact
         shell: bash
@@ -119,8 +120,8 @@ jobs:
 
   build-macos-intel:
     runs-on: macos-latest
-    needs: [get-info, check-new-commits]
-    if: github.event_name != 'schedule' || needs.check-new-commits.outputs.should_build == 'true'
+    needs: [get-info]
+    if: needs.get-info.outputs.should_build == 'true'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -140,16 +141,21 @@ jobs:
         with:
           targets: x86_64-apple-darwin
 
-
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
         run: npm install
+
+      - name: Set npm version
+        working-directory: tauri/iva-prime
+        shell: bash
+        run: npm version "${{ needs.get-info.outputs.version }}"
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         with:
           projectPath: tauri/iva-prime
-          args: '--target x86_64-apple-darwin --bundles dmg'
+          args: >-
+            --target x86_64-apple-darwin --bundles dmg -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
       - name: Rename macOS Intel artifact
         shell: bash
@@ -166,8 +172,8 @@ jobs:
 
   build-macos-arm:
     runs-on: macos-latest
-    needs: [get-info, check-new-commits]
-    if: github.event_name != 'schedule' || needs.check-new-commits.outputs.should_build == 'true'
+    needs: [get-info]
+    if: needs.get-info.outputs.should_build == 'true'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -187,16 +193,21 @@ jobs:
         with:
           targets: aarch64-apple-darwin
 
-
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
         run: npm install
+
+      - name: Set npm version
+        working-directory: tauri/iva-prime
+        shell: bash
+        run: npm version "${{ needs.get-info.outputs.version }}"
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         with:
           projectPath: tauri/iva-prime
-          args: '--target aarch64-apple-darwin --bundles dmg'
+          args: >-
+            --target aarch64-apple-darwin --bundles dmg -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
       - name: Rename macOS ARM artifact
         shell: bash
@@ -213,8 +224,8 @@ jobs:
 
   build-linux:
     runs-on: ubuntu-22.04
-    needs: [get-info, check-new-commits]
-    if: github.event_name != 'schedule' || needs.check-new-commits.outputs.should_build == 'true'
+    needs: [get-info]
+    if: needs.get-info.outputs.should_build == 'true'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -241,12 +252,17 @@ jobs:
         working-directory: tauri/iva-prime
         run: npm install
 
+      - name: Set npm version
+        working-directory: tauri/iva-prime
+        shell: bash
+        run: npm version "${{ needs.get-info.outputs.version }}"
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         with:
           projectPath: tauri/iva-prime
-          args: '--bundles deb,rpm'
+          args: >-
+            --bundles deb,rpm -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
       - name: Rename Linux artifact
         shell: bash
@@ -271,11 +287,8 @@ jobs:
 
   pre-release:
     runs-on: ubuntu-latest
-    needs: [get-info, check-new-commits, build-windows, build-macos-intel, build-macos-arm, build-linux]
-    if: >-
-      (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
-      && github.ref == 'refs/heads/master'
-      && (github.event_name != 'schedule' || needs.check-new-commits.outputs.should_build == 'true')
+    needs: [get-info, build-windows, build-macos-intel, build-macos-arm, build-linux]
+    if: (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') || (github.event_name == 'schedule' && needs.get-info.outputs.should_build == 'true')
     steps:
       - name: Download Windows artifact
         uses: actions/download-artifact@v4
@@ -320,7 +333,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: nightly
-          name: "IVA Prime v${{ needs.get-info.outputs.version }}-pre-release-${{ github.run_id }}"
+          name: "IVA Prime v${{ needs.get-info.outputs.version }}"
           prerelease: true
           body: |
             Nightly build of the IVA Prime desktop app.
@@ -332,3 +345,57 @@ jobs:
             ./*.rpm
             ./*.exe
             ./*.dmg
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [get-info, build-windows, build-macos-intel, build-macos-arm, build-linux]
+    if: github.event_name == 'release'
+    steps:
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: iva-prime-windows
+          path: ./
+
+      - name: Download macOS Intel artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: iva-prime-macos-intel
+          path: ./
+
+      - name: Download macOS ARM artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: iva-prime-macos-arm
+          path: ./
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: iva-prime-linux
+          path: ./
+
+      - name: Generate SHA256 checksums
+        run: |
+          sha256sum *.AppImage > SHA256SUMS.txt || true
+          sha256sum *.deb >> SHA256SUMS.txt || true
+          sha256sum *.rpm >> SHA256SUMS.txt || true
+          sha256sum *.exe >> SHA256SUMS.txt || true
+          sha256sum *.dmg >> SHA256SUMS.txt || true
+          cat SHA256SUMS.txt
+
+      - name: List files
+        run: ls -rl
+
+      - name: Upload assets to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ./SHA256SUMS.txt
+            ./*.AppImage
+            ./*.deb
+            ./*.rpm
+            ./*.exe
+            ./*.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
