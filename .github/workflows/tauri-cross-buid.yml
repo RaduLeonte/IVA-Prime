@@ -16,13 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get_version.outputs.version }}
-      should_build: ${{ steps.check_for_new_commits.outputs.new_commits }}
+      should_build: ${{ steps.decide_should_build.outputs.should_build }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        
-      - name: Install GitHub CLI
-        run: sudo apt-get update && sudo apt-get install -y gh jq
+
 
       - name: Get version from Cargo.toml and context
         id: get_version
@@ -39,8 +37,8 @@ jobs:
           echo "version=$FINAL_VERSION"
 
   
-      - name: Check for new commits since last nightly (only for schedule)
-        id: check_for_new_commits
+      - name: Decide whether to build
+        id: decide_should_build
         run: |
           echo "GitHub event: ${{ github.event_name }}"
           if [ "${{ github.event_name }}" = "schedule" ]; then
