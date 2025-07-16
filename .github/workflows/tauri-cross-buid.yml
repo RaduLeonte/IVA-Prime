@@ -103,7 +103,7 @@ jobs:
         with:
           projectPath: tauri/iva-prime
           args: >-
-            --bundles nsis -c "{\"version\": \"${{ needs.get-info.outputs.version }}\"}"
+            --bundles nsis -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
       - name: Rename Windows artifact
         shell: bash
@@ -155,7 +155,7 @@ jobs:
         with:
           projectPath: tauri/iva-prime
           args: >-
-            --target x86_64-apple-darwin --bundles dmg -c "{\"version\": \"${{ needs.get-info.outputs.version }}\"}"
+            --target x86_64-apple-darwin --bundles dmg -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
       - name: Rename macOS Intel artifact
         shell: bash
@@ -207,7 +207,7 @@ jobs:
         with:
           projectPath: tauri/iva-prime
           args: >-
-            --target aarch64-apple-darwin --bundles dmg -c "{\"version\": \"${{ needs.get-info.outputs.version }}\"}"
+            --target aarch64-apple-darwin --bundles dmg -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
       - name: Rename macOS ARM artifact
         shell: bash
@@ -262,7 +262,7 @@ jobs:
         with:
           projectPath: tauri/iva-prime
           args: >-
-            --bundles deb,rpm -c "{\"version\": \"${{ needs.get-info.outputs.version }}\"}"
+            --bundles deb,rpm -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
       - name: Rename Linux artifact
         shell: bash
