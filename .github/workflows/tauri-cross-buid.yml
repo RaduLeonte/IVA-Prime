@@ -173,10 +173,7 @@ jobs:
         run: |
           VERSION="${{ needs.get-info.outputs.version }}"
           
-          # Rename app
-          mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app IVA-Prime-${VERSION}-macos-intel.app || true
-          
-          # Rename app updater
+          # Rename app archive
           mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz IVA-Prime-${VERSION}-macos-intel.app.tar.gz || true
           
           # Rename app updater signature
@@ -190,7 +187,6 @@ jobs:
         with:
           name: iva-prime-macos-intel
           path: |
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.dmg
@@ -244,10 +240,7 @@ jobs:
         run: |
           VERSION="${{ needs.get-info.outputs.version }}"
           
-          # Rename app
-          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app IVA-Prime-${VERSION}-macos-arm.app || true
-          
-          # Rename app updater
+          # Rename app archive
           mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz IVA-Prime-${VERSION}-macos-arm.app.tar.gz || true
           
           # Rename app updater signature
@@ -261,7 +254,6 @@ jobs:
         with:
           name: iva-prime-macos-arm
           path: |
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.dmg
@@ -402,11 +394,9 @@ jobs:
             IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-windows.exe
             IVA-Prime-${{ needs.get-info.outputs.version }}-windows.exe.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.dmg
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.dmg
@@ -458,11 +448,9 @@ jobs:
             IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-windows.exe
             IVA-Prime-${{ needs.get-info.outputs.version }}-windows.exe.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.dmg
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.dmg
