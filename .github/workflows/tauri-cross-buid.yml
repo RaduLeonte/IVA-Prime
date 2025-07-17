@@ -172,12 +172,16 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ needs.get-info.outputs.version }}"
+          
           # Rename app
           mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app IVA-Prime-${VERSION}-macos-intel.app || true
+          
           # Rename app updater
           mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz IVA-Prime-${VERSION}-macos-intel.app.tar.gz || true
+          
           # Rename app updater signature
           mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz.sig IVA-Prime-${VERSION}-macos-intel.app.tar.gz.sig || true
+          
           # Rename dmg
           mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg IVA-Prime-${VERSION}-macos-intel.dmg || true
 
@@ -239,12 +243,16 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ needs.get-info.outputs.version }}"
+          
           # Rename app
           mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app IVA-Prime-${VERSION}-macos-arm.app || true
+          
           # Rename app updater
           mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz IVA-Prime-${VERSION}-macos-arm.app.tar.gz || true
+          
           # Rename app updater signature
           mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz.sig IVA-Prime-${VERSION}-macos-arm.app.tar.gz.sig || true
+          
           # Rename dmg
           mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg IVA-Prime-${VERSION}-macos-arm.dmg || true
 
@@ -309,21 +317,22 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ needs.get-info.outputs.version }}"
-          # Rename AppImage
-          mv tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage IVA-Prime-${VERSION}-linux.AppImage || true
-          # Rename DEB
-          mv tauri/iva-prime/src-tauri/target/release/bundle/deb/*.deb IVA-Prime-${VERSION}-linux.deb || true
-          # Rename RPM
-          mv tauri/iva-prime/src-tauri/target/release/bundle/rpm/*.rpm IVA-Prime-${VERSION}-linux.rpm || true
+          ARTIFACTS=("AppImage" "deb" "rpm")
+
+          for ARTIFACT in "${ARTIFACTS[@]}"; do
+            mv tauri/iva-prime/src-tauri/target/release/bundle/$ARTIFACT/*.$ARTIFACT IVA-Prime-${VERSION}-linux.$ARTIFACT || true
+            mv tauri/iva-prime/src-tauri/target/release/bundle/$ARTIFACT/*.$ARTIFACT.sig IVA-Prime-${VERSION}-linux.$ARTIFACT.sig || true
+          done
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
           name: iva-prime-linux
           path: |
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.AppImage
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.deb
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm
+            $(for EXT in AppImage deb rpm; do
+              echo IVA-Prime-${{ needs.get-info.outputs.version }}-linux.$EXT
+              echo IVA-Prime-${{ needs.get-info.outputs.version }}-linux.$EXT.sig
+            done)
 
 
   pre-release:
@@ -331,7 +340,7 @@ jobs:
     needs: [get-info, build-windows, build-macos-intel, build-macos-arm, build-linux]
     if: (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') || (github.event_name == 'schedule' && needs.get-info.outputs.should_build == 'true')
     steps:
-      - name: Download Windows artifact
+      - name: Download Windows artifacts
         uses: actions/download-artifact@v4
         with:
           name: iva-prime-windows
@@ -349,7 +358,7 @@ jobs:
           name: iva-prime-macos-arm
           path: ./
 
-      - name: Download Linux artifact
+      - name: Download Linux artifacts
         uses: actions/download-artifact@v4
         with:
           name: iva-prime-linux
@@ -372,9 +381,13 @@ jobs:
             This version might contain bugs and can be unstable compared to the full release!
           files: |
             ./*.AppImage
+            ./*.AppImage.sig
             ./*.deb
+            ./*.deb.sig
             ./*.rpm
+            ./*.rpm.sig
             ./*.exe
+            ./*.exes.sig
             ./*.app
             ./*.app.tar.gz
             ./*.app.tar.gz.sig
@@ -418,9 +431,13 @@ jobs:
         with:
           files: |
             ./*.AppImage
+            ./*.AppImage.sig
             ./*.deb
+            ./*.deb.sig
             ./*.rpm
+            ./*.rpm.sig
             ./*.exe
+            ./*.exes.sig
             ./*.app
             ./*.app.tar.gz
             ./*.app.tar.gz.sig
