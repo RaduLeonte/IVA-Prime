@@ -170,15 +170,23 @@ jobs:
         run: |
           VERSION="${{ needs.get-info.outputs.version }}"
           # Rename app
-          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/app/*.app IVA-Prime-${VERSION}-macos-arm.app
+          mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app IVA-Prime-${VERSION}-macos-intel.app || true
+          # Rename app updater
+          mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz IVA-Prime-${VERSION}-macos-intel.app.tar.gz || true
+          # Rename app updater signature
+          mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz.sig IVA-Prime-${VERSION}-macos-intel.app.tar.gz.sig || true
           # Rename dmg
-          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg IVA-Prime-${VERSION}-macos-arm.dmg
+          mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg IVA-Prime-${VERSION}-macos-intel.dmg || true
 
       - name: Upload macOS Intel artifact
         uses: actions/upload-artifact@v4
         with:
           name: iva-prime-macos-intel
-          path: IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.dmg
+          path: |
+            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app
+            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz
+            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz.sig
+            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.dmg
 
 
   build-macos-arm:
@@ -229,9 +237,13 @@ jobs:
         run: |
           VERSION="${{ needs.get-info.outputs.version }}"
           # Rename app
-          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/app/*.app IVA-Prime-${VERSION}-macos-arm.app
+          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app IVA-Prime-${VERSION}-macos-arm.app || true
+          # Rename app updater
+          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz IVA-Prime-${VERSION}-macos-arm.app.tar.gz || true
+          # Rename app updater signature
+          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz.sig IVA-Prime-${VERSION}-macos-arm.app.tar.gz.sig || true
           # Rename dmg
-          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg IVA-Prime-${VERSION}-macos-arm.dmg
+          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg IVA-Prime-${VERSION}-macos-arm.dmg || true
 
       - name: Upload macOS ARM artifact
         uses: actions/upload-artifact@v4
@@ -239,6 +251,8 @@ jobs:
           name: iva-prime-macos-arm
           path: |
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app
+            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz
+            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.dmg
 
 
@@ -359,6 +373,8 @@ jobs:
             ./*.rpm
             ./*.exe
             ./*.app
+            ./*.app.tar.gz
+            ./*.app.tar.gz.sig
             ./*.dmg
 
   release:
@@ -403,6 +419,8 @@ jobs:
             ./*.rpm
             ./*.exe
             ./*.app
+            ./*.app.tar.gz
+            ./*.app.tar.gz.sig
             ./*.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
