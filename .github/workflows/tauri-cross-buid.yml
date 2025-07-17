@@ -101,7 +101,7 @@ jobs:
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY}}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY}}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD}}
         with:
           projectPath: tauri/iva-prime
@@ -156,18 +156,21 @@ jobs:
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY}}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY}}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD}}
         with:
           projectPath: tauri/iva-prime
           args: >-
-            --target x86_64-apple-darwin --bundles dmg -c '{"version": "${{ needs.get-info.outputs.version }}"}'
+            --target x86_64-apple-darwin --bundles app,dmg -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
       - name: Rename macOS Intel artifact
         shell: bash
         run: |
           VERSION="${{ needs.get-info.outputs.version }}"
-          mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg IVA-Prime-${VERSION}-macos-intel.dmg
+          # Rename app
+          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/app/*.app IVA-Prime-${VERSION}-macos-arm.app
+          # Rename dmg
+          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg IVA-Prime-${VERSION}-macos-arm.dmg
 
       - name: Upload macOS Intel artifact
         uses: actions/upload-artifact@v4
@@ -211,24 +214,29 @@ jobs:
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY}}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY}}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD}}
         with:
           projectPath: tauri/iva-prime
           args: >-
-            --target aarch64-apple-darwin --bundles dmg -c '{"version": "${{ needs.get-info.outputs.version }}"}'
+            --target aarch64-apple-darwin --bundles app,dmg -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
       - name: Rename macOS ARM artifact
         shell: bash
         run: |
           VERSION="${{ needs.get-info.outputs.version }}"
+          # Rename app
+          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/app/*.app IVA-Prime-${VERSION}-macos-arm.app
+          # Rename dmg
           mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg IVA-Prime-${VERSION}-macos-arm.dmg
 
       - name: Upload macOS ARM artifact
         uses: actions/upload-artifact@v4
         with:
           name: iva-prime-macos-arm
-          path: IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.dmg
+          path: |
+            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app
+            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.dmg
 
 
   build-linux:
@@ -269,12 +277,12 @@ jobs:
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY}}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY}}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD}}
         with:
           projectPath: tauri/iva-prime
           args: >-
-            --bundles deb,rpm -c '{"version": "${{ needs.get-info.outputs.version }}"}'
+            --bundles appimage,deb,rpm -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
       - name: Rename Linux artifact
         shell: bash
@@ -308,13 +316,13 @@ jobs:
           name: iva-prime-windows
           path: ./
 
-      - name: Download macOS Intel artifact
+      - name: Download macOS Intel artifacts
         uses: actions/download-artifact@v4
         with:
           name: iva-prime-macos-intel
           path: ./
 
-      - name: Download macOS ARM artifact
+      - name: Download macOS ARM artifacts
         uses: actions/download-artifact@v4
         with:
           name: iva-prime-macos-arm
@@ -325,15 +333,6 @@ jobs:
         with:
           name: iva-prime-linux
           path: ./
-
-      - name: Generate SHA256 checksums
-        run: |
-          sha256sum *.AppImage > SHA256SUMS.txt || true
-          sha256sum *.deb >> SHA256SUMS.txt || true
-          sha256sum *.rpm >> SHA256SUMS.txt || true
-          sha256sum *.exe >> SHA256SUMS.txt || true
-          sha256sum *.dmg >> SHA256SUMS.txt || true
-          cat SHA256SUMS.txt
 
       - name: List files
         run: ls -rl
@@ -351,11 +350,11 @@ jobs:
             Nightly build of the IVA Prime desktop app.
             This version might contain bugs and can be unstable compared to the full release!
           files: |
-            ./SHA256SUMS.txt
             ./*.AppImage
             ./*.deb
             ./*.rpm
             ./*.exe
+            ./*.app
             ./*.dmg
 
   release:
@@ -369,13 +368,13 @@ jobs:
           name: iva-prime-windows
           path: ./
 
-      - name: Download macOS Intel artifact
+      - name: Download macOS Intel artifacts
         uses: actions/download-artifact@v4
         with:
           name: iva-prime-macos-intel
           path: ./
 
-      - name: Download macOS ARM artifact
+      - name: Download macOS ARM artifacts
         uses: actions/download-artifact@v4
         with:
           name: iva-prime-macos-arm
@@ -387,14 +386,6 @@ jobs:
           name: iva-prime-linux
           path: ./
 
-      - name: Generate SHA256 checksums
-        run: |
-          sha256sum *.AppImage > SHA256SUMS.txt || true
-          sha256sum *.deb >> SHA256SUMS.txt || true
-          sha256sum *.rpm >> SHA256SUMS.txt || true
-          sha256sum *.exe >> SHA256SUMS.txt || true
-          sha256sum *.dmg >> SHA256SUMS.txt || true
-          cat SHA256SUMS.txt
 
       - name: List files
         run: ls -rl
@@ -403,11 +394,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            ./SHA256SUMS.txt
             ./*.AppImage
             ./*.deb
             ./*.rpm
             ./*.exe
+            ./*.app
             ./*.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
