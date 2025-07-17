@@ -119,8 +119,9 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI5NjhBODBERjlGMDkzMjUKUldRbGsvRDVEYWhvS1ZHb2YwNTdRK2JXODZSc1hpM2NWemMzYm9ubjNuZHg4dUsybTh6ZVRyUlgK",
       "endpoints": [
-        ""
+        "https://github.com/RaduLeonte/IVA-Prime/releases/tag/download/latest.json"
       ],
+      "dialog": true,
       "windows": {
         "installMode": "passive"
       }

@@ -12,7 +12,95 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use tauri::{Listener, Manager, WebviewWindow};
 use tauri_plugin_deep_link::DeepLinkExt;
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
+use tauri_plugin_updater::{UpdaterExt};
 use url::Url;
+
+async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
+    //let current_version = app.package_info().version.to_string();
+
+    let update_channel = if true {
+        "https://github.com/RaduLeonte/IVA-Prime/releases/tag/nightly/latest/download/latest.json"
+    } else {
+        "https://github.com/RaduLeonte/IVA-Prime/releases/latest/download/latest.json"
+    };
+
+
+    if let Some(update) = app
+        .updater_builder()
+        .endpoints(vec![Url::parse(update_channel)?])?
+        .build()?
+        .check()
+        .await? {
+        let mut downloaded = 0;
+
+        // alternatively we could also call update.download() and update.install() separately
+        update
+        .download_and_install(
+            |chunk_length, content_length| {
+            downloaded += chunk_length;
+            println!("downloaded {downloaded} from {content_length:?}");
+            },
+            || {
+            println!("download finished");
+            },
+        )
+        .await?;
+
+        println!("update installed");
+        app.restart();
+    }
+/* 
+
+    // Check for updates
+    if let Some(update_metadata) = app.updater()?.check().await? {
+        // Get the version of the update
+        let update_version = update_metadata.version.to_string();
+
+
+        // Show a confirmation dialog with current and update version details
+        if let Some(main_window) = app.get_webview_window("main") {
+            let message = format!(
+                "Current version: {}\n\nUpdate to version: {}\n\nDo you want to install the latest update?",
+                current_version, update_version
+            );
+
+            let confirmed = app.dialog()
+                .title("Confirm Update")
+                .message(&message)
+                .buttons(MessageDialogButtons::OkCancelCustom("Yes", "No"))
+                .blocking_show();
+
+            if !confirmed {
+                log::info!("User canceled the update.");
+                return Ok(());
+            }
+        } else {
+            log::error!("Failed to get main window for dialog.");
+            return Ok(());
+        }
+
+        // Proceed with the update
+        let mut downloaded = 0;
+
+        update_metadata
+            .download_and_install(
+                |chunk_length, content_length| {
+                    downloaded += chunk_length;
+                    log::info!("Downloaded {downloaded} from {content_length:?}.");
+                },
+                || {
+                    log::info!("Download finished.");
+                },
+            )
+            .await?;
+
+        log::info!("Update installed.");
+        app.restart(); // Restart the app after installation
+    } */
+
+    Ok(())
+}
 
 pub fn print_to_js_console(window: WebviewWindow, s: String) {
     let js_call = format!("console.log('{}');", s);
@@ -279,8 +367,21 @@ pub fn run() {
             log::info!("App is starting...!");
 
             let app_handle = app.app_handle().clone();
+            tauri::async_runtime::spawn(async move {
+                match update(app_handle).await {
+                    Ok(_) => {
+                        log::info!("Update completed successfully.");
+                    },
+                    Err(e) => {
+                        log::error!("Failed to perform update: {}", e);
+                    }
+                }
+            });
+            
+            let app_handle = app.app_handle().clone();
             app.listen("window-ready", move |_event| {
                 log::info!("Window is ready!");
+
 
                 let mut flag = MAIN_WINDOW_READY_FLAG.lock().unwrap();
                 *flag = true;
