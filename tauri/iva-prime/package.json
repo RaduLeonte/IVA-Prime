@@ -8,5 +8,8 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2"
+  },
+  "dependencies": {
+    "@tauri-apps/plugin-updater": "^2.9.0"
   }
 }
