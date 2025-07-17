@@ -317,22 +317,36 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ needs.get-info.outputs.version }}"
-          ARTIFACTS=("AppImage" "deb" "rpm")
-
-          for ARTIFACT in "${ARTIFACTS[@]}"; do
-            mv tauri/iva-prime/src-tauri/target/release/bundle/$ARTIFACT/*.$ARTIFACT IVA-Prime-${VERSION}-linux.$ARTIFACT || true
-            mv tauri/iva-prime/src-tauri/target/release/bundle/$ARTIFACT/*.$ARTIFACT.sig IVA-Prime-${VERSION}-linux.$ARTIFACT.sig || true
-          done
+          
+          # Rename AppImage
+          mv tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage IVA-Prime-${VERSION}-linux.AppImage || true
+          
+          # Rename AppImage signature
+          mv tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage.sig IVA-Prime-${VERSION}-linux.AppImage.sig || true
+          
+          # Rename DEB
+          mv tauri/iva-prime/src-tauri/target/release/bundle/deb/*.deb IVA-Prime-${VERSION}-linux.deb || true
+          
+          # Rename DEB signature
+          mv tauri/iva-prime/src-tauri/target/release/bundle/deb/*.deb.sig IVA-Prime-${VERSION}-linux.deb.sig || true
+          
+          # Rename RPM
+          mv tauri/iva-prime/src-tauri/target/release/bundle/rpm/*.rpm IVA-Prime-${VERSION}-linux.rpm || true
+          
+          # Rename RPM signature
+          mv tauri/iva-prime/src-tauri/target/release/bundle/rpm/*.rpm.sig IVA-Prime-${VERSION}-linux.rpm.sig || true
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
           name: iva-prime-linux
           path: |
-            $(for EXT in AppImage deb rpm; do
-              echo IVA-Prime-${{ needs.get-info.outputs.version }}-linux.$EXT
-              echo IVA-Prime-${{ needs.get-info.outputs.version }}-linux.$EXT.sig
-            done)
+            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.AppImage
+            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.AppImage.sig
+            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.deb
+            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.deb.sig
+            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm
+            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm.sig
 
 
   pre-release:
