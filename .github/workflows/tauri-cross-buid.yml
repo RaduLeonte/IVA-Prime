@@ -434,8 +434,8 @@ jobs:
             IVA-Prime-${{ needs.get-info.outputs.version }}-linux.deb.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm
             IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-windows.exe
-            IVA-Prime-${{ needs.get-info.outputs.version }}-windows.exe.sig
+            IVA-Prime-${{ needs.get-info.outputs.version }}-win64-setup.exe
+            IVA-Prime-${{ needs.get-info.outputs.version }}-win64-setup.exe.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.dmg
@@ -477,6 +477,47 @@ jobs:
       - name: List files
         run: ls -rl
 
+      - name: Generate latest.json
+        run: |
+          VERSION="${{ needs.get-info.outputs.version }}"
+          PUB_DATE=$(date --utc +%Y-%m-%dT%H:%M:%SZ)  # RFC 3339 format
+          RELEASE_URL="https://github.com/RaduLeonte/IVA-Prime/releases/latest/download"
+
+          cat <<EOF > latest.json
+          {
+            "version": "$VERSION",
+            "notes": "Nightly build of the IVA Prime desktop app. This version might contain bugs and can be unstable compared to the full release!",
+            "pub_date": "$PUB_DATE",
+            "platforms": {
+              "linux-x86_64": {
+                "signature": "$(cat IVA-Prime-${VERSION}-linux.AppImage.sig)",
+                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-linux.AppImage"
+              },
+              "linux-x86_64-deb": {
+                "signature": "$(cat IVA-Prime-${VERSION}-linux.deb.sig)",
+                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-linux.deb"
+              },
+              "linux-x86_64-rpm": {
+                "signature": "$(cat IVA-Prime-${VERSION}-linux.rpm.sig)",
+                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-linux.rpm"
+              },
+              "windows-x86_64": {
+                "signature": "$(cat IVA-Prime-${VERSION}-win64-setup.exe.sig)",
+                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-win64-setup.exe"
+              },
+              "darwin-x86_64": {
+                "signature": "$(cat IVA-Prime-${VERSION}-macos-intel.app.tar.gz.sig)",
+                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-macos-intel.app.tar.gz"
+              },
+              "darwin-aarch64": {
+                "signature": "$(cat IVA-Prime-${VERSION}-macos-arm.app.tar.gz.sig)",
+                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-macos-arm.app.tar.gz"
+              }
+            }
+          }
+          EOF
+          cat latest.json  # Print the file to verify
+
       - name: Upload assets to GitHub Release
         uses: softprops/action-gh-release@v2
         env:
@@ -489,12 +530,13 @@ jobs:
             IVA-Prime-${{ needs.get-info.outputs.version }}-linux.deb.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm
             IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-windows.exe
-            IVA-Prime-${{ needs.get-info.outputs.version }}-windows.exe.sig
+            IVA-Prime-${{ needs.get-info.outputs.version }}-win64-setup.exe
+            IVA-Prime-${{ needs.get-info.outputs.version }}-win64-setup.exe.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.dmg
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.dmg
+            latest.json
         
