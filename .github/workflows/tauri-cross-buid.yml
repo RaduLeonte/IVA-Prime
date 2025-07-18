@@ -378,6 +378,7 @@ jobs:
         run: |
           VERSION="${{ needs.get-info.outputs.version }}"
           PUB_DATE=$(date --utc +%Y-%m-%dT%H:%M:%SZ)  # RFC 3339 format
+          RELEASE_URL="https://github.com/RaduLeonte/IVA-Prime/releases/download/nightly"
 
           cat <<EOF > latest.json
           {
@@ -386,28 +387,28 @@ jobs:
             "pub_date": "$PUB_DATE",
             "platforms": {
               "linux-x86_64": {
-                "signature": "file://$(pwd)/IVA-Prime-${VERSION}-linux.AppImage.sig",
-                "url": "file://$(pwd)/IVA-Prime-${VERSION}-linux.AppImage"
+                "signature": "$(cat IVA-Prime-${VERSION}-linux.AppImage.sig)",
+                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-linux.AppImage"
               },
               "linux-x86_64-deb": {
-                "signature": "file://$(pwd)/IVA-Prime-${VERSION}-linux.deb.sig",
-                "url": "file://$(pwd)/IVA-Prime-${VERSION}-linux.deb"
+                "signature": "$(cat IVA-Prime-${VERSION}-linux.deb.sig)",
+                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-linux.deb"
               },
               "linux-x86_64-rpm": {
-                "signature": "file://$(pwd)/IVA-Prime-${VERSION}-linux.rpm.sig",
-                "url": "file://$(pwd)/IVA-Prime-${VERSION}-linux.rpm"
+                "signature": "$(cat IVA-Prime-${VERSION}-linux.rpm.sig)",
+                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-linux.rpm"
               },
               "windows-x86_64": {
-                "signature": "file://$(pwd)/IVA-Prime-${VERSION}-win64-setup.exe.sig",
-                "url": "file://$(pwd)/IVA-Prime-${VERSION}-win64-setup.exe"
+                "signature": "$(cat IVA-Prime-${VERSION}-win64-setup.exe.sig)",
+                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-win64-setup.exe"
               },
               "darwin-x86_64": {
-                "signature": "file://$(pwd)/IVA-Prime-${VERSION}-macos-intel.app.tar.gz.sig",
-                "url": "file://$(pwd)/IVA-Prime-${VERSION}-macos-intel.app.tar.gz"
+                "signature": "$(cat IVA-Prime-${VERSION}-macos-intel.app.tar.gz.sig)",
+                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-macos-intel.app.tar.gz"
               },
               "darwin-aarch64": {
-                "signature": "file://$(pwd)/IVA-Prime-${VERSION}-macos-arm.app.tar.gz.sig",
-                "url": "file://$(pwd)/IVA-Prime-${VERSION}-macos-arm.app.tar.gz"
+                "signature": "$(cat IVA-Prime-${VERSION}-macos-arm.app.tar.gz.sig)",
+                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-macos-arm.app.tar.gz"
               }
             }
           }
