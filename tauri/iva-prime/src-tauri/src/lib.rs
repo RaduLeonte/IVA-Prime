@@ -11,12 +11,15 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use tauri::{Listener, Manager, WebviewWindow};
+use tauri::menu::{CheckMenuItemBuilder, MenuBuilder, SubmenuBuilder};
 use tauri_plugin_deep_link::DeepLinkExt;
-use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 use tauri_plugin_updater::UpdaterExt;
+use tauri_plugin_store::{StoreBuilder, StoreExt};
 use url::Url;
+use serde_json::json;
 
-async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
+async fn check_for_update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
     let update_channel = if true {
         "https://github.com/RaduLeonte/IVA-Prime/releases/download/nightly/latest.json"
     } else {
@@ -312,6 +315,7 @@ pub fn run() {
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(
             tauri_plugin_log::Builder::new()
                 .level(log::LevelFilter::Debug) // Lowest log level
@@ -349,18 +353,67 @@ pub fn run() {
             log::info!("Logs path -> {:?}", log_dir);
             log::info!("App is starting...!");
 
-            let app_handle = app.app_handle().clone();
-            tauri::async_runtime::spawn(async move {
-                match update(app_handle).await {
-                    Ok(_) => {
-                        log::info!("Update completed successfully.");
+            // Load setting from store
+            let mut store = StoreBuilder::new(app.handle(), "settings.json".parse()?).build();
+            let _ = store.load();
+            let app_settings = AppSettings::load_from_store(&store);
+            match app_settings {
+                Ok(app_settings) => {
+                    let check_for_updates = app_settings.check_for_updates;
+
+                    log::debug!("check_for_updates {}", check_for_updates);
+
+                    Ok(())
+                }
+                Err(err) => {
+                    log::error!("Error loading settings: {}", err);
+                    Err(err)
+                }
+            };
+
+            // Window menu
+            let check_updates_item = CheckMenuItemBuilder::new("Check for Updates on Startup")
+                .id("check_for_updates_on_startup")
+                .checked(check_for_updates)
+                .build(app)?;
+
+            let settings_menu = SubmenuBuilder::new(app, "Settings")
+                .item(&check_updates_item)
+                .build()?;
+            
+            let menu = MenuBuilder::new(app)
+                .items(&[&settings_menu])
+                .build()?;
+
+            app.set_menu(menu)?;
+            app.on_menu_event(move |_app_handle: &tauri::AppHandle, event| {
+                match event.id().0.as_str() {
+                    "check_for_updates_on_startup" => {
+                        let checked = check_updates_item.is_checked().unwrap_or(false);
+                        store.set("check_for_updates_on_startup", json!({ "value": checked }));
                     },
-                    Err(e) => {
-                        log::error!("Failed to perform update: {}", e);
+                    _ => {
+                        log::debug!("Unexpected menu event.");
                     }
                 }
             });
+
+            // Check for updates
+            if check_for_updates {
+                let app_handle = app.app_handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    match check_for_update(app_handle).await {
+                        Ok(_) => {
+                            log::info!("Update completed successfully.");
+                        },
+                        Err(e) => {
+                            log::error!("Failed to perform update: {}", e);
+                        }
+                    }
+                });
+            }
             
+            // On main window ready
             let app_handle = app.app_handle().clone();
             app.listen("window-ready", move |_event| {
                 log::info!("Window is ready!");
@@ -405,6 +458,7 @@ pub fn run() {
                 });
             }
 
+            // Register deep links
             app.deep_link().register_all()?;
 
             // Process file args passed at startup

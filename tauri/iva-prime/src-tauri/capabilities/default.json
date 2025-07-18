@@ -12,6 +12,7 @@
     "fs:write-all",
     "fs:write-files",
     "fs:allow-write-file",
-    "log:default"
+    "log:default",
+    "store:default"
   ]
 }
