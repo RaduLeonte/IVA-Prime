@@ -433,8 +433,8 @@ jobs:
             IVA-Prime-${{ needs.get-info.outputs.version }}-linux.deb.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm
             IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-windows.exe
-            IVA-Prime-${{ needs.get-info.outputs.version }}-windows.exe.sig
+            IVA-Prime-${{ needs.get-info.outputs.version }}-win64-setup.exe
+            IVA-Prime-${{ needs.get-info.outputs.version }}-win64-setup.exe.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz.sig
             IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.dmg
