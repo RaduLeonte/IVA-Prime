@@ -10,8 +10,8 @@ use serde::Serialize;
 use serde_json::json;
 use url::Url;
 
-use tauri::{Listener, Manager, WebviewWindow};
 use tauri::menu::{CheckMenuItemBuilder, MenuBuilder, SubmenuBuilder};
+use tauri::{Listener, Manager, WebviewWindow};
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 use tauri_plugin_store::StoreExt;
@@ -19,7 +19,6 @@ use tauri_plugin_updater::UpdaterExt;
 
 #[cfg(target_os = "windows")]
 use windows::Win32::Foundation::*;
-
 
 pub fn setup_logging(logs_dir: &std::path::Path) -> Result<(), fern::InitError> {
     let log_file_path = logs_dir.join("output.log");
@@ -74,7 +73,8 @@ fn check_for_update(app_handle: tauri::AppHandle, release_channel: String) {
             Ok(_) => log::info!("Update check completed."),
             Err(e) => {
                 log::error!("Update check failed: {}", e);
-                app_handle.dialog()
+                app_handle
+                    .dialog()
                     .message(format!("Update check failed:\n{}", e))
                     .title("Update Error")
                     .blocking_show();
@@ -83,7 +83,10 @@ fn check_for_update(app_handle: tauri::AppHandle, release_channel: String) {
     });
 }
 
-async fn get_update(app_handle: tauri::AppHandle, release_channel: &str) -> tauri_plugin_updater::Result<()> {
+async fn get_update(
+    app_handle: tauri::AppHandle,
+    release_channel: &str,
+) -> tauri_plugin_updater::Result<()> {
     let update_url = if release_channel == "nightly" {
         "https://github.com/RaduLeonte/IVA-Prime/releases/download/nightly/latest.json"
     } else {
@@ -96,7 +99,6 @@ async fn get_update(app_handle: tauri::AppHandle, release_channel: &str) -> taur
         .build()?;
 
     let update = updater.check().await?;
-
 
     if let Some(ref update) = update {
         log::info!(
@@ -115,10 +117,14 @@ async fn get_update(app_handle: tauri::AppHandle, release_channel: &str) -> taur
             current_version, new_version
         );
 
-        let answer = app_handle.dialog()
+        let answer = app_handle
+            .dialog()
             .message(dialog_message)
             .title("Update Available")
-            .buttons(MessageDialogButtons::OkCancelCustom("Update Now".to_string(), "Later".to_string()))
+            .buttons(MessageDialogButtons::OkCancelCustom(
+                "Update Now".to_string(),
+                "Later".to_string(),
+            ))
             .blocking_show();
 
         if !answer {
@@ -129,19 +135,20 @@ async fn get_update(app_handle: tauri::AppHandle, release_channel: &str) -> taur
         // alternatively we could also call update.download() and update.install() separately
         log::info!("Starting download...");
         update
-        .download_and_install(
-            |_chunk_length, _content_length| {},
-            || {
-                log::info!("Download finished.");
-            },
-        )
-        .await?;
+            .download_and_install(
+                |_chunk_length, _content_length| {},
+                || {
+                    log::info!("Download finished.");
+                },
+            )
+            .await?;
 
         log::info!("Update installed.");
         app_handle.restart();
     } else {
         log::info!("No update required.");
-        app_handle.dialog()
+        app_handle
+            .dialog()
             .message("You are up to date!")
             .title("No Update Available")
             .blocking_show();
@@ -149,7 +156,6 @@ async fn get_update(app_handle: tauri::AppHandle, release_channel: &str) -> taur
 
     Ok(())
 }
-
 
 pub fn print_to_js_console(window: WebviewWindow, s: String) {
     let js_call = format!("console.log('{}');", s);
@@ -380,7 +386,7 @@ pub fn run() {
     let settings_path = appdata_dir.join("settings.json");
 
     tauri::Builder::default()
-    // Plugins
+        // Plugins
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_deep_link::init())
@@ -402,10 +408,8 @@ pub fn run() {
                 handle_file_associations(app.clone(), files);
             }
         }))
-        
         // Register custom commands for frontend
         .invoke_handler(tauri::generate_handler![open_about_window])
-       
         // App setup
         .setup(move |app| {
             log::info!("Logs path -> \"{}\"", logs_dir.display());
@@ -417,38 +421,29 @@ pub fn run() {
 
             let check_for_updates_on_startup: bool = store
                 .get("check_for_updates_on_startup")
-                .and_then( |obj|
-                    obj
-                        .get("value")
-                        .and_then( |v|
-                            v.as_bool()
-                        )
-                )
+                .and_then(|obj| obj.get("value").and_then(|v| v.as_bool()))
                 .unwrap_or(false);
 
             let release_channel = store
                 .get("release_channel")
-                .and_then( |obj|
-                    obj
-                        .get("value")
-                        .and_then( |v|
-                            v.as_str()
-                        )
-                        .map( |s|
-                            s.to_owned()
-                        )
-                )
+                .and_then(|obj| {
+                    obj.get("value")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_owned())
+                })
                 .unwrap_or_else(|| "full".to_string());
 
             // Window menu
-            let check_updates_on_startup_item = CheckMenuItemBuilder::new("Check for Updates on Startup")
-                .id("check_for_updates_on_startup")
-                .checked(check_for_updates_on_startup)
-                .build(app)?;
+            let check_updates_on_startup_item =
+                CheckMenuItemBuilder::new("Check for Updates on Startup")
+                    .id("check_for_updates_on_startup")
+                    .checked(check_for_updates_on_startup)
+                    .build(app)?;
 
-            let check_for_updates_now_item = tauri::menu::MenuItemBuilder::new("Check for Updates Now")
-                .id("check_for_updates_now")
-                .build(app)?;
+            let check_for_updates_now_item =
+                tauri::menu::MenuItemBuilder::new("Check for Updates Now")
+                    .id("check_for_updates_now")
+                    .build(app)?;
 
             let full_release_item = CheckMenuItemBuilder::new("Full-release")
                 .id("release_channel_full")
@@ -471,10 +466,8 @@ pub fn run() {
                 .separator()
                 .item(&release_channel_menu)
                 .build()?;
-            
-            let menu = MenuBuilder::new(app)
-                .items(&[&settings_menu])
-                .build()?;
+
+            let menu = MenuBuilder::new(app).items(&[&settings_menu]).build()?;
 
             app.set_menu(menu)?;
             app.on_menu_event(move |app_handle: &tauri::AppHandle, event| {
@@ -497,7 +490,11 @@ pub fn run() {
                         let app_handle = app_handle.clone();
                         let release_channel = store
                             .get("release_channel")
-                            .and_then(|obj| obj.get("value").and_then(|v| v.as_str()).map(|s| s.to_owned()))
+                            .and_then(|obj| {
+                                obj.get("value")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.to_owned())
+                            })
                             .unwrap_or_else(|| "full".to_string());
                         check_for_update(app_handle, release_channel);
                     }
@@ -511,12 +508,11 @@ pub fn run() {
             if check_for_updates_on_startup {
                 check_for_update(app.app_handle().clone(), release_channel);
             };
-            
+
             // On main window ready
             let app_handle = app.app_handle().clone();
             app.listen("window-ready", move |_event| {
                 log::info!("Window is ready!");
-
 
                 let mut flag = MAIN_WINDOW_READY_FLAG.lock().unwrap();
                 *flag = true;
