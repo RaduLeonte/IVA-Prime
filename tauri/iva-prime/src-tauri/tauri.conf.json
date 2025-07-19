@@ -31,6 +31,7 @@
   "bundle": {
     "active": true,
     "category": "Utility",
+    "copyright": "Copyright © 2025 Radu Leonte and contributors. Licensed under GPLv3.",
     "createUpdaterArtifacts": true,
     "fileAssociations": [
       {
@@ -55,7 +56,6 @@
         "role": "Editor"
       }
     ],
-    "homepage": "https://www.ivaprime.com",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -63,6 +63,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "longDescription": "IVA Prime is a free, open-source app for editing plasmid files and automatically generating primers for IVA (In Vivo Assembly) cloning. IVA Prime is available as a web app (ivaprime.com) and as a desktop application for Windows, macOS, and Linux.",
     "targets": ["nsis", "deb", "rpm", "appimage"],
     "windows": {
       "allowDowngrades": true,
