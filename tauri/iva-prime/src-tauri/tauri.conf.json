@@ -9,16 +9,19 @@
     },
     "windows": [
       {
-        "label": "main",
+        "acceptFirstMouse": true,
+        "center": true,
+        "devtools": true,
         "dragDropEnabled": false,
+        "label": "main",
+        "maximized": true,
+        "resizable": true,
         "title": "IVA Prime",
         "width": 1200,
         "height": 800,
         "minWidth": 1000,
         "minHeight": 600,
-        "resizable": true,
-        "devtools": true,
-        "acceptFirstMouse": true
+        "zoomHotkeysEnabled": true
       }
     ],
     "withGlobalTauri": true
