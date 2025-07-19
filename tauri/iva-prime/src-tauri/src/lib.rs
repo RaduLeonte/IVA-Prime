@@ -1,94 +1,142 @@
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[cfg(target_os = "windows")]
-use windows::Win32::Foundation::*;
-
-use tauri_plugin_log::{Target, TargetKind};
+use std::fs;
+use std::path::PathBuf;
+use std::sync::Mutex;
 
 use base64::{engine::general_purpose, Engine};
+use chrono::Local;
+use fern::colors::{Color, ColoredLevelConfig};
 use once_cell::sync::Lazy;
 use serde::Serialize;
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use serde_json::json;
+use url::Url;
+
+use tauri::menu::{CheckMenuItemBuilder, MenuBuilder, SubmenuBuilder};
 use tauri::{Listener, Manager, WebviewWindow};
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
-use tauri_plugin_updater::{UpdaterExt};
-use url::Url;
+use tauri_plugin_store::StoreExt;
+use tauri_plugin_updater::UpdaterExt;
 
-async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
-    //let current_version = app.package_info().version.to_string();
+#[cfg(target_os = "windows")]
+use windows::Win32::Foundation::*;
 
-    let update_channel = if true {
-        "https://github.com/RaduLeonte/IVA-Prime/releases/tag/nightly/latest/download/latest.json"
+pub fn setup_logging(logs_dir: &std::path::Path) -> Result<(), fern::InitError> {
+    let log_file_path = logs_dir.join("output.log");
+
+    let colors = ColoredLevelConfig::new()
+        .debug(Color::Magenta)
+        .info(Color::Green)
+        .warn(Color::Yellow)
+        .error(Color::Red)
+        .trace(Color::Blue);
+
+    fern::Dispatch::new()
+        // Global filter
+        .level(log::LevelFilter::Debug)
+        // Module filter
+        .level_for("tauri_plugin_updater::updater", log::LevelFilter::Info)
+        // Terminal output (colored)
+        .chain(
+            fern::Dispatch::new()
+                .format(move |out, message, record| {
+                    out.finish(format_args!(
+                        "[{}][{}][{}] {}",
+                        Local::now().format("%Y-%m-%d %H:%M:%S"),
+                        colors.color(record.level()),
+                        record.target(),
+                        message
+                    ))
+                })
+                .chain(std::io::stdout()),
+        )
+        // File output (not colored)
+        .chain(
+            fern::Dispatch::new()
+                .format(|out, message, record| {
+                    out.finish(format_args!(
+                        "[{}][{}][{}] {}",
+                        Local::now().format("%Y-%m-%d %H:%M:%S"),
+                        record.level(),
+                        record.target(),
+                        message
+                    ))
+                })
+                .chain(fern::log_file(log_file_path)?),
+        )
+        .apply()?;
+    Ok(())
+}
+
+fn check_for_update(app_handle: tauri::AppHandle, release_channel: String) {
+    tauri::async_runtime::spawn(async move {
+        match get_update(app_handle.clone(), &release_channel).await {
+            Ok(_) => log::info!("Update check completed."),
+            Err(e) => {
+                log::error!("Update check failed: {}", e);
+                app_handle
+                    .dialog()
+                    .message(format!("Update check failed:\n{}", e))
+                    .title("Update Error")
+                    .blocking_show();
+            }
+        }
+    });
+}
+
+async fn get_update(
+    app_handle: tauri::AppHandle,
+    release_channel: &str,
+) -> tauri_plugin_updater::Result<()> {
+    let update_url = if release_channel == "nightly" {
+        "https://github.com/RaduLeonte/IVA-Prime/releases/download/nightly/latest.json"
     } else {
-        "https://github.com/RaduLeonte/IVA-Prime/releases/latest/download/latest.json"
+        "https://github.com/RaduLeonte/IVA-Prime/releases/latest/latest.json"
     };
 
-
-    if let Some(update) = app
+    let updater = app_handle
         .updater_builder()
-        .endpoints(vec![Url::parse(update_channel)?])?
-        .build()?
-        .check()
-        .await? {
-        let mut downloaded = 0;
+        .endpoints(vec![Url::parse(update_url)?])?
+        .build()?;
+
+    let update = updater.check().await?;
+
+    if let Some(ref update) = update {
+        log::info!(
+            "Update found!\n  Body: {:?}\n  Current version: {}\n  New version: {}\n  Download URL: {}",
+            update.body,
+            update.current_version,
+            update.version,
+            update.download_url
+        );
+
+        let current_version = update.current_version.to_string();
+        let new_version = update.version.to_string();
+
+        let dialog_message = format!(
+            "A new update is available!\n\nCurrent version: {}\nNew version: {}\n\nDo you want to download and install this update?",
+            current_version, new_version
+        );
+
+        let answer = app_handle
+            .dialog()
+            .message(dialog_message)
+            .title("Update Available")
+            .buttons(MessageDialogButtons::OkCancelCustom(
+                "Update Now".to_string(),
+                "Later".to_string(),
+            ))
+            .blocking_show();
+
+        if !answer {
+            log::info!("User declined update.");
+            return Ok(());
+        };
 
         // alternatively we could also call update.download() and update.install() separately
+        log::info!("Starting download...");
         update
-        .download_and_install(
-            |chunk_length, content_length| {
-            downloaded += chunk_length;
-            println!("downloaded {downloaded} from {content_length:?}");
-            },
-            || {
-            println!("download finished");
-            },
-        )
-        .await?;
-
-        println!("update installed");
-        app.restart();
-    }
-/* 
-
-    // Check for updates
-    if let Some(update_metadata) = app.updater()?.check().await? {
-        // Get the version of the update
-        let update_version = update_metadata.version.to_string();
-
-
-        // Show a confirmation dialog with current and update version details
-        if let Some(main_window) = app.get_webview_window("main") {
-            let message = format!(
-                "Current version: {}\n\nUpdate to version: {}\n\nDo you want to install the latest update?",
-                current_version, update_version
-            );
-
-            let confirmed = app.dialog()
-                .title("Confirm Update")
-                .message(&message)
-                .buttons(MessageDialogButtons::OkCancelCustom("Yes", "No"))
-                .blocking_show();
-
-            if !confirmed {
-                log::info!("User canceled the update.");
-                return Ok(());
-            }
-        } else {
-            log::error!("Failed to get main window for dialog.");
-            return Ok(());
-        }
-
-        // Proceed with the update
-        let mut downloaded = 0;
-
-        update_metadata
             .download_and_install(
-                |chunk_length, content_length| {
-                    downloaded += chunk_length;
-                    log::info!("Downloaded {downloaded} from {content_length:?}.");
-                },
+                |_chunk_length, _content_length| {},
                 || {
                     log::info!("Download finished.");
                 },
@@ -96,8 +144,15 @@ async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
             .await?;
 
         log::info!("Update installed.");
-        app.restart(); // Restart the app after installation
-    } */
+        app_handle.restart();
+    } else {
+        log::info!("No update required.");
+        app_handle
+            .dialog()
+            .message("You are up to date!")
+            .title("No Update Available")
+            .blocking_show();
+    };
 
     Ok(())
 }
@@ -295,60 +350,54 @@ async fn open_about_window(app: tauri::AppHandle) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     #[cfg(target_os = "linux")]
-    pub fn get_log_dir() -> PathBuf {
+    pub fn get_appdata_dir() -> PathBuf {
         // Get the XDG_CONFIG_HOME or fall back to ~/.config if not set
         let config_dir = std::env::var("XDG_CONFIG_HOME")
-            .map(PathBuf::from) // Convert the String to PathBuf
+            .map(PathBuf::from)
             .unwrap_or_else(|_| {
                 dirs::home_dir()
                     .unwrap_or_else(|| PathBuf::from("~"))
                     .join(".config")
             });
 
-        config_dir.join("iva-prime").join("logs")
+        config_dir.join("IVA Prime")
     }
 
     #[cfg(any(target_os = "windows", target_os = "macos"))]
-    pub fn get_log_dir() -> PathBuf {
-        // Get the current executable's directory
-        let exe_dir = std::env::current_exe()
-            .map(|p| p.parent().unwrap_or_else(|| Path::new(".")).to_path_buf())
-            .unwrap_or_else(|_| PathBuf::from("."));
-
-        // Return the log directory (inside the executable's directory)
-        exe_dir.join("logs")
+    pub fn get_appdata_dir() -> PathBuf {
+        // Use OS app data directories if possible
+        let base = dirs::data_local_dir()
+            .or_else(|| dirs::home_dir()) // fallback: home dir
+            .unwrap_or_else(|| PathBuf::from("."));
+        base.join("IVA Prime")
     }
 
-    // Determine the log directory based on the OS
-    let log_dir = get_log_dir();
+    // Determine appdata directory based on the OS
+    let appdata_dir = get_appdata_dir();
+
+    let logs_dir = appdata_dir.join("logs");
+    // Make sure it exists
+    if let Err(e) = fs::create_dir_all(&logs_dir) {
+        log::error!("Could not create logs directory: {e}");
+    };
+
+    setup_logging(&logs_dir).expect("Failed to initialize logging");
+
+    let settings_path = appdata_dir.join("settings.json");
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_updater::Builder::new().build())
         // Plugins
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(
-            tauri_plugin_log::Builder::new()
-                .level(log::LevelFilter::Debug) // Lowest log level
-                .targets([
-                    Target::new(TargetKind::Stdout),
-                    Target::new(TargetKind::Folder {
-                        path: log_dir.clone(),
-                        file_name: None,
-                    }),
-                    Target::new(TargetKind::Webview),
-                ])
-                .max_file_size(50_000_000)
-                .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
-                .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
-                .build(),
-        )
-        // Ensure only one instance of the app is allowed.
-        // If a second instance is opened (e.g. by double-clicking a file),
-        // its arguments are captured here.
+        .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            // Ensure only one instance of the app is allowed.
+            // If a second instance is opened (e.g. by double-clicking a file),
+            // its arguments are captured here.
+
             // Convert incoming args into filesystem paths (excluding flags)
             let files: Vec<PathBuf> = parse_files_from_args(args);
 
@@ -363,25 +412,107 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![open_about_window])
         // App setup
         .setup(move |app| {
-            log::info!("Logs path -> {:?}", log_dir);
+            log::info!("Logs path -> \"{}\"", logs_dir.display());
+            log::info!("Settings path -> \"{}\"", settings_path.display());
             log::info!("App is starting...!");
 
-            let app_handle = app.app_handle().clone();
-            tauri::async_runtime::spawn(async move {
-                match update(app_handle).await {
-                    Ok(_) => {
-                        log::info!("Update completed successfully.");
-                    },
-                    Err(e) => {
-                        log::error!("Failed to perform update: {}", e);
+            // Load setting from store
+            let store = app.store(settings_path)?;
+
+            let check_for_updates_on_startup: bool = store
+                .get("check_for_updates_on_startup")
+                .and_then(|obj| obj.get("value").and_then(|v| v.as_bool()))
+                .unwrap_or(false);
+
+            let release_channel = store
+                .get("release_channel")
+                .and_then(|obj| {
+                    obj.get("value")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_owned())
+                })
+                .unwrap_or_else(|| "full".to_string());
+
+            // Window menu
+            let check_updates_on_startup_item =
+                CheckMenuItemBuilder::new("Check for Updates on Startup")
+                    .id("check_for_updates_on_startup")
+                    .checked(check_for_updates_on_startup)
+                    .build(app)?;
+
+            let check_for_updates_now_item =
+                tauri::menu::MenuItemBuilder::new("Check for Updates Now")
+                    .id("check_for_updates_now")
+                    .build(app)?;
+
+            let full_release_item = CheckMenuItemBuilder::new("Full-release")
+                .id("release_channel_full")
+                .checked(release_channel == "full")
+                .build(app)?;
+
+            let nightly_release_item = CheckMenuItemBuilder::new("Nightly pre-release")
+                .id("release_channel_nightly")
+                .checked(release_channel == "nightly")
+                .build(app)?;
+
+            let release_channel_menu = SubmenuBuilder::new(app, "Release channel")
+                .item(&full_release_item)
+                .item(&nightly_release_item)
+                .build()?;
+
+            let settings_menu = SubmenuBuilder::new(app, "Settings")
+                .item(&check_updates_on_startup_item)
+                .item(&check_for_updates_now_item)
+                .separator()
+                .item(&release_channel_menu)
+                .build()?;
+
+            let menu = MenuBuilder::new(app).items(&[&settings_menu]).build()?;
+
+            app.set_menu(menu)?;
+            app.on_menu_event(move |app_handle: &tauri::AppHandle, event| {
+                match event.id().0.as_str() {
+                    "check_for_updates_on_startup" => {
+                        let checked = check_updates_on_startup_item.is_checked().unwrap_or(false);
+                        store.set("check_for_updates_on_startup", json!({ "value": checked }));
+                    }
+                    "release_channel_full" => {
+                        let _ = full_release_item.set_checked(true);
+                        let _ = nightly_release_item.set_checked(false);
+                        store.set("release_channel", json!({ "value": "full" }));
+                    }
+                    "release_channel_nightly" => {
+                        let _ = full_release_item.set_checked(false);
+                        let _ = nightly_release_item.set_checked(true);
+                        store.set("release_channel", json!({ "value": "nightly" }));
+                    }
+                    "check_for_updates_now" => {
+                        let app_handle = app_handle.clone();
+                        let release_channel = store
+                            .get("release_channel")
+                            .and_then(|obj| {
+                                obj.get("value")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.to_owned())
+                            })
+                            .unwrap_or_else(|| "full".to_string());
+                        check_for_update(app_handle, release_channel);
+                    }
+                    _ => {
+                        log::debug!("Unexpected menu event.");
                     }
                 }
             });
-            
+
+            // Check for updates
+            if check_for_updates_on_startup {
+                check_for_update(app.app_handle().clone(), release_channel);
+            };
+
+            // On main window ready
             let app_handle = app.app_handle().clone();
             app.listen("window-ready", move |_event| {
                 log::info!("Window is ready!");
-
 
                 let mut flag = MAIN_WINDOW_READY_FLAG.lock().unwrap();
                 *flag = true;
@@ -422,6 +553,7 @@ pub fn run() {
                 });
             }
 
+            // Register deep links
             app.deep_link().register_all()?;
 
             // Process file args passed at startup
