@@ -83,6 +83,17 @@ fn check_for_update(app_handle: tauri::AppHandle, release_channel: String) {
     });
 }
 
+fn detect_linux_install_type() -> String {
+    if std::env::var("APPIMAGE").is_ok() {
+        return "appimage".to_string();
+    }
+
+    let install_type: String = std::env::var("IVA_PRIME_INSTALL_TYPE").unwrap_or_else(|_| "unknown".to_string());
+    log::debug!("Linux install type -> {:?}", install_type.clone());
+    
+    install_type
+}
+
 async fn get_update(
     app_handle: tauri::AppHandle,
     release_channel: &str,
@@ -93,10 +104,31 @@ async fn get_update(
         "https://github.com/RaduLeonte/IVA-Prime/releases/latest/latest.json"
     };
 
-    let updater = app_handle
-        .updater_builder()
-        .endpoints(vec![Url::parse(update_url)?])?
-        .build()?;
+    let updater = {
+        #[cfg(target_os = "linux")]
+        {
+            let target = match detect_linux_install_type().as_str() {
+                "appimage" => "linux-x86_64",
+                "deb" => "linux-x86_64-deb",
+                "rpm" => "linux-x86_64-rpm",
+                _ => "linux-x86_64", // default fallback
+            };
+
+            app_handle
+                .updater_builder()
+                .endpoints(vec![Url::parse(update_url)?])?
+                .target(target)
+                .build()?
+        }
+
+        #[cfg(any(target_os = "windows", target_os = "macos"))]
+        {
+            app_handle
+                .updater_builder()
+                .endpoints(vec![Url::parse(update_url)?])?
+                .build()?
+        }
+    };
 
     let update = updater.check().await?;
 
