@@ -1,6 +1,8 @@
 #!/bin/sh
+
 set -e
 echo "Post installation -> update mime and desktop databases"
 update-mime-database /usr/share/mime
 update-desktop-database /usr/share/applications
+echo "IVA_PRIME_INSTALL_TYPE=\"deb\"" >> /etc/environment
 exit 0

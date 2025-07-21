@@ -3,4 +3,5 @@ set -e
 echo "Pre removal -> update mime and desktop databases"
 update-mime-database /usr/share/mime
 update-desktop-database /usr/share/applications
+sed -i '/IVA_PRIME_INSTALL_TYPE/d' /etc/environment
 exit 0
