@@ -83,6 +83,7 @@ fn check_for_update(app_handle: tauri::AppHandle, release_channel: String) {
     });
 }
 
+#[cfg(target_os = "linux")]
 fn detect_linux_install_type() -> String {
     if std::env::var("APPIMAGE").is_ok() {
         return "appimage".to_string();
