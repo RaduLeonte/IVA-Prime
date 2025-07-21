@@ -178,7 +178,7 @@ jobs:
             target
 
       - name: Set up parallelization for Cargo build
-        run: echo "CARGO_BUILD_JOBS=$(nproc)" >> $GITHUB_ENV
+        run: echo "CARGO_BUILD_JOBS=$(sysctl -n hw.physicalcpu)" >> $GITHUB_ENV
 
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
@@ -261,7 +261,7 @@ jobs:
             target
 
       - name: Set up parallelization for Cargo build
-        run: echo "CARGO_BUILD_JOBS=$(nproc)" >> $GITHUB_ENV
+        run: echo "CARGO_BUILD_JOBS=$(sysctl -n hw.physicalcpu)" >> $GITHUB_ENV
 
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
