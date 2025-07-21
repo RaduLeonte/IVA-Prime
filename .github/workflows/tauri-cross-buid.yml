@@ -93,6 +93,15 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache Rust dependencies and toolchain
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: "rust-${{ runner.os }}-stable-${{ hashFiles('**/Cargo.lock') }}"
+          cache-directories: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
 
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
@@ -140,6 +149,14 @@ jobs:
         with:
           targets: x86_64-apple-darwin
 
+      - name: Cache Rust dependencies and toolchain
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: "rust-${{ runner.os }}-stable-${{ hashFiles('**/Cargo.lock') }}"
+          cache-directories: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
 
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
@@ -187,6 +204,14 @@ jobs:
         with:
           targets: aarch64-apple-darwin
 
+      - name: Cache Rust dependencies and toolchain
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: "rust-${{ runner.os }}-stable-${{ hashFiles('**/Cargo.lock') }}"
+          cache-directories: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
 
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
@@ -237,10 +262,18 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Cache Rust dependencies and toolchain
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: "rust-${{ runner.os }}-stable-${{ hashFiles('**/Cargo.lock') }}"
+          cache-directories: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
         run: npm install
-
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
