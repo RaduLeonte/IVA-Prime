@@ -88,11 +88,14 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Force update Cargo.lock
+        run: cargo update
       
       - name: Cache Rust dependencies and toolchain
         uses: Swatinem/rust-cache@v2
         with:
-          key: "rust-${{ runner.os }}-stable-${{ hashFiles('**/Cargo.lock') }}"
+          key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
           cache-directories: |
             ~/.cargo/registry
             ~/.cargo/git
