@@ -101,6 +101,9 @@ jobs:
             ~/.cargo/git
             target
 
+      - name: Set up parallelization for Cargo build
+        run: echo "CARGO_BUILD_JOBS=$(wmic cpu get NumberOfCores | findstr /R [0-9])" >> $GITHUB_ENV
+
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
         run: npm install
