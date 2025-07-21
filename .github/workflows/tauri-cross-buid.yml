@@ -264,11 +264,13 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
+          workspaces: "tauri/iva-prime/src-tauri/"
           cache-directories: |
             ~/.cargo/registry
             ~/.cargo/git
             target
             src-tauri/target/release/build
+            tauri/iva-prime/src-tauri/target/release/build
 
       - name: Set up parallelization for Cargo build
         run: |
