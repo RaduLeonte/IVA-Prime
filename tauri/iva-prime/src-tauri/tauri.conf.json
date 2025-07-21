@@ -109,13 +109,15 @@
         "files": {
           "usr/share/mime/packages/iva-prime-mime.xml": "iva-prime-mime.xml"
         },
-        "postInstallScript": "scripts/postinst",
+        "postInstallScript": "scripts/postinst_deb",
         "preRemoveScript": "scripts/prerm"
       },
       "rpm": {
         "epoch": 0,
         "files": {},
-        "release": "1"
+        "release": "1",
+        "postInstallScript": "scripts/postinst_deb",
+        "preRemoveScript": "scripts/prerm"
       }
     }
   },
