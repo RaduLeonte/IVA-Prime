@@ -103,7 +103,10 @@ jobs:
             target
 
       - name: Set up parallelization for Cargo build
-        run: echo "CARGO_BUILD_JOBS=$(wmic cpu get NumberOfCores | findstr /R [0-9])" >> $GITHUB_ENV
+        run: |
+          NUM_CORES=$(wmic cpu get NumberOfCores | findstr /R [0-9])
+          echo "Number of processors: $NUM_CORES"
+          echo "CARGO_BUILD_JOBS=$NUM_CORES" >> $GITHUB_ENV
 
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
@@ -178,7 +181,10 @@ jobs:
             target
 
       - name: Set up parallelization for Cargo build
-        run: echo "CARGO_BUILD_JOBS=$(sysctl -n hw.physicalcpu)" >> $GITHUB_ENV
+        run: |
+          NUM_CORES=$(sysctl -n hw.physicalcpu)
+          echo "Number of processors: $NUM_CORES"
+          echo "CARGO_BUILD_JOBS=$NUM_CORES" >> $GITHUB_ENV
 
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
@@ -261,7 +267,10 @@ jobs:
             target
 
       - name: Set up parallelization for Cargo build
-        run: echo "CARGO_BUILD_JOBS=$(sysctl -n hw.physicalcpu)" >> $GITHUB_ENV
+        run: |
+          NUM_CORES=$(sysctl -n hw.physicalcpu)
+          echo "Number of processors: $NUM_CORES"
+          echo "CARGO_BUILD_JOBS=$NUM_CORES" >> $GITHUB_ENV
 
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
@@ -347,7 +356,10 @@ jobs:
             target
 
       - name: Set up parallelization for Cargo build
-        run: echo "CARGO_BUILD_JOBS=$(nproc)" >> $GITHUB_ENV
+        run: |
+          NUM_CORES=$(nproc)
+          echo "Number of processors: $NUM_CORES"
+          echo "CARGO_BUILD_JOBS=$NUM_CORES" >> $GITHUB_ENV
 
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
