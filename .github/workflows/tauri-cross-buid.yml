@@ -101,6 +101,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
+            src-tauri/target/release/build
 
       - name: Set up parallelization for Cargo build
         run: |
@@ -179,6 +180,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
+            src-tauri/target/release/build
 
       - name: Set up parallelization for Cargo build
         run: |
@@ -265,6 +267,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
+            src-tauri/target/release/build
 
       - name: Set up parallelization for Cargo build
         run: |
@@ -354,6 +357,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
+            src-tauri/target/release/build
 
       - name: Set up parallelization for Cargo build
         run: |
