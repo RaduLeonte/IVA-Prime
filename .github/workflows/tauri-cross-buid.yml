@@ -104,9 +104,9 @@ jobs:
 
       - name: Set up parallelization for Cargo build
         run: |
-          NUM_CORES=$(wmic cpu get NumberOfCores | findstr /R [0-9])
-          echo "Number of processors: $NUM_CORES"
-          echo "CARGO_BUILD_JOBS=$NUM_CORES" >> $GITHUB_ENV
+          $numCores = (Get-WmiObject -Class Win32_Processor | Select-Object -ExpandProperty NumberOfCores) | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+          echo "Number of processors: $numCores"
+          echo "CARGO_BUILD_JOBS=$numCores" >> $GITHUB_ENV
 
       - name: Install frontend dependencies
         working-directory: tauri/iva-prime
