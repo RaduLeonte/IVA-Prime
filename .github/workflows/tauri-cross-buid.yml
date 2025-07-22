@@ -1,5 +1,14 @@
 name: Build Tauri App
 
+run-name: >
+  ${{ github.event_name == 'schedule' && 'Nightly Build - ' || 
+      github.event_name == 'release' && 'Release Build - ' || 
+      github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/master' && 'Manual Pre-Release Build - ' || 'Manual Build - ') || 
+      github.event_name == 'pull_request' && 'PR Build - ' || 
+      'Build' 
+  }}
+  ${{ github.ref_name }} by @${{ github.actor }}
+
 on:
   workflow_dispatch: # Manual trigger: on PR -> no pre-release or on master -> pre-release
   schedule: # Nightly build
