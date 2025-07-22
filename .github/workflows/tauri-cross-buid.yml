@@ -32,7 +32,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-
       - name: Get version from Cargo.toml and context
         id: get_version
         working-directory: tauri/iva-prime/src-tauri
@@ -85,6 +84,9 @@ jobs:
     needs: [get-info]
     if: needs.get-info.outputs.should_build == 'true'
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Setup Runner
         uses: ./.github/actions/setup-runner
         with:
@@ -117,6 +119,9 @@ jobs:
     needs: [get-info]
     if: needs.get-info.outputs.should_build == 'true'
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Setup Runner
         uses: ./.github/actions/setup-runner
         with:
@@ -151,6 +156,9 @@ jobs:
     needs: [get-info]
     if: needs.get-info.outputs.should_build == 'true'
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
       - name: Setup Runner
         uses: ./.github/actions/setup-runner
         with:
@@ -185,6 +193,9 @@ jobs:
     needs: [get-info]
     if: needs.get-info.outputs.should_build == 'true'
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
       - name: Setup Runner
         uses: ./.github/actions/setup-runner
         with:
