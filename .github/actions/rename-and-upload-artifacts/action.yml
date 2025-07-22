@@ -1,0 +1,67 @@
+name: Rename and Upload Artifacts
+description: Rename and upload multiple artifacts from target mappings
+inputs:
+  targets:
+    description: |
+      Multiline, format: .extension -> path/ -> renameto
+      Example:
+        .exe -> release/bundle/nsis/ -> win64-setup
+        .exe.sig -> release/bundle/nsis/ -> win64-setup
+    required: true
+  version:
+    description: Version string to use in filenames
+    required: true
+  artifact-name:
+    description: Artifact name to upload under
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Rename artifacts as specified in targets
+      shell: bash
+      run: |
+        set -e
+        ROOT="tauri/iva-prime/src-tauri/target"
+        VERSION="${{ inputs.version }}"
+        TMP_UPLOAD_DIR="rename-artifacts-tmp"
+        mkdir -p "$TMP_UPLOAD_DIR"
+
+        while IFS= read -r line; do
+          [[ -z "$line" || "$line" =~ ^# ]] && continue  # skip blank/comment lines
+          # Parse the line: .ext -> dir/ -> renameto
+          EXT=$(echo "$line" | awk -F'->' '{print $1}' | xargs)
+          DIR=$(echo "$line" | awk -F'->' '{print $2}' | xargs)
+          RENAME=$(echo "$line" | awk -F'->' '{print $3}' | xargs)
+
+          SRC="$ROOT/$DIR"
+          shopt -s nullglob
+          for f in "$SRC"/*$EXT; do
+            # Compute the output name
+            OUT="IVA-Prime-${VERSION}-${RENAME}${EXT}"
+            # For multi-extensions, ensure we preserve the full ext
+            if [[ "$EXT" == ".app.tar.gz" || "$EXT" == ".app.tar.gz.sig" ]]; then
+              OUT="IVA-Prime-${VERSION}-${RENAME}${EXT}"
+            fi
+
+            # For .sig, make sure we treat e.g. .dmg.sig, .AppImage.sig, etc
+            if [[ "$EXT" == ".sig" ]]; then
+              orig_ext="${f%.*}"
+              orig_ext="${orig_ext##*.}"
+              OUT="IVA-Prime-${VERSION}-${RENAME}.${orig_ext}.sig"
+            fi
+
+            echo "Copying $f -> $TMP_UPLOAD_DIR/$OUT"
+            cp "$f" "$TMP_UPLOAD_DIR/$OUT"
+          done
+          shopt -u nullglob
+        done <<< "${{ inputs.targets }}"
+
+        echo "Final files for upload:"
+        ls -lh "$TMP_UPLOAD_DIR"
+
+    - name: Upload renamed artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: rename-artifacts-tmp/

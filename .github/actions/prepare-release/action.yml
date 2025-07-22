@@ -1,0 +1,117 @@
+name: Prepare Release Files
+description: Download artifacts, generate latest.json, and list files for release upload.
+inputs:
+  version:
+    required: true
+    description: "Version to use in naming."
+  nightly:
+    required: false
+    default: "false"
+    description: "Set to 'true' for nightly/pre-release mode."
+outputs:
+  files_list:
+    description: "Newline-separated list of artifact files for upload."
+    value: ${{ steps.list_files.outputs.files_list }}
+runs:
+  using: "composite"
+  steps:
+    - name: Download Windows artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: iva-prime-windows
+        path: ./
+
+    - name: Download macOS Intel artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: iva-prime-macos-intel
+        path: ./
+
+    - name: Download macOS ARM artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: iva-prime-macos-arm
+        path: ./
+
+    - name: Download Linux artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: iva-prime-linux
+        path: ./
+
+    - name: List files in workspace
+      shell: bash
+      run: ls -rl
+
+    - name: Generate latest.json
+      shell: bash
+      run: |
+        VERSION="${{ inputs.version }}"
+        PUB_DATE=$(date --utc +%Y-%m-%dT%H:%M:%SZ)
+        if [ "${{ inputs.nightly }}" = "true" ]; then
+          RELEASE_URL="https://github.com/RaduLeonte/IVA-Prime/releases/download/nightly"
+        else
+          RELEASE_URL="https://github.com/RaduLeonte/IVA-Prime/releases/latest/download"
+        fi
+        cat <<EOF > latest.json
+        {
+          "version": "$VERSION",
+          "notes": "Nightly build of the IVA Prime desktop app. This version might contain bugs and can be unstable compared to the full release!",
+          "pub_date": "$PUB_DATE",
+          "platforms": {
+            "linux-x86_64": {
+              "signature": "$(cat IVA-Prime-${VERSION}-linux.AppImage.sig)",
+              "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-linux.AppImage"
+            },
+            "linux-x86_64-deb": {
+              "signature": "$(cat IVA-Prime-${VERSION}-linux.deb.sig)",
+              "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-linux.deb"
+            },
+            "linux-x86_64-rpm": {
+              "signature": "$(cat IVA-Prime-${VERSION}-linux.rpm.sig)",
+              "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-linux.rpm"
+            },
+            "windows-x86_64": {
+              "signature": "$(cat IVA-Prime-${VERSION}-win64-setup.exe.sig)",
+              "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-win64-setup.exe"
+            },
+            "darwin-x86_64": {
+              "signature": "$(cat IVA-Prime-${VERSION}-macos-intel.app.tar.gz.sig)",
+              "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-macos-intel.app.tar.gz"
+            },
+            "darwin-aarch64": {
+              "signature": "$(cat IVA-Prime-${VERSION}-macos-arm.app.tar.gz.sig)",
+              "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-macos-arm.app.tar.gz"
+            }
+          }
+        }
+        EOF
+        cat latest.json
+
+    - name: Output artifact file list
+      id: list_files
+      shell: bash
+      run: |
+        VERSION="${{ inputs.version }}"
+        {
+          echo "IVA-Prime-${VERSION}-linux.AppImage"
+          echo "IVA-Prime-${VERSION}-linux.AppImage.sig"
+          echo "IVA-Prime-${VERSION}-linux.deb"
+          echo "IVA-Prime-${VERSION}-linux.deb.sig"
+          echo "IVA-Prime-${VERSION}-linux.rpm"
+          echo "IVA-Prime-${VERSION}-linux.rpm.sig"
+          echo "IVA-Prime-${VERSION}-win64-setup.exe"
+          echo "IVA-Prime-${VERSION}-win64-setup.exe.sig"
+          echo "IVA-Prime-${VERSION}-macos-arm.app.tar.gz"
+          echo "IVA-Prime-${VERSION}-macos-arm.app.tar.gz.sig"
+          echo "IVA-Prime-${VERSION}-macos-arm.dmg"
+          echo "IVA-Prime-${VERSION}-macos-intel.app.tar.gz"
+          echo "IVA-Prime-${VERSION}-macos-intel.app.tar.gz.sig"
+          echo "IVA-Prime-${VERSION}-macos-intel.dmg"
+          echo "latest.json"
+        } | tee files.txt
+        # Output for next step
+        # Turn to multiline output for next step
+        echo "files_list<<EOF" >> $GITHUB_OUTPUT
+        cat files.txt >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT

@@ -1,0 +1,74 @@
+name: Setup Runner 
+description: Setup the runner os for building the Tauri app
+inputs:
+  node-version:
+    description: 'Node.js version'
+    required: false
+    default: 'lts/*'
+  python-version:
+    description: 'Python version'
+    required: false
+    default: '3.13.5'
+  rust-targets:
+    description: 'Rust targets (comma separated, e.g. x86_64-apple-darwin)'
+    required: false
+    default: ''
+  version:
+    description: 'Version string'
+    required: false
+    default: ''
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install Linux dependencies
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ inputs.rust-targets }}
+
+    - name: Cache Rust dependencies and toolchain
+      uses: Swatinem/rust-cache@v2
+      with:
+        key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
+        workspaces: tauri/iva-prime/src-tauri -> target
+
+    - name: Set up parallelization for Cargo build
+      shell: bash
+      run: |
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          NUM_CORES=$(powershell -Command "(Get-WmiObject -Class Win32_Processor | Select-Object -ExpandProperty NumberOfCores) | Measure-Object -Sum | Select-Object -ExpandProperty Sum")
+        elif [[ "$RUNNER_OS" == "macOS" ]]; then
+          NUM_CORES=$(sysctl -n hw.physicalcpu)
+        else
+          NUM_CORES=$(nproc)
+        fi
+        echo "CARGO_BUILD_JOBS=$NUM_CORES" >> $GITHUB_ENV
+        echo "Number of processors: $NUM_CORES"
+
+    - name: Install frontend dependencies
+      working-directory: tauri/iva-prime
+      shell: bash
+      run: npm install
+
+    - name: Set npm version
+      if: ${{ inputs.version != '' }}
+      working-directory: tauri/iva-prime
+      shell: bash
+      run: npm version "${{ inputs.version }}"

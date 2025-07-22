@@ -1,5 +1,14 @@
 name: Build Tauri App
 
+run-name: >
+  ${{ github.event_name == 'schedule' && 'Nightly Build - ' || 
+      github.event_name == 'release' && 'Release Build - ' || 
+      github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/master' && 'Manual Pre-Release Build - ' || 'Manual Build - ') || 
+      github.event_name == 'pull_request' && 'PR Build - ' || 
+      'Build' 
+  }}
+  ${{ github.ref_name }} by @${{ github.actor }}
+
 on:
   workflow_dispatch: # Manual trigger: on PR -> no pre-release or on master -> pre-release
   schedule: # Nightly build
@@ -13,14 +22,15 @@ on:
 
 jobs:
   get-info:
+    name: Get Info
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get_version.outputs.version }}
       should_build: ${{ steps.decide_should_build.outputs.should_build }}
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
 
       - name: Get version from Cargo.toml and context
         id: get_version
@@ -69,6 +79,7 @@ jobs:
 
 
   build-windows:
+    name: Build for Windows
     runs-on: windows-latest
     needs: [get-info]
     if: needs.get-info.outputs.should_build == 'true'
@@ -76,27 +87,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup Runner
+        uses: ./.github/actions/setup-runner
         with:
-          python-version: '3.13.5'
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install frontend dependencies
-        working-directory: tauri/iva-prime
-        run: npm install
-
-      - name: Set npm version
-        working-directory: tauri/iva-prime
-        shell: bash
-        run: npm version "${{ needs.get-info.outputs.version }}"
+          version: ${{ needs.get-info.outputs.version }}
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -109,23 +103,18 @@ jobs:
           args: >-
             --bundles nsis -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
-      - name: Rename Windows artifact
-        shell: bash
-        run: |
-          VERSION="${{ needs.get-info.outputs.version }}"
-          mv tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe IVA-Prime-${VERSION}-win64-setup.exe
-          mv tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe.sig IVA-Prime-${VERSION}-win64-setup.exe.sig
-
-      - name: Upload Windows artifact
-        uses: actions/upload-artifact@v4
+      - name: Rename and Upload Windows artifact
+        uses: ./.github/actions/rename-and-upload-artifacts
         with:
-          name: iva-prime-windows
-          path: |
-            IVA-Prime-${{ needs.get-info.outputs.version }}-win64-setup.exe
-            IVA-Prime-${{ needs.get-info.outputs.version }}-win64-setup.exe.sig
+          targets: |
+            .exe -> release/bundle/nsis/ -> win64-setup
+            .exe.sig -> release/bundle/nsis/ -> win64-setup
+          version: ${{ needs.get-info.outputs.version }}
+          artifact-name: iva-prime-windows
 
 
   build-macos-intel:
+    name: Build for macOS Intel CPUs
     runs-on: macos-latest
     needs: [get-info]
     if: needs.get-info.outputs.should_build == 'true'
@@ -133,29 +122,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup Runner
+        uses: ./.github/actions/setup-runner
         with:
-          python-version: '3.13.5'
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-apple-darwin
-
-      - name: Install frontend dependencies
-        working-directory: tauri/iva-prime
-        run: npm install
-
-      - name: Set npm version
-        working-directory: tauri/iva-prime
-        shell: bash
-        run: npm version "${{ needs.get-info.outputs.version }}"
+          rust-targets: x86_64-apple-darwin
+          version: ${{ needs.get-info.outputs.version }}
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -168,61 +139,31 @@ jobs:
           args: >-
             --target x86_64-apple-darwin --bundles app,dmg -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
-      - name: Rename macOS Intel artifact
-        shell: bash
-        run: |
-          VERSION="${{ needs.get-info.outputs.version }}"
-          
-          # Rename app archive
-          mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz IVA-Prime-${VERSION}-macos-intel.app.tar.gz || true
-          
-          # Rename app updater signature
-          mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz.sig IVA-Prime-${VERSION}-macos-intel.app.tar.gz.sig || true
-          
-          # Rename dmg
-          mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg IVA-Prime-${VERSION}-macos-intel.dmg || true
-
-      - name: Upload macOS Intel artifact
-        uses: actions/upload-artifact@v4
+      - name: Rename and Upload macOS Intel artifact
+        uses: ./.github/actions/rename-and-upload-artifacts
         with:
-          name: iva-prime-macos-intel
-          path: |
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.dmg
+          targets: |
+            .app.tar.gz -> x86_64-apple-darwin/release/bundle/macos/ -> macos-intel
+            .app.tar.gz.sig -> x86_64-apple-darwin/release/bundle/macos/ -> macos-intel
+            .dmg -> x86_64-apple-darwin/release/bundle/dmg/ -> macos-intel
+          version: ${{ needs.get-info.outputs.version }}
+          artifact-name: iva-prime-macos-intel
 
 
   build-macos-arm:
+    name: Build for macOS ARM CPUs
     runs-on: macos-latest
     needs: [get-info]
     if: needs.get-info.outputs.should_build == 'true'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+        
+      - name: Setup Runner
+        uses: ./.github/actions/setup-runner
         with:
-          python-version: '3.13.5'
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-apple-darwin
-
-      - name: Install frontend dependencies
-        working-directory: tauri/iva-prime
-        run: npm install
-
-      - name: Set npm version
-        working-directory: tauri/iva-prime
-        shell: bash
-        run: npm version "${{ needs.get-info.outputs.version }}"
+          rust-targets: aarch64-apple-darwin
+          version: ${{ needs.get-info.outputs.version }}
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -235,31 +176,19 @@ jobs:
           args: >-
             --target aarch64-apple-darwin --bundles app,dmg -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
-      - name: Rename macOS ARM artifact
-        shell: bash
-        run: |
-          VERSION="${{ needs.get-info.outputs.version }}"
-          
-          # Rename app archive
-          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz IVA-Prime-${VERSION}-macos-arm.app.tar.gz || true
-          
-          # Rename app updater signature
-          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz.sig IVA-Prime-${VERSION}-macos-arm.app.tar.gz.sig || true
-          
-          # Rename dmg
-          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg IVA-Prime-${VERSION}-macos-arm.dmg || true
-
-      - name: Upload macOS ARM artifact
-        uses: actions/upload-artifact@v4
+      - name: Rename and Upload macOS ARM artifact
+        uses: ./.github/actions/rename-and-upload-artifacts
         with:
-          name: iva-prime-macos-arm
-          path: |
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.dmg
+          targets: |
+            .app.tar.gz -> aarch64-apple-darwin/release/bundle/macos/ -> macos-arm
+            .app.tar.gz.sig -> aarch64-apple-darwin/release/bundle/macos/ -> macos-arm
+            .dmg -> aarch64-apple-darwin/release/bundle/dmg/ -> macos-arm
+          version: ${{ needs.get-info.outputs.version }}
+          artifact-name: iva-prime-macos-arm
 
 
   build-linux:
+    name: Build for Linux
     runs-on: ubuntu-22.04
     needs: [get-info]
     if: needs.get-info.outputs.should_build == 'true'
@@ -267,32 +196,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup Runner
+        uses: ./.github/actions/setup-runner
         with:
-          python-version: '3.13.5'
-        
-      - name: Install Linux dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install frontend dependencies
-        working-directory: tauri/iva-prime
-        run: npm install
-
-      - name: Set npm version
-        working-directory: tauri/iva-prime
-        shell: bash
-        run: npm version "${{ needs.get-info.outputs.version }}"
+          version: ${{ needs.get-info.outputs.version }}
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -305,115 +212,33 @@ jobs:
           args: >-
             --bundles appimage,deb,rpm -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
-      - name: Rename Linux artifact
-        shell: bash
-        run: |
-          VERSION="${{ needs.get-info.outputs.version }}"
-          
-          # Rename AppImage
-          mv tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage IVA-Prime-${VERSION}-linux.AppImage || true
-          
-          # Rename AppImage signature
-          mv tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage.sig IVA-Prime-${VERSION}-linux.AppImage.sig || true
-          
-          # Rename DEB
-          mv tauri/iva-prime/src-tauri/target/release/bundle/deb/*.deb IVA-Prime-${VERSION}-linux.deb || true
-          
-          # Rename DEB signature
-          mv tauri/iva-prime/src-tauri/target/release/bundle/deb/*.deb.sig IVA-Prime-${VERSION}-linux.deb.sig || true
-          
-          # Rename RPM
-          mv tauri/iva-prime/src-tauri/target/release/bundle/rpm/*.rpm IVA-Prime-${VERSION}-linux.rpm || true
-          
-          # Rename RPM signature
-          mv tauri/iva-prime/src-tauri/target/release/bundle/rpm/*.rpm.sig IVA-Prime-${VERSION}-linux.rpm.sig || true
-
-      - name: Upload Linux artifacts
-        uses: actions/upload-artifact@v4
+      - name: Rename and Upload Linux artifact
+        uses: ./.github/actions/rename-and-upload-artifacts
         with:
-          name: iva-prime-linux
-          path: |
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.AppImage
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.AppImage.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.deb
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.deb.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm.sig
+          targets: |
+            .AppImage -> release/bundle/appimage/ -> linux
+            .AppImage.sig -> release/bundle/appimage/ -> linux
+            .deb -> release/bundle/deb/ -> linux
+            .deb.sig -> release/bundle/deb/ -> linux
+            .rpm -> release/bundle/rpm/ -> linux
+            .rpm.sig -> release/bundle/rpm/ -> linux
+          version: ${{ needs.get-info.outputs.version }}
+          artifact-name: iva-prime-linux
+
 
 
   pre-release:
+    name: Create Pre-release
     runs-on: ubuntu-latest
     needs: [get-info, build-windows, build-macos-intel, build-macos-arm, build-linux]
     if: (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') || (github.event_name == 'schedule' && needs.get-info.outputs.should_build == 'true')
     steps:
-      - name: Download Windows artifacts
-        uses: actions/download-artifact@v4
+      - name: Prepare Pre-release Artifacts
+        id: prepare
+        uses: ./.github/actions/prepare-release
         with:
-          name: iva-prime-windows
-          path: ./
-
-      - name: Download macOS Intel artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: iva-prime-macos-intel
-          path: ./
-
-      - name: Download macOS ARM artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: iva-prime-macos-arm
-          path: ./
-
-      - name: Download Linux artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: iva-prime-linux
-          path: ./
-
-      - name: List files
-        run: ls -rl
-
-
-      - name: Generate latest.json
-        run: |
-          VERSION="${{ needs.get-info.outputs.version }}"
-          PUB_DATE=$(date --utc +%Y-%m-%dT%H:%M:%SZ)  # RFC 3339 format
-          RELEASE_URL="https://github.com/RaduLeonte/IVA-Prime/releases/download/nightly"
-
-          cat <<EOF > latest.json
-          {
-            "version": "$VERSION",
-            "notes": "Nightly build of the IVA Prime desktop app. This version might contain bugs and can be unstable compared to the full release!",
-            "pub_date": "$PUB_DATE",
-            "platforms": {
-              "linux-x86_64": {
-                "signature": "$(cat IVA-Prime-${VERSION}-linux.AppImage.sig)",
-                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-linux.AppImage"
-              },
-              "linux-x86_64-deb": {
-                "signature": "$(cat IVA-Prime-${VERSION}-linux.deb.sig)",
-                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-linux.deb"
-              },
-              "linux-x86_64-rpm": {
-                "signature": "$(cat IVA-Prime-${VERSION}-linux.rpm.sig)",
-                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-linux.rpm"
-              },
-              "windows-x86_64": {
-                "signature": "$(cat IVA-Prime-${VERSION}-win64-setup.exe.sig)",
-                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-win64-setup.exe"
-              },
-              "darwin-x86_64": {
-                "signature": "$(cat IVA-Prime-${VERSION}-macos-intel.app.tar.gz.sig)",
-                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-macos-intel.app.tar.gz"
-              },
-              "darwin-aarch64": {
-                "signature": "$(cat IVA-Prime-${VERSION}-macos-arm.app.tar.gz.sig)",
-                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-macos-arm.app.tar.gz"
-              }
-            }
-          }
-          EOF
-          cat latest.json  # Print the file to verify
+          version: ${{ needs.get-info.outputs.version }}
+          nightly: "true"
 
 
       - name: Update Nightly Release
@@ -427,116 +252,26 @@ jobs:
           body: |
             Nightly build of the IVA Prime desktop app.
             This version might contain bugs and can be unstable compared to the full release!
-          files: |
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.AppImage
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.AppImage.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.deb
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.deb.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-win64-setup.exe
-            IVA-Prime-${{ needs.get-info.outputs.version }}-win64-setup.exe.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.dmg
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.dmg
-            latest.json
+          files: ${{ steps.prepare.outputs.files_list }}
+
 
   release:
+    name: Create Release
     runs-on: ubuntu-latest
     needs: [get-info, build-windows, build-macos-intel, build-macos-arm, build-linux]
     if: github.event_name == 'release'
     steps:
-      - name: Download Windows artifact
-        uses: actions/download-artifact@v4
+      - name: Prepare Release Artifacts
+        id: prepare
+        uses: ./.github/actions/prepare-release
         with:
-          name: iva-prime-windows
-          path: ./
-
-      - name: Download macOS Intel artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: iva-prime-macos-intel
-          path: ./
-
-      - name: Download macOS ARM artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: iva-prime-macos-arm
-          path: ./
-
-      - name: Download Linux artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: iva-prime-linux
-          path: ./
-
-
-      - name: List files
-        run: ls -rl
-
-      - name: Generate latest.json
-        run: |
-          VERSION="${{ needs.get-info.outputs.version }}"
-          PUB_DATE=$(date --utc +%Y-%m-%dT%H:%M:%SZ)  # RFC 3339 format
-          RELEASE_URL="https://github.com/RaduLeonte/IVA-Prime/releases/latest/download"
-
-          cat <<EOF > latest.json
-          {
-            "version": "$VERSION",
-            "notes": "Nightly build of the IVA Prime desktop app. This version might contain bugs and can be unstable compared to the full release!",
-            "pub_date": "$PUB_DATE",
-            "platforms": {
-              "linux-x86_64": {
-                "signature": "$(cat IVA-Prime-${VERSION}-linux.AppImage.sig)",
-                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-linux.AppImage"
-              },
-              "linux-x86_64-deb": {
-                "signature": "$(cat IVA-Prime-${VERSION}-linux.deb.sig)",
-                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-linux.deb"
-              },
-              "linux-x86_64-rpm": {
-                "signature": "$(cat IVA-Prime-${VERSION}-linux.rpm.sig)",
-                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-linux.rpm"
-              },
-              "windows-x86_64": {
-                "signature": "$(cat IVA-Prime-${VERSION}-win64-setup.exe.sig)",
-                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-win64-setup.exe"
-              },
-              "darwin-x86_64": {
-                "signature": "$(cat IVA-Prime-${VERSION}-macos-intel.app.tar.gz.sig)",
-                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-macos-intel.app.tar.gz"
-              },
-              "darwin-aarch64": {
-                "signature": "$(cat IVA-Prime-${VERSION}-macos-arm.app.tar.gz.sig)",
-                "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-macos-arm.app.tar.gz"
-              }
-            }
-          }
-          EOF
-          cat latest.json  # Print the file to verify
+          version: ${{ needs.get-info.outputs.version }}
+          nightly: "false"
 
       - name: Upload assets to GitHub Release
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          files: |
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.AppImage
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.AppImage.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.deb
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.deb.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-win64-setup.exe
-            IVA-Prime-${{ needs.get-info.outputs.version }}-win64-setup.exe.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.dmg
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.dmg
-            latest.json
+          files: ${{ steps.prepare.outputs.files_list }}
         
