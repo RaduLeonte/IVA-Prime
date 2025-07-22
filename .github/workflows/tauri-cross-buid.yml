@@ -80,44 +80,15 @@ jobs:
 
 
   build-windows:
+    name: Build for Windows
     runs-on: windows-latest
     needs: [get-info]
     if: needs.get-info.outputs.should_build == 'true'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: ./.github/actions/setup-python
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Runner
+        uses: ./.github/actions/setup-runner
         with:
-          node-version: lts/*
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache Rust dependencies and toolchain
-        uses: Swatinem/rust-cache@v2
-        with:
-          key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
-          workspaces: tauri/iva-prime/src-tauri -> target
-
-      - name: Set up parallelization for Cargo build
-        run: |
-          $numCores = (Get-WmiObject -Class Win32_Processor | Select-Object -ExpandProperty NumberOfCores) | Measure-Object -Sum | Select-Object -ExpandProperty Sum
-          echo "Number of processors: $numCores"
-          echo "CARGO_BUILD_JOBS=$numCores" >> $GITHUB_ENV
-
-      - name: Install frontend dependencies
-        working-directory: tauri/iva-prime
-        run: npm install
-
-      - name: Set npm version
-        working-directory: tauri/iva-prime
-        shell: bash
-        run: npm version "${{ needs.get-info.outputs.version }}"
+          version: ${{ needs.get-info.outputs.version }}
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -147,46 +118,16 @@ jobs:
 
 
   build-macos-intel:
+    name: Build for macOS Intel CPUs
     runs-on: macos-latest
     needs: [get-info]
     if: needs.get-info.outputs.should_build == 'true'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: ./.github/actions/setup-python
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Runner
+        uses: ./.github/actions/setup-runner
         with:
-          node-version: lts/*
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-apple-darwin
-
-      - name: Cache Rust dependencies and toolchain
-        uses: Swatinem/rust-cache@v2
-        with:
-          key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
-          workspaces: tauri/iva-prime/src-tauri -> target
-
-      - name: Set up parallelization for Cargo build
-        run: |
-          NUM_CORES=$(sysctl -n hw.physicalcpu)
-          echo "Number of processors: $NUM_CORES"
-          echo "CARGO_BUILD_JOBS=$NUM_CORES" >> $GITHUB_ENV
-
-      - name: Install frontend dependencies
-        working-directory: tauri/iva-prime
-        run: npm install
-
-      - name: Set npm version
-        working-directory: tauri/iva-prime
-        shell: bash
-        run: npm version "${{ needs.get-info.outputs.version }}"
+          rust-targets: x86_64-apple-darwin
+          version: ${{ needs.get-info.outputs.version }}
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -224,46 +165,16 @@ jobs:
 
 
   build-macos-arm:
+    name: Build for macOS ARM CPUs
     runs-on: macos-latest
     needs: [get-info]
     if: needs.get-info.outputs.should_build == 'true'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: ./.github/actions/setup-python
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Runner
+        uses: ./.github/actions/setup-runner
         with:
-          node-version: lts/*
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-apple-darwin
-
-      - name: Cache Rust dependencies and toolchain
-        uses: Swatinem/rust-cache@v2
-        with:
-          key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
-          workspaces: tauri/iva-prime/src-tauri -> target
-
-      - name: Set up parallelization for Cargo build
-        run: |
-          NUM_CORES=$(sysctl -n hw.physicalcpu)
-          echo "Number of processors: $NUM_CORES"
-          echo "CARGO_BUILD_JOBS=$NUM_CORES" >> $GITHUB_ENV
-
-      - name: Install frontend dependencies
-        working-directory: tauri/iva-prime
-        run: npm install
-
-      - name: Set npm version
-        working-directory: tauri/iva-prime
-        shell: bash
-        run: npm version "${{ needs.get-info.outputs.version }}"
+          rust-targets: aarch64-apple-darwin
+          version: ${{ needs.get-info.outputs.version }}
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -301,49 +212,15 @@ jobs:
 
 
   build-linux:
+    name: Build for Linux
     runs-on: ubuntu-22.04
     needs: [get-info]
     if: needs.get-info.outputs.should_build == 'true'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: ./.github/actions/setup-python
-        
-      - name: Install Linux dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Runner
+        uses: ./.github/actions/setup-runner
         with:
-          node-version: lts/*
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache Rust dependencies and toolchain
-        uses: Swatinem/rust-cache@v2
-        with:
-          key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
-          workspaces: tauri/iva-prime/src-tauri -> target
-
-      - name: Set up parallelization for Cargo build
-        run: |
-          NUM_CORES=$(nproc)
-          echo "Number of processors: $NUM_CORES"
-          echo "CARGO_BUILD_JOBS=$NUM_CORES" >> $GITHUB_ENV
-
-      - name: Install frontend dependencies
-        working-directory: tauri/iva-prime
-        run: npm install
-
-      - name: Set npm version
-        working-directory: tauri/iva-prime
-        shell: bash
-        run: npm version "${{ needs.get-info.outputs.version }}"
+          version: ${{ needs.get-info.outputs.version }}
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -393,6 +270,7 @@ jobs:
 
 
   pre-release:
+    name: Create Pre-release
     runs-on: ubuntu-latest
     needs: [get-info, build-windows, build-macos-intel, build-macos-arm, build-linux]
     if: (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') || (github.event_name == 'schedule' && needs.get-info.outputs.should_build == 'true')
@@ -495,6 +373,7 @@ jobs:
             latest.json
 
   release:
+    name: Create Release
     runs-on: ubuntu-latest
     needs: [get-info, build-windows, build-macos-intel, build-macos-arm, build-linux]
     if: github.event_name == 'release'
