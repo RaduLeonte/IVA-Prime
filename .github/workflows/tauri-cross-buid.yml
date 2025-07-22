@@ -89,10 +89,6 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Force update Cargo.lock
-        working-directory: tauri/iva-prime/src-tauri
-        run: cargo update
-
       - name: Cache Rust dependencies and toolchain
         uses: Swatinem/rust-cache@v2
         with:
@@ -164,9 +160,7 @@ jobs:
         with:
           targets: x86_64-apple-darwin
 
-      - name: Force update Cargo.lock
-        working-directory: tauri/iva-prime/src-tauri
-        run: cargo update
+
 
       - name: Cache Rust dependencies and toolchain
         uses: Swatinem/rust-cache@v2
@@ -246,10 +240,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin
-
-      - name: Force update Cargo.lock
-        working-directory: tauri/iva-prime/src-tauri
-        run: cargo update
 
       - name: Cache Rust dependencies and toolchain
         uses: Swatinem/rust-cache@v2
@@ -332,10 +322,6 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-
-      - name: Force update Cargo.lock
-        working-directory: tauri/iva-prime/src-tauri
-        run: cargo update
 
       - name: Cache Rust dependencies and toolchain
         uses: Swatinem/rust-cache@v2
@@ -535,7 +521,6 @@ jobs:
         with:
           name: iva-prime-linux
           path: ./
-
 
       - name: List files
         run: ls -rl
