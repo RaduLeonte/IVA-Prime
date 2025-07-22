@@ -264,7 +264,9 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
-          workspaces: "tauri/iva-prime/src-tauri -> target"
+          workspaces: |
+            tauri/iva-prime/src-tauri
+            tauri/iva-prime/src-tauri -> target/release/build
           cache-directories: |
             ~/.cargo/registry
             ~/.cargo/git
