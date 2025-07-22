@@ -22,10 +22,12 @@ on:
 
 jobs:
   get-info:
+    name: Get Info
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get_version.outputs.version }}
       should_build: ${{ steps.decide_should_build.outputs.should_build }}
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -86,9 +88,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13.5'
+        uses: ./.github/workflows/steps/setup_python.yml
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -155,9 +155,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13.5'
+        uses: ./.github/workflows/steps/setup_python.yml
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -168,8 +166,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-apple-darwin
-
-
 
       - name: Cache Rust dependencies and toolchain
         uses: Swatinem/rust-cache@v2
@@ -236,9 +232,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13.5'
+        uses: ./.github/workflows/steps/setup_python.yml
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -315,9 +309,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13.5'
+        uses: ./.github/workflows/steps/setup_python.yml
         
       - name: Install Linux dependencies
         run: |
