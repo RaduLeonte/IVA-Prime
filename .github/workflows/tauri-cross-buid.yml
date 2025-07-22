@@ -101,6 +101,15 @@ jobs:
           args: >-
             --bundles nsis -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
+      - name: Rename and Upload Windows artifact
+        uses: ./.github/actions/rename-and-upload-artifacts
+        with:
+          targets: |
+            .exe -> release/bundle/nsis/ -> win64-setup
+            .exe.sig -> release/bundle/nsis/ -> win64-setup
+          version: ${{ needs.get-info.outputs.version }}
+          artifact-name: iva-prime-windows
+
       - name: Rename Windows artifact
         shell: bash
         run: |
@@ -232,6 +241,13 @@ jobs:
           projectPath: tauri/iva-prime
           args: >-
             --bundles appimage,deb,rpm -c '{"version": "${{ needs.get-info.outputs.version }}"}'
+
+      - name: Rename and Upload Windows artifact
+        uses: ./.github/actions/rename-and-upload-artifacts
+        with:
+          targets: |
+            .exe -> release/bundle/nsis/ -> win64-setup
+            .exe.sig -> release/bundle/nsis/ -> win64-setup
 
       - name: Rename Linux artifact
         shell: bash
