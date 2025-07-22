@@ -99,6 +99,7 @@ jobs:
           key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
           workspaces: |
             tauri/iva-prime
+            tauri/iva-prime/src-tauri
             tauri/iva-prime/src-tauri -> target/release/build
           cache-directories: |
             ~/.cargo/registry
@@ -182,6 +183,7 @@ jobs:
           key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
           workspaces: |
             tauri/iva-prime
+            tauri/iva-prime/src-tauri
             tauri/iva-prime/src-tauri -> target/release/build
           cache-directories: |
             ~/.cargo/registry
@@ -273,6 +275,7 @@ jobs:
           key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
           workspaces: |
             tauri/iva-prime
+            tauri/iva-prime/src-tauri
             tauri/iva-prime/src-tauri -> target/release/build
           cache-directories: |
             ~/.cargo/registry
@@ -367,6 +370,7 @@ jobs:
           key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
           workspaces: |
             tauri/iva-prime
+            tauri/iva-prime/src-tauri
             tauri/iva-prime/src-tauri -> target/release/build
           cache-directories: |
             ~/.cargo/registry
