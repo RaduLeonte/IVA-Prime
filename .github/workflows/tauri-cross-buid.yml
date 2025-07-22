@@ -110,21 +110,6 @@ jobs:
           version: ${{ needs.get-info.outputs.version }}
           artifact-name: iva-prime-windows
 
-      - name: Rename Windows artifact
-        shell: bash
-        run: |
-          VERSION="${{ needs.get-info.outputs.version }}"
-          mv tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe IVA-Prime-${VERSION}-win64-setup.exe
-          mv tauri/iva-prime/src-tauri/target/release/bundle/nsis/*.exe.sig IVA-Prime-${VERSION}-win64-setup.exe.sig
-
-      - name: Upload Windows artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: iva-prime-windows
-          path: |
-            IVA-Prime-${{ needs.get-info.outputs.version }}-win64-setup.exe
-            IVA-Prime-${{ needs.get-info.outputs.version }}-win64-setup.exe.sig
-
 
   build-macos-intel:
     name: Build for macOS Intel CPUs
@@ -149,28 +134,15 @@ jobs:
           args: >-
             --target x86_64-apple-darwin --bundles app,dmg -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
-      - name: Rename macOS Intel artifact
-        shell: bash
-        run: |
-          VERSION="${{ needs.get-info.outputs.version }}"
-          
-          # Rename app archive
-          mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz IVA-Prime-${VERSION}-macos-intel.app.tar.gz || true
-          
-          # Rename app updater signature
-          mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz.sig IVA-Prime-${VERSION}-macos-intel.app.tar.gz.sig || true
-          
-          # Rename dmg
-          mv tauri/iva-prime/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg IVA-Prime-${VERSION}-macos-intel.dmg || true
-
-      - name: Upload macOS Intel artifact
-        uses: actions/upload-artifact@v4
+      - name: Rename and Upload macOS Intel artifact
+        uses: ./.github/actions/rename-and-upload-artifacts
         with:
-          name: iva-prime-macos-intel
-          path: |
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.app.tar.gz.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-intel.dmg
+          targets: |
+            .app.tar.gz -> x86_64-apple-darwin/release/bundle/macos/ -> macos-intel
+            .app.tar.gz.sig -> x86_64-apple-darwin/release/bundle/macos/ -> macos-intel
+            .dmg -> x86_64-apple-darwin/release/bundle/dmg/ -> macos-intel
+          version: ${{ needs.get-info.outputs.version }}
+          artifact-name: iva-prime-macos-intel
 
 
   build-macos-arm:
@@ -196,28 +168,15 @@ jobs:
           args: >-
             --target aarch64-apple-darwin --bundles app,dmg -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
-      - name: Rename macOS ARM artifact
-        shell: bash
-        run: |
-          VERSION="${{ needs.get-info.outputs.version }}"
-          
-          # Rename app archive
-          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz IVA-Prime-${VERSION}-macos-arm.app.tar.gz || true
-          
-          # Rename app updater signature
-          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz.sig IVA-Prime-${VERSION}-macos-arm.app.tar.gz.sig || true
-          
-          # Rename dmg
-          mv tauri/iva-prime/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg IVA-Prime-${VERSION}-macos-arm.dmg || true
-
-      - name: Upload macOS ARM artifact
-        uses: actions/upload-artifact@v4
+      - name: Rename and Upload macOS ARM artifact
+        uses: ./.github/actions/rename-and-upload-artifacts
         with:
-          name: iva-prime-macos-arm
-          path: |
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.app.tar.gz.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-macos-arm.dmg
+          targets: |
+            .app.tar.gz -> aarch64-apple-darwin/release/bundle/macos/ -> macos-arm
+            .app.tar.gz.sig -> aarch64-apple-darwin/release/bundle/macos/ -> macos-arm
+            .dmg -> aarch64-apple-darwin/release/bundle/dmg/ -> macos-arm
+          version: ${{ needs.get-info.outputs.version }}
+          artifact-name: iva-prime-macos-arm
 
 
   build-linux:
@@ -242,47 +201,19 @@ jobs:
           args: >-
             --bundles appimage,deb,rpm -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
-      - name: Rename and Upload Windows artifact
+      - name: Rename and Upload Linux artifact
         uses: ./.github/actions/rename-and-upload-artifacts
         with:
           targets: |
-            .exe -> release/bundle/nsis/ -> win64-setup
-            .exe.sig -> release/bundle/nsis/ -> win64-setup
+            .AppImage -> release/bundle/appimage/ -> linux
+            .AppImage.sig -> release/bundle/appimage/ -> linux
+            .deb -> release/bundle/deb/ -> linux
+            .deb.sig -> release/bundle/deb/ -> linux
+            .rpm -> release/bundle/rpm/ -> linux
+            .rpm.sig -> release/bundle/rpm/ -> linux
+          version: ${{ needs.get-info.outputs.version }}
+          artifact-name: iva-prime-linux
 
-      - name: Rename Linux artifact
-        shell: bash
-        run: |
-          VERSION="${{ needs.get-info.outputs.version }}"
-          
-          # Rename AppImage
-          mv tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage IVA-Prime-${VERSION}-linux.AppImage || true
-          
-          # Rename AppImage signature
-          mv tauri/iva-prime/src-tauri/target/release/bundle/appimage/*.AppImage.sig IVA-Prime-${VERSION}-linux.AppImage.sig || true
-          
-          # Rename DEB
-          mv tauri/iva-prime/src-tauri/target/release/bundle/deb/*.deb IVA-Prime-${VERSION}-linux.deb || true
-          
-          # Rename DEB signature
-          mv tauri/iva-prime/src-tauri/target/release/bundle/deb/*.deb.sig IVA-Prime-${VERSION}-linux.deb.sig || true
-          
-          # Rename RPM
-          mv tauri/iva-prime/src-tauri/target/release/bundle/rpm/*.rpm IVA-Prime-${VERSION}-linux.rpm || true
-          
-          # Rename RPM signature
-          mv tauri/iva-prime/src-tauri/target/release/bundle/rpm/*.rpm.sig IVA-Prime-${VERSION}-linux.rpm.sig || true
-
-      - name: Upload Linux artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: iva-prime-linux
-          path: |
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.AppImage
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.AppImage.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.deb
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.deb.sig
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm
-            IVA-Prime-${{ needs.get-info.outputs.version }}-linux.rpm.sig
 
 
   pre-release:
