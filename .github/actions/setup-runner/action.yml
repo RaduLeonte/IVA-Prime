@@ -49,18 +49,28 @@ runs:
         key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
         workspaces: tauri/iva-prime/src-tauri -> target
 
-    - name: Set up parallelization for Cargo build
+    - name: Set up parallelization for Cargo build (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        $numCores = (Get-WmiObject -Class Win32_Processor | Select-Object -ExpandProperty NumberOfCores) | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+        echo "Number of processors: $numCores"
+        echo "CARGO_BUILD_JOBS=$numCores" >> $env:GITHUB_ENV
+
+    - name: Set up parallelization for Cargo build (macOS)
+      if: runner.os == 'macOS'
       shell: bash
       run: |
-        if [[ "$RUNNER_OS" == "Windows" ]]; then
-          numCores=$(powershell -Command "(Get-WmiObject -Class Win32_Processor | Select-Object -ExpandProperty NumberOfCores) | Measure-Object -Sum | Select-Object -ExpandProperty Sum")
-        elif [[ "$RUNNER_OS" == "macOS" ]]; then
-          NUM_CORES=$(sysctl -n hw.physicalcpu)
-        else
-          NUM_CORES=$(nproc)
-        fi
-        echo "CARGO_BUILD_JOBS=$NUM_CORES" >> $GITHUB_ENV
+        NUM_CORES=$(sysctl -n hw.physicalcpu)
         echo "Number of processors: $NUM_CORES"
+        echo "CARGO_BUILD_JOBS=$NUM_CORES" >> $GITHUB_ENV
+
+    - name: Set up parallelization for Cargo build (Linux)
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        NUM_CORES=$(nproc)
+        echo "Number of processors: $NUM_CORES"
+        echo "CARGO_BUILD_JOBS=$NUM_CORES" >> $GITHUB_ENV
 
     - name: Install frontend dependencies
       working-directory: tauri/iva-prime
