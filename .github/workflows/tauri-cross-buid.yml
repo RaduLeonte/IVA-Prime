@@ -97,13 +97,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
-          workspaces: tauri/iva-prime/src-tauri
-          cache-directories: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          cache-targets: |
-            target/release/build
+          workspaces: tauri/iva-prime/src-tauri -> target
 
       - name: Set up parallelization for Cargo build
         run: |
@@ -178,13 +172,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
-          workspaces: tauri/iva-prime/src-tauri
-          cache-directories: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          cache-targets: |
-            target/release/build
+          workspaces: tauri/iva-prime/src-tauri -> target
 
       - name: Set up parallelization for Cargo build
         run: |
@@ -267,13 +255,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
-          workspaces: tauri/iva-prime/src-tauri
-          cache-directories: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          cache-targets: |
-            target/release/build
+          workspaces: tauri/iva-prime/src-tauri -> target
 
       - name: Set up parallelization for Cargo build
         run: |
@@ -359,13 +341,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
-          workspaces: tauri/iva-prime/src-tauri
-          cache-directories: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          cache-targets: |
-            target/release/build
+          workspaces: tauri/iva-prime/src-tauri -> target
 
       - name: Set up parallelization for Cargo build
         run: |
