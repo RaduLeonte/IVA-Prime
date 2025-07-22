@@ -97,10 +97,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
-          workspaces: |
-            tauri/iva-prime
-            tauri/iva-prime/src-tauri
-            tauri/iva-prime/src-tauri -> target/release/build
+          workspaces: tauri/iva-prime/src-tauri
           cache-directories: |
             ~/.cargo/registry
             ~/.cargo/git
@@ -181,10 +178,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
-          workspaces: |
-            tauri/iva-prime
-            tauri/iva-prime/src-tauri
-            tauri/iva-prime/src-tauri -> target/release/build
+          workspaces: tauri/iva-prime/src-tauri
           cache-directories: |
             ~/.cargo/registry
             ~/.cargo/git
@@ -273,10 +267,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
-          workspaces: |
-            tauri/iva-prime
-            tauri/iva-prime/src-tauri
-            tauri/iva-prime/src-tauri -> target/release/build
+          workspaces: tauri/iva-prime/src-tauri
           cache-directories: |
             ~/.cargo/registry
             ~/.cargo/git
@@ -368,10 +359,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: "rust-${{ runner.os }}-${{ env.RUST_VERSION }}-${{ hashFiles('**/Cargo.lock') }}"
-          workspaces: |
-            tauri/iva-prime
-            tauri/iva-prime/src-tauri
-            tauri/iva-prime/src-tauri -> target/release/build
+          workspaces: tauri/iva-prime/src-tauri
           cache-directories: |
             ~/.cargo/registry
             ~/.cargo/git
