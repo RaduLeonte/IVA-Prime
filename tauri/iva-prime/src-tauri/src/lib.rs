@@ -17,9 +17,6 @@ use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 use tauri_plugin_store::StoreExt;
 use tauri_plugin_updater::UpdaterExt;
 
-#[cfg(target_os = "windows")]
-use windows::Win32::Foundation::*;
-
 pub fn setup_logging(logs_dir: &std::path::Path) -> Result<(), fern::InitError> {
     let log_file_path = logs_dir.join("output.log");
 
@@ -306,58 +303,6 @@ fn handle_file_associations(app: tauri::AppHandle, files: Vec<PathBuf>) {
     }
 }
 
-#[cfg(target_os = "windows")]
-/// Forces the taskbar icon to use a high-res icon
-///
-/// * `window` - A reference to the [`tauri::WebviewWindow`] that should receive the high-res icon.
-/// * `icon_path_str` - A relative or absolute path to the `.ico` file to use. The icon file
-///   should contain a 256x256 image (preferably 32-bit RGBA) for best results.
-fn force_high_res_taskbar_icon(window: &WebviewWindow, icon_path_str: &str) {
-    use std::ffi::OsStr;
-    use std::os::windows::ffi::OsStrExt;
-    use windows::{
-        core::PCWSTR,
-        Win32::{
-            Foundation::{HWND, LPARAM, WPARAM},
-            UI::WindowsAndMessaging::*,
-        },
-    };
-
-    // Try to get the native window handle (HWND) for the Tauri window
-    if let Ok(hwnd_raw) = window.hwnd() {
-        // Convert the handle into the proper Windows API type
-        let hwnd = HWND(hwnd_raw.0 as isize);
-
-        // Convert the icon path string to a null-terminated wide string for Windows API
-        let icon_path: Vec<u16> = OsStr::new(icon_path_str)
-            .encode_wide()
-            .chain(Some(0))
-            .collect();
-
-        // Load the .ico file as an icon handle (HICON)
-        let hicon_result = unsafe {
-            LoadImageW(
-                HINSTANCE::default(),             // Load from disk, not a resource handle
-                PCWSTR(icon_path.as_ptr()),       // Path to icon file
-                IMAGE_ICON,                       // We're loading an icon
-                256,                              // Desired width
-                256,                              // Desired height
-                LR_LOADFROMFILE | LR_DEFAULTSIZE, // Load from file, fallback to default size if needed
-            )
-        };
-
-        // If the icon was loaded successfully, apply it to the window
-        if let Ok(hicon) = hicon_result {
-            unsafe {
-                // Set the large (taskbar/alt-tab) icon
-                SendMessageW(hwnd, WM_SETICON, WPARAM(1), LPARAM(hicon.0)); // ICON_BIG = 1
-
-                // Set the small (title bar/window frame) icon
-                SendMessageW(hwnd, WM_SETICON, WPARAM(0), LPARAM(hicon.0)); // ICON_SMALL = 0
-            }
-        }
-    }
-}
 
 #[tauri::command]
 #[allow(unused_variables)]
@@ -372,12 +317,6 @@ async fn open_about_window(app: tauri::AppHandle) {
     .title("IVA Prime - About")
     .inner_size(800.0, 600.0)
     .build();
-
-    // Force the window to use a high-res icon
-    #[cfg(target_os = "windows")]
-    if let Ok(ref window) = about_window {
-        force_high_res_taskbar_icon(window, "icons/icon.ico");
-    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -574,17 +513,6 @@ pub fn run() {
                     }
                 }
             });
-
-            // On Windows, force high-res window icon
-            #[cfg(target_os = "windows")]
-            {
-                let app_handle = app.app_handle().clone();
-                app.listen("window-ready", move |_event| {
-                    if let Some(main_window) = app_handle.get_webview_window("main") {
-                        force_high_res_taskbar_icon(&main_window, "icons/icon.ico");
-                    }
-                });
-            }
 
             // Register deep links
             app.deep_link().register_all()?;
