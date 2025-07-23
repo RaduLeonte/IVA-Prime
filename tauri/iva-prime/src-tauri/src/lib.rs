@@ -11,7 +11,7 @@ use serde_json::json;
 use url::Url;
 
 use tauri::menu::{CheckMenuItemBuilder, MenuBuilder, SubmenuBuilder};
-use tauri::{Listener, Manager, WebviewWindow};
+use tauri::{Listener, Manager, WebviewWindow, WebviewWindowBuilder};
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 use tauri_plugin_store::StoreExt;
@@ -86,9 +86,10 @@ fn detect_linux_install_type() -> String {
         return "appimage".to_string();
     }
 
-    let install_type: String = std::env::var("IVA_PRIME_INSTALL_TYPE").unwrap_or_else(|_| "unknown".to_string());
+    let install_type: String =
+        std::env::var("IVA_PRIME_INSTALL_TYPE").unwrap_or_else(|_| "unknown".to_string());
     log::debug!("Linux install type -> {:?}", install_type.clone());
-    
+
     install_type
 }
 
@@ -303,20 +304,16 @@ fn handle_file_associations(app: tauri::AppHandle, files: Vec<PathBuf>) {
     }
 }
 
-
 #[tauri::command]
 #[allow(unused_variables)]
 /// Opens the "About" window in the Tauri application.
 async fn open_about_window(app: tauri::AppHandle) {
     // Create the window
-    let about_window = tauri::WebviewWindowBuilder::new(
-        &app,
-        "about", // Unique label
-        tauri::WebviewUrl::App("about.html".into()),
-    )
-    .title("IVA Prime - About")
-    .inner_size(800.0, 600.0)
-    .build();
+    let about_window =
+        WebviewWindowBuilder::from_config(&app, &app.config().app.windows.get(1).unwrap().clone())
+            .unwrap()
+            .build()
+            .unwrap();
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -358,6 +355,7 @@ pub fn run() {
     let settings_path = appdata_dir.join("settings.json");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
         // Plugins
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())

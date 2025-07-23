@@ -9,17 +9,35 @@
     },
     "windows": [
       {
+        "label": "main",
+        "url": "index.html",
         "acceptFirstMouse": true,
         "center": true,
         "devtools": true,
         "dragDropEnabled": false,
-        "label": "main",
         "maximized": true,
         "resizable": true,
         "title": "IVA Prime",
         "width": 1200,
         "height": 800,
         "minWidth": 1000,
+        "minHeight": 600,
+        "zoomHotkeysEnabled": true
+      },
+      {
+        "label": "about",
+        "url": "about.html",
+        "create": false,
+        "acceptFirstMouse": true,
+        "center": true,
+        "devtools": true,
+        "dragDropEnabled": false,
+        "maximized": false,
+        "resizable": true,
+        "title": "IVA Prime - About",
+        "width": 800,
+        "height": 600,
+        "minWidth": 800,
         "minHeight": 600,
         "zoomHotkeysEnabled": true
       }
