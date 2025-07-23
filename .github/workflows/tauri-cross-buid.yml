@@ -233,6 +233,9 @@ jobs:
     needs: [get-info, build-windows, build-macos-intel, build-macos-arm, build-linux]
     if: (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') || (github.event_name == 'schedule' && needs.get-info.outputs.should_build == 'true')
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Prepare Pre-release Artifacts
         id: prepare
         uses: ./.github/actions/prepare-release
@@ -261,6 +264,9 @@ jobs:
     needs: [get-info, build-windows, build-macos-intel, build-macos-arm, build-linux]
     if: github.event_name == 'release'
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Prepare Release Artifacts
         id: prepare
         uses: ./.github/actions/prepare-release

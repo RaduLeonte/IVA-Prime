@@ -12,6 +12,7 @@ outputs:
   files_list:
     description: "Newline-separated list of artifact files for upload."
     value: ${{ steps.list_files.outputs.files_list }}
+
 runs:
   using: "composite"
   steps:
