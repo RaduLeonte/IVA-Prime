@@ -134,7 +134,7 @@
         "epoch": 0,
         "files": {},
         "release": "1",
-        "postInstallScript": "scripts/postinst_deb",
+        "postInstallScript": "scripts/postinst_rpm",
         "preRemoveScript": "scripts/prerm"
       }
     }
