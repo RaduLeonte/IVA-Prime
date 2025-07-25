@@ -62,6 +62,11 @@ const ContextMenu = new class {
                 conditions: {all: ["feature"]},
                 action: () => Session.activePlasmid().removeFeature(Session.activePlasmid().getSelectedFeatureID())
             },
+            {
+                item: "Annotate common features in selection",
+                conditions: {all: ["range"]},
+                action: () => Session.activePlasmid().detectCommonFeatures(Session.activePlasmid().getSelectionIndices())
+            },
 
             { separator: "" },
 

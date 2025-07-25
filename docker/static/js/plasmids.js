@@ -670,6 +670,53 @@ class Plasmid {
         this.saveState(`New translation at first START (starting pos: ${cursorIndex})`);
     };
 
+
+    /**
+     * 
+     */
+    detectCommonFeatures(selectionIndices) {
+        const [startIndex, endIndex] = selectionIndices.map(i => i - 1);
+        const selectedSequence = this.sequence.slice(startIndex, endIndex + 1);
+
+        console.log(selectedSequence);
+        const detectedFeatures = Nucleotides.detectCommonFeatures(selectedSequence);
+
+        // Offset spans of detected features
+        for (const [featureID, featureDict] of Object.entries(detectedFeatures)) {
+            featureDict["span"] = featureDict["span"].map((s) => s + startIndex);
+        };
+
+        // Check for duplicates
+        const getUniqueKey = (featureDict) => {
+            return `${featureDict["label"]}-${featureDict["span"].join(',')}`;
+        };
+
+        const currentFeaturesKeys = new Set();
+        for (const [featureID, featureDict] of Object.entries(this.features)) {
+            currentFeaturesKeys.add(getUniqueKey(featureDict));
+        };
+        for (const [featureID, featureDict] of Object.entries(detectedFeatures)) {
+            const uniqueKey = getUniqueKey(featureDict);
+
+            // If the uniqueKey is in currentFeaturesKeys, delete the corresponding feature
+            if (currentFeaturesKeys.has(uniqueKey)) {
+                delete detectedFeatures[featureID];
+            };
+        };
+
+        // Add features
+        this.features = {...this.features, ...detectedFeatures};
+        this.sortFeatures();
+
+        PlasmidViewer.deselectBases();
+        PlasmidViewer.redraw();
+        Sidebar.update();
+
+        // Save
+        this.saveState(`Detect common features`);
+    };
+
+
     /**
      * Insert new sequence into plasmid sequence
      * 
