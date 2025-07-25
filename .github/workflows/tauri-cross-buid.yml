@@ -254,7 +254,9 @@ jobs:
           prerelease: true
           body: |
             Nightly build of the IVA Prime desktop app.
-            This version might contain bugs and can be unstable compared to the full release!
+
+            > [!WARNING]
+            > This version might contain bugs and can be unstable compared to the full release!
           files: ${{ steps.prepare.outputs.files_list }}
 
 
