@@ -51,13 +51,15 @@ runs:
         PUB_DATE=$(date --utc +%Y-%m-%dT%H:%M:%SZ)
         if [ "${{ inputs.nightly }}" = "true" ]; then
           RELEASE_URL="https://github.com/RaduLeonte/IVA-Prime/releases/download/nightly"
+          RELEASE_NOTES="Nightly build of the IVA Prime desktop app. This version might contain bugs and can be unstable compared to the full release!"
         else
           RELEASE_URL="https://github.com/RaduLeonte/IVA-Prime/releases/latest/download"
+          RELEASE_NOTES=""
         fi
         cat <<EOF > latest.json
         {
           "version": "$VERSION",
-          "notes": "Nightly build of the IVA Prime desktop app. This version might contain bugs and can be unstable compared to the full release!",
+          "notes": "$RELEASE_NOTES",
           "pub_date": "$PUB_DATE",
           "platforms": {
             "linux-x86_64": {

@@ -100,7 +100,7 @@ async fn get_update(
     let update_url = if release_channel == "nightly" {
         "https://github.com/RaduLeonte/IVA-Prime/releases/download/nightly/latest.json"
     } else {
-        "https://github.com/RaduLeonte/IVA-Prime/releases/latest/latest.json"
+        "https://github.com/RaduLeonte/IVA-Prime/releases/latest/download/latest.json"
     };
 
     let updater = {
