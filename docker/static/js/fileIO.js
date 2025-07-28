@@ -959,7 +959,7 @@ const FileIO = new class {
 
                         // If there is a second /note entry, then it contains
                         // some special properties (like color)
-                        if (key == "note") {
+                        if (key == "note" && value) {
                             let ivaColorMatch = value.match(/iva-color:\s*(#([A-Fa-f0-9]{6}))/);
                             let colorMatch = value.match(/color:\s*(#([A-Fa-f0-9]{6}))/);
                             if (ivaColorMatch) {
