@@ -1,6 +1,7 @@
 ---
 name: Build and Push Docker Image to Google Cloud Platform
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
