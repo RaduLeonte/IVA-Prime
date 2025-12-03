@@ -2196,7 +2196,8 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   overflow: hidden;
   box-sizing: border-box;
   
-  visibility: hidden;
+  visibility: visible;
+  pointer-events: none;
   mask-image: linear-gradient(
     to bottom, 
     rgba(0,0,0,0) 0%,
@@ -2220,6 +2221,8 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   bottom: 0;
   padding: 10px;
   box-sizing: border-box;
+
+  pointer-events: all;
 }
 
 .alert {

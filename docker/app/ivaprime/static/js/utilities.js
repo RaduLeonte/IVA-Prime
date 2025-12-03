@@ -261,7 +261,7 @@ const Utilities = new class {
             document.removeEventListener("copy", dummyCopyListener);
         } else {
             const el = document.createElement('textarea');
-            el.value = inputString;
+            el.value = string;
             document.body.appendChild(el);
             el.select();
             document.execCommand('copy');
@@ -299,13 +299,13 @@ const Utilities = new class {
         };
 
         console.log("Utilities.copySequence ->", selection, mode);
+        this.copyToClipboard(selection);
         Alerts.showAlert(
             "Copied sequence to clipboard",
             `Sequence: "${selection.length > 12 ? selection.slice(0, 6) + "..." + selection.slice(-6) : selection}" (${selection.length} bp).`,
             3,
             "green",
-        )
-        this.copyToClipboard(selection);
+        );
     };
 
 
