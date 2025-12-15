@@ -2347,11 +2347,15 @@ html[data-theme="dark"] .boolean-switch-slider:before {
 }
 
 .context-menu-section-items {
-  padding-left: 5px;
+  padding-left: 17px;
 }
 
 .context-menu-item {
   padding: 7px 10px;
+}
+.context-menu-item:has(input) {
+  display:flex;
+  align-items: center;
 }
 .context-menu-item[disabled] {
   opacity: 15%;
@@ -2396,6 +2400,42 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   content: "›";
   font-size: 18px;
 }
+
+.context-menu-checkbox {
+  pointer-events: none;
+  width: 1.25em;
+  height: 1.25em;
+  margin: 0;
+  margin-right: 0.35em;
+}
+
+.context-menu-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.context-menu-icon::before {
+  content: "";
+  display: inline-block;
+  width: 1.5em;
+  height: 1.5em;
+  margin-right: 0.35em;
+
+  background: no-repeat center / contain;
+}
+
+.context-menu-icon-iva-operations::before {
+  background-image: url('/static/assets/favicon.svg');
+}
+
+.context-menu-icon-features::before {
+  background-image: url('/static/assets/icons/features.svg');
+}
+
+.context-menu-icon-copy::before {
+  background-image: url('/static/assets/icons/copy.svg');
+}
+
 /* #endregion Context_menu */
 
 

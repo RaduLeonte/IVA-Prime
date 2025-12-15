@@ -1,11 +1,16 @@
 const ContextMenu = new class {
     constructor() {
         this.structure = [
-            { section: "IVA Cloning Operations", items: [
+            { section: "<span class='context-menu-icon context-menu-icon-iva-operations'>IVA Cloning Operations</span>", items: [
                 {
                     item: "Insert here",
                     conditions: {all: ["single"]},
                     action: () => Modals.createInsertionModal("insertion")
+                },
+                {
+                    item: "Insert from linear fragment",
+                    conditions:  {any: ["single", "range", "feature"]},
+                    action: () => Modals.createInsertFromLinearFragmentModal()
                 },
                 {
                     item: "Delete selection",
@@ -16,14 +21,6 @@ const ContextMenu = new class {
                     item: "Mutate selection",
                     conditions: {any: ["range", "feature"]},
                     action: () => Modals.createInsertionModal("mutation")
-                },
-
-                { separator: "" },
-
-                {
-                    item: "Insert from linear fragment",
-                    conditions:  {any: ["single", "range", "feature"]},
-                    action: () => Modals.createInsertFromLinearFragmentModal()
                 },
 
                 { separator: "" },
@@ -48,67 +45,99 @@ const ContextMenu = new class {
                     conditions:  {any: ["single", "range", "feature"], all: ["subcloningTarget"]},
                     action: () => Modals.createSubcloningModal()
                 },
+
+                { separator: "" },
+
+                {
+                    item: "Modify plasmid to reflect operation",
+                    checkboxID:  "modifyPlasmidAfterOperation",
+                    action: () => {
+                        const newState = !UserPreferences.get("modifyPlasmidAfterOperation");
+                        UserPreferences.set("modifyPlasmidAfterOperation", newState);
+                        document.getElementById("modifyPlasmidAfterOperation").checked = newState;
+                    }
+                },
+
+                {
+                    item: "Modify plasmid without generating primers",
+                    checkboxID:  "onlyModifyPlasmid",
+                    action: () => {
+                        const newState = !UserPreferences.get("onlyModifyPlasmid");
+                        UserPreferences.set("onlyModifyPlasmid", newState);
+                        document.getElementById("onlyModifyPlasmid").checked = newState;
+                    }
+                },
             ]},
 
             { separator: "" },
 
-            {
-                item: "Annotate selection",
-                conditions: {all: ["range"]},
-                action: () => Session.activePlasmid().newFeature(Session.activePlasmid().getSelectionIndices())
-            },
-            {
-                item: "Delete feature annotation",
-                conditions: {all: ["feature"]},
-                action: () => Session.activePlasmid().removeFeature(Session.activePlasmid().getSelectedFeatureID())
-            },
-            {
-                item: "Annotate common features in selection",
-                conditions: {all: ["range"]},
-                action: () => Session.activePlasmid().detectCommonFeatures(Session.activePlasmid().getSelectionIndices())
-            },
+            { section: "<span class='context-menu-icon context-menu-icon-features'>Feature Annotations</span>", items: [
+                {
+                    item: "Annotate selection",
+                    conditions: {all: ["range"]},
+                    action: () => Session.activePlasmid().newFeature(Session.activePlasmid().getSelectionIndices())
+                },
+                {
+                    item: "Delete feature annotation",
+                    conditions: {all: ["feature"]},
+                    action: () => Session.activePlasmid().removeFeature(Session.activePlasmid().getSelectedFeatureID())
+                },
+                {
+                    item: "Annotate common features in selection",
+                    conditions: {all: ["range"]},
+                    action: () => Session.activePlasmid().detectCommonFeatures(Session.activePlasmid().getSelectionIndices())
+                },
+            ]},
+
 
             { separator: "" },
 
-            {
-                item: "Copy nucleotides",
-                conditions: {any: ["range", "feature"]},
-                action: () => Utilities.copySequence()
-            },
-            { 
-                submenu: "Copy nucleotides special",
-                items: [
-                    {
-                        item: "<p>Copy reverse</p><p>(top strand, 3'->5')</p>",
-                        conditions: {any: ["range", "feature"]},
-                        action: () => Utilities.copySequence("reverse")
-                    },
-                    {
-                        item: "<p>Copy reverse complement</p><p>(bottom strand, 5'->3')</p>",
-                        conditions: {any: ["range", "feature"]},
-                        action: () => Utilities.copySequence("reverse complement")
-                    },
-                    {
-                        item: "<p>Copy complement</p><p>(bottom strand, 3'->5')</p>",
-                        conditions: {any: ["range", "feature"]},
-                        action: () => Utilities.copySequence("complement")
-                    },
-                ]
-            },
+            { section: "<span class='context-menu-icon context-menu-icon-copy'>Copy to clipboard</span>", items: [
+                { 
+                    submenu: "Copy nucleotides",
+                    items: [
+                        {
+                            item: "<p>Copy forward</p><p>(top strand, 5'->3')</p>",
+                            conditions: {any: ["range", "feature"]},
+                            action: () => Utilities.copySequence()
+                        },
+                        {
+                            item: "<p>Copy reverse</p><p>(top strand, 3'->5')</p>",
+                            conditions: {any: ["range", "feature"]},
+                            action: () => Utilities.copySequence("reverse")
+                        },
+                        {
+                            item: "<p>Copy reverse complement</p><p>(bottom strand, 5'->3')</p>",
+                            conditions: {any: ["range", "feature"]},
+                            action: () => Utilities.copySequence("reverse complement")
+                        },
+                        {
+                            item: "<p>Copy complement</p><p>(bottom strand, 3'->5')</p>",
+                            conditions: {any: ["range", "feature"]},
+                            action: () => Utilities.copySequence("complement")
+                        },
+                    ]
+                },
+    
+                { 
+                    submenu: "Copy amino acids",
+                    items: [
+                        {
+                            item: "Copy amino acids (forward)",
+                            conditions: {any: ["range", "feature"]},
+                            action: () => Utilities.copyAASequence()
+                        },
+            
+                        {
+                            item: "Copy amino acids (reverse)",
+                            conditions: {any: ["range", "feature"]},
+                            action: () => Utilities.copyAASequence("reverse")
+                        },
+                    ]
+                },
+            ]},
 
-            { separator: "" },
 
-            {
-                item: "Copy amino acids",
-                conditions: {any: ["range", "feature"]},
-                action: () => Utilities.copyAASequence()
-            },
-
-            {
-                item: "Copy amino acids (reverse)",
-                conditions: {any: ["range", "feature"]},
-                action: () => Utilities.copyAASequence("reverse")
-            },
 
             { separator: "" },
 
@@ -182,7 +211,7 @@ const ContextMenu = new class {
                     // Create section title
                     const sectionTitle = document.createElement("div");
                     sectionTitle.classList.add("context-menu-section-title");
-                    sectionTitle.textContent = entry.section;
+                    sectionTitle.innerHTML = entry.section;
                     sectionContainer.appendChild(sectionTitle);
         
                     // Create section items container
@@ -207,7 +236,19 @@ const ContextMenu = new class {
                     menuItem.classList.add("context-menu-item");
                     menuItem.innerHTML = entry.item;
 
-                    menuItem.setAttribute("conditions", JSON.stringify(entry.conditions))
+                    if (entry.checkboxID !== undefined) {
+                        // Add checkbox
+                        const checkbox = document.createElement("input");
+                        checkbox.classList.add("context-menu-checkbox");
+                        checkbox.id = entry.checkboxID;
+                        checkbox.type = "checkbox";
+                        checkbox.checked = UserPreferences.get(entry.checkboxID);
+                        menuItem.insertBefore(checkbox, menuItem.firstChild);
+                    };
+
+                    if (entry.conditions) {
+                        menuItem.setAttribute("conditions", JSON.stringify(entry.conditions))
+                    };
 
                     // Attach click event for regular menu items
                     menuItem.addEventListener("click", () => {
@@ -217,7 +258,10 @@ const ContextMenu = new class {
                             e.preventDefault();
                             return;
                         };
-                        ContextMenu.hide();
+                        if (entry.checkboxID == undefined) {
+                            // If it's not a checkbox, hide the menu on click
+                            ContextMenu.hide();
+                        };
                         entry.action();
                     });
 
