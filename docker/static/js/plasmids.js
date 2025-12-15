@@ -986,30 +986,36 @@ class Plasmid {
             // Save primers 
             this.primers.push(primerSet);
     
-            // Adjust sequence
-            this.sliceSequence(operationRange, seqToInsert);
-            // Adjust features and deletion marks
-            this.shiftFeatures(operationRange, seqToInsert);
-            this.shiftDeletionMarks(operationRange, seqToInsert);
+            if (UserPreferences.get("modifyPlasmidAfterOperation")) {
+                // Adjust sequence
+                this.sliceSequence(operationRange, seqToInsert);
+                // Adjust features and deletion marks
+                this.shiftFeatures(operationRange, seqToInsert);
+                this.shiftDeletionMarks(operationRange, seqToInsert);
+        
+                if (operationType !== "Deletion") {
+                    // For non-deletions, create a new feature annotation for the inserted sequence
+                    this.newFeature(
+                        [operationRange[0], operationRange[0]+seqToInsert.length-1],
+                        "fwd",
+                        (newFeatureName === null) ? operationType: newFeatureName,
+                        null,
+                        "#c83478",
+                        translateFeature,
+                        ""
+                    );
+                } else {
+                    // Deletion operations ->  add deletion mark
+                    this.deletionMarks.push(operationRange[0]);
     
-            if (operationType !== "Deletion") {
-                // For non-deletions, create a new feature annotation for the inserted sequence
-                this.newFeature(
-                    [operationRange[0], operationRange[0]+seqToInsert.length-1],
-                    "fwd",
-                    (newFeatureName === null) ? operationType: newFeatureName,
-                    null,
-                    "#c83478",
-                    translateFeature,
-                    ""
-                );
+                    // Redraw
+                    PlasmidViewer.deselectBases();
+                    PlasmidViewer.redraw();
+                    Sidebar.update();
+                };
             } else {
-                // Deletion operations ->  add deletion mark
-                this.deletionMarks.push(operationRange[0]);
-
                 // Redraw
                 PlasmidViewer.deselectBases();
-                PlasmidViewer.redraw();
                 Sidebar.update();
             };
 
