@@ -8,6 +8,7 @@ const UserPreferences = new class {
             "cookieConsentGiven": false,
 
             "modifyPlasmidAfterOperation": true,
+            "onlyModifyPlasmid": false,
             "symmetricPrimers": false,
             "HRMinLength": 18,
             "HRTm": 50,

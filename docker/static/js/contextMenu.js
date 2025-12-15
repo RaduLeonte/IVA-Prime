@@ -57,6 +57,16 @@ const ContextMenu = new class {
                         document.getElementById("modifyPlasmidAfterOperation").checked = newState;
                     }
                 },
+
+                {
+                    item: "Modify plasmid without generating primers",
+                    checkboxID:  "onlyModifyPlasmid",
+                    action: () => {
+                        const newState = !UserPreferences.get("onlyModifyPlasmid");
+                        UserPreferences.set("onlyModifyPlasmid", newState);
+                        document.getElementById("onlyModifyPlasmid").checked = newState;
+                    }
+                },
             ]},
 
             { separator: "" },
@@ -232,7 +242,7 @@ const ContextMenu = new class {
                         checkbox.classList.add("context-menu-checkbox");
                         checkbox.id = entry.checkboxID;
                         checkbox.type = "checkbox";
-                        checkbox.checked = UserPreferences.get("modifyPlasmidAfterOperation");
+                        checkbox.checked = UserPreferences.get(entry.checkboxID);
                         menuItem.insertBefore(checkbox, menuItem.firstChild);
                     };
 

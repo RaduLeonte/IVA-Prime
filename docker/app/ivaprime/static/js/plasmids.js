@@ -984,7 +984,9 @@ class Plasmid {
             };
     
             // Save primers 
-            this.primers.push(primerSet);
+            if (!UserPreferences.get("onlyModifyPlasmid")) {
+                this.primers.push(primerSet);
+            };
     
             if (UserPreferences.get("modifyPlasmidAfterOperation")) {
                 // Adjust sequence
@@ -1006,7 +1008,9 @@ class Plasmid {
                     );
                 } else {
                     // Deletion operations ->  add deletion mark
-                    this.deletionMarks.push(operationRange[0]);
+                    if (!UserPreferences.get("onlyModifyPlasmid")) {
+                        this.deletionMarks.push(operationRange[0]);
+                    };
     
                     // Redraw
                     PlasmidViewer.deselectBases();
