@@ -1,7 +1,7 @@
 const ContextMenu = new class {
     constructor() {
         this.structure = [
-            { section: "IVA Cloning Operations", items: [
+            { section: "<span class='context-menu-icon context-menu-icon-iva-operations'>IVA Cloning Operations</span>", items: [
                 {
                     item: "Insert here",
                     conditions: {all: ["single"]},
@@ -49,7 +49,7 @@ const ContextMenu = new class {
 
             { separator: "" },
 
-            { section: "Feature Annotations", items: [
+            { section: "<span class='context-menu-icon context-menu-icon-features'>Feature Annotations</span>", items: [
                 {
                     item: "Annotate selection",
                     conditions: {all: ["range"]},
@@ -70,7 +70,7 @@ const ContextMenu = new class {
 
             { separator: "" },
 
-            { section: "Copy", items: [
+            { section: "<span class='context-menu-icon context-menu-icon-copy'>Copy to clipboard</span>", items: [
                 { 
                     submenu: "Copy nucleotides",
                     items: [
@@ -189,7 +189,7 @@ const ContextMenu = new class {
                     // Create section title
                     const sectionTitle = document.createElement("div");
                     sectionTitle.classList.add("context-menu-section-title");
-                    sectionTitle.textContent = entry.section;
+                    sectionTitle.innerHTML = entry.section;
                     sectionContainer.appendChild(sectionTitle);
         
                     // Create section items container
