@@ -8,6 +8,11 @@ const ContextMenu = new class {
                     action: () => Modals.createInsertionModal("insertion")
                 },
                 {
+                    item: "Insert from linear fragment",
+                    conditions:  {any: ["single", "range", "feature"]},
+                    action: () => Modals.createInsertFromLinearFragmentModal()
+                },
+                {
                     item: "Delete selection",
                     conditions: {any: ["range", "feature"]},
                     action: () => Session.activePlasmid().IVAOperation("Deletion")
@@ -16,14 +21,6 @@ const ContextMenu = new class {
                     item: "Mutate selection",
                     conditions: {any: ["range", "feature"]},
                     action: () => Modals.createInsertionModal("mutation")
-                },
-
-                { separator: "" },
-
-                {
-                    item: "Insert from linear fragment",
-                    conditions:  {any: ["single", "range", "feature"]},
-                    action: () => Modals.createInsertFromLinearFragmentModal()
                 },
 
                 { separator: "" },
@@ -52,63 +49,73 @@ const ContextMenu = new class {
 
             { separator: "" },
 
-            {
-                item: "Annotate selection",
-                conditions: {all: ["range"]},
-                action: () => Session.activePlasmid().newFeature(Session.activePlasmid().getSelectionIndices())
-            },
-            {
-                item: "Delete feature annotation",
-                conditions: {all: ["feature"]},
-                action: () => Session.activePlasmid().removeFeature(Session.activePlasmid().getSelectedFeatureID())
-            },
-            {
-                item: "Annotate common features in selection",
-                conditions: {all: ["range"]},
-                action: () => Session.activePlasmid().detectCommonFeatures(Session.activePlasmid().getSelectionIndices())
-            },
+            { section: "Feature Annotations", items: [
+                {
+                    item: "Annotate selection",
+                    conditions: {all: ["range"]},
+                    action: () => Session.activePlasmid().newFeature(Session.activePlasmid().getSelectionIndices())
+                },
+                {
+                    item: "Delete feature annotation",
+                    conditions: {all: ["feature"]},
+                    action: () => Session.activePlasmid().removeFeature(Session.activePlasmid().getSelectedFeatureID())
+                },
+                {
+                    item: "Annotate common features in selection",
+                    conditions: {all: ["range"]},
+                    action: () => Session.activePlasmid().detectCommonFeatures(Session.activePlasmid().getSelectionIndices())
+                },
+            ]},
+
 
             { separator: "" },
 
-            {
-                item: "Copy nucleotides",
-                conditions: {any: ["range", "feature"]},
-                action: () => Utilities.copySequence()
-            },
-            { 
-                submenu: "Copy nucleotides special",
-                items: [
-                    {
-                        item: "<p>Copy reverse</p><p>(top strand, 3'->5')</p>",
-                        conditions: {any: ["range", "feature"]},
-                        action: () => Utilities.copySequence("reverse")
-                    },
-                    {
-                        item: "<p>Copy reverse complement</p><p>(bottom strand, 5'->3')</p>",
-                        conditions: {any: ["range", "feature"]},
-                        action: () => Utilities.copySequence("reverse complement")
-                    },
-                    {
-                        item: "<p>Copy complement</p><p>(bottom strand, 3'->5')</p>",
-                        conditions: {any: ["range", "feature"]},
-                        action: () => Utilities.copySequence("complement")
-                    },
-                ]
-            },
+            { section: "Copy", items: [
+                { 
+                    submenu: "Copy nucleotides",
+                    items: [
+                        {
+                            item: "<p>Copy forward</p><p>(top strand, 5'->3')</p>",
+                            conditions: {any: ["range", "feature"]},
+                            action: () => Utilities.copySequence()
+                        },
+                        {
+                            item: "<p>Copy reverse</p><p>(top strand, 3'->5')</p>",
+                            conditions: {any: ["range", "feature"]},
+                            action: () => Utilities.copySequence("reverse")
+                        },
+                        {
+                            item: "<p>Copy reverse complement</p><p>(bottom strand, 5'->3')</p>",
+                            conditions: {any: ["range", "feature"]},
+                            action: () => Utilities.copySequence("reverse complement")
+                        },
+                        {
+                            item: "<p>Copy complement</p><p>(bottom strand, 3'->5')</p>",
+                            conditions: {any: ["range", "feature"]},
+                            action: () => Utilities.copySequence("complement")
+                        },
+                    ]
+                },
+    
+                { 
+                    submenu: "Copy amino acids",
+                    items: [
+                        {
+                            item: "Copy amino acids (forward)",
+                            conditions: {any: ["range", "feature"]},
+                            action: () => Utilities.copyAASequence()
+                        },
+            
+                        {
+                            item: "Copy amino acids (reverse)",
+                            conditions: {any: ["range", "feature"]},
+                            action: () => Utilities.copyAASequence("reverse")
+                        },
+                    ]
+                },
+            ]},
 
-            { separator: "" },
 
-            {
-                item: "Copy amino acids",
-                conditions: {any: ["range", "feature"]},
-                action: () => Utilities.copyAASequence()
-            },
-
-            {
-                item: "Copy amino acids (reverse)",
-                conditions: {any: ["range", "feature"]},
-                action: () => Utilities.copyAASequence("reverse")
-            },
 
             { separator: "" },
 
