@@ -45,6 +45,18 @@ const ContextMenu = new class {
                     conditions:  {any: ["single", "range", "feature"], all: ["subcloningTarget"]},
                     action: () => Modals.createSubcloningModal()
                 },
+
+                { separator: "" },
+
+                {
+                    item: "Modify plasmid to reflect operation",
+                    checkboxID:  "modifyPlasmidAfterOperation",
+                    action: () => {
+                        const newState = !UserPreferences.get("modifyPlasmidAfterOperation");
+                        UserPreferences.set("modifyPlasmidAfterOperation", newState);
+                        document.getElementById("modifyPlasmidAfterOperation").checked = newState;
+                    }
+                },
             ]},
 
             { separator: "" },
@@ -214,7 +226,19 @@ const ContextMenu = new class {
                     menuItem.classList.add("context-menu-item");
                     menuItem.innerHTML = entry.item;
 
-                    menuItem.setAttribute("conditions", JSON.stringify(entry.conditions))
+                    if (entry.checkboxID !== undefined) {
+                        // Add checkbox
+                        const checkbox = document.createElement("input");
+                        checkbox.classList.add("context-menu-checkbox");
+                        checkbox.id = entry.checkboxID;
+                        checkbox.type = "checkbox";
+                        checkbox.checked = UserPreferences.get("modifyPlasmidAfterOperation");
+                        menuItem.insertBefore(checkbox, menuItem.firstChild);
+                    };
+
+                    if (entry.conditions) {
+                        menuItem.setAttribute("conditions", JSON.stringify(entry.conditions))
+                    };
 
                     // Attach click event for regular menu items
                     menuItem.addEventListener("click", () => {
@@ -224,7 +248,10 @@ const ContextMenu = new class {
                             e.preventDefault();
                             return;
                         };
-                        ContextMenu.hide();
+                        if (entry.checkboxID == undefined) {
+                            // If it's not a checkbox, hide the menu on click
+                            ContextMenu.hide();
+                        };
                         entry.action();
                     });
 

@@ -7,6 +7,7 @@ const UserPreferences = new class {
             "theme": "light",
             "cookieConsentGiven": false,
 
+            "modifyPlasmidAfterOperation": true,
             "symmetricPrimers": false,
             "HRMinLength": 18,
             "HRTm": 50,

@@ -2353,6 +2353,10 @@ html[data-theme="dark"] .boolean-switch-slider:before {
 .context-menu-item {
   padding: 7px 10px;
 }
+.context-menu-item:has(input) {
+  display:flex;
+  align-items: center;
+}
 .context-menu-item[disabled] {
   opacity: 15%;
   -webkit-user-select: none; /* Safari */
@@ -2395,6 +2399,14 @@ html[data-theme="dark"] .boolean-switch-slider:before {
 
   content: "›";
   font-size: 18px;
+}
+
+.context-menu-checkbox {
+  pointer-events: none;
+  width: 1.25em;
+  height: 1.25em;
+  margin: 0;
+  margin-right: 0.35em;
 }
 
 .context-menu-icon {
