@@ -278,6 +278,9 @@ const Modals = new class {
                 } else if (entry.type === "item") {
                     // Actual item
                     const itemOption = document.createElement("option");
+                    if (entry.aa.length >= 60) {
+                        itemOption.classList.add("common-insertions-item-long");
+                    };
                     itemOption.value = entry.aa;
                     itemOption.setAttribute("feature-label", entry.label);
                     itemOption.textContent = indent + entry.name;
@@ -301,7 +304,17 @@ const Modals = new class {
 
         // When selection an option, set the text of the targetInput to the option's value
         select.addEventListener("change", (event) => {
-            targetInput.value = event.target.value;
+            const insertionSeq = event.target.value;
+            targetInput.value = insertionSeq;
+
+            if (insertionSeq.length >= 60) {
+                Alerts.warning(
+                    "Long insertion sequence",
+                    "Insertions of sequences longer than 60 bp will result in long, expensive primers and cannot be guaranteed to succeed. For longer insertions, subcloning or inserting from a linear fragment may be more appropriate.",
+                    15,
+                    "orange"
+                );
+            };
         });
 
         return container;
