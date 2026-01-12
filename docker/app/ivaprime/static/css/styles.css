@@ -1659,6 +1659,10 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   justify-items: flex-start;
 }
 
+.common-insertions-item-long {
+  color: var(--btn-red);
+}
+
 /* #endregion Modal_windows  */
 
 
