@@ -913,6 +913,92 @@ const Modals = new class {
         this._create(id, body, action);
     };
 
+    //#region Batch mutagenesis
+    /**
+     * Create the modal window for batch mutagenesis
+     */
+    createBatchMutagenesisModal() {
+        const id = "modal-window-batch-mutagenesis";
+
+        const body = document.createElement("div");
+        body.classList.add("modal-batch-mutagenesis");
+
+        // Title
+        body.appendChild(
+            this._createModalTitle("Batch mutagenesis")
+        );
+
+        // Batch mutagenesis explanation
+        const hint = document.createElement("div");
+        hint.classList.add("modal-hint");
+        hint.innerHTML = `
+            Batch mutagenesis functions in the following way:
+
+            <ul>
+                <li>
+                    Specify single mutations as "S11D" or "11D" (11th serine will be mutated to aspartate).
+                </li>
+                <li>
+                    Specify longer mutations as "EEVD340KKVR" ("EEVD" motif starting with E340 will mutate to "KKVR").
+                </li>
+                <li>
+                    Mutations should be deliminated by commas, spaces, or new-lines.
+                </li>
+                <li>
+                    All mutations are applied to the same plasmid template.
+                </li>
+            </ul>
+        `;
+        body.appendChild(hint);
+
+        const sequenceGroup = document.createElement("div");
+        sequenceGroup.classList.add("modal-vgroup", "modal-new-file-sequence-input");
+        body.appendChild(sequenceGroup);
+
+        // Create text input
+        const textArea = document.createElement("textarea");
+        textArea.id = "batch-mutagenesis-input";
+        textArea.classList.add("modal-input", "modal-textarea");
+        textArea.spellcheck = false;
+        textArea.setAttribute("validator", "batchMutagenesis");
+        sequenceGroup.appendChild(textArea);
+
+
+        // Codon optimization dropdown
+        body.appendChild(
+            this._createCodonOptimizationDropdown()
+        );
+
+        
+        /**
+         * Action
+         */
+        const action = () => {
+            // Get new feature name if the user selection a common insertion
+            const selectElement = commonInsertionsDropdown.querySelector(".common-insertions-dropdown");
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            const newFeatureName = (selectedOption.hasAttribute("feature-label")) ? selectedOption.getAttribute("feature-label"): null;
+            
+            // Perform IVA operation
+            Session.activePlasmid().IVAOperation(
+                (type === "insertion") ? "Insertion": "Mutation",
+                document.getElementById("insertion-input-dna").value,
+                document.getElementById("insertion-input-aa").value,
+                document.getElementById("insertion-select-organism").value,
+                document.getElementById("insertion-checkbox-translate").checked,
+                newFeatureName,
+            );
+        };
+
+
+        // Action and cancel buttons
+        body.appendChild(
+            this._createButtons("Create primers", id, action)
+        );
+    
+        this._create(id, body, action);
+    };
+
 
     //#region Subcloning
     /**

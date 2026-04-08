@@ -23,7 +23,21 @@ const Utilities = new class {
             aa: (value) => /^[ACDEFGHIKLMNPQRSTVWY*X-]*$/i.test(value),
             aaOrSpecific: (value) => 
                 /^[ACDEFGHIKLMNPQRSTVWY*X-]*$/i.test(value) ||
-                /^[ACDEFGHIKLMNPQRSTVWY][0-9]+$/i.test(value)
+                /^[ACDEFGHIKLMNPQRSTVWY][0-9]+$/i.test(value),
+            batchMutagenesis: (value) => {
+                if (!value || !value.trim()) return true; // input is empty
+
+                const tokens = value
+                    .split(/[,\s]+/)   // commas, spaces, tabs, newlines
+                    .filter(Boolean);
+
+                const single = /^(?:[ACDEFGHIKLMNPQRSTVWY]|\.)?\d+[ACDEFGHIKLMNPQRSTVWY]$/i;
+                const motif = /^[ACDEFGHIKLMNPQRSTVWY]+\d+[ACDEFGHIKLMNPQRSTVWY]+$/i;
+
+                return tokens.every(token =>
+                    single.test(token) || motif.test(token)
+                );
+            },
         };
         document.addEventListener("DOMContentLoaded", function (event) {
             const inputElements = document.querySelectorAll("input[validator]");

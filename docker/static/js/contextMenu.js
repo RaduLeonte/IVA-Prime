@@ -22,6 +22,11 @@ const ContextMenu = new class {
                     conditions: {any: ["range", "feature"]},
                     action: () => Modals.createInsertionModal("mutation")
                 },
+                {
+                    item: "Batch mutagenesis",
+                    conditions: {any: ["single", "range", "feature"]},
+                    action: () => Modals.createBatchMutagenesisModal()
+                },
 
                 { separator: "" },
 
