@@ -913,6 +913,123 @@ const Modals = new class {
         this._create(id, body, action);
     };
 
+    //#region Batch mutagenesis
+    /**
+     * Create the modal window for batch mutagenesis
+     */
+    createBatchMutagenesisModal() {
+        const id = "modal-window-batch-mutagenesis";
+
+        const body = document.createElement("div");
+        body.classList.add("modal-batch-mutagenesis");
+
+        // Title
+        body.appendChild(
+            this._createModalTitle("Batch mutagenesis")
+        );
+
+        // Batch mutagenesis explanation
+        const hint = document.createElement("div");
+        hint.classList.add("modal-hint");
+        hint.innerHTML = `
+            Batch mutagenesis functions in the following way:
+
+            <ul>
+                <li>
+                    Specify single mutations as "S11D" or "11D" (11th serine will be mutated to aspartate).
+                </li>
+                <li>
+                    Specify longer mutations as "EEVD340KKVR" ("EEVD" motif starting with E340 will mutate to "KKVR").
+                </li>
+                <li>
+                    Mutations should be deliminated by commas, spaces, or new-lines.
+                </li>
+                <li>
+                    All mutations are applied to the same plasmid template.
+                </li>
+            </ul>
+        `;
+        body.appendChild(hint);
+
+        // Open reading frame selector
+        const orfSelectorVGroup = document.createElement("div");
+        orfSelectorVGroup.classList.add("modal-vgroup");
+        body.appendChild(orfSelectorVGroup);
+        // Hgroup for label and select
+        const orfSelectorHGroup = document.createElement("div");
+        orfSelectorHGroup.classList.add("modal-hgroup");
+        orfSelectorVGroup.appendChild(orfSelectorHGroup);
+        // Dropdown label
+        const orfSelectorLabel = document.createElement("label");
+        orfSelectorLabel.innerText = "Select open reading frame:";
+        orfSelectorHGroup.appendChild(orfSelectorLabel);
+        // Dropdown
+        const orfSelectorSelect = document.createElement("select");
+        orfSelectorSelect.id = "batch-mutagenesis-orf-selector";
+
+        // Populate ORF selector
+        const translatedFeatures = Object.fromEntries(
+            Object.entries(Session.activePlasmid().features).filter(([id, featureDict]) => featureDict.translated === true)
+        );
+        // Iterate over organisms and add them as options
+        Object.entries(translatedFeatures).forEach(([id, featureDict]) => {
+            const option = document.createElement("option");
+            const featureSpanString = (featureDict.directionality === "fwd") ? `${featureDict.span[0]} → ${featureDict.span[1]}`: `${featureDict.span[0]} ← ${featureDict.span[1]}`;
+            option.value = id;
+            option.textContent = `${featureDict.label} [${featureSpanString}]`;
+            orfSelectorSelect.appendChild(option);
+        });
+        orfSelectorHGroup.appendChild(orfSelectorSelect);
+
+        // Codon hint
+        const orfSelectorHint = document.createElement("div");
+        orfSelectorHint.classList.add("modal-hint");
+        orfSelectorHint.innerHTML = `
+            If your target reading frame does not appear in the dropdown, make sure that it is annotated and translated.
+        `;
+        orfSelectorVGroup.appendChild(orfSelectorHint);
+        
+
+
+        const sequenceGroup = document.createElement("div");
+        sequenceGroup.classList.add("modal-vgroup", "modal-new-file-sequence-input");
+        body.appendChild(sequenceGroup);
+
+        // Create text input
+        const textArea = document.createElement("textarea");
+        textArea.id = "batch-mutagenesis-input";
+        textArea.classList.add("modal-input", "modal-textarea");
+        textArea.spellcheck = false;
+        textArea.setAttribute("validator", "batchMutagenesis");
+        sequenceGroup.appendChild(textArea);
+
+
+        // Codon optimization dropdown
+        body.appendChild(
+            this._createCodonOptimizationDropdown()
+        );
+
+        
+        /**
+         * Action
+         */
+        const action = () => {
+            Session.activePlasmid().batchMutagenesis(
+                document.getElementById("batch-mutagenesis-orf-selector").value,
+                document.getElementById("batch-mutagenesis-input").value,
+                document.getElementById("insertion-select-organism").value,
+            );
+        };
+
+
+        // Action and cancel buttons
+        body.appendChild(
+            this._createButtons("Create primers", id, action)
+        );
+    
+        this._create(id, body, action);
+    };
+
 
     //#region Subcloning
     /**

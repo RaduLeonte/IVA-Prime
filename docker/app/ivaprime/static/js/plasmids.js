@@ -988,7 +988,7 @@ class Plasmid {
                 this.primers.push(primerSet);
             };
     
-            if (UserPreferences.get("modifyPlasmidAfterOperation")) {
+            if (operationType !== "Batch Mutation" && UserPreferences.get("modifyPlasmidAfterOperation")) {
                 // Adjust sequence
                 this.sliceSequence(operationRange, seqToInsert);
                 // Adjust features and deletion marks
@@ -1038,6 +1038,56 @@ class Plasmid {
                 };
             };
         };
+    };
+
+    // #region Batch mutagenesis
+    /**
+     * Parse user input and perform batch mutagenesis
+     * 
+     * @param {Number} orfStartIndex - Start index of the open reading frame
+     * @param {String} userInput - Unparsed user input
+     * @param {String | null} targetOrganism - Target organism for codon optimization
+     */
+    batchMutagenesis(targetFeatureID, userInput, targetOrganism) {
+        const targetFeatureDict = Session.activePlasmid().features[targetFeatureID];
+        const featureDirectionality = targetFeatureDict.directionality;
+        const featureSpan = targetFeatureDict.span;
+        const sequenceStartIndex = (featureDirectionality === "fwd") ? featureSpan[0] : featureSpan[1]
+
+        const tokens = userInput
+            .split(/[,\s]+/)   // commas, spaces, tabs, newlines
+            .filter(Boolean);
+
+        const tokenPattern = /^([ACDEFGHIKLMNPQRSTVWY\.]*)(\d+)([ACDEFGHIKLMNPQRSTVWY]*)$/i;
+        tokens.forEach(token => {
+            const match = token.match(tokenPattern);
+            if (!match) return;
+
+            const [_, origAA, indexString, newAA] = match;
+            const indexAA = parseInt(indexString)
+            //console.log(`Plasmid.batchMutagenesis => token="${token}" -> "${origAA}"-"${indexAA}"-"${newAA}"`);
+        
+            const aaSpanStart = (featureDirectionality === "fwd") ? sequenceStartIndex + (indexAA - 1)*3 : sequenceStartIndex - (indexAA - 1)*3; 
+            const aaSpanEnd = (featureDirectionality === "fwd") ? aaSpanStart + newAA.length*3 - 1: aaSpanStart - newAA.length*3 + 1;
+            const aaSpan = [aaSpanStart, aaSpanEnd];
+            console.log(`Plasmid.batchMutagenesis => token="${token}" -> [${aaSpan}]`);
+
+            // Select target seq
+            PlasmidViewer.selectAA(aaSpan);
+            // Perform mut
+            this.IVAOperation(
+                "Batch Mutation",
+                "",
+                newAA,
+                targetOrganism,
+            );
+            // Rename primers
+            this.renamePrimerSet(
+                this.primers.length - 1,
+                token,
+                [`${token}_fwd`, `${token}_rev`],
+            );
+        });
     };
 
 

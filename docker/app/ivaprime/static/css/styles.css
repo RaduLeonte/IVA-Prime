@@ -1663,6 +1663,12 @@ html[data-theme="dark"] .boolean-switch-slider:before {
   color: var(--btn-red);
 }
 
+
+.modal-batch-mutagenesis {
+  min-width: 50vw;
+  min-height: 50vh;
+}
+
 /* #endregion Modal_windows  */
 
 
