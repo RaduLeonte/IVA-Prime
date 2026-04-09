@@ -951,6 +951,46 @@ const Modals = new class {
         `;
         body.appendChild(hint);
 
+        // Open reading frame selector
+        const orfSelectorVGroup = document.createElement("div");
+        orfSelectorVGroup.classList.add("modal-vgroup");
+        body.appendChild(orfSelectorVGroup);
+        // Hgroup for label and select
+        const orfSelectorHGroup = document.createElement("div");
+        orfSelectorHGroup.classList.add("modal-hgroup");
+        orfSelectorVGroup.appendChild(orfSelectorHGroup);
+        // Dropdown label
+        const orfSelectorLabel = document.createElement("label");
+        orfSelectorLabel.innerText = "Select open reading frame:";
+        orfSelectorHGroup.appendChild(orfSelectorLabel);
+        // Dropdown
+        const orfSelectorSelect = document.createElement("select");
+        orfSelectorSelect.id = "batch-mutagenesis-orf-selector";
+
+        // Populate ORF selector
+        const translatedFeatures = Object.fromEntries(
+            Object.entries(Session.activePlasmid().features).filter(([id, featureDict]) => featureDict.translated === true)
+        );
+        // Iterate over organisms and add them as options
+        Object.entries(translatedFeatures).forEach(([id, featureDict]) => {
+            const option = document.createElement("option");
+            const featureSpanString = (featureDict.directionality === "fwd") ? `${featureDict.span[0]} → ${featureDict.span[1]}`: `${featureDict.span[0]} ← ${featureDict.span[1]}`;
+            option.value = id;
+            option.textContent = `${featureDict.label} [${featureSpanString}]`;
+            orfSelectorSelect.appendChild(option);
+        });
+        orfSelectorHGroup.appendChild(orfSelectorSelect);
+
+        // Codon hint
+        const orfSelectorHint = document.createElement("div");
+        orfSelectorHint.classList.add("modal-hint");
+        orfSelectorHint.innerHTML = `
+            If your target reading frame does not appear in the dropdown, make sure that it is annotated and translated.
+        `;
+        orfSelectorVGroup.appendChild(orfSelectorHint);
+        
+
+
         const sequenceGroup = document.createElement("div");
         sequenceGroup.classList.add("modal-vgroup", "modal-new-file-sequence-input");
         body.appendChild(sequenceGroup);
@@ -974,19 +1014,10 @@ const Modals = new class {
          * Action
          */
         const action = () => {
-            // Get new feature name if the user selection a common insertion
-            const selectElement = commonInsertionsDropdown.querySelector(".common-insertions-dropdown");
-            const selectedOption = selectElement.options[selectElement.selectedIndex];
-            const newFeatureName = (selectedOption.hasAttribute("feature-label")) ? selectedOption.getAttribute("feature-label"): null;
-            
-            // Perform IVA operation
-            Session.activePlasmid().IVAOperation(
-                (type === "insertion") ? "Insertion": "Mutation",
-                document.getElementById("insertion-input-dna").value,
-                document.getElementById("insertion-input-aa").value,
+            Session.activePlasmid().batchMutagenesis(
+                document.getElementById("batch-mutagenesis-orf-selector").value,
+                document.getElementById("batch-mutagenesis-input").value,
                 document.getElementById("insertion-select-organism").value,
-                document.getElementById("insertion-checkbox-translate").checked,
-                newFeatureName,
             );
         };
 
