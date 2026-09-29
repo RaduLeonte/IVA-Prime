@@ -63,8 +63,8 @@ runs:
           "pub_date": "$PUB_DATE",
           "platforms": {
             "linux-x86_64": {
-              "signature": "$(cat IVA-Prime-${VERSION}-linux.AppImage.sig)",
-              "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-linux.AppImage"
+              "signature": "$(cat IVA-Prime-${VERSION}-x86_64.AppImage.sig)",
+              "url": "${RELEASE_URL}/IVA-Prime-${VERSION}-x86_64.AppImage"
             },
             "linux-x86_64-deb": {
               "signature": "$(cat IVA-Prime-${VERSION}-linux.deb.sig)",
@@ -97,8 +97,8 @@ runs:
       run: |
         VERSION="${{ inputs.version }}"
         {
-          echo "IVA-Prime-${VERSION}-linux.AppImage"
-          echo "IVA-Prime-${VERSION}-linux.AppImage.sig"
+          echo "IVA-Prime-${VERSION}-x86_64.AppImage"
+          echo "IVA-Prime-${VERSION}-x86_64.AppImage.sig"
           echo "IVA-Prime-${VERSION}-linux.deb"
           echo "IVA-Prime-${VERSION}-linux.deb.sig"
           echo "IVA-Prime-${VERSION}-linux.rpm"
