@@ -250,9 +250,19 @@ jobs:
           chmod +x "$APPIMAGE"
 
           if [ -f "$APPIMAGE.sig" ]; then
+            if [ -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ]; then
+              echo "TAURI_SIGNING_PRIVATE_KEY is not set, cannot re-sign the AppImage"
+              exit 1
+            fi
             rm -f "$APPIMAGE.sig"
             cd "$GITHUB_WORKSPACE/tauri/iva-prime"
-            npx tauri signer sign "$APPIMAGE"
+            # `tauri signer sign` does not read the TAURI_SIGNING_* env vars,
+            # so pass the key and password explicitly.
+            npx tauri signer sign \
+              --private-key "$TAURI_SIGNING_PRIVATE_KEY" \
+              --password "${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}" \
+              "$APPIMAGE"
+            test -f "$APPIMAGE.sig"
           fi
 
       - name: Rename and Upload Linux artifact
