@@ -212,12 +212,65 @@ jobs:
           args: >-
             --bundles appimage,deb,rpm -c '{"version": "${{ needs.get-info.outputs.version }}"}'
 
+      # Tauri's bundler leaves .DirIcon as an absolute symlink into the build
+      # machine's AppDir, which is dangling once the AppImage is distributed.
+      # Replace it with a real file, repack, and re-sign for the updater.
+      - name: Fix AppImage .DirIcon
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          BUNDLE_DIR="$GITHUB_WORKSPACE/tauri/iva-prime/src-tauri/target/release/bundle/appimage"
+          APPIMAGE=$(ls "$BUNDLE_DIR"/*.AppImage)
+          WORK="$RUNNER_TEMP/appimage-fix"
+          mkdir -p "$WORK"
+          cd "$WORK"
+
+          wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool-x86_64.AppImage "$APPIMAGE"
+
+          "$APPIMAGE" --appimage-extract > /dev/null
+          ICON=$(ls squashfs-root/usr/share/icons/hicolor/256x256/apps/*.png | head -n1)
+          rm -f squashfs-root/.DirIcon
+          cp "$ICON" squashfs-root/.DirIcon
+
+          # MimeType is a string list and must end with ';'
+          sed -i -E '/^MimeType=.*[^;]$/s/$/;/' squashfs-root/usr/share/applications/*.desktop
+
+          if find squashfs-root -type l -lname '/*' | grep -q .; then
+            echo "Absolute symlinks remain in AppDir:"
+            find squashfs-root -type l -lname '/*' -printf '%p -> %l\n'
+            exit 1
+          fi
+
+          ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 ./appimagetool-x86_64.AppImage squashfs-root fixed.AppImage
+          mv -f fixed.AppImage "$APPIMAGE"
+          chmod +x "$APPIMAGE"
+
+          if [ -f "$APPIMAGE.sig" ]; then
+            if [ -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ]; then
+              echo "TAURI_SIGNING_PRIVATE_KEY is not set, cannot re-sign the AppImage"
+              exit 1
+            fi
+            rm -f "$APPIMAGE.sig"
+            cd "$GITHUB_WORKSPACE/tauri/iva-prime"
+            # `tauri signer sign` does not read the TAURI_SIGNING_* env vars,
+            # so pass the key and password explicitly.
+            npx tauri signer sign \
+              --private-key "$TAURI_SIGNING_PRIVATE_KEY" \
+              --password "${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}" \
+              "$APPIMAGE"
+            test -f "$APPIMAGE.sig"
+          fi
+
       - name: Rename and Upload Linux artifact
         uses: ./.github/actions/rename-and-upload-artifacts
         with:
           targets: |
-            .AppImage -> release/bundle/appimage/ -> linux
-            .AppImage.sig -> release/bundle/appimage/ -> linux
+            .AppImage -> release/bundle/appimage/ -> x86_64
+            .AppImage.sig -> release/bundle/appimage/ -> x86_64
             .deb -> release/bundle/deb/ -> linux
             .deb.sig -> release/bundle/deb/ -> linux
             .rpm -> release/bundle/rpm/ -> linux
